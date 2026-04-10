@@ -53,6 +53,7 @@ function showLogin() {
   document.getElementById("login-screen").style.display = "flex";
   document.getElementById("dashboard").style.display = "none";
 }
+
 function showDashboard(user) {
   document.getElementById("login-screen").style.display = "none";
   document.getElementById("dashboard").style.display = "block";
