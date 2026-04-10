@@ -1,4 +1,5 @@
 import { auth, db } from "./firebase-config.js";
+import { loadDashboard } from "./app.js";
 import {
   GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
