@@ -1,1 +1,80 @@
+/* Hero Light branding */
+:root {
+  --hero-primary: #06a3b6;
+  --hero-bg: #f0f4f8;
+  --hero-card: #ffffff;
+  --hero-text: #1a2733;
+  --hero-muted: #6b7d8c;
+  --hero-radius: 10px;
+  --hero-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
 
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Trebuchet MS", sans-serif;
+  background: var(--hero-bg);
+  color: var(--hero-text);
+}
+
+/* LOGIN */
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.login-card {
+  background: var(--hero-card);
+  border-radius: var(--hero-radius);
+  box-shadow: var(--hero-shadow);
+  padding: 40px;
+  max-width: 400px;
+  text-align: center;
+}
+.login-card h1 { color: var(--hero-primary); margin: 0 0 8px; }
+.login-card p { color: var(--hero-muted); margin: 0 0 24px; }
+.login-card small { display: block; margin-top: 16px; color: var(--hero-muted); }
+
+.btn-primary {
+  background: var(--hero-primary);
+  color: #fff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: var(--hero-radius);
+  font-size: 15px;
+  font-family: inherit;
+  cursor: pointer;
+  width: 100%;
+}
+.btn-primary:hover { opacity: 0.9; }
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid #fff;
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: var(--hero-radius);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.error-msg { color: #c0392b; min-height: 18px; margin: 12px 0 0; font-size: 13px; }
+
+/* DASHBOARD */
+.hero-header {
+  background: var(--hero-primary);
+  color: #fff;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.hero-header h1 { margin: 0; font-size: 20px; }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.avatar { width: 36px; height: 36px; border-radius: 50%; border: 2px solid #fff; }
+
+#widgets-container { padding: 24px; }
+.loading { color: var(--hero-muted); text-align: center; }
