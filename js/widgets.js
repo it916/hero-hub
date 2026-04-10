@@ -1,4 +1,7 @@
-// Datos compartidos hardcoded (luego migramos a Firestore)
+import { db } from "./firebase-config.js";
+import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { auth } from "./firebase-config.js";
+
 const SHARED_DATA = {
   spotlight: {
     title: "Hero del Mes",
@@ -28,7 +31,6 @@ const SHARED_DATA = {
   ]
 };
 
-// Definición de widgets disponibles
 const WIDGET_DEFS = {
   spotlight: { title: "🌟 Hero Spotlight", render: renderSpotlight },
   birthdays: { title: "🎂 Cumpleaños del equipo", render: renderBirthdays },
@@ -48,22 +50,44 @@ export function renderWidgets(userData) {
     card.className = "widget-card";
     card.dataset.widget = key;
     card.innerHTML = `
-      <h2 class="widget-title">${WIDGET_DEFS[key].title}</h2>
+      <h2 class="widget-title">
+        <span class="drag-handle" title="Arrastra para reordenar">⋮⋮</span>
+        ${WIDGET_DEFS[key].title}
+      </h2>
       <div class="widget-body">${WIDGET_DEFS[key].render(userData)}</div>
     `;
     container.appendChild(card);
   });
+
+  // Activar drag & drop
+  Sortable.create(container, {
+    handle: ".drag-handle",
+    animation: 180,
+    ghostClass: "widget-ghost",
+    onEnd: saveOrder
+  });
+}
+
+async function saveOrder() {
+  const cards = document.querySelectorAll("#widgets-container .widget-card");
+  const newOrder = Array.from(cards).map(c => c.dataset.widget);
+  const user = auth.currentUser;
+  if (!user) return;
+  try {
+    await updateDoc(doc(db, "users", user.email), { widgetOrder: newOrder });
+    console.log("Orden guardado:", newOrder);
+  } catch (e) {
+    console.error("Error guardando orden:", e);
+  }
 }
 
 function renderSpotlight() {
   const s = SHARED_DATA.spotlight;
-  return `
-    <div class="spotlight">
-      <div class="spotlight-name">${s.name}</div>
-      <div class="spotlight-role">${s.role}</div>
-      <p class="spotlight-msg">${s.message}</p>
-    </div>
-  `;
+  return `<div class="spotlight">
+    <div class="spotlight-name">${s.name}</div>
+    <div class="spotlight-role">${s.role}</div>
+    <p class="spotlight-msg">${s.message}</p>
+  </div>`;
 }
 
 function renderBirthdays() {

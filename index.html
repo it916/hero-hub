@@ -5,34 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hero Hub — Hero Insurance USA</title>
   <link rel="stylesheet" href="css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 </head>
 <body>
-  <!-- PANTALLA DE LOGIN -->
   <div id="login-screen" class="login-container" style="display:none;">
     <div class="login-card">
       <h1>Hero Hub</h1>
       <p>Portal interno de Hero Insurance USA</p>
-      <button id="btn-login" class="btn-primary">
-        Iniciar sesión con Google
-      </button>
+      <button id="btn-login" class="btn-primary">Iniciar sesión con Google</button>
       <p id="login-error" class="error-msg"></p>
       <small>Solo cuentas <strong>@heroinsuranceusa.com</strong></small>
     </div>
   </div>
 
-  <!-- DASHBOARD (oculto hasta que haya login válido) -->
   <div id="dashboard" style="display:none;">
     <header class="hero-header">
-      <div class="header-left">
-        <h1>Hero Hub</h1>
-      </div>
+      <div class="header-left"><h1>Hero Hub</h1></div>
       <div class="header-right">
         <span id="user-greeting"></span>
         <img id="user-avatar" src="" alt="avatar" class="avatar">
         <button id="btn-logout" class="btn-ghost">Salir</button>
       </div>
     </header>
-
     <main id="widgets-container">
       <p class="loading">Cargando tu Hub...</p>
     </main>
