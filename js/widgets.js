@@ -1,10 +1,8 @@
-import { db } from "./firebase-config.js";
+import { db, auth } from "./firebase-config.js";
 import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { auth } from "./firebase-config.js";
 
 const SHARED_DATA = {
   spotlight: {
-    title: "Hero del Mes",
     name: "Anny Medina",
     role: "COO",
     message: "Por su liderazgo excepcional en el cierre del Q1 2026."
@@ -22,23 +20,29 @@ const SHARED_DATA = {
     "Cada cliente atendido con excelencia es una historia de éxito.",
     "La constancia vence lo que la dicha no alcanza."
   ],
-  tools: [
+  defaultTools: [
     { label: "Gmail", url: "https://mail.google.com", icon: "📧" },
     { label: "Drive", url: "https://drive.google.com", icon: "📁" },
     { label: "Calendar", url: "https://calendar.google.com", icon: "📅" },
-    { label: "Hub Agentes", url: "https://hub.heroinsuranceusa.com", icon: "👥" },
-    { label: "IT Console", url: "https://it916.github.io/hero-it-console/", icon: "🛠️" }
+    { label: "Hub Agentes", url: "https://hub.heroinsuranceusa.com", icon: "👥" }
   ]
 };
 
 const WIDGET_DEFS = {
   spotlight: { title: "🌟 Hero Spotlight", render: renderSpotlight },
   birthdays: { title: "🎂 Cumpleaños del equipo", render: renderBirthdays },
-  messages:  { title: "💬 Mensaje del día",      render: renderMessages },
-  tools:     { title: "🛠️ Mis herramientas",     render: renderTools }
+  messages:  { title: "💬 Mensaje del día", render: renderMessages },
+  tools:     { title: "🛠️ Mis herramientas", render: renderTools }
 };
 
+let currentUserData = null;
+
 export function renderWidgets(userData) {
+  currentUserData = userData;
+  // Si nunca ha tocado sus shortcuts, inicializa con los defaults
+  if (!userData.shortcuts || userData.shortcuts.length === 0) {
+    userData.shortcuts = [...SHARED_DATA.defaultTools];
+  }
   const container = document.getElementById("widgets-container");
   container.innerHTML = "";
   const order = userData.widgetOrder || Object.keys(WIDGET_DEFS);
@@ -59,25 +63,29 @@ export function renderWidgets(userData) {
     container.appendChild(card);
   });
 
-  // Activar drag & drop
   Sortable.create(container, {
     handle: ".drag-handle",
     animation: 180,
     ghostClass: "widget-ghost",
     onEnd: saveOrder
   });
+
+  attachToolHandlers();
 }
 
 async function saveOrder() {
   const cards = document.querySelectorAll("#widgets-container .widget-card");
   const newOrder = Array.from(cards).map(c => c.dataset.widget);
+  await saveUserField({ widgetOrder: newOrder });
+}
+
+async function saveUserField(fields) {
   const user = auth.currentUser;
   if (!user) return;
   try {
-    await updateDoc(doc(db, "users", user.email), { widgetOrder: newOrder });
-    console.log("Orden guardado:", newOrder);
+    await updateDoc(doc(db, "users", user.email), fields);
   } catch (e) {
-    console.error("Error guardando orden:", e);
+    console.error("Error guardando:", e);
   }
 }
 
@@ -104,15 +112,68 @@ function renderMessages() {
 }
 
 function renderTools(userData) {
-  const userTools = (userData.shortcuts && userData.shortcuts.length)
-    ? userData.shortcuts
-    : SHARED_DATA.tools;
-  return `<div class="tools-grid">${
-    userTools.map(t =>
-      `<a href="${t.url}" target="_blank" class="tool-link">
-        <span class="tool-icon">${t.icon || "🔗"}</span>
-        <span class="tool-label">${t.label}</span>
-      </a>`
-    ).join("")
-  }</div>`;
+  const tools = userData.shortcuts || [];
+  return `
+    <div class="tools-grid">
+      ${tools.map((t, i) => `
+        <div class="tool-link-wrapper">
+          <a href="${t.url}" target="_blank" class="tool-link">
+            <span class="tool-icon">${t.icon || "🔗"}</span>
+            <span class="tool-label">${t.label}</span>
+          </a>
+          <button class="tool-delete" data-index="${i}" title="Eliminar">×</button>
+        </div>
+      `).join("")}
+      <button class="tool-add" title="Agregar acceso">
+        <span class="tool-icon">➕</span>
+        <span class="tool-label">Agregar</span>
+      </button>
+    </div>
+  `;
+}
+
+function attachToolHandlers() {
+  const addBtn = document.querySelector(".tool-add");
+  if (addBtn) addBtn.addEventListener("click", openAddModal);
+
+  document.querySelectorAll(".tool-delete").forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const idx = parseInt(btn.dataset.index);
+      if (!confirm("¿Eliminar este acceso?")) return;
+      currentUserData.shortcuts.splice(idx, 1);
+      await saveUserField({ shortcuts: currentUserData.shortcuts });
+      renderWidgets(currentUserData);
+    });
+  });
+}
+
+function openAddModal() {
+  const modal = document.createElement("div");
+  modal.className = "modal-overlay";
+  modal.innerHTML = `
+    <div class="modal">
+      <h3>Nuevo acceso rápido</h3>
+      <label>Nombre <input id="t-label" placeholder="Ej: Slack" maxlength="20"></label>
+      <label>URL <input id="t-url" placeholder="https://..." type="url"></label>
+      <label>Ícono (emoji) <input id="t-icon" placeholder="🔗" maxlength="2"></label>
+      <div class="modal-buttons">
+        <button class="btn-ghost-dark" id="t-cancel">Cancelar</button>
+        <button class="btn-primary" id="t-save">Guardar</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  modal.querySelector("#t-cancel").onclick = () => modal.remove();
+  modal.querySelector("#t-save").onclick = async () => {
+    const label = modal.querySelector("#t-label").value.trim();
+    const url = modal.querySelector("#t-url").value.trim();
+    const icon = modal.querySelector("#t-icon").value.trim() || "🔗";
+    if (!label || !url) { alert("Nombre y URL son requeridos"); return; }
+    currentUserData.shortcuts.push({ label, url, icon });
+    await saveUserField({ shortcuts: currentUserData.shortcuts });
+    modal.remove();
+    renderWidgets(currentUserData);
+  };
 }
