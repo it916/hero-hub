@@ -58,4 +58,5 @@ function showDashboard(user) {
   document.getElementById("dashboard").style.display = "block";
   document.getElementById("user-avatar").src = user.photoURL;
   document.getElementById("user-greeting").textContent = user.displayName;
+  loadDashboard(user);
 }
