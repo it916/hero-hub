@@ -5,12 +5,12 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase
 // 🔧 REEMPLAZA estos valores con los de TU proyecto Firebase
 // (Console → Project settings → Your apps → Web app → firebaseConfig)
 const firebaseConfig = {
-  apiKey: "PEGA_AQUI",
-  authDomain: "hero-hub.firebaseapp.com",
-  projectId: "hero-hub",
-  storageBucket: "hero-hub.appspot.com",
-  messagingSenderId: "PEGA_AQUI",
-  appId: "PEGA_AQUI"
+apiKey: "AIzaSyAtlIACoJkSg77xjw0N3ODFoaH0Sf2pVtc",
+  authDomain: "hero-hub-de520.firebaseapp.com",
+  projectId: "hero-hub-de520",
+  storageBucket: "hero-hub-de520.firebasestorage.app",
+  messagingSenderId: "1062942956307",
+  appId: "1:1062942956307:web:eba9e9bfb0c649fefc58e6"
 };
 
 const app = initializeApp(firebaseConfig);
