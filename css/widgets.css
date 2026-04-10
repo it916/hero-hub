@@ -1,0 +1,63 @@
+/* === WIDGETS === */
+#widgets-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.widget-card {
+  background: var(--hero-card);
+  border-radius: var(--hero-radius);
+  box-shadow: var(--hero-shadow);
+  padding: 20px;
+}
+
+.widget-title {
+  margin: 0 0 14px;
+  font-size: 16px;
+  color: var(--hero-primary);
+  border-bottom: 2px solid var(--hero-bg);
+  padding-bottom: 8px;
+}
+
+.widget-body { font-size: 14px; }
+
+/* Spotlight */
+.spotlight { text-align: center; padding: 10px 0; }
+.spotlight-name { font-size: 20px; font-weight: bold; color: var(--hero-text); }
+.spotlight-role { color: var(--hero-muted); margin: 4px 0 12px; }
+.spotlight-msg { font-style: italic; color: var(--hero-text); }
+
+/* Cumpleaños */
+.bday-list { list-style: none; padding: 0; margin: 0; }
+.bday-list li {
+  display: flex; justify-content: space-between;
+  padding: 8px 0; border-bottom: 1px solid var(--hero-bg);
+}
+.bday-list li:last-child { border-bottom: none; }
+.bday-list strong { color: var(--hero-primary); }
+
+/* Mensaje */
+.motivational {
+  font-style: italic; text-align: center;
+  color: var(--hero-text); padding: 20px 0; margin: 0;
+}
+
+/* Herramientas */
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 12px;
+}
+.tool-link {
+  display: flex; flex-direction: column; align-items: center;
+  text-decoration: none; color: var(--hero-text);
+  padding: 12px 6px; border-radius: 8px;
+  transition: background 0.2s;
+}
+.tool-link:hover { background: var(--hero-bg); }
+.tool-icon { font-size: 28px; }
+.tool-label { font-size: 12px; margin-top: 4px; text-align: center; }
