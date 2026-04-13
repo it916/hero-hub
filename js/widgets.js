@@ -1,18 +1,6 @@
 import { db, auth } from "./firebase-config.js";
 import { doc, updateDoc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const TEAM = [
-  {name:'Anny Medina', role:'COO', date:{m:10,d:6}, photo:'https://i.imgur.com/QAKNQU6.png'},
-  {name:'Aurys Rodriguez', role:'CFO', date:{m:12,d:28}, photo:'https://i.imgur.com/wrUIReK.png'},
-  {name:'Jesus Gutierrez', role:'CEO', date:{m:5,d:13}, photo:'https://i.imgur.com/mZ1PkXU.png'},
-  {name:'Jeyxi Suárez', role:'COO Assistant', date:{m:7,d:6}, photo:'https://i.imgur.com/lw8CulK.png'},
-  {name:'María Alejandra Iribarren', role:'Relations Manager', date:{m:9,d:8}, photo:'https://i.imgur.com/n1HfSfc.png'},
-  {name:'Oscar Palacios', role:'Assistance Department', date:{m:11,d:13}, photo:'https://i.imgur.com/7LMl99i.png'},
-  {name:'Fernando Romero', role:'IT & Technology Manager', date:{m:11,d:15}, photo:'https://i.imgur.com/zUyf42Y.png'},
-  {name:'Ramón Portillo', role:'Broker Support', date:{m:2,d:22}, photo:'https://i.imgur.com/uDgo3D2.png'},
-  {name:'Eduardo Romero', role:'Office Manager', date:{m:10,d:26}, photo:'https://i.ibb.co/h0GTBhG/circulo-EDUARDO-OO.png'},
-];
-
 const ARSENAL_DEFAULT = {
   google: [
     {label:'Gmail', url:'https://mail.google.com', icon:'https://cdn4.iconfinder.com/data/icons/logos-brands-in-colors/48/google-gmail-512.png'},
@@ -44,15 +32,16 @@ const ARSENAL_DEFAULT = {
 
 const ADMIN_EMAILS = ["it@heroinsuranceusa.com"];
 
-let SHARED_DATA = { spotlight: { imageUrl:'', message:'', honorees:[] }, messages: [] };
+let SHARED_DATA = { spotlight:{imageUrl:'',message:'',honorees:[]}, messages:[], team:[] };
 let currentUserData = null;
 let isAdmin = false;
 
 async function loadSharedData() {
   try {
-    const [sp, ms] = await Promise.all([
+    const [sp, ms, tm] = await Promise.all([
       getDoc(doc(db, "shared", "spotlight")),
-      getDoc(doc(db, "shared", "messages"))
+      getDoc(doc(db, "shared", "messages")),
+      getDoc(doc(db, "shared", "team"))
     ]);
     if (sp.exists()) {
       const d = sp.data();
@@ -62,9 +51,11 @@ async function loadSharedData() {
     if (ms.exists()) {
       const data = ms.data();
       if (Array.isArray(data.items)) {
-        // Detectar si son strings viejos o objetos nuevos
         SHARED_DATA.messages = data.items.map(x => typeof x === 'string' ? { id:crypto.randomUUID(), frase:x, autor:'—', created_at:new Date().toISOString() } : x);
       }
+    }
+    if (tm.exists() && Array.isArray(tm.data().members)) {
+      SHARED_DATA.team = tm.data().members;
     }
   } catch (e) { console.warn("Error cargando shared:", e.message); }
 }
@@ -83,7 +74,7 @@ export async function renderWidgets(userData) {
   if (window.refreshIcons) window.refreshIcons();
 }
 
-// ARSENAL
+// ═══ ARSENAL ═══
 function renderArsenal() {
   const container = document.getElementById("tools-container");
   if (!container) return;
@@ -156,7 +147,7 @@ function openAddToolModal(group) {
   };
 }
 
-// SPOTLIGHT
+// ═══ SPOTLIGHT ═══
 function renderSpotlight() {
   const s = SHARED_DATA.spotlight;
   const banner = document.getElementById('spotlight-banner');
@@ -184,7 +175,15 @@ function renderSpotlight() {
   if (msgEl) msgEl.textContent = s.message || '';
 }
 
-// CUMPLEAÑOS
+// ═══ CUMPLEAÑOS (desde shared/team) ═══
+function parseBirthdate(bd) {
+  // Formato "MM-DD"
+  if (!bd || typeof bd !== 'string' || !/^\d{2}-\d{2}$/.test(bd)) return null;
+  const [m, d] = bd.split('-').map(x => parseInt(x));
+  if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+  return { m, d };
+}
+
 function daysUntil(bd) {
   const today = new Date(); today.setHours(0,0,0,0);
   const thisYear = new Date(today.getFullYear(), bd.m-1, bd.d);
@@ -192,12 +191,33 @@ function daysUntil(bd) {
   const target = thisYear > today ? thisYear : new Date(today.getFullYear()+1, bd.m-1, bd.d);
   return Math.ceil((target - today) / (1000*60*60*24));
 }
+
 function renderBirthday() {
   const MONTHS = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
-  const sorted = TEAM.map(p => ({ p, d: daysUntil(p.date) })).sort((a,b) => a.d - b.d);
-  const { p, d } = sorted[0];
-  const isToday = d === 0, isTomorrow = d === 1;
+
+  // Filtrar solo miembros con birthdate válido
+  const withBirthday = SHARED_DATA.team
+    .map(m => {
+      const date = parseBirthdate(m.birthdate);
+      return date ? { p: {...m, date}, d: daysUntil(date) } : null;
+    })
+    .filter(x => x !== null)
+    .sort((a,b) => a.d - b.d);
+
   const el = id => document.getElementById(id);
+
+  if (!withBirthday.length) {
+    if (el('bdayName')) el('bdayName').textContent = '—';
+    if (el('bdayRole')) el('bdayRole').textContent = 'Sin cumpleaños registrados';
+    if (el('bdayBadge')) el('bdayBadge').textContent = '🎈 Próximo cumpleaños';
+    if (el('bdayDate')) el('bdayDate').textContent = '—';
+    if (el('bdayCountdown')) el('bdayCountdown').innerHTML = '—';
+    return;
+  }
+
+  const { p, d } = withBirthday[0];
+  const isToday = d === 0, isTomorrow = d === 1;
+
   if (el('bdayAvatar')) {
     el('bdayAvatar').src = p.photo;
     el('bdayAvatar').onerror = function(){ this.src=`https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=06a3b6&color=fff&size=200`; };
@@ -205,7 +225,7 @@ function renderBirthday() {
   if (el('bdayFloat')) el('bdayFloat').textContent = isToday ? '🎊' : '🎈';
   if (el('bdayBadge')) el('bdayBadge').textContent = isToday ? '🎂 Cumpleaños hoy' : '🎈 Próximo cumpleaños';
   if (el('bdayName')) el('bdayName').textContent = p.name;
-  if (el('bdayRole')) el('bdayRole').textContent = p.role;
+  if (el('bdayRole')) el('bdayRole').textContent = p.role || '';
   if (el('bdayDate')) el('bdayDate').textContent = `🗓️ ${p.date.d} ${MONTHS[p.date.m-1]}`;
   if (el('bdayCountdown')) {
     if (isToday) el('bdayCountdown').innerHTML = '<strong>¡Es hoy! 🎉</strong>';
@@ -215,7 +235,7 @@ function renderBirthday() {
   if (el('bdayConfetti')) el('bdayConfetti').textContent = isToday ? '🎊🎂🎊' : '🎈🎂🎈';
 }
 
-// ═══ MENSAJE DEL DÍA (con Firestore) ═══
+// ═══ MENSAJE DEL DÍA ═══
 let msgIdx = 0, msgTimer = null, msgProg = 0;
 
 function initials(name) {
@@ -233,7 +253,6 @@ function relDate(iso) {
 
 function renderMessageWidget() {
   const msgs = SHARED_DATA.messages;
-  // Current frase
   if (!msgs.length) {
     document.getElementById('msgBody').innerHTML = '<p class="empty">Sin frases aún. ¡Sé el primero en agregar una!</p>';
     document.getElementById('msgMeta').style.display = 'none';
@@ -271,7 +290,7 @@ function startMsgTimer() {
     msgProg += (40/12000)*100;
     const pf = document.getElementById('msgProgFill');
     if (pf) pf.style.width = msgProg + '%';
-    if (msgProg >= 100) { nextMsg(); }
+    if (msgProg >= 100) nextMsg();
   }, 40);
 }
 function nextMsg() { if (!SHARED_DATA.messages.length) return; msgIdx = (msgIdx+1) % SHARED_DATA.messages.length; showCurrentMsg(); startMsgTimer(); }
@@ -336,7 +355,6 @@ function wireMsgForm() {
       if (cc) { cc.textContent = `${frase.value.length}/200`; cc.classList.toggle('warn', frase.value.length > 180); }
     });
   }
-  // Controles
   ['msgPrev','msgNext','msgRand','btnDelCurrent'].forEach(id => {
     const el = document.getElementById(id);
     if (el && !el.dataset.bound) {
@@ -365,11 +383,8 @@ async function publishMsg() {
     document.getElementById('msgChar').textContent = '0/200';
     msgIdx = SHARED_DATA.messages.length - 1;
     renderMessageWidget();
-  } catch (e) {
-    alert("Error al publicar: " + e.message);
-  } finally {
-    btn.disabled = false;
-  }
+  } catch (e) { alert("Error al publicar: " + e.message); }
+  finally { btn.disabled = false; }
 }
 async function deleteCurrent() {
   if (!isAdmin || !SHARED_DATA.messages.length) return;
