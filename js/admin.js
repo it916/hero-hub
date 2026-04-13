@@ -27,33 +27,48 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 async function loadAll() {
-  const [sp, ms] = await Promise.all([
-    getDoc(doc(db, "shared", "spotlight")),
-    getDoc(doc(db, "shared", "messages"))
-  ]);
+  try {
+    const [sp, ms] = await Promise.all([
+      getDoc(doc(db, "shared", "spotlight")),
+      getDoc(doc(db, "shared", "messages"))
+    ]);
 
-  // Migración: si tiene formato viejo (name, role), conviértelo a honorees[]
-  if (sp.exists()) {
-    const data = sp.data();
-    if (data.honorees) {
-      // Formato nuevo
-      spotlight = {
-        imageUrl: data.imageUrl || "",
-        message: data.message || "",
-        honorees: data.honorees || []
-      };
-    } else if (data.name) {
-      // Formato viejo, convertir
-      spotlight = {
-        imageUrl: "",
-        message: data.message || "",
-        honorees: [{ name: data.name, role: data.role || "" }]
-      };
+    // SPOTLIGHT - migración de formato viejo a nuevo
+    if (sp.exists()) {
+      const data = sp.data();
+      if (data && Array.isArray(data.honorees)) {
+        spotlight = {
+          imageUrl: data.imageUrl || "",
+          message: data.message || "",
+          honorees: data.honorees
+        };
+      } else if (data && data.name) {
+        spotlight = {
+          imageUrl: "",
+          message: data.message || "",
+          honorees: [{ name: data.name, role: data.role || "" }]
+        };
+      }
     }
+
+    // MENSAJES - guarda defensiva: solo aceptamos array
+    if (ms.exists()) {
+      const data = ms.data();
+      if (data && Array.isArray(data.items)) {
+        messages = data.items.filter(x => typeof x === 'string');
+      } else {
+        console.warn("shared/messages tiene formato inválido, reseteando a []", data);
+        messages = [];
+      }
+    } else {
+      messages = [];
+    }
+  } catch (e) {
+    console.error("Error cargando datos:", e);
+    messages = [];
   }
 
-  messages = ms.exists() ? (ms.data().items || []) : [];
-
+  // Render UI
   document.getElementById("sp-image").value = spotlight.imageUrl;
   document.getElementById("sp-message").value = spotlight.message;
   renderHonorees();
@@ -81,29 +96,40 @@ function wireHandlers() {
   // Guardar spotlight
   document.getElementById("sp-save").onclick = async () => {
     spotlight.message = document.getElementById("sp-message").value.trim();
-    // Filtrar honorees vacíos
     spotlight.honorees = spotlight.honorees.filter(h => h.name && h.name.trim());
     if (!spotlight.honorees.length) {
       alert("Agrega al menos un honorado");
       return;
     }
-    await setDoc(doc(db, "shared", "spotlight"), spotlight);
-    flash("sp-status", "✅ Guardado");
+    try {
+      await setDoc(doc(db, "shared", "spotlight"), spotlight);
+      flash("sp-status", "✅ Guardado");
+    } catch (e) {
+      console.error(e);
+      flash("sp-status", "❌ Error: " + e.message);
+    }
   };
 
   // Mensajes
   document.getElementById("ms-add").onclick = async () => {
     const text = document.getElementById("ms-text").value.trim();
     if (!text) return;
+    if (!Array.isArray(messages)) messages = [];
     messages.push(text);
-    await setDoc(doc(db, "shared", "messages"), { items: messages });
-    document.getElementById("ms-text").value = "";
-    renderMessages();
+    try {
+      await setDoc(doc(db, "shared", "messages"), { items: messages });
+      document.getElementById("ms-text").value = "";
+      renderMessages();
+    } catch (e) {
+      console.error(e);
+      alert("Error guardando: " + e.message);
+    }
   };
 }
 
 function renderHonorees() {
   const list = document.getElementById("sp-honorees-list");
+  if (!Array.isArray(spotlight.honorees)) spotlight.honorees = [];
   list.innerHTML = spotlight.honorees.map((h, i) => `
     <div class="honoree-row">
       <div class="honoree-num">${i + 1}</div>
@@ -145,6 +171,7 @@ function renderImagePreview() {
 
 function renderMessages() {
   const list = document.getElementById("ms-list");
+  if (!Array.isArray(messages)) messages = [];
   list.innerHTML = messages.map((m, i) =>
     `<div class="admin-item">
       <span>"${m}"</span>
@@ -154,8 +181,10 @@ function renderMessages() {
     btn.onclick = async () => {
       if (!confirm("¿Eliminar?")) return;
       messages.splice(parseInt(btn.dataset.i), 1);
-      await setDoc(doc(db, "shared", "messages"), { items: messages });
-      renderMessages();
+      try {
+        await setDoc(doc(db, "shared", "messages"), { items: messages });
+        renderMessages();
+      } catch (e) { alert("Error: " + e.message); }
     };
   });
 }
