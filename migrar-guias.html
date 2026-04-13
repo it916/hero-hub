@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Migrar Guías · Hero Hub</title>
+<style>
+  body { font-family:system-ui,sans-serif; background:#0a3d4a; color:#fff; padding:40px; max-width:720px; margin:0 auto; }
+  h1 { color:#06a3b6; }
+  button { background:#06a3b6; color:#fff; border:none; padding:14px 28px; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; margin:20px 0; }
+  button:disabled { opacity:.5; cursor:wait; }
+  #log { background:#062a33; padding:20px; border-radius:10px; margin-top:20px; font-family:monospace; font-size:13px; white-space:pre-wrap; max-height:400px; overflow-y:auto; }
+  .ok { color:#10b981; } .err { color:#f43f5e; } .info { color:#7a9aa5; }
+  code { background:#062a33; padding:2px 6px; border-radius:4px; }
+</style>
+</head>
+<body>
+  <h1>📘 Migración de Guías → Firestore</h1>
+  <p>Sube las 15 guías a <code>shared/guias</code>. Ejecútalo una sola vez.</p>
+  <button id="btn-migrar" disabled>Cargando...</button>
+  <div id="log"></div>
+
+<script type="module">
+import { auth, db } from "./js/firebase-config.js";
+import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const GUIDES = [
+  { emoji:'📅', tag:'Aetna', title:'Crear un Evento en Aetna Account Manager', url:'https://scribehow.com/viewer/Creating_an_Event_in_Aetna_Account_Manager__bdRkhyuuR-6-BjFSkMOlMQ?referrer=documents' },
+  { emoji:'🏥', tag:'Inscripción', title:'Completar Inscripción de Seguro Médico en Línea', url:'https://scribehow.com/viewer/How_To_Complete_Health_Insurance_Enrollment_Online__sYFh5VkjQwGQISy53DKtPg?referrer=documents' },
+  { emoji:'🌿', tag:'HealthSherpa', title:'Registrarse en HealthSherpa', url:'https://scribehow.com/viewer/How_to_Sign_Up_for_HealthSherpa_Account__PzMe8A2RTcKISr8fki8HmQ?referrer=documents' },
+  { emoji:'⭐', tag:'Oscar', title:'Onboarding en OSCAR', url:'https://scribehow.com/viewer/How_to_do_OSCAR_onboarding__Mr6zuxe1Qni8D6FV816QZw?referrer=documents' },
+  { emoji:'🏢', tag:'Aetna', title:'Onboarding Aetna — Registro del Equipo Producer', url:'https://scribehow.com/viewer/AETNA_Onboarding_for_Producer_Team_Registration__QknVYpPDRO-gQlFs4NuvCQ?referrer=documents' },
+  { emoji:'📝', tag:'Cigna', title:'Completar Contrato Cigna en Línea', url:'https://scribehow.com/viewer/How_To_Complete_Your_Cigna_Contract_Online__lQ_g6O3qQoyO-NlHL9wb-Q?referrer=documents' },
+  { emoji:'🔷', tag:'Molina', title:'Acuerdo Molina — Login en Evolve NXT', url:'https://scribehow.com/viewer/Complete_Molina_Agreement_Evolve_NXT_Login__cPx0B8OyQ6ezKaYDVrizPQ?referrer=documents' },
+  { emoji:'🆕', tag:'Triple-S Vida', title:'Crear Cuenta Nueva en Triple-S Vida', url:'https://scribehow.com/viewer/Create_a_New_Account_on_Triple-S_Vida__m4d-3KKAR_mCUyuB_N4aAg?referrer=documents' },
+  { emoji:'🛡️', tag:'SuranceBay', title:'Registrar Cuenta Nueva en SuranceBay', url:'https://scribehow.com/viewer/Register_a_New_Account_on_SuranceBay__1wz5Tv6rSnCdTjuTfs9oqA?referrer=documents' },
+  { emoji:'✍️', tag:'Citas', title:'Registrarse para una Cita de Agente', url:'https://scribehow.com/viewer/Sign_Up_for_an_Agent_Appointment__xUTs96KGRn-MeEgpaCfDRA?referrer=documents' },
+  { emoji:'📋', tag:'National General', title:'Solicitud de Onboarding — National General Agent', url:'https://scribehow.com/viewer/Complete_National_General_Agent_Onboarding_Application__Ijg-MJQ-T16l42XSK3hhnA?referrer=documents' },
+  { emoji:'🗽', tag:'ManhattanLife', title:'Registrarse como Producer en ManhattanLife', url:'https://scribehow.com/viewer/Register_for_a_ManhattanLife_Producer_Account__Tso0ZecqT0ufJfG2O4I4tg?referrer=documents' },
+  { emoji:'💼', tag:'Ameritas', title:'Registro para Cotización e Inscripción en Ameritas', url:'https://scribehow.com/viewer/Register_for_Ameritas_Quoting_and_Enrollment__Fe5aBhI-TDeVOrXw7JXP_g?referrer=documents' },
+  { emoji:'👤', tag:'Triple-S Vida', title:'Crear Cuenta de Agente en Triple-S Vida', url:'https://scribehow.com/viewer/Create_a_New_Triple-S_Vida_Agent_Account__QVVJPHsCScqSCt3dbowSqQ?referrer=documents' },
+  { emoji:'📤', tag:'Aplicaciones', title:'Enviar Solicitud de Agencia de Vida y Salud', url:'https://scribehow.com/viewer/How_to_Submit_Life_and_Health_Agency_Application__REmmHwyMSiWOwXf37MKRvg?referrer=documents' },
+];
+
+function log(msg, cls="") {
+  const el = document.getElementById("log");
+  el.innerHTML += `<span class="${cls}">${msg}</span>\n`;
+  el.scrollTop = el.scrollHeight;
+}
+
+onAuthStateChanged(auth, async (user) => {
+  const btn = document.getElementById("btn-migrar");
+  if (!user) {
+    log("🔐 Iniciando sesión...", "info");
+    try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+    catch(e) { log("❌ Login cancelado", "err"); }
+    return;
+  }
+  if (user.email !== "it@heroinsuranceusa.com") {
+    log(`❌ Solo it@heroinsuranceusa.com puede migrar. Estás como ${user.email}`, "err"); return;
+  }
+  log(`✅ Autenticado como ${user.email}`, "ok");
+  log(`📋 ${GUIDES.length} guías listas.`, "info");
+  btn.disabled = false;
+  btn.textContent = "Ejecutar migración";
+});
+
+document.getElementById("btn-migrar").addEventListener("click", async () => {
+  const btn = document.getElementById("btn-migrar");
+  btn.disabled = true; btn.textContent = "Migrando...";
+  try {
+    const items = GUIDES.map(g => ({
+      ...g,
+      updatedBy: 'migration',
+      updatedAt: new Date().toISOString()
+    }));
+    log(`📤 Escribiendo ${items.length} guías a shared/guias...`, "info");
+    await setDoc(doc(db, "shared", "guias"), { items });
+    log(`✅ ¡Completado! ${items.length} guías guardadas.`, "ok");
+    log(`🎉 Borra migrar-guias.html del repo.`, "ok");
+    btn.textContent = "✅ Completado";
+  } catch (e) {
+    log(`❌ Error: ${e.message}`, "err");
+    console.error(e);
+    btn.disabled = false; btn.textContent = "Reintentar";
+  }
+});
+</script>
+</body>
+</html>

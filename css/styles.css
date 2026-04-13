@@ -819,3 +819,118 @@ body[data-theme="dark"] .hero-topbar { background:rgba(15,42,51,.92); }
   .modal-grid-2 { grid-template-columns:1fr; }
   .dir-toolbar .btn-add-contact span { display:none; }
 }
+/* ═══════════════════════════════════════════
+   AGREGAR AL FINAL DE css/styles.css
+   Estilos página Guías
+   ═══════════════════════════════════════════ */
+
+.guias-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(230px, 1fr));
+  gap:14px;
+}
+
+.guia-card {
+  position:relative;
+  border-radius:18px;
+  background:var(--card);
+  border:1px solid var(--border);
+  overflow:hidden;
+  transition:all .15s;
+  animation:fadeUpG .35s ease both;
+  box-shadow:var(--shadow-sm);
+}
+@keyframes fadeUpG {
+  from { opacity:0; transform:translateY(10px); }
+  to { opacity:1; transform:translateY(0); }
+}
+.guia-card::before {
+  content:""; position:absolute; inset:0;
+  background:linear-gradient(135deg, rgba(6,163,182,.08), transparent 60%);
+  opacity:0; transition:opacity .2s; border-radius:inherit;
+  pointer-events:none;
+}
+.guia-card:hover {
+  transform:translateY(-4px);
+  border-color:rgba(6,163,182,.32);
+  box-shadow:0 10px 26px rgba(6,107,120,.15), 0 0 0 1px rgba(6,163,182,.1);
+}
+.guia-card:hover::before { opacity:1; }
+
+.guia-link {
+  display:flex; flex-direction:column; gap:10px;
+  padding:18px; text-decoration:none; color:var(--text);
+  min-height:155px;
+}
+
+.guia-top {
+  display:flex; align-items:center; justify-content:space-between;
+}
+
+.guia-emoji {
+  width:42px; height:42px;
+  border-radius:12px;
+  background:var(--paper); border:1px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; flex-shrink:0;
+  transition:transform .2s;
+}
+.guia-card:hover .guia-emoji {
+  transform:scale(1.12) rotate(-4deg);
+}
+
+.guia-arrow {
+  font-size:16px; color:var(--muted); opacity:.5;
+  transition:all .2s;
+}
+.guia-card:hover .guia-arrow {
+  opacity:1; color:var(--cyan);
+  transform:translate(2px,-2px);
+}
+
+.guia-tag {
+  display:inline-block;
+  font-size:9.5px; font-weight:900; letter-spacing:1.5px;
+  text-transform:uppercase;
+  color:var(--cyan); opacity:.8;
+  margin-bottom:4px;
+}
+
+.guia-title {
+  font-size:13.5px; font-weight:800;
+  line-height:1.35; color:var(--text);
+}
+
+.guia-cta {
+  margin-top:auto;
+  font-size:11px; font-weight:700;
+  color:var(--muted);
+  display:flex; align-items:center; gap:5px;
+  transition:color .2s;
+}
+.guia-card:hover .guia-cta { color:var(--cyan); }
+
+/* Admin actions sobre card */
+.guia-actions {
+  position:absolute; top:8px; right:8px;
+  display:flex; gap:3px; opacity:0;
+  transition:opacity .15s; z-index:2;
+}
+.guia-card:hover .guia-actions { opacity:1; }
+.guia-act {
+  width:22px; height:22px; border-radius:6px;
+  border:none; background:var(--paper); cursor:pointer;
+  font-size:11px; font-weight:700; color:var(--muted);
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 2px 6px rgba(0,0,0,.12); transition:all .12s;
+}
+.guia-act:hover { transform:scale(1.1); }
+.guia-act.edit:hover { background:var(--cyan); color:#fff; }
+.guia-act.del:hover { background:var(--rose); color:#fff; }
+
+@media (max-width:700px) {
+  .guias-grid { grid-template-columns:1fr 1fr; }
+}
+@media (max-width:420px) {
+  .guias-grid { grid-template-columns:1fr; }
+}
