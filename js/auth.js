@@ -24,17 +24,19 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById("login-error").textContent = "Acceso restringido a cuentas @heroinsuranceusa.com";
     return showLogin();
   }
-  const userRef = doc(db, "users", user.email);
-  const snap = await getDoc(userRef);
-  if (!snap.exists()) {
-    await setDoc(userRef, {
-      displayName: user.displayName, photoURL: user.photoURL,
-      greeting: `¡Hola, ${user.displayName.split(" ")[0]}!`,
-      theme: "light",
-      widgetOrder: ["spotlight", "birthdays", "messages", "tools"],
-      hiddenWidgets: [], shortcuts: []
-    });
-  }
+  // Crear doc de usuario si no existe (mínimo)
+  try {
+    const userRef = doc(db, "users", user.email);
+    const snap = await getDoc(userRef);
+    if (!snap.exists()) {
+      await setDoc(userRef, {
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+        greeting: "",
+        theme: "light"
+      });
+    }
+  } catch (e) { console.error("Error creando user doc:", e); }
   showDashboard(user);
 });
 
@@ -45,10 +47,11 @@ function showLogin() {
 function showDashboard(user) {
   document.getElementById("login-screen").style.display = "none";
   document.getElementById("dashboard").style.display = "block";
-  document.getElementById("user-avatar").src = user.photoURL;
-  document.getElementById("user-greeting").textContent = user.displayName;
+  const av = document.getElementById("user-avatar");
+  if (av) av.src = user.photoURL;
   if (ADMIN_EMAILS.includes(user.email)) {
-    document.getElementById("btn-admin").style.display = "inline-block";
+    const a = document.getElementById("btn-admin");
+    if (a) a.style.display = "inline-flex";
   }
   loadDashboard(user);
 }

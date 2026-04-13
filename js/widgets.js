@@ -1,7 +1,7 @@
 import { db, auth } from "./firebase-config.js";
 import { doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// ════ EQUIPO HERO (cumpleaños) ════
+// EQUIPO
 const TEAM = [
   {name:'Anny Medina', role:'COO', date:{m:10,d:6}, photo:'https://i.imgur.com/QAKNQU6.png'},
   {name:'Aurys Rodriguez', role:'CFO', date:{m:12,d:28}, photo:'https://i.imgur.com/wrUIReK.png'},
@@ -14,7 +14,7 @@ const TEAM = [
   {name:'Eduardo Romero', role:'Office Manager', date:{m:10,d:26}, photo:'https://i.ibb.co/h0GTBhG/circulo-EDUARDO-OO.png'},
 ];
 
-// ════ ARSENAL (tools agrupados) ════
+// ARSENAL DEFAULT
 const ARSENAL_DEFAULT = {
   google: [
     {label:'Gmail', url:'https://mail.google.com', icon:'https://cdn4.iconfinder.com/data/icons/logos-brands-in-colors/48/google-gmail-512.png'},
@@ -44,10 +44,15 @@ const ARSENAL_DEFAULT = {
   ],
 };
 
-// ════ DATOS COMPARTIDOS ════
+// SHARED FALLBACK
 let SHARED_DATA = {
-  spotlight: { name:'—', role:'', message:'' },
-  messages: []
+  spotlight: { name:'Anny Medina', role:'COO', message:'Por su liderazgo en el cierre del Q1 2026.' },
+  messages: [
+    "El éxito es la suma de pequeños esfuerzos repetidos día tras día.",
+    "Un equipo unido es imparable. ¡Gracias por ser parte de Hero!",
+    "Cada cliente atendido con excelencia es una historia de éxito.",
+    "La constancia vence lo que la dicha no alcanza."
+  ]
 };
 
 let currentUserData = null;
@@ -59,16 +64,18 @@ async function loadSharedData() {
       getDoc(doc(db, "shared", "messages"))
     ]);
     if (sp.exists()) SHARED_DATA.spotlight = sp.data();
-    if (ms.exists()) SHARED_DATA.messages = ms.data().items || [];
-  } catch (e) { console.error("Error leyendo shared:", e); }
+    if (ms.exists() && Array.isArray(ms.data().items) && ms.data().items.length) {
+      SHARED_DATA.messages = ms.data().items;
+    }
+  } catch (e) { console.warn("Usando datos por defecto:", e.message); }
 }
 
 export async function renderWidgets(userData) {
-  currentUserData = userData;
+  currentUserData = userData || {};
   await loadSharedData();
-  document.body.dataset.theme = userData.theme || "light";
+  document.body.dataset.theme = currentUserData.theme || "light";
 
-  renderArsenal(userData);
+  renderArsenal();
   renderSpotlight();
   renderBirthday();
   renderMessages();
@@ -76,11 +83,12 @@ export async function renderWidgets(userData) {
   if (window.refreshIcons) window.refreshIcons();
 }
 
-// ════ ARSENAL ════
-function renderArsenal(userData) {
+// ARSENAL
+function renderArsenal() {
   const container = document.getElementById("tools-container");
   if (!container) return;
-  const arsenal = userData.arsenal || ARSENAL_DEFAULT;
+  // Si user tiene arsenal personalizado úsalo, sino default
+  const arsenal = (currentUserData.arsenal && Object.keys(currentUserData.arsenal).length) ? currentUserData.arsenal : ARSENAL_DEFAULT;
   const groups = [
     { key:'google', label:'Google Workspace', cls:'google' },
     { key:'ai', label:'Inteligencia Artificial', cls:'ai' },
@@ -113,11 +121,11 @@ function renderArsenal(userData) {
   container.querySelectorAll('.tool-delete-btn').forEach(b => b.addEventListener('click', async (e) => {
     e.preventDefault(); e.stopPropagation();
     if (!confirm("¿Eliminar este acceso?")) return;
-    const arsenal = currentUserData.arsenal || JSON.parse(JSON.stringify(ARSENAL_DEFAULT));
+    const arsenal = (currentUserData.arsenal && Object.keys(currentUserData.arsenal).length) ? currentUserData.arsenal : JSON.parse(JSON.stringify(ARSENAL_DEFAULT));
     arsenal[b.dataset.group].splice(parseInt(b.dataset.idx), 1);
     currentUserData.arsenal = arsenal;
     await saveUserField({ arsenal });
-    renderArsenal(currentUserData);
+    renderArsenal();
     if (window.refreshIcons) window.refreshIcons();
   }));
 }
@@ -139,18 +147,18 @@ function openAddToolModal(group) {
     const url = modal.querySelector("#t-url").value.trim();
     const icon = modal.querySelector("#t-icon").value.trim() || 'https://cdn-icons-png.flaticon.com/512/1006/1006771.png';
     if (!label || !url) { alert("Nombre y URL requeridos"); return; }
-    const arsenal = currentUserData.arsenal || JSON.parse(JSON.stringify(ARSENAL_DEFAULT));
+    const arsenal = (currentUserData.arsenal && Object.keys(currentUserData.arsenal).length) ? currentUserData.arsenal : JSON.parse(JSON.stringify(ARSENAL_DEFAULT));
     if (!arsenal[group]) arsenal[group] = [];
     arsenal[group].push({ label, url, icon });
     currentUserData.arsenal = arsenal;
     await saveUserField({ arsenal });
     modal.remove();
-    renderArsenal(currentUserData);
+    renderArsenal();
     if (window.refreshIcons) window.refreshIcons();
   };
 }
 
-// ════ SPOTLIGHT ════
+// SPOTLIGHT
 function renderSpotlight() {
   const s = SHARED_DATA.spotlight;
   const n = document.getElementById("spName"); if (n) n.textContent = s.name || '—';
@@ -158,7 +166,7 @@ function renderSpotlight() {
   const m = document.getElementById("spMessage"); if (m) m.textContent = s.message || '';
 }
 
-// ════ CUMPLEAÑOS ════
+// CUMPLEAÑOS
 function daysUntil(bd) {
   const today = new Date(); today.setHours(0,0,0,0);
   const thisYear = new Date(today.getFullYear(), bd.m-1, bd.d);
@@ -173,7 +181,7 @@ function renderBirthday() {
   const isToday = d === 0, isTomorrow = d === 1;
   const el = id => document.getElementById(id);
   if (el('bdayAvatar')) {
-    el('bdayAvatar').src = p.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=06a3b6&color=fff&size=200`;
+    el('bdayAvatar').src = p.photo;
     el('bdayAvatar').onerror = function(){ this.src=`https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=06a3b6&color=fff&size=200`; };
   }
   if (el('bdayFloat')) el('bdayFloat').textContent = isToday ? '🎊' : '🎈';
@@ -189,12 +197,11 @@ function renderBirthday() {
   if (el('bdayConfetti')) el('bdayConfetti').textContent = isToday ? '🎊🎂🎊' : '🎈🎂🎈';
 }
 
-// ════ MENSAJES ════
+// MENSAJES
 let msgIdx = 0, msgTimer = null, msgProg = 0;
 function renderMessages() {
   if (!SHARED_DATA.messages.length) {
-    document.getElementById('msgBody').innerHTML = '<p class="empty">Sin mensajes aún. Agrega frases desde el panel admin.</p>';
-    document.getElementById('msgCounter').textContent = '0 / 0';
+    document.getElementById('msgBody').innerHTML = '<p class="empty">Sin mensajes aún.</p>';
     return;
   }
   msgIdx = msgIdx % SHARED_DATA.messages.length;
@@ -203,28 +210,32 @@ function renderMessages() {
   msgProg = 0;
   msgTimer = setInterval(() => {
     msgProg += (40/12000)*100;
-    document.getElementById('msgProgFill').style.width = msgProg + '%';
+    const pf = document.getElementById('msgProgFill');
+    if (pf) pf.style.width = msgProg + '%';
     if (msgProg >= 100) { msgIdx = (msgIdx+1) % SHARED_DATA.messages.length; showMsg(); msgProg = 0; }
   }, 40);
 }
 function showMsg() {
   const body = document.getElementById('msgBody');
+  if (!body) return;
   body.classList.add('fading');
   setTimeout(() => {
     body.innerHTML = `<div class="msg-quote"><span class="q-mark">\u201c</span>${SHARED_DATA.messages[msgIdx]}</div>`;
     body.classList.remove('fading');
   }, 250);
-  document.getElementById('msgCounter').textContent = `${msgIdx+1} / ${SHARED_DATA.messages.length}`;
+  const c = document.getElementById('msgCounter');
+  if (c) c.textContent = `${msgIdx+1} / ${SHARED_DATA.messages.length}`;
   msgProg = 0;
-  document.getElementById('msgProgFill').style.width = '0%';
+  const pf = document.getElementById('msgProgFill');
+  if (pf) pf.style.width = '0%';
 }
 document.addEventListener('click', e => {
+  if (!SHARED_DATA.messages.length) return;
   if (e.target.closest('#msgPrev')) { msgIdx = (msgIdx-1+SHARED_DATA.messages.length) % SHARED_DATA.messages.length; showMsg(); }
   if (e.target.closest('#msgNext')) { msgIdx = (msgIdx+1) % SHARED_DATA.messages.length; showMsg(); }
   if (e.target.closest('#msgRand')) { msgIdx = Math.floor(Math.random()*SHARED_DATA.messages.length); showMsg(); }
 });
 
-// ════ SAVE & SETTINGS ════
 async function saveUserField(fields) {
   const user = auth.currentUser;
   if (!user) return;
@@ -277,6 +288,8 @@ export function updateGreeting() {
   else if (h >= 12 && h < 19) greet = "Buenas tardes";
   const firstName = user.displayName.split(" ")[0];
   const custom = currentUserData?.greeting?.trim();
-  document.getElementById('greet-text').textContent = custom || greet;
-  document.getElementById('greet-name').textContent = firstName;
+  const tEl = document.getElementById('greet-text');
+  const nEl = document.getElementById('greet-name');
+  if (tEl) tEl.textContent = custom || greet;
+  if (nEl) nEl.textContent = firstName;
 }
