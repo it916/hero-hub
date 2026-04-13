@@ -1,7 +1,6 @@
 import { db, auth } from "./firebase-config.js";
 import { doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// EQUIPO
 const TEAM = [
   {name:'Anny Medina', role:'COO', date:{m:10,d:6}, photo:'https://i.imgur.com/QAKNQU6.png'},
   {name:'Aurys Rodriguez', role:'CFO', date:{m:12,d:28}, photo:'https://i.imgur.com/wrUIReK.png'},
@@ -14,7 +13,6 @@ const TEAM = [
   {name:'Eduardo Romero', role:'Office Manager', date:{m:10,d:26}, photo:'https://i.ibb.co/h0GTBhG/circulo-EDUARDO-OO.png'},
 ];
 
-// ARSENAL DEFAULT
 const ARSENAL_DEFAULT = {
   google: [
     {label:'Gmail', url:'https://mail.google.com', icon:'https://cdn4.iconfinder.com/data/icons/logos-brands-in-colors/48/google-gmail-512.png'},
@@ -44,9 +42,8 @@ const ARSENAL_DEFAULT = {
   ],
 };
 
-// SHARED FALLBACK
 let SHARED_DATA = {
-  spotlight: { name:'Anny Medina', role:'COO', message:'Por su liderazgo en el cierre del Q1 2026.' },
+  spotlight: { imageUrl:'', message:'', honorees:[] },
   messages: [
     "El éxito es la suma de pequeños esfuerzos repetidos día tras día.",
     "Un equipo unido es imparable. ¡Gracias por ser parte de Hero!",
@@ -63,7 +60,15 @@ async function loadSharedData() {
       getDoc(doc(db, "shared", "spotlight")),
       getDoc(doc(db, "shared", "messages"))
     ]);
-    if (sp.exists()) SHARED_DATA.spotlight = sp.data();
+    if (sp.exists()) {
+      const d = sp.data();
+      // Migración: soporta formato viejo y nuevo
+      if (d.honorees) {
+        SHARED_DATA.spotlight = { imageUrl:d.imageUrl||'', message:d.message||'', honorees:d.honorees||[] };
+      } else if (d.name) {
+        SHARED_DATA.spotlight = { imageUrl:'', message:d.message||'', honorees:[{name:d.name,role:d.role||''}] };
+      }
+    }
     if (ms.exists() && Array.isArray(ms.data().items) && ms.data().items.length) {
       SHARED_DATA.messages = ms.data().items;
     }
@@ -83,11 +88,9 @@ export async function renderWidgets(userData) {
   if (window.refreshIcons) window.refreshIcons();
 }
 
-// ARSENAL
 function renderArsenal() {
   const container = document.getElementById("tools-container");
   if (!container) return;
-  // Si user tiene arsenal personalizado úsalo, sino default
   const arsenal = (currentUserData.arsenal && Object.keys(currentUserData.arsenal).length) ? currentUserData.arsenal : ARSENAL_DEFAULT;
   const groups = [
     { key:'google', label:'Google Workspace', cls:'google' },
@@ -110,8 +113,7 @@ function renderArsenal() {
             <button class="tool-delete-btn" data-group="${g.key}" data-idx="${i}" title="Eliminar">×</button>
           </div>`).join("")}
         <button class="tool-add-card" data-group="${g.key}">
-          <i data-lucide="plus"></i>
-          <span>Agregar</span>
+          <i data-lucide="plus"></i><span>Agregar</span>
         </button>
       </div>
     </div>`;
@@ -158,15 +160,42 @@ function openAddToolModal(group) {
   };
 }
 
-// SPOTLIGHT
+// === SPOTLIGHT NUEVO con imagen + honorees ===
 function renderSpotlight() {
   const s = SHARED_DATA.spotlight;
-  const n = document.getElementById("spName"); if (n) n.textContent = s.name || '—';
-  const r = document.getElementById("spRole"); if (r) r.textContent = s.role || '';
-  const m = document.getElementById("spMessage"); if (m) m.textContent = s.message || '';
+  const banner = document.getElementById('spotlight-banner');
+  const imgBg = document.getElementById('sp-image-bg');
+  const honoreesEl = document.getElementById('sp-honorees');
+  const msgEl = document.getElementById('sp-message');
+
+  if (imgBg) {
+    if (s.imageUrl) {
+      imgBg.style.backgroundImage = `url(${s.imageUrl})`;
+      banner?.classList.add('has-image');
+    } else {
+      imgBg.style.backgroundImage = '';
+      banner?.classList.remove('has-image');
+    }
+  }
+
+  if (honoreesEl) {
+    if (s.honorees && s.honorees.length) {
+      const count = s.honorees.length;
+      honoreesEl.dataset.count = count;
+      honoreesEl.innerHTML = s.honorees.map(h => `
+        <div class="honoree-item">
+          <div class="honoree-name-display">${h.name || ''}</div>
+          ${h.role ? `<div class="honoree-role-display">${h.role}</div>` : ''}
+        </div>
+      `).join('<div class="honoree-divider">·</div>');
+    } else {
+      honoreesEl.innerHTML = '<div class="honoree-name-display">—</div>';
+    }
+  }
+
+  if (msgEl) msgEl.textContent = s.message || '';
 }
 
-// CUMPLEAÑOS
 function daysUntil(bd) {
   const today = new Date(); today.setHours(0,0,0,0);
   const thisYear = new Date(today.getFullYear(), bd.m-1, bd.d);
@@ -197,7 +226,6 @@ function renderBirthday() {
   if (el('bdayConfetti')) el('bdayConfetti').textContent = isToday ? '🎊🎂🎊' : '🎈🎂🎈';
 }
 
-// MENSAJES
 let msgIdx = 0, msgTimer = null, msgProg = 0;
 function renderMessages() {
   if (!SHARED_DATA.messages.length) {

@@ -13,7 +13,6 @@
 </head>
 <body>
 
-<!-- LOGIN -->
 <div id="login-screen" class="login-container" style="display:none;">
   <div class="login-card">
     <div class="login-mark"><svg viewBox="0 0 100 100" fill="none"><path d="M50 5 L60 35 L92 38 L67 58 L75 90 L50 72 L25 90 L33 58 L8 38 L40 35 Z" fill="currentColor"/></svg></div>
@@ -26,10 +25,8 @@
   </div>
 </div>
 
-<!-- DASHBOARD -->
 <div id="dashboard" style="display:none;">
 
-  <!-- HEADER DELGADO -->
   <header class="hero-topbar">
     <div class="topbar-inner">
       <div class="brand-block">
@@ -39,7 +36,6 @@
           <div class="brand-sub">Hero Insurance USA</div>
         </div>
       </div>
-
       <div class="topbar-greeting">
         <div class="greet-meta">
           <span class="status-dot"></span>
@@ -48,7 +44,6 @@
           <span id="greet-name">Héroe</span>
         </div>
       </div>
-
       <div class="topbar-meta">
         <div class="meta-chip"><i data-lucide="calendar-days"></i><span id="meta-date">—</span></div>
         <div class="meta-chip mono"><i data-lucide="clock"></i><span id="meta-time">—</span></div>
@@ -65,7 +60,6 @@
 
   <main class="page">
 
-    <!-- ARSENAL DEL HÉROE -->
     <section class="section fade-in">
       <div class="section-label"><span class="kicker-dot"></span>Arsenal del Héroe</div>
       <div class="card-shell">
@@ -79,11 +73,9 @@
 
     <div class="connector"></div>
 
-    <!-- ACCESO RÁPIDO A MISIONES -->
     <section class="section fade-in">
       <div class="section-label"><span class="kicker-dot"></span>Acceso rápido a misiones</div>
       <div class="missions-grid">
-
         <a class="mission-banner mission-support" href="https://it916.github.io/hero-it-console/soporte.html" target="_blank" rel="noopener">
           <div class="mission-glow"></div>
           <div class="mission-top">
@@ -100,7 +92,6 @@
             <span class="mission-cta light">Solicitar ayuda <i data-lucide="arrow-right"></i></span>
           </div>
         </a>
-
         <a class="mission-banner mission-db" href="https://web-production-5de88.up.railway.app/login" target="_blank" rel="noopener">
           <div class="mission-glow"></div>
           <div class="mission-top">
@@ -117,7 +108,6 @@
             <span class="mission-cta">Ingresar <i data-lucide="arrow-right"></i></span>
           </div>
         </a>
-
         <a class="mission-banner mission-alta" href="https://it916.github.io/alta-agentes/" target="_blank" rel="noopener">
           <div class="mission-glow"></div>
           <div class="mission-top">
@@ -134,7 +124,6 @@
             <span class="mission-cta cyan">Registrar <i data-lucide="arrow-right"></i></span>
           </div>
         </a>
-
         <a class="mission-banner mission-training" href="http://heroinsuranceusa.com/trainings" target="_blank" rel="noopener">
           <div class="mission-glow"></div>
           <div class="mission-top">
@@ -151,19 +140,16 @@
             <span class="mission-cta emerald">Ver calendario <i data-lucide="arrow-right"></i></span>
           </div>
         </a>
-
       </div>
     </section>
 
     <div class="connector"></div>
 
-    <!-- CENTRAL DE ALARMAS -->
     <section class="section fade-in">
       <div class="section-label"><span class="kicker-dot"></span>Central de Alarmas</div>
       <div class="card-shell">
         <div class="alarms-grid">
           <div class="alarms-left">
-            <!-- Gather Town -->
             <div class="alarm-card gather">
               <div class="alarm-icon-wrap">
                 <div class="alarm-icon"><i data-lucide="building"></i></div>
@@ -175,7 +161,6 @@
               </div>
               <a class="alarm-cta" href="https://app.v2.gather.town/app/hero-insurance-usa-2e9e375c-6dcb-40c4-b607-d0791d5dfb78" target="_blank" rel="noopener">Ingresar ahora <i data-lucide="arrow-right"></i></a>
             </div>
-            <!-- Próximo meeting -->
             <div class="alarm-card meet">
               <div class="alarm-icon" id="meetBadge"><i data-lucide="calendar-clock"></i></div>
               <div class="alarm-info">
@@ -188,7 +173,6 @@
                 <a class="btn-mini" id="meetLink" href="#" target="_blank" rel="noopener">Ver Calendar</a>
               </div>
             </div>
-            <!-- Clima -->
             <div class="alarm-card weather">
               <div class="weather-icon" id="weatherIcon">⛅</div>
               <div class="alarm-info">
@@ -203,9 +187,7 @@
               </div>
             </div>
           </div>
-
           <div class="alarms-right">
-            <!-- Próximo cumpleaños -->
             <div class="bday-panel">
               <div class="bday-shimmer"></div>
               <div class="bday-content">
@@ -230,24 +212,19 @@
 
     <div class="connector"></div>
 
-    <!-- HERO SPOTLIGHT -->
+    <!-- HERO SPOTLIGHT NUEVO -->
     <section class="section fade-in">
       <div class="section-label"><span class="kicker-dot"></span>Hero Spotlight</div>
       <div class="card-shell">
-        <div class="spotlight-banner">
+        <div class="spotlight-banner-v2" id="spotlight-banner">
           <div class="spotlight-shimmer"></div>
-          <div class="spotlight-content">
+          <div class="spotlight-image" id="sp-image-bg"></div>
+          <div class="spotlight-overlay"></div>
+          <div class="spotlight-content-v2">
             <div class="spotlight-badge"><span class="crown">👑</span> Héroe del mes</div>
-            <div class="spotlight-name" id="spName">—</div>
-            <div class="spotlight-role" id="spRole">—</div>
+            <div class="spotlight-honorees" id="sp-honorees">—</div>
             <div class="spotlight-stars">⭐⭐⭐⭐⭐</div>
-            <div class="spotlight-msg" id="spMessage">—</div>
-          </div>
-          <div class="spotlight-decor">
-            <div class="confetti c1">✨</div>
-            <div class="confetti c2">⭐</div>
-            <div class="confetti c3">💫</div>
-            <div class="confetti c4">✨</div>
+            <div class="spotlight-msg" id="sp-message"></div>
           </div>
         </div>
       </div>
@@ -255,7 +232,6 @@
 
     <div class="connector"></div>
 
-    <!-- MENSAJE DEL DÍA -->
     <section class="section fade-in">
       <div class="section-label"><span class="kicker-dot"></span>Mensaje del Día</div>
       <div class="card-shell narrow">
@@ -276,7 +252,7 @@
   </main>
 
   <footer class="hero-footer">
-    <span>HERO HUB · v4.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+    <span>HERO HUB · v4.1</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
   </footer>
 </div>
 
