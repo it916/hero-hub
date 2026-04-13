@@ -379,3 +379,79 @@ body[data-theme="dark"] .hero-topbar { background:rgba(15,42,51,.92); }
 .pl-del { flex-shrink:0; width:24px; height:24px; border-radius:6px; border:1px solid rgba(244,63,94,.25); background:rgba(244,63,94,.06); color:var(--rose); font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .15s; }
 .pl-del:hover { background:var(--rose); color:#fff; border-color:var(--rose); }
 .pl-empty { text-align:center; padding:28px 10px; font-size:13px; color:var(--muted); font-style:italic; }
+/* ═══════════════════════════════════════════
+   AGREGAR ESTO AL FINAL DE css/styles.css
+   (nav del topbar + greet row)
+   ═══════════════════════════════════════════ */
+
+/* Ajustes al topbar para acomodar nav */
+.hero-topbar { padding:0; }
+.topbar-inner { padding:12px 24px 10px; }
+
+.brand-link { display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit; }
+
+/* ═══ NAV LINKS ═══ */
+.topbar-nav {
+  display:flex; align-items:center; gap:4px; flex:1;
+  justify-content:center; max-width:640px; margin:0 auto;
+}
+.nav-link {
+  display:inline-flex; align-items:center; gap:7px;
+  padding:8px 14px; border-radius:10px;
+  font-size:13px; font-weight:600; color:var(--muted);
+  text-decoration:none; transition:all .15s;
+  white-space:nowrap;
+}
+.nav-link i { width:15px; height:15px; }
+.nav-link:hover { background:var(--paper); color:var(--text); }
+.nav-link.active {
+  background:linear-gradient(135deg, rgba(6,163,182,.12), rgba(6,163,182,.06));
+  color:var(--cyan); font-weight:700;
+  box-shadow:inset 0 0 0 1px rgba(6,163,182,.18);
+}
+
+/* ═══ GREET ROW (separada, delgada) ═══ */
+.topbar-greet-row {
+  max-width:1320px; margin:0 auto;
+  padding:0 24px 10px;
+  display:flex; align-items:center; justify-content:space-between; gap:24px;
+  border-top:1px solid var(--border);
+  padding-top:10px;
+}
+.topbar-greet-row .greet-meta { padding:5px 14px; font-size:12px; }
+.topbar-greet-row .topbar-meta { gap:6px; }
+.topbar-greet-row .meta-chip { padding:6px 10px; font-size:11px; }
+
+/* Topbar greeting viejo (el del centro) ya no se usa — ocultar por si quedó */
+.topbar-greeting { display:none; }
+
+/* Botón hamburguesa solo mobile */
+.menu-toggle { display:none; }
+
+/* ═══ RESPONSIVE ═══ */
+@media (max-width:1100px) {
+  .topbar-nav { max-width:520px; }
+  .nav-link { padding:8px 10px; }
+  .nav-link span { display:none; }
+  .nav-link i { width:18px; height:18px; }
+}
+@media (max-width:900px) {
+  .topbar-inner { padding:12px 16px 10px; flex-wrap:wrap; }
+  .topbar-nav {
+    position:absolute; top:100%; left:0; right:0; flex-direction:column;
+    background:var(--card); border-top:1px solid var(--border);
+    padding:12px 16px; gap:4px; box-shadow:var(--shadow);
+    max-width:none;
+    display:none;
+  }
+  .topbar-nav.open { display:flex; }
+  .nav-link { width:100%; padding:12px 14px; justify-content:flex-start; }
+  .nav-link span { display:inline; }
+  .menu-toggle { display:flex; }
+  .topbar-greet-row { flex-wrap:wrap; padding:10px 16px; gap:8px; }
+  .topbar-greet-row .greet-meta { order:1; }
+  .topbar-greet-row .topbar-meta { order:2; width:100%; justify-content:center; }
+}
+@media (max-width:600px) {
+  .topbar-greet-row .meta-chip:not(.mono) { display:none; }
+}

@@ -30,30 +30,44 @@
   <header class="hero-topbar">
     <div class="topbar-inner">
       <div class="brand-block">
-        <div class="logo-mark"><svg viewBox="0 0 100 100"><path d="M50 5 L60 35 L92 38 L67 58 L75 90 L50 72 L25 90 L33 58 L8 38 L40 35 Z" fill="currentColor"/></svg></div>
-        <div>
-          <div class="brand-name">HERO HUB</div>
-          <div class="brand-sub">Hero Insurance USA</div>
-        </div>
+        <a href="index.html" class="brand-link">
+          <div class="logo-mark"><svg viewBox="0 0 100 100"><path d="M50 5 L60 35 L92 38 L67 58 L75 90 L50 72 L25 90 L33 58 L8 38 L40 35 Z" fill="currentColor"/></svg></div>
+          <div>
+            <div class="brand-name">HERO HUB</div>
+            <div class="brand-sub">Hero Insurance USA</div>
+          </div>
+        </a>
       </div>
-      <div class="topbar-greeting">
-        <div class="greet-meta">
-          <span class="status-dot"></span>
-          <span id="greet-text">Buenos días</span>
-          <span class="dot-sep">·</span>
-          <span id="greet-name">Héroe</span>
-        </div>
+
+      <nav class="topbar-nav" id="topbar-nav">
+        <a href="index.html" class="nav-link active"><i data-lucide="home"></i><span>Inicio</span></a>
+        <a href="equipo.html" class="nav-link"><i data-lucide="users"></i><span>Equipo</span></a>
+        <a href="carriers.html" class="nav-link"><i data-lucide="shield"></i><span>Carriers</span></a>
+        <a href="directorio.html" class="nav-link"><i data-lucide="book-user"></i><span>Directorio</span></a>
+        <a href="guias.html" class="nav-link"><i data-lucide="book-open"></i><span>Guías</span></a>
+        <a href="politicas.html" class="nav-link"><i data-lucide="scroll-text"></i><span>Políticas</span></a>
+      </nav>
+
+      <div class="topbar-actions">
+        <img id="user-avatar" src="" alt="" class="avatar">
+        <a id="btn-admin" href="admin.html" class="icon-btn" style="display:none;" title="Admin"><i data-lucide="shield-check"></i></a>
+        <button id="btn-settings" class="icon-btn" title="Configuración"><i data-lucide="settings-2"></i></button>
+        <button id="btn-logout" class="icon-btn" title="Salir"><i data-lucide="log-out"></i></button>
+        <button id="btn-menu" class="icon-btn menu-toggle" title="Menú"><i data-lucide="menu"></i></button>
+      </div>
+    </div>
+
+    <div class="topbar-greet-row">
+      <div class="greet-meta">
+        <span class="status-dot"></span>
+        <span id="greet-text">Buenos días</span>
+        <span class="dot-sep">·</span>
+        <span id="greet-name">Héroe</span>
       </div>
       <div class="topbar-meta">
         <div class="meta-chip"><i data-lucide="calendar-days"></i><span id="meta-date">—</span></div>
         <div class="meta-chip mono"><i data-lucide="clock"></i><span id="meta-time">—</span></div>
         <div class="meta-chip"><i data-lucide="map-pin"></i><span>Miami</span></div>
-        <div class="topbar-actions">
-          <img id="user-avatar" src="" alt="" class="avatar">
-          <a id="btn-admin" href="admin.html" class="icon-btn" style="display:none;" title="Admin"><i data-lucide="shield-check"></i></a>
-          <button id="btn-settings" class="icon-btn" title="Configuración"><i data-lucide="settings-2"></i></button>
-          <button id="btn-logout" class="icon-btn" title="Salir"><i data-lucide="log-out"></i></button>
-        </div>
       </div>
     </div>
   </header>
@@ -168,7 +182,6 @@
 
     <div class="connector"></div>
 
-    <!-- MENSAJE DEL DÍA -->
     <section class="section fade-in">
       <div class="section-label"><span class="kicker-dot"></span>Mensaje del Día</div>
       <div class="card-shell msg-shell">
@@ -191,9 +204,7 @@
           </div>
         </div>
         <div class="msg-progress"><div class="msg-progress-fill" id="msgProgFill"></div></div>
-
         <div class="msg-divider"></div>
-
         <div class="msg-add-wrap">
           <div class="msg-add-title">➕ Agregar tu frase al equipo</div>
           <input type="text" class="msg-field" id="msgNombre" placeholder="Tu nombre" maxlength="40">
@@ -203,9 +214,7 @@
           </div>
           <div class="msg-char" id="msgChar">0/200</div>
         </div>
-
         <div class="msg-divider"></div>
-
         <div class="msg-playlist">
           <div class="pl-hdr">
             <div class="pl-hdr-title">📋 Playlist del equipo</div>
@@ -219,13 +228,21 @@
   </main>
 
   <footer class="hero-footer">
-    <span>HERO HUB · v4.2</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+    <span>HERO HUB · v4.3</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
   </footer>
 </div>
 
 <script>
   window.refreshIcons = () => { if (window.lucide) lucide.createIcons(); };
-  document.addEventListener("DOMContentLoaded", () => window.refreshIcons());
+  document.addEventListener("DOMContentLoaded", () => {
+    window.refreshIcons();
+    // Mobile nav toggle
+    const menuBtn = document.getElementById("btn-menu");
+    const nav = document.getElementById("topbar-nav");
+    if (menuBtn && nav) {
+      menuBtn.addEventListener("click", () => nav.classList.toggle("open"));
+    }
+  });
 </script>
 <script type="module" src="js/firebase-config.js"></script>
 <script type="module" src="js/auth.js"></script>
