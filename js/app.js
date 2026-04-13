@@ -6,26 +6,26 @@ export async function loadDashboard(user) {
   const userRef = doc(db, "users", user.email);
   const snap = await getDoc(userRef);
   const userData = snap.exists() ? snap.data() : {};
-  setMastheadDate();
+  startClock();
   await renderWidgets(userData);
 }
 
-function setMastheadDate() {
-  const now = new Date();
+function startClock() {
   const dias = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
   const meses = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-  const mesesLargo = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
-  const left = document.getElementById("masthead-date");
-  if (left) left.textContent = `${dias[now.getDay()]} · ${now.getDate()} ${meses[now.getMonth()]} ${now.getFullYear()}`;
-
-  const issue = document.getElementById("masthead-issue");
-  if (issue) {
-    const start = new Date(now.getFullYear(), 0, 0);
-    const dayOfYear = Math.floor((now - start) / (1000 * 60 * 60 * 24));
-    issue.textContent = `Nº ${dayOfYear}`;
+  function tick() {
+    const now = new Date();
+    const dateEl = document.getElementById("meta-date");
+    const timeEl = document.getElementById("meta-time");
+    if (dateEl) dateEl.textContent = `${dias[now.getDay()].slice(0,3)} ${now.getDate()} ${meses[now.getMonth()]}`;
+    if (timeEl) {
+      const h = String(now.getHours()).padStart(2, "0");
+      const m = String(now.getMinutes()).padStart(2, "0");
+      const s = String(now.getSeconds()).padStart(2, "0");
+      timeEl.textContent = `${h}:${m}:${s}`;
+    }
   }
-
-  const date = document.getElementById("hero-date");
-  if (date) date.textContent = `${dias[now.getDay()]}, ${now.getDate()} de ${mesesLargo[now.getMonth()]} de ${now.getFullYear()}`;
+  tick();
+  setInterval(tick, 1000);
 }

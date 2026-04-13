@@ -6,7 +6,7 @@
   <title>Hero Hub — Hero Insurance USA</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,700;0,9..144,900;1,9..144,400&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -14,59 +14,94 @@
 <body>
   <div id="login-screen" class="login-container" style="display:none;">
     <div class="login-card">
-      <div class="masthead-mini">HERO INSURANCE USA · EST. 2024</div>
+      <div class="login-mark">
+        <svg viewBox="0 0 100 100" fill="none"><path d="M50 5 L60 35 L92 38 L67 58 L75 90 L50 72 L25 90 L33 58 L8 38 L40 35 Z" fill="currentColor"/></svg>
+      </div>
+      <div class="kicker-mini">HERO INSURANCE USA</div>
       <h1>Hero Hub</h1>
-      <p class="login-tagline">Portal interno · Volumen II</p>
-      <div class="login-rule"></div>
-      <button id="btn-login" class="btn-primary">Iniciar sesión con Google →</button>
+      <p class="login-tagline">El cuartel general del equipo</p>
+      <button id="btn-login" class="btn-primary">
+        <span>Activar superpoderes</span>
+        <i data-lucide="arrow-right"></i>
+      </button>
       <p id="login-error" class="error-msg"></p>
       <small>Solo cuentas <strong>@heroinsuranceusa.com</strong></small>
     </div>
   </div>
 
   <div id="dashboard" style="display:none;">
-    <header class="masthead">
-      <div class="masthead-row">
-        <div class="masthead-meta-left" id="masthead-date">—</div>
-        <div class="masthead-title">Hero Hub</div>
-        <div class="masthead-meta-right">
+
+    <!-- BANNER HEROICO con ondas de poder -->
+    <section class="hero-banner">
+      <div class="power-waves">
+        <div class="wave wave-1"></div>
+        <div class="wave wave-2"></div>
+        <div class="wave wave-3"></div>
+        <div class="burst-rays"></div>
+      </div>
+
+      <header class="hero-topbar">
+        <div class="brand-block">
+          <div class="logo-mark">
+            <svg viewBox="0 0 100 100"><path d="M50 5 L60 35 L92 38 L67 58 L75 90 L50 72 L25 90 L33 58 L8 38 L40 35 Z" fill="currentColor"/></svg>
+          </div>
+          <div>
+            <div class="brand-name">HERO HUB</div>
+            <div class="brand-sub">Hero Insurance USA</div>
+          </div>
+        </div>
+        <div class="topbar-actions">
           <img id="user-avatar" src="" alt="" class="avatar">
           <a id="btn-admin" href="admin.html" class="icon-btn" style="display:none;" title="Admin"><i data-lucide="shield-check"></i></a>
           <button id="btn-settings" class="icon-btn" title="Configuración"><i data-lucide="settings-2"></i></button>
           <button id="btn-logout" class="icon-btn" title="Salir"><i data-lucide="log-out"></i></button>
         </div>
-      </div>
-      <div class="masthead-rule"></div>
-      <nav class="masthead-nav">
-        <span>Vol. II</span>
-        <span class="sep">·</span>
-        <span>Edición Diaria</span>
-        <span class="sep">·</span>
-        <span id="masthead-issue">Nº —</span>
-        <span class="sep">·</span>
-        <span>Hero Insurance USA</span>
-      </nav>
-    </header>
+      </header>
 
-    <section class="lede">
-      <div class="kicker">Bienvenido de vuelta</div>
-      <h1 id="user-greeting" class="headline">Hola</h1>
-      <p class="dek" id="hero-date">—</p>
+      <div class="banner-content">
+        <div class="banner-greeting-card">
+          <div class="kicker-row">
+            <span class="status-badge"><span class="status-dot"></span>HÉROE EN LÍNEA</span>
+          </div>
+          <div class="welcome-label">Bienvenido, héroe</div>
+          <h1 id="user-greeting" class="hero-name">Fernando</h1>
+          <p class="hero-quote">"Dale un Hero a tu vida"</p>
+
+          <div class="banner-meta">
+            <div class="meta-item">
+              <i data-lucide="calendar-days"></i>
+              <div>
+                <div class="meta-label">FECHA</div>
+                <div class="meta-value" id="meta-date">—</div>
+              </div>
+            </div>
+            <div class="meta-item">
+              <i data-lucide="clock"></i>
+              <div>
+                <div class="meta-label">LOCAL</div>
+                <div class="meta-value" id="meta-time">—</div>
+              </div>
+            </div>
+            <div class="meta-item">
+              <i data-lucide="map-pin"></i>
+              <div>
+                <div class="meta-label">MIAMI</div>
+                <div class="meta-value">FL · USA</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <main id="widgets-container">
-      <p class="loading">Cargando edición...</p>
+      <p class="loading">Activando el Hub...</p>
     </main>
 
-    <footer class="colophon">
-      <div class="colophon-rule"></div>
-      <div class="colophon-text">
-        <span>Hero Hub · Volumen II</span>
-        <span class="sep">·</span>
-        <span>Hero Insurance USA</span>
-        <span class="sep">·</span>
-        <span>© 2026</span>
-      </div>
+    <footer class="hero-footer">
+      <span>HERO HUB · v3.0</span>
+      <span class="sep">•</span>
+      <span>HERO INSURANCE USA</span>
     </footer>
   </div>
 
