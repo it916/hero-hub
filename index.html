@@ -6,16 +6,22 @@
   <title>Hero Hub — Hero Insurance USA</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
+  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
   <div id="login-screen" class="login-container" style="display:none;">
     <div class="login-card">
+      <div class="login-mark">H</div>
       <h1>Hero Hub</h1>
-      <p>Portal interno de Hero Insurance USA</p>
-      <button id="btn-login" class="btn-primary">Iniciar sesión con Google</button>
+      <p>Portal interno · Hero Insurance USA</p>
+      <button id="btn-login" class="btn-primary">
+        <span>Iniciar sesión con Google</span>
+        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+      </button>
       <p id="login-error" class="error-msg"></p>
       <small>Solo cuentas <strong>@heroinsuranceusa.com</strong></small>
     </div>
@@ -26,38 +32,52 @@
       <div class="header-left">
         <div class="logo-mark">H</div>
         <div>
-          <div class="header-brand">HERO HUB</div>
+          <div class="header-brand">Hero Hub</div>
           <div class="header-sub">Hero Insurance USA</div>
         </div>
       </div>
       <div class="header-right">
-        <img id="user-avatar" src="" alt="avatar" class="avatar">
-        <a id="btn-admin" href="admin.html" class="btn-ghost" style="display:none;" title="Admin">🛡️</a>
-        <button id="btn-settings" class="btn-ghost" title="Configuración">⚙️</button>
-        <button id="btn-logout" class="btn-ghost" title="Salir">⎋</button>
+        <img id="user-avatar" src="" alt="" class="avatar">
+        <a id="btn-admin" href="admin.html" class="icon-btn" style="display:none;" title="Admin"><i data-lucide="shield-check" class="w-5 h-5"></i></a>
+        <button id="btn-settings" class="icon-btn" title="Configuración"><i data-lucide="settings-2" class="w-5 h-5"></i></button>
+        <button id="btn-logout" class="icon-btn" title="Salir"><i data-lucide="log-out" class="w-5 h-5"></i></button>
       </div>
     </header>
 
     <section class="hero-banner">
-      <div class="hero-banner-inner">
-        <div class="hero-greeting-block">
-          <div class="section-label">Bienvenido de vuelta</div>
-          <h1 id="user-greeting" class="hero-greeting">¡Hola!</h1>
+      <div class="banner-grid">
+        <div class="banner-greeting">
+          <div class="kicker"><span class="kicker-dot"></span>Bienvenido de vuelta</div>
+          <h1 id="user-greeting" class="display-greeting">Hola</h1>
           <p id="hero-date" class="hero-date"></p>
         </div>
-        <div class="hero-clock-block">
-          <div id="hero-clock" class="hero-clock">00:00</div>
-          <div id="hero-clock-meridiem" class="hero-meridiem">AM</div>
+        <div class="banner-clock">
+          <div id="hero-clock" class="clock-time">00:00</div>
+          <div class="clock-meta">
+            <span id="hero-clock-meridiem">AM</span>
+            <span class="dot-sep">·</span>
+            <span>Miami, FL</span>
+          </div>
         </div>
       </div>
-      <div class="hero-decoration"></div>
     </section>
 
     <main id="widgets-container">
       <p class="loading">Cargando tu Hub...</p>
     </main>
+
+    <footer class="hero-footer">
+      <span>Hero Hub · v2.0</span>
+      <span class="dot-sep">·</span>
+      <span>Hero Insurance USA</span>
+    </footer>
   </div>
 
+  <script>
+    // Activar Lucide después de cualquier render
+    window.refreshIcons = () => { if (window.lucide) lucide.createIcons(); };
+    document.addEventListener("DOMContentLoaded", () => window.refreshIcons());
+  </script>
   <script type="module" src="js/firebase-config.js"></script>
   <script type="module" src="js/auth.js"></script>
 </body>

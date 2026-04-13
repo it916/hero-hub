@@ -3,21 +3,20 @@ import { doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.
 
 let SHARED_DATA = {
   spotlight: { name: "—", role: "", message: "" },
-  birthdays: [],
-  messages: [],
+  birthdays: [], messages: [],
   defaultTools: [
-    { label: "Gmail", url: "https://mail.google.com", icon: "📧" },
-    { label: "Drive", url: "https://drive.google.com", icon: "📁" },
-    { label: "Calendar", url: "https://calendar.google.com", icon: "📅" },
-    { label: "Hub Agentes", url: "https://hub.heroinsuranceusa.com", icon: "👥" }
+    { label: "Gmail", url: "https://mail.google.com", icon: "mail" },
+    { label: "Drive", url: "https://drive.google.com", icon: "hard-drive" },
+    { label: "Calendar", url: "https://calendar.google.com", icon: "calendar" },
+    { label: "Hub Agentes", url: "https://hub.heroinsuranceusa.com", icon: "users" }
   ]
 };
 
 const WIDGET_DEFS = {
-  spotlight: { title: "🌟 Hero Spotlight", render: renderSpotlight },
-  birthdays: { title: "🎂 Cumpleaños del equipo", render: renderBirthdays },
-  messages:  { title: "💬 Mensaje del día", render: renderMessages },
-  tools:     { title: "🛠️ Mis herramientas", render: renderTools }
+  spotlight: { title: "Hero Spotlight",       icon: "award",       render: renderSpotlight },
+  birthdays: { title: "Cumpleaños del equipo", icon: "cake",        render: renderBirthdays },
+  messages:  { title: "Mensaje del día",       icon: "quote",       render: renderMessages },
+  tools:     { title: "Mis herramientas",      icon: "layout-grid", render: renderTools }
 };
 
 let currentUserData = null;
@@ -43,7 +42,7 @@ export async function renderWidgets(userData) {
   }
   document.body.dataset.theme = userData.theme || "light";
   document.getElementById("user-greeting").textContent =
-    userData.greeting || `¡Hola, ${auth.currentUser.displayName.split(" ")[0]}!`;
+    userData.greeting || `Hola, ${auth.currentUser.displayName.split(" ")[0]}`;
 
   const container = document.getElementById("widgets-container");
   container.innerHTML = "";
@@ -52,18 +51,24 @@ export async function renderWidgets(userData) {
 
   order.forEach(key => {
     if (hidden.includes(key) || !WIDGET_DEFS[key]) return;
+    const def = WIDGET_DEFS[key];
     const card = document.createElement("section");
     card.className = "widget-card";
     card.dataset.widget = key;
     card.innerHTML = `
-      <h2 class="widget-title"><span class="drag-handle" title="Arrastra">⋮⋮</span>${WIDGET_DEFS[key].title}</h2>
-      <div class="widget-body">${WIDGET_DEFS[key].render(userData)}</div>`;
+      <div class="widget-title">
+        <i data-lucide="${def.icon}" class="widget-title-icon"></i>
+        <span>${def.title}</span>
+        <span class="drag-handle" title="Arrastra"><i data-lucide="grip-vertical" class="w-4 h-4"></i></span>
+      </div>
+      ${def.render(userData)}`;
     container.appendChild(card);
   });
 
-  Sortable.create(container, { handle: ".drag-handle", animation: 180, ghostClass: "widget-ghost", onEnd: saveOrder });
+  Sortable.create(container, { handle: ".drag-handle", animation: 200, ghostClass: "widget-ghost", onEnd: saveOrder });
   attachToolHandlers();
   attachSettingsHandler();
+  if (window.refreshIcons) window.refreshIcons();
 }
 
 async function saveOrder() {
@@ -79,25 +84,38 @@ async function saveUserField(fields) {
 
 function renderSpotlight() {
   const s = SHARED_DATA.spotlight;
-  return `<div class="spotlight"><div class="spotlight-name">${s.name||"—"}</div><div class="spotlight-role">${s.role||""}</div><p class="spotlight-msg">${s.message||""}</p></div>`;
+  return `<div class="spotlight-card">
+    <span class="spotlight-badge"><i data-lucide="sparkles" class="w-3 h-3"></i> Hero del mes</span>
+    <div class="spotlight-name">${s.name||"—"}</div>
+    <div class="spotlight-role">${s.role||""}</div>
+    ${s.message ? `<p class="spotlight-msg">${s.message}</p>` : ""}
+  </div>`;
 }
 function renderBirthdays() {
   if (!SHARED_DATA.birthdays.length) return `<p class="empty">Sin cumpleaños registrados.</p>`;
-  return `<ul class="bday-list">${SHARED_DATA.birthdays.map(b => `<li><span>${b.name}</span><strong>${b.date}</strong></li>`).join("")}</ul>`;
+  return `<ul class="bday-list">${SHARED_DATA.birthdays.map(b =>
+    `<li><span class="bday-name">${b.name}</span><span class="bday-date">${b.date}</span></li>`
+  ).join("")}</ul>`;
 }
 function renderMessages() {
   if (!SHARED_DATA.messages.length) return `<p class="empty">Sin mensajes.</p>`;
   const idx = new Date().getDate() % SHARED_DATA.messages.length;
-  return `<p class="motivational">"${SHARED_DATA.messages[idx]}"</p>`;
+  return `<div class="motivational-card"><p class="motivational">${SHARED_DATA.messages[idx]}</p></div>`;
 }
 function renderTools(userData) {
   const tools = userData.shortcuts || [];
-  return `<div class="tools-grid">${tools.map((t, i) => `
+  return `<div class="tools-grid">${tools.map((t,i) => `
     <div class="tool-link-wrapper">
-      <a href="${t.url}" target="_blank" class="tool-link"><span class="tool-icon">${t.icon||"🔗"}</span><span class="tool-label">${t.label}</span></a>
+      <a href="${t.url}" target="_blank" class="tool-link">
+        <span class="tool-icon-wrap"><i data-lucide="${t.icon||'link'}" class="w-5 h-5"></i></span>
+        <span class="tool-label">${t.label}</span>
+      </a>
       <button class="tool-delete" data-index="${i}" title="Eliminar">×</button>
     </div>`).join("")}
-    <button class="tool-add"><span class="tool-icon">➕</span><span class="tool-label">Agregar</span></button>
+    <button class="tool-add">
+      <span class="tool-icon-wrap"><i data-lucide="plus" class="w-5 h-5"></i></span>
+      <span class="tool-label">Agregar</span>
+    </button>
   </div>`;
 }
 
@@ -114,15 +132,14 @@ function attachToolHandlers() {
     });
   });
 }
-
 function openAddModal() {
   const modal = document.createElement("div");
   modal.className = "modal-overlay";
   modal.innerHTML = `<div class="modal">
     <h3>Nuevo acceso rápido</h3>
-    <label>Nombre <input id="t-label" maxlength="20"></label>
+    <label>Nombre <input id="t-label" maxlength="20" placeholder="Slack"></label>
     <label>URL <input id="t-url" type="url" placeholder="https://..."></label>
-    <label>Ícono (emoji) <input id="t-icon" maxlength="2"></label>
+    <label>Ícono (nombre lucide) <input id="t-icon" placeholder="link, slack, github..." maxlength="30"></label>
     <div class="modal-buttons"><button class="btn-ghost-dark" id="t-cancel">Cancelar</button><button class="btn-primary" id="t-save">Guardar</button></div>
   </div>`;
   document.body.appendChild(modal);
@@ -130,7 +147,7 @@ function openAddModal() {
   modal.querySelector("#t-save").onclick = async () => {
     const label = modal.querySelector("#t-label").value.trim();
     const url = modal.querySelector("#t-url").value.trim();
-    const icon = modal.querySelector("#t-icon").value.trim() || "🔗";
+    const icon = modal.querySelector("#t-icon").value.trim() || "link";
     if (!label || !url) { alert("Nombre y URL requeridos"); return; }
     currentUserData.shortcuts.push({ label, url, icon });
     await saveUserField({ shortcuts: currentUserData.shortcuts });
@@ -150,11 +167,11 @@ function openSettingsModal() {
   const modal = document.createElement("div");
   modal.className = "modal-overlay";
   modal.innerHTML = `<div class="modal">
-    <h3>⚙️ Configuración</h3>
+    <h3>Configuración</h3>
     <label>Saludo personalizado <input id="s-greeting" value="${greeting.replace(/"/g,'&quot;')}" maxlength="50"></label>
     <label>Tema<div class="theme-toggle">
-      <button class="theme-btn ${theme==='light'?'active':''}" data-theme="light">☀️ Claro</button>
-      <button class="theme-btn ${theme==='dark'?'active':''}" data-theme="dark">🌙 Oscuro</button>
+      <button class="theme-btn ${theme==='light'?'active':''}" data-theme="light">☀ Claro</button>
+      <button class="theme-btn ${theme==='dark'?'active':''}" data-theme="dark">☾ Oscuro</button>
     </div></label>
     <label>Widgets visibles</label>
     <div class="widget-toggles">${Object.keys(WIDGET_DEFS).map(k => `
