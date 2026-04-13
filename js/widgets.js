@@ -13,10 +13,10 @@ let SHARED_DATA = {
 };
 
 const WIDGET_DEFS = {
-  spotlight: { title: "Hero Spotlight",       icon: "award",       render: renderSpotlight },
-  birthdays: { title: "Cumpleaños del equipo", icon: "cake",        render: renderBirthdays },
-  messages:  { title: "Mensaje del día",       icon: "quote",       render: renderMessages },
-  tools:     { title: "Mis herramientas",      icon: "layout-grid", render: renderTools }
+  spotlight: { title: "Hero Spotlight", render: renderSpotlight },
+  birthdays: { title: "Cumpleaños del equipo", render: renderBirthdays },
+  messages:  { title: "Mensaje del día", render: renderMessages },
+  tools:     { title: "Mis herramientas", render: renderTools }
 };
 
 let currentUserData = null;
@@ -49,17 +49,19 @@ export async function renderWidgets(userData) {
   const order = userData.widgetOrder || Object.keys(WIDGET_DEFS);
   const hidden = userData.hiddenWidgets || [];
 
+  let n = 0;
   order.forEach(key => {
     if (hidden.includes(key) || !WIDGET_DEFS[key]) return;
+    n++;
     const def = WIDGET_DEFS[key];
     const card = document.createElement("section");
     card.className = "widget-card";
     card.dataset.widget = key;
     card.innerHTML = `
       <div class="widget-title">
-        <i data-lucide="${def.icon}" class="widget-title-icon"></i>
+        <span class="article-num">${String(n).padStart(2,"0")} / 04</span>
         <span>${def.title}</span>
-        <span class="drag-handle" title="Arrastra"><i data-lucide="grip-vertical" class="w-4 h-4"></i></span>
+        <span class="drag-handle" title="Arrastra"><i data-lucide="grip-vertical"></i></span>
       </div>
       ${def.render(userData)}`;
     container.appendChild(card);
@@ -74,6 +76,7 @@ export async function renderWidgets(userData) {
 async function saveOrder() {
   const cards = document.querySelectorAll("#widgets-container .widget-card");
   await saveUserField({ widgetOrder: Array.from(cards).map(c => c.dataset.widget) });
+  renderWidgets(currentUserData); // re-render para renumerar
 }
 async function saveUserField(fields) {
   const user = auth.currentUser;
@@ -85,7 +88,7 @@ async function saveUserField(fields) {
 function renderSpotlight() {
   const s = SHARED_DATA.spotlight;
   return `<div class="spotlight-card">
-    <span class="spotlight-badge"><i data-lucide="sparkles" class="w-3 h-3"></i> Hero del mes</span>
+    <div class="spotlight-eyebrow">★ Hero del mes</div>
     <div class="spotlight-name">${s.name||"—"}</div>
     <div class="spotlight-role">${s.role||""}</div>
     ${s.message ? `<p class="spotlight-msg">${s.message}</p>` : ""}
@@ -107,15 +110,12 @@ function renderTools(userData) {
   return `<div class="tools-grid">${tools.map((t,i) => `
     <div class="tool-link-wrapper">
       <a href="${t.url}" target="_blank" class="tool-link">
-        <span class="tool-icon-wrap"><i data-lucide="${t.icon||'link'}" class="w-5 h-5"></i></span>
+        <span class="tool-icon-wrap"><i data-lucide="${t.icon||'link'}"></i></span>
         <span class="tool-label">${t.label}</span>
       </a>
       <button class="tool-delete" data-index="${i}" title="Eliminar">×</button>
     </div>`).join("")}
-    <button class="tool-add">
-      <span class="tool-icon-wrap"><i data-lucide="plus" class="w-5 h-5"></i></span>
-      <span class="tool-label">Agregar</span>
-    </button>
+    <button class="tool-add"><i data-lucide="plus"></i><span>Agregar</span></button>
   </div>`;
 }
 
@@ -136,11 +136,11 @@ function openAddModal() {
   const modal = document.createElement("div");
   modal.className = "modal-overlay";
   modal.innerHTML = `<div class="modal">
-    <h3>Nuevo acceso rápido</h3>
+    <h3>Nuevo acceso</h3>
     <label>Nombre <input id="t-label" maxlength="20" placeholder="Slack"></label>
     <label>URL <input id="t-url" type="url" placeholder="https://..."></label>
-    <label>Ícono (nombre lucide) <input id="t-icon" placeholder="link, slack, github..." maxlength="30"></label>
-    <div class="modal-buttons"><button class="btn-ghost-dark" id="t-cancel">Cancelar</button><button class="btn-primary" id="t-save">Guardar</button></div>
+    <label>Ícono (lucide) <input id="t-icon" placeholder="link, slack, github..." maxlength="30"></label>
+    <div class="modal-buttons"><button class="btn-ghost-dark" id="t-cancel">Cancelar</button><button class="btn-primary" id="t-save">Guardar →</button></div>
   </div>`;
   document.body.appendChild(modal);
   modal.querySelector("#t-cancel").onclick = () => modal.remove();
@@ -170,13 +170,13 @@ function openSettingsModal() {
     <h3>Configuración</h3>
     <label>Saludo personalizado <input id="s-greeting" value="${greeting.replace(/"/g,'&quot;')}" maxlength="50"></label>
     <label>Tema<div class="theme-toggle">
-      <button class="theme-btn ${theme==='light'?'active':''}" data-theme="light">☀ Claro</button>
-      <button class="theme-btn ${theme==='dark'?'active':''}" data-theme="dark">☾ Oscuro</button>
+      <button class="theme-btn ${theme==='light'?'active':''}" data-theme="light">Claro</button>
+      <button class="theme-btn ${theme==='dark'?'active':''}" data-theme="dark">Oscuro</button>
     </div></label>
-    <label>Widgets visibles</label>
+    <label>Secciones visibles</label>
     <div class="widget-toggles">${Object.keys(WIDGET_DEFS).map(k => `
       <label class="checkbox-row"><input type="checkbox" data-widget="${k}" ${hidden.includes(k)?'':'checked'}>${WIDGET_DEFS[k].title}</label>`).join("")}</div>
-    <div class="modal-buttons"><button class="btn-primary" id="s-close">Cerrar</button></div>
+    <div class="modal-buttons"><button class="btn-primary" id="s-close">Cerrar →</button></div>
   </div>`;
   document.body.appendChild(modal);
   modal.querySelector("#s-greeting").addEventListener("blur", async (e) => {
