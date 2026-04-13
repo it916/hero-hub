@@ -1,95 +1,226 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hero Hub — Hero Insurance USA</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css">
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hero Hub — Hero Insurance USA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
-  <div id="login-screen" class="login-container" style="display:none;">
-    <div class="login-card">
-      <div class="login-mark">
-        <svg viewBox="0 0 100 100" fill="none"><path d="M50 5 L60 35 L92 38 L67 58 L75 90 L50 72 L25 90 L33 58 L8 38 L40 35 Z" fill="currentColor"/></svg>
-      </div>
-      <div class="kicker-mini">HERO INSURANCE USA</div>
-      <h1>Hero Hub</h1>
-      <p class="login-tagline">El cuartel general del equipo</p>
-      <button id="btn-login" class="btn-primary">
-        <span>Activar superpoderes</span>
-        <i data-lucide="arrow-right"></i>
-      </button>
-      <p id="login-error" class="error-msg"></p>
-      <small>Solo cuentas <strong>@heroinsuranceusa.com</strong></small>
-    </div>
+
+<!-- LOGIN -->
+<div id="login-screen" class="login-container" style="display:none;">
+  <div class="login-card">
+    <div class="login-mark"><svg viewBox="0 0 100 100" fill="none"><path d="M50 5 L60 35 L92 38 L67 58 L75 90 L50 72 L25 90 L33 58 L8 38 L40 35 Z" fill="currentColor"/></svg></div>
+    <div class="kicker-mini">HERO INSURANCE USA</div>
+    <h1>Hero Hub</h1>
+    <p class="login-tagline">El cuartel general del equipo</p>
+    <button id="btn-login" class="btn-primary"><span>Activar superpoderes</span><i data-lucide="arrow-right"></i></button>
+    <p id="login-error" class="error-msg"></p>
+    <small>Solo cuentas <strong>@heroinsuranceusa.com</strong></small>
   </div>
+</div>
 
-  <div id="dashboard" style="display:none;">
+<!-- DASHBOARD -->
+<div id="dashboard" style="display:none;">
 
-    <section class="hero-banner">
-      <div class="power-waves">
-        <div class="wave wave-1"></div>
-        <div class="wave wave-2"></div>
-        <div class="wave wave-3"></div>
-        <div class="burst-rays"></div>
+  <!-- HEADER DELGADO -->
+  <header class="hero-topbar">
+    <div class="topbar-inner">
+      <div class="brand-block">
+        <div class="logo-mark"><svg viewBox="0 0 100 100"><path d="M50 5 L60 35 L92 38 L67 58 L75 90 L50 72 L25 90 L33 58 L8 38 L40 35 Z" fill="currentColor"/></svg></div>
+        <div>
+          <div class="brand-name">HERO HUB</div>
+          <div class="brand-sub">Hero Insurance USA</div>
+        </div>
       </div>
 
-      <header class="hero-topbar">
-        <div class="brand-block">
-          <div class="logo-mark">
-            <svg viewBox="0 0 100 100"><path d="M50 5 L60 35 L92 38 L67 58 L75 90 L50 72 L25 90 L33 58 L8 38 L40 35 Z" fill="currentColor"/></svg>
-          </div>
-          <div>
-            <div class="brand-name">HERO HUB</div>
-            <div class="brand-sub">Hero Insurance USA</div>
-          </div>
+      <div class="topbar-greeting">
+        <div class="greet-meta">
+          <span class="status-dot"></span>
+          <span id="greet-text">Buenos días</span>
+          <span class="dot-sep">·</span>
+          <span id="greet-name">Héroe</span>
         </div>
+      </div>
+
+      <div class="topbar-meta">
+        <div class="meta-chip"><i data-lucide="calendar-days"></i><span id="meta-date">—</span></div>
+        <div class="meta-chip mono"><i data-lucide="clock"></i><span id="meta-time">—</span></div>
+        <div class="meta-chip"><i data-lucide="map-pin"></i><span>Miami</span></div>
         <div class="topbar-actions">
           <img id="user-avatar" src="" alt="" class="avatar">
           <a id="btn-admin" href="admin.html" class="icon-btn" style="display:none;" title="Admin"><i data-lucide="shield-check"></i></a>
           <button id="btn-settings" class="icon-btn" title="Configuración"><i data-lucide="settings-2"></i></button>
           <button id="btn-logout" class="icon-btn" title="Salir"><i data-lucide="log-out"></i></button>
         </div>
-      </header>
+      </div>
+    </div>
+  </header>
 
-      <div class="banner-content">
-        <div class="banner-greeting-card">
-          <div class="greeting-left">
-            <div class="kicker-row">
-              <span class="status-badge"><span class="status-dot"></span>HÉROE EN LÍNEA</span>
+  <main class="page">
+
+    <!-- ARSENAL DEL HÉROE -->
+    <section class="section fade-in">
+      <div class="section-label"><span class="kicker-dot"></span>Arsenal del Héroe</div>
+      <div class="card-shell">
+        <div class="tools-header-row">
+          <div class="tools-title">Accesos directos</div>
+          <div class="tools-sub">Herramientas esenciales del equipo Hero</div>
+        </div>
+        <div id="tools-container"><p class="loading">Cargando arsenal...</p></div>
+      </div>
+    </section>
+
+    <div class="connector"></div>
+
+    <!-- ACCESO RÁPIDO A MISIONES -->
+    <section class="section fade-in">
+      <div class="section-label"><span class="kicker-dot"></span>Acceso rápido a misiones</div>
+      <div class="missions-grid">
+
+        <a class="mission-banner mission-support" href="https://it916.github.io/hero-it-console/soporte.html" target="_blank" rel="noopener">
+          <div class="mission-glow"></div>
+          <div class="mission-top">
+            <div class="mission-icon"><i data-lucide="headphones"></i></div>
+            <div class="mission-status"><span class="status-dot"></span>Escuadrón IT en línea</div>
+          </div>
+          <div class="mission-body">
+            <div class="mission-eyebrow">🛡️ Centro de apoyo</div>
+            <div class="mission-title">¿Tu misión necesita refuerzo técnico?</div>
+            <div class="mission-desc">El Escuadrón IT está listo. Abre un ticket y te respondemos en menos de 20 minutos.</div>
+          </div>
+          <div class="mission-foot">
+            <div class="mission-tags"><span class="tag">⚡ &lt;20 min</span><span class="tag">🎯 Soporte directo</span></div>
+            <span class="mission-cta light">Solicitar ayuda <i data-lucide="arrow-right"></i></span>
+          </div>
+        </a>
+
+        <a class="mission-banner mission-db" href="https://web-production-5de88.up.railway.app/login" target="_blank" rel="noopener">
+          <div class="mission-glow"></div>
+          <div class="mission-top">
+            <div class="mission-icon"><i data-lucide="database"></i></div>
+            <div class="mission-status"><span class="status-dot"></span>En línea</div>
+          </div>
+          <div class="mission-body">
+            <div class="mission-eyebrow">🗄️ Cuartel general</div>
+            <div class="mission-title">Base de Datos de Agentes</div>
+            <div class="mission-desc">Accede al registro completo del equipo Hero. Consulta, gestiona y potencia la misión.</div>
+          </div>
+          <div class="mission-foot">
+            <div class="mission-tags"><span class="tag">🔒 Seguro</span><span class="tag">⚡ Tiempo real</span></div>
+            <span class="mission-cta">Ingresar <i data-lucide="arrow-right"></i></span>
+          </div>
+        </a>
+
+        <a class="mission-banner mission-alta" href="https://it916.github.io/alta-agentes/" target="_blank" rel="noopener">
+          <div class="mission-glow"></div>
+          <div class="mission-top">
+            <div class="mission-icon"><i data-lucide="user-plus"></i></div>
+            <div class="mission-status"><span class="status-dot"></span>Disponible</div>
+          </div>
+          <div class="mission-body">
+            <div class="mission-eyebrow">✉️ Incorporación heroica</div>
+            <div class="mission-title">Alta de Correo Corporativo</div>
+            <div class="mission-desc">Equipa a un nuevo héroe con su identidad digital. Activa sus superpoderes corporativos.</div>
+          </div>
+          <div class="mission-foot">
+            <div class="mission-tags"><span class="tag">🦸 Nuevo agente</span><span class="tag">🚀 Activación</span></div>
+            <span class="mission-cta cyan">Registrar <i data-lucide="arrow-right"></i></span>
+          </div>
+        </a>
+
+        <a class="mission-banner mission-training" href="http://heroinsuranceusa.com/trainings" target="_blank" rel="noopener">
+          <div class="mission-glow"></div>
+          <div class="mission-top">
+            <div class="mission-icon"><i data-lucide="graduation-cap"></i></div>
+            <div class="mission-status"><span class="status-dot"></span>Disponible</div>
+          </div>
+          <div class="mission-body">
+            <div class="mission-eyebrow">🎓 Capacitación continua</div>
+            <div class="mission-title">Calendario de Trainings</div>
+            <div class="mission-desc">Mantente al día con todas las capacitaciones y entrenamientos del equipo Hero.</div>
+          </div>
+          <div class="mission-foot">
+            <div class="mission-tags"><span class="tag">📅 Agenda</span><span class="tag">🎯 Entrenamientos</span></div>
+            <span class="mission-cta emerald">Ver calendario <i data-lucide="arrow-right"></i></span>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+    <div class="connector"></div>
+
+    <!-- CENTRAL DE ALARMAS -->
+    <section class="section fade-in">
+      <div class="section-label"><span class="kicker-dot"></span>Central de Alarmas</div>
+      <div class="card-shell">
+        <div class="alarms-grid">
+          <div class="alarms-left">
+            <!-- Gather Town -->
+            <div class="alarm-card gather">
+              <div class="alarm-icon-wrap">
+                <div class="alarm-icon"><i data-lucide="building"></i></div>
+                <div class="pulse-dot"></div>
+              </div>
+              <div class="alarm-info">
+                <div class="alarm-title">Gather Town</div>
+                <div class="alarm-sub">La base de operaciones virtual 🦸</div>
+              </div>
+              <a class="alarm-cta" href="https://app.v2.gather.town/app/hero-insurance-usa-2e9e375c-6dcb-40c4-b607-d0791d5dfb78" target="_blank" rel="noopener">Ingresar ahora <i data-lucide="arrow-right"></i></a>
             </div>
-            <div class="welcome-label">Bienvenido, héroe</div>
-            <h1 id="user-greeting" class="hero-name">Fernando</h1>
-            <p class="hero-quote">"Dale un Hero a tu vida"</p>
+            <!-- Próximo meeting -->
+            <div class="alarm-card meet">
+              <div class="alarm-icon" id="meetBadge"><i data-lucide="calendar-clock"></i></div>
+              <div class="alarm-info">
+                <div class="alarm-title" id="meetTitle">Cargando…</div>
+                <div class="alarm-sub" id="meetMeta">—</div>
+                <div class="alarm-extra" id="meetUpcoming"></div>
+              </div>
+              <div class="alarm-actions">
+                <div class="countdown" id="meetCountdown">—</div>
+                <a class="btn-mini" id="meetLink" href="#" target="_blank" rel="noopener">Ver Calendar</a>
+              </div>
+            </div>
+            <!-- Clima -->
+            <div class="alarm-card weather">
+              <div class="weather-icon" id="weatherIcon">⛅</div>
+              <div class="alarm-info">
+                <div class="weather-temp" id="weatherTemp">—</div>
+                <div class="alarm-sub" id="weatherDesc">Cargando…</div>
+                <div class="alarm-extra mono" id="weatherCity">MIAMI · AHORA</div>
+              </div>
+              <div class="weather-extras">
+                <div><strong id="weatherHumidity">—</strong>Humedad</div>
+                <div><strong id="weatherWind">—</strong>Viento</div>
+                <div><strong id="weatherFeels">—</strong>Sens.</div>
+              </div>
+            </div>
           </div>
 
-          <div class="greeting-right">
-            <div class="banner-meta">
-              <div class="meta-item">
-                <i data-lucide="calendar-days"></i>
-                <div>
-                  <div class="meta-label">FECHA</div>
-                  <div class="meta-value" id="meta-date">—</div>
+          <div class="alarms-right">
+            <!-- Próximo cumpleaños -->
+            <div class="bday-panel">
+              <div class="bday-shimmer"></div>
+              <div class="bday-content">
+                <div class="bday-avatar-wrap">
+                  <div class="bday-float" id="bdayFloat">🎈</div>
+                  <div class="bday-ring">
+                    <img class="bday-avatar" id="bdayAvatar" src="" alt="">
+                  </div>
                 </div>
-              </div>
-              <div class="meta-item">
-                <i data-lucide="clock"></i>
-                <div>
-                  <div class="meta-label">LOCAL</div>
-                  <div class="meta-value" id="meta-time">—</div>
-                </div>
-              </div>
-              <div class="meta-item">
-                <i data-lucide="map-pin"></i>
-                <div>
-                  <div class="meta-label">MIAMI</div>
-                  <div class="meta-value">FL · USA</div>
-                </div>
+                <div class="bday-badge" id="bdayBadge">🎈 Próximo cumpleaños</div>
+                <div class="bday-name" id="bdayName">—</div>
+                <div class="bday-role" id="bdayRole">—</div>
+                <div class="bday-date-chip" id="bdayDate">🗓️ —</div>
+                <div class="bday-countdown" id="bdayCountdown">—</div>
+                <div class="bday-confetti" id="bdayConfetti">🎈🎂🎈</div>
               </div>
             </div>
           </div>
@@ -97,22 +228,63 @@
       </div>
     </section>
 
-    <main id="widgets-container">
-      <p class="loading">Activando el Hub...</p>
-    </main>
+    <div class="connector"></div>
 
-    <footer class="hero-footer">
-      <span>HERO HUB · v3.0</span>
-      <span class="sep">•</span>
-      <span>HERO INSURANCE USA</span>
-    </footer>
-  </div>
+    <!-- HERO SPOTLIGHT -->
+    <section class="section fade-in">
+      <div class="section-label"><span class="kicker-dot"></span>Hero Spotlight</div>
+      <div class="card-shell">
+        <div class="spotlight-banner">
+          <div class="spotlight-shimmer"></div>
+          <div class="spotlight-content">
+            <div class="spotlight-badge"><span class="crown">👑</span> Héroe del mes</div>
+            <div class="spotlight-name" id="spName">—</div>
+            <div class="spotlight-role" id="spRole">—</div>
+            <div class="spotlight-stars">⭐⭐⭐⭐⭐</div>
+            <div class="spotlight-msg" id="spMessage">—</div>
+          </div>
+          <div class="spotlight-decor">
+            <div class="confetti c1">✨</div>
+            <div class="confetti c2">⭐</div>
+            <div class="confetti c3">💫</div>
+            <div class="confetti c4">✨</div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-  <script>
-    window.refreshIcons = () => { if (window.lucide) lucide.createIcons(); };
-    document.addEventListener("DOMContentLoaded", () => window.refreshIcons());
-  </script>
-  <script type="module" src="js/firebase-config.js"></script>
-  <script type="module" src="js/auth.js"></script>
+    <div class="connector"></div>
+
+    <!-- MENSAJE DEL DÍA -->
+    <section class="section fade-in">
+      <div class="section-label"><span class="kicker-dot"></span>Mensaje del Día</div>
+      <div class="card-shell narrow">
+        <div class="msg-display">
+          <div class="msg-kicker">✦ Misión del día ✦</div>
+          <div class="msg-body" id="msgBody"><div class="ld-wrap"><div class="ld"></div><div class="ld"></div><div class="ld"></div></div></div>
+          <div class="msg-controls">
+            <span class="msg-counter" id="msgCounter">— / —</span>
+            <button class="ctrl-btn" id="msgPrev" title="Anterior"><i data-lucide="chevron-left"></i></button>
+            <button class="ctrl-btn" id="msgNext" title="Siguiente"><i data-lucide="chevron-right"></i></button>
+            <button class="ctrl-btn" id="msgRand" title="Aleatoria"><i data-lucide="shuffle"></i></button>
+          </div>
+        </div>
+        <div class="msg-progress"><div class="msg-progress-fill" id="msgProgFill"></div></div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="hero-footer">
+    <span>HERO HUB · v4.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+  </footer>
+</div>
+
+<script>
+  window.refreshIcons = () => { if (window.lucide) lucide.createIcons(); };
+  document.addEventListener("DOMContentLoaded", () => window.refreshIcons());
+</script>
+<script type="module" src="js/firebase-config.js"></script>
+<script type="module" src="js/auth.js"></script>
 </body>
 </html>
