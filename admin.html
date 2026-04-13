@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin — Hero Hub</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div id="loading" class="login-container"><div class="login-card"><p>Verificando acceso...</p></div></div>
+
+  <div id="admin-panel" style="display:none;">
+    <header class="hero-header">
+      <div class="header-left"><h1>🛡️ Admin — Hero Hub</h1></div>
+      <div class="header-right">
+        <a href="index.html" class="btn-ghost">← Volver al Hub</a>
+      </div>
+    </header>
+    <main class="admin-main">
+
+      <section class="admin-section">
+        <h2>🌟 Hero Spotlight</h2>
+        <label>Nombre <input id="sp-name"></label>
+        <label>Rol <input id="sp-role"></label>
+        <label>Mensaje <textarea id="sp-message" rows="3"></textarea></label>
+        <button class="btn-primary" id="sp-save">Guardar Spotlight</button>
+        <span class="save-status" id="sp-status"></span>
+      </section>
+
+      <section class="admin-section">
+        <h2>🎂 Cumpleaños</h2>
+        <div id="bd-list"></div>
+        <div class="add-row">
+          <input id="bd-name" placeholder="Nombre">
+          <input id="bd-date" placeholder="Ej: 15 Nov">
+          <button class="btn-primary" id="bd-add">Agregar</button>
+        </div>
+      </section>
+
+      <section class="admin-section">
+        <h2>💬 Mensajes motivacionales</h2>
+        <div id="ms-list"></div>
+        <div class="add-row">
+          <input id="ms-text" placeholder="Nuevo mensaje">
+          <button class="btn-primary" id="ms-add">Agregar</button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script type="module" src="js/firebase-config.js"></script>
+  <script type="module" src="js/admin.js"></script>
+</body>
+</html>
