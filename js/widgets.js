@@ -1,5 +1,5 @@
 import { db, auth } from "./firebase-config.js";
-import { doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { doc, updateDoc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const TEAM = [
   {name:'Anny Medina', role:'COO', date:{m:10,d:6}, photo:'https://i.imgur.com/QAKNQU6.png'},
@@ -42,17 +42,11 @@ const ARSENAL_DEFAULT = {
   ],
 };
 
-let SHARED_DATA = {
-  spotlight: { imageUrl:'', message:'', honorees:[] },
-  messages: [
-    "El éxito es la suma de pequeños esfuerzos repetidos día tras día.",
-    "Un equipo unido es imparable. ¡Gracias por ser parte de Hero!",
-    "Cada cliente atendido con excelencia es una historia de éxito.",
-    "La constancia vence lo que la dicha no alcanza."
-  ]
-};
+const ADMIN_EMAILS = ["it@heroinsuranceusa.com"];
 
+let SHARED_DATA = { spotlight: { imageUrl:'', message:'', honorees:[] }, messages: [] };
 let currentUserData = null;
+let isAdmin = false;
 
 async function loadSharedData() {
   try {
@@ -62,32 +56,34 @@ async function loadSharedData() {
     ]);
     if (sp.exists()) {
       const d = sp.data();
-      // Migración: soporta formato viejo y nuevo
-      if (d.honorees) {
-        SHARED_DATA.spotlight = { imageUrl:d.imageUrl||'', message:d.message||'', honorees:d.honorees||[] };
-      } else if (d.name) {
-        SHARED_DATA.spotlight = { imageUrl:'', message:d.message||'', honorees:[{name:d.name,role:d.role||''}] };
+      if (d.honorees) SHARED_DATA.spotlight = { imageUrl:d.imageUrl||'', message:d.message||'', honorees:d.honorees||[] };
+      else if (d.name) SHARED_DATA.spotlight = { imageUrl:'', message:d.message||'', honorees:[{name:d.name,role:d.role||''}] };
+    }
+    if (ms.exists()) {
+      const data = ms.data();
+      if (Array.isArray(data.items)) {
+        // Detectar si son strings viejos o objetos nuevos
+        SHARED_DATA.messages = data.items.map(x => typeof x === 'string' ? { id:crypto.randomUUID(), frase:x, autor:'—', created_at:new Date().toISOString() } : x);
       }
     }
-    if (ms.exists() && Array.isArray(ms.data().items) && ms.data().items.length) {
-      SHARED_DATA.messages = ms.data().items;
-    }
-  } catch (e) { console.warn("Usando datos por defecto:", e.message); }
+  } catch (e) { console.warn("Error cargando shared:", e.message); }
 }
 
 export async function renderWidgets(userData) {
   currentUserData = userData || {};
+  isAdmin = auth.currentUser && ADMIN_EMAILS.includes(auth.currentUser.email);
   await loadSharedData();
   document.body.dataset.theme = currentUserData.theme || "light";
 
   renderArsenal();
   renderSpotlight();
   renderBirthday();
-  renderMessages();
+  renderMessageWidget();
   attachSettingsHandler();
   if (window.refreshIcons) window.refreshIcons();
 }
 
+// ARSENAL
 function renderArsenal() {
   const container = document.getElementById("tools-container");
   if (!container) return;
@@ -160,7 +156,7 @@ function openAddToolModal(group) {
   };
 }
 
-// === SPOTLIGHT NUEVO con imagen + honorees ===
+// SPOTLIGHT
 function renderSpotlight() {
   const s = SHARED_DATA.spotlight;
   const banner = document.getElementById('spotlight-banner');
@@ -169,33 +165,26 @@ function renderSpotlight() {
   const msgEl = document.getElementById('sp-message');
 
   if (imgBg) {
-    if (s.imageUrl) {
-      imgBg.style.backgroundImage = `url(${s.imageUrl})`;
-      banner?.classList.add('has-image');
-    } else {
-      imgBg.style.backgroundImage = '';
-      banner?.classList.remove('has-image');
-    }
+    if (s.imageUrl) { imgBg.style.backgroundImage = `url(${s.imageUrl})`; banner?.classList.add('has-image'); }
+    else { imgBg.style.backgroundImage = ''; banner?.classList.remove('has-image'); }
   }
-
   if (honoreesEl) {
-    if (s.honorees && s.honorees.length) {
-      const count = s.honorees.length;
-      honoreesEl.dataset.count = count;
+    if (s.honorees?.length) {
+      honoreesEl.dataset.count = s.honorees.length;
       honoreesEl.innerHTML = s.honorees.map(h => `
         <div class="honoree-item">
           <div class="honoree-name-display">${h.name || ''}</div>
           ${h.role ? `<div class="honoree-role-display">${h.role}</div>` : ''}
         </div>
-      `).join('<div class="honoree-divider">·</div>');
+      `).join('');
     } else {
       honoreesEl.innerHTML = '<div class="honoree-name-display">—</div>';
     }
   }
-
   if (msgEl) msgEl.textContent = s.message || '';
 }
 
+// CUMPLEAÑOS
 function daysUntil(bd) {
   const today = new Date(); today.setHours(0,0,0,0);
   const thisYear = new Date(today.getFullYear(), bd.m-1, bd.d);
@@ -226,43 +215,170 @@ function renderBirthday() {
   if (el('bdayConfetti')) el('bdayConfetti').textContent = isToday ? '🎊🎂🎊' : '🎈🎂🎈';
 }
 
+// ═══ MENSAJE DEL DÍA (con Firestore) ═══
 let msgIdx = 0, msgTimer = null, msgProg = 0;
-function renderMessages() {
-  if (!SHARED_DATA.messages.length) {
-    document.getElementById('msgBody').innerHTML = '<p class="empty">Sin mensajes aún.</p>';
-    return;
+
+function initials(name) {
+  return (name||'?').split(' ').slice(0,2).map(w => w[0]||'').join('').toUpperCase() || '?';
+}
+function relDate(iso) {
+  const d = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(d/60000);
+  if (m < 1) return 'ahora';
+  if (m < 60) return `hace ${m}m`;
+  const h = Math.floor(m/60);
+  if (h < 24) return `hace ${h}h`;
+  return `hace ${Math.floor(h/24)}d`;
+}
+
+function renderMessageWidget() {
+  const msgs = SHARED_DATA.messages;
+  // Current frase
+  if (!msgs.length) {
+    document.getElementById('msgBody').innerHTML = '<p class="empty">Sin frases aún. ¡Sé el primero en agregar una!</p>';
+    document.getElementById('msgMeta').style.display = 'none';
+  } else {
+    msgIdx = msgIdx % msgs.length;
+    showCurrentMsg();
+    startMsgTimer();
   }
-  msgIdx = msgIdx % SHARED_DATA.messages.length;
-  showMsg();
+  renderPlaylist();
+  wireMsgForm();
+}
+function showCurrentMsg() {
+  const msgs = SHARED_DATA.messages;
+  if (!msgs.length) return;
+  const f = msgs[msgIdx];
+  const body = document.getElementById('msgBody');
+  body.classList.add('fading');
+  setTimeout(() => {
+    body.innerHTML = `<div class="msg-quote"><span class="q-mark">\u201c</span>${f.frase}</div>`;
+    body.classList.remove('fading');
+  }, 250);
+  document.getElementById('msgMeta').style.display = 'flex';
+  document.getElementById('authorAv').textContent = initials(f.autor);
+  document.getElementById('authorNm').textContent = f.autor;
+  document.getElementById('authorDt').textContent = '· ' + relDate(f.created_at);
+  document.getElementById('msgCounter').textContent = `${msgIdx+1} / ${msgs.length}`;
+  document.getElementById('btnDelCurrent').style.display = isAdmin ? 'flex' : 'none';
+  renderPlaylist();
+}
+function startMsgTimer() {
   if (msgTimer) clearInterval(msgTimer);
   msgProg = 0;
+  document.getElementById('msgProgFill').style.width = '0%';
   msgTimer = setInterval(() => {
     msgProg += (40/12000)*100;
     const pf = document.getElementById('msgProgFill');
     if (pf) pf.style.width = msgProg + '%';
-    if (msgProg >= 100) { msgIdx = (msgIdx+1) % SHARED_DATA.messages.length; showMsg(); msgProg = 0; }
+    if (msgProg >= 100) { nextMsg(); }
   }, 40);
 }
-function showMsg() {
-  const body = document.getElementById('msgBody');
-  if (!body) return;
-  body.classList.add('fading');
-  setTimeout(() => {
-    body.innerHTML = `<div class="msg-quote"><span class="q-mark">\u201c</span>${SHARED_DATA.messages[msgIdx]}</div>`;
-    body.classList.remove('fading');
-  }, 250);
-  const c = document.getElementById('msgCounter');
-  if (c) c.textContent = `${msgIdx+1} / ${SHARED_DATA.messages.length}`;
-  msgProg = 0;
-  const pf = document.getElementById('msgProgFill');
-  if (pf) pf.style.width = '0%';
+function nextMsg() { if (!SHARED_DATA.messages.length) return; msgIdx = (msgIdx+1) % SHARED_DATA.messages.length; showCurrentMsg(); startMsgTimer(); }
+function prevMsg() { if (!SHARED_DATA.messages.length) return; msgIdx = (msgIdx-1+SHARED_DATA.messages.length) % SHARED_DATA.messages.length; showCurrentMsg(); startMsgTimer(); }
+function randMsg() { if (!SHARED_DATA.messages.length) return; msgIdx = Math.floor(Math.random()*SHARED_DATA.messages.length); showCurrentMsg(); startMsgTimer(); }
+function goToMsg(i) { msgIdx = i; showCurrentMsg(); startMsgTimer(); }
+
+function renderPlaylist() {
+  const list = document.getElementById('plList');
+  if (!list) return;
+  const count = document.getElementById('plCount');
+  const msgs = SHARED_DATA.messages;
+  if (count) count.textContent = `${msgs.length} frase${msgs.length !== 1 ? 's' : ''}`;
+  if (!msgs.length) { list.innerHTML = '<div class="pl-empty">🎵 La playlist está vacía.</div>'; return; }
+  list.innerHTML = msgs.map((f, i) => {
+    const active = i === msgIdx ? ' pl-active' : '';
+    const del = isAdmin ? `<button class="pl-del" data-id="${f.id}" title="Eliminar">🗑</button>` : '';
+    return `<div class="pl-item${active}" data-i="${i}">
+      <div class="pl-num">${i+1}</div>
+      <div class="pl-content">
+        <div class="pl-text">${f.frase}</div>
+        <div class="pl-by">— ${f.autor} · ${relDate(f.created_at)}</div>
+      </div>
+      ${del}
+    </div>`;
+  }).join('');
+  list.querySelectorAll('.pl-item').forEach(it => {
+    it.addEventListener('click', e => { if (!e.target.closest('.pl-del')) goToMsg(parseInt(it.dataset.i)); });
+  });
+  list.querySelectorAll('.pl-del').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!confirm("¿Eliminar esta frase?")) return;
+      SHARED_DATA.messages = SHARED_DATA.messages.filter(x => x.id !== btn.dataset.id);
+      await setDoc(doc(db, "shared", "messages"), { items: SHARED_DATA.messages });
+      if (msgIdx >= SHARED_DATA.messages.length) msgIdx = Math.max(0, SHARED_DATA.messages.length-1);
+      renderMessageWidget();
+    });
+  });
 }
-document.addEventListener('click', e => {
-  if (!SHARED_DATA.messages.length) return;
-  if (e.target.closest('#msgPrev')) { msgIdx = (msgIdx-1+SHARED_DATA.messages.length) % SHARED_DATA.messages.length; showMsg(); }
-  if (e.target.closest('#msgNext')) { msgIdx = (msgIdx+1) % SHARED_DATA.messages.length; showMsg(); }
-  if (e.target.closest('#msgRand')) { msgIdx = Math.floor(Math.random()*SHARED_DATA.messages.length); showMsg(); }
-});
+
+function wireMsgForm() {
+  const btn = document.getElementById('msgPubBtn');
+  if (btn && !btn.dataset.bound) {
+    btn.dataset.bound = "1";
+    btn.addEventListener('click', publishMsg);
+  }
+  const nombre = document.getElementById('msgNombre');
+  if (nombre) {
+    const saved = localStorage.getItem('hero_msg_nombre');
+    if (saved && !nombre.value) nombre.value = saved;
+    if (!nombre.dataset.bound) {
+      nombre.dataset.bound = "1";
+      nombre.addEventListener('input', () => localStorage.setItem('hero_msg_nombre', nombre.value.trim()));
+    }
+  }
+  const frase = document.getElementById('msgFrase');
+  if (frase && !frase.dataset.bound) {
+    frase.dataset.bound = "1";
+    frase.addEventListener('input', () => {
+      const cc = document.getElementById('msgChar');
+      if (cc) { cc.textContent = `${frase.value.length}/200`; cc.classList.toggle('warn', frase.value.length > 180); }
+    });
+  }
+  // Controles
+  ['msgPrev','msgNext','msgRand','btnDelCurrent'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.dataset.bound) {
+      el.dataset.bound = "1";
+      el.addEventListener('click', () => {
+        if (id === 'msgPrev') prevMsg();
+        if (id === 'msgNext') nextMsg();
+        if (id === 'msgRand') randMsg();
+        if (id === 'btnDelCurrent') deleteCurrent();
+      });
+    }
+  });
+}
+async function publishMsg() {
+  const nombre = document.getElementById('msgNombre').value.trim();
+  const frase = document.getElementById('msgFrase').value.trim();
+  if (!nombre) { alert("Ingresa tu nombre"); return; }
+  if (frase.length < 10) { alert("La frase debe tener al menos 10 caracteres"); return; }
+  const btn = document.getElementById('msgPubBtn');
+  btn.disabled = true;
+  try {
+    const nueva = { id: crypto.randomUUID(), frase, autor: nombre, created_at: new Date().toISOString() };
+    SHARED_DATA.messages.push(nueva);
+    await setDoc(doc(db, "shared", "messages"), { items: SHARED_DATA.messages });
+    document.getElementById('msgFrase').value = '';
+    document.getElementById('msgChar').textContent = '0/200';
+    msgIdx = SHARED_DATA.messages.length - 1;
+    renderMessageWidget();
+  } catch (e) {
+    alert("Error al publicar: " + e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+async function deleteCurrent() {
+  if (!isAdmin || !SHARED_DATA.messages.length) return;
+  if (!confirm("¿Eliminar esta frase?")) return;
+  SHARED_DATA.messages.splice(msgIdx, 1);
+  await setDoc(doc(db, "shared", "messages"), { items: SHARED_DATA.messages });
+  if (msgIdx >= SHARED_DATA.messages.length) msgIdx = Math.max(0, SHARED_DATA.messages.length-1);
+  renderMessageWidget();
+}
 
 async function saveUserField(fields) {
   const user = auth.currentUser;
