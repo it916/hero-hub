@@ -685,3 +685,137 @@ body[data-theme="dark"] .hero-topbar { background:rgba(15,42,51,.92); }
   .team-toolbar { gap:10px; }
   .team-toolbar .btn-add-member span { display:none; }
 }
+/* ═══════════════════════════════════════════
+   AGREGAR AL FINAL DE css/styles.css
+   Estilos página Directorio
+   ═══════════════════════════════════════════ */
+
+/* Toolbar */
+.dir-toolbar {
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  margin-bottom:16px; padding:0 4px;
+}
+.dir-toolbar .search-wrap { flex:1; min-width:220px; }
+.dir-stats { display:flex; gap:8px; flex-wrap:wrap; }
+.stat-pill {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:7px 14px; border-radius:999px;
+  background:var(--paper); border:1px solid var(--border);
+  font-size:11.5px; font-weight:700; color:var(--muted);
+}
+.stat-pill strong { color:var(--cyan); font-weight:900; font-size:13px; }
+.btn-add-contact { padding:11px 18px !important; margin-top:0 !important; }
+.btn-add-contact i { width:16px; height:16px; }
+
+/* Filter chips */
+.filter-row {
+  display:flex; gap:7px; flex-wrap:wrap;
+  margin-bottom:24px; padding:0 4px;
+}
+.filter-chip {
+  padding:6px 14px; border-radius:999px;
+  font-size:10.5px; font-weight:800; letter-spacing:.5px;
+  cursor:pointer; user-select:none;
+  border:1px solid var(--border); background:var(--card);
+  color:var(--muted); transition:all .15s;
+}
+.filter-chip:hover { background:var(--paper); color:var(--text); }
+.filter-chip.active {
+  background:var(--cyan); border-color:var(--cyan);
+  color:#fff; box-shadow:0 3px 10px rgba(6,163,182,.3);
+}
+
+/* Body */
+.dir-body { display:flex; flex-direction:column; gap:22px; }
+
+.dir-company-block {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:20px; padding:18px; box-shadow:var(--shadow-sm);
+}
+.dir-company-name {
+  font-size:10.5px; font-weight:900; letter-spacing:2.5px;
+  text-transform:uppercase; color:var(--cyan);
+  margin-bottom:14px; display:flex; align-items:center; gap:10px;
+}
+.dir-company-name::after {
+  content:""; flex:1; height:1px;
+  background:linear-gradient(to right,rgba(6,163,182,.25),transparent);
+}
+
+.dir-cards-row {
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));
+  gap:10px;
+}
+
+.dir-card {
+  position:relative;
+  background:var(--paper); border:1px solid var(--border);
+  border-radius:14px; padding:14px 15px;
+  display:flex; flex-direction:column; gap:5px;
+  transition:all .15s;
+}
+.dir-card:hover {
+  background:var(--card); border-color:rgba(6,163,182,.3);
+  transform:translateY(-2px);
+  box-shadow:0 8px 20px rgba(6,107,120,.12);
+}
+
+.dir-card-actions {
+  position:absolute; top:8px; right:8px;
+  display:flex; gap:3px; opacity:0; transition:opacity .15s;
+}
+.dir-card:hover .dir-card-actions { opacity:1; }
+.dir-act {
+  width:22px; height:22px; border-radius:6px;
+  border:none; background:var(--card); cursor:pointer;
+  font-size:11px; font-weight:700; color:var(--muted);
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 2px 6px rgba(0,0,0,.12); transition:all .12s;
+}
+.dir-act:hover { transform:scale(1.1); }
+.dir-edit:hover { background:var(--cyan); color:#fff; }
+.dir-del:hover { background:var(--rose); color:#fff; }
+
+.dir-dept {
+  display:inline-block; width:fit-content; margin-bottom:2px;
+  font-size:9px; font-weight:900; letter-spacing:1.5px;
+  text-transform:uppercase;
+  padding:3px 9px; border-radius:999px; border:1px solid;
+}
+.dir-name {
+  font-size:13.5px; font-weight:800; color:var(--text);
+  line-height:1.2; padding-right:44px; /* espacio para botones */
+}
+.dir-phone {
+  display:block; font-size:12.5px; font-weight:700;
+  color:var(--cyan); text-decoration:none;
+  letter-spacing:.2px; transition:color .15s;
+}
+.dir-phone::before { content:"📞 "; font-size:10px; }
+.dir-phone:hover { color:var(--cyan-deep); }
+.dir-email {
+  display:block; font-size:11px; font-weight:600;
+  color:var(--muted); text-decoration:none;
+  word-break:break-all; transition:color .15s; margin-top:2px;
+}
+.dir-email:hover { color:var(--text); }
+.dir-notes {
+  font-size:10.5px; color:var(--muted); font-style:italic;
+  border-top:1px solid var(--border); padding-top:6px;
+  margin-top:3px; line-height:1.4;
+}
+
+/* Modal grid */
+.modal-grid-2 {
+  display:grid; grid-template-columns:1fr 1fr; gap:12px;
+  margin-bottom:16px;
+}
+.modal-grid-2 label { margin-bottom:0 !important; }
+
+/* Responsive */
+@media (max-width:720px) {
+  .dir-cards-row { grid-template-columns:1fr; }
+  .modal-grid-2 { grid-template-columns:1fr; }
+  .dir-toolbar .btn-add-contact span { display:none; }
+}

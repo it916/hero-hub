@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Directorio — Hero Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<div id="loading" class="login-container"><div class="login-card"><p>Verificando acceso...</p></div></div>
+
+<div id="dashboard" style="display:none;">
+
+  <header class="hero-topbar">
+    <div class="topbar-inner">
+      <div class="brand-block">
+        <a href="index.html" class="brand-link">
+          <div class="logo-mark"><svg viewBox="0 0 100 100"><path d="M50 5 L60 35 L92 38 L67 58 L75 90 L50 72 L25 90 L33 58 L8 38 L40 35 Z" fill="currentColor"/></svg></div>
+          <div>
+            <div class="brand-name">HERO HUB</div>
+            <div class="brand-sub">Hero Insurance USA</div>
+          </div>
+        </a>
+      </div>
+      <nav class="topbar-nav" id="topbar-nav">
+        <a href="index.html" class="nav-link"><i data-lucide="home"></i><span>Inicio</span></a>
+        <a href="equipo.html" class="nav-link"><i data-lucide="users"></i><span>Equipo</span></a>
+        <a href="carriers.html" class="nav-link"><i data-lucide="shield"></i><span>Carriers</span></a>
+        <a href="directorio.html" class="nav-link active"><i data-lucide="book-user"></i><span>Directorio</span></a>
+        <a href="guias.html" class="nav-link"><i data-lucide="book-open"></i><span>Guías</span></a>
+        <a href="politicas.html" class="nav-link"><i data-lucide="scroll-text"></i><span>Políticas</span></a>
+      </nav>
+      <div class="topbar-actions">
+        <img id="user-avatar" src="" alt="" class="avatar">
+        <a id="btn-admin" href="admin.html" class="icon-btn" style="display:none;" title="Admin"><i data-lucide="shield-check"></i></a>
+        <button id="btn-logout" class="icon-btn" title="Salir"><i data-lucide="log-out"></i></button>
+        <button id="btn-menu" class="icon-btn menu-toggle" title="Menú"><i data-lucide="menu"></i></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+
+    <section class="page-header">
+      <div class="page-kicker">• Hero Insurance USA •</div>
+      <h1 class="page-title">Directorio de Contactos</h1>
+      <p class="page-sub">Portales, Carriers y contactos directos del equipo</p>
+    </section>
+
+    <section class="dir-toolbar">
+      <div class="search-wrap">
+        <i data-lucide="search" class="search-icon"></i>
+        <input type="text" id="dir-search" placeholder="Buscar por nombre, empresa, departamento, email o teléfono...">
+      </div>
+      <div class="dir-stats">
+        <div class="stat-pill"><strong id="stat-contacts">0</strong> contactos</div>
+        <div class="stat-pill"><strong id="stat-companies">0</strong> empresas</div>
+      </div>
+      <button id="btn-add-contact" class="btn-primary btn-add-contact"><i data-lucide="plus"></i><span>Agregar contacto</span></button>
+    </section>
+
+    <section class="filter-row" id="filter-row">
+      <div class="filter-chip active" data-dept="all">Todos</div>
+      <div class="filter-chip" data-dept="Broker Support">Broker Support</div>
+      <div class="filter-chip" data-dept="Broker Manager">Broker Manager</div>
+      <div class="filter-chip" data-dept="Finance">Finance</div>
+      <div class="filter-chip" data-dept="Contract">Contract</div>
+      <div class="filter-chip" data-dept="Sales">Sales</div>
+      <div class="filter-chip" data-dept="Marketing">Marketing</div>
+      <div class="filter-chip" data-dept="Events">Events</div>
+      <div class="filter-chip" data-dept="Technical Support">Technical Support</div>
+    </section>
+
+    <section id="dir-body" class="dir-body"><p class="loading">Cargando directorio...</p></section>
+
+  </main>
+
+  <footer class="hero-footer">
+    <span>HERO HUB · v4.3</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+  </footer>
+</div>
+
+<script>
+  window.refreshIcons = () => { if (window.lucide) lucide.createIcons(); };
+  document.addEventListener("DOMContentLoaded", () => {
+    window.refreshIcons();
+    const menuBtn = document.getElementById("btn-menu");
+    const nav = document.getElementById("topbar-nav");
+    if (menuBtn && nav) menuBtn.addEventListener("click", () => nav.classList.toggle("open"));
+  });
+</script>
+<script type="module" src="js/firebase-config.js"></script>
+<script type="module" src="js/directorio.js"></script>
+</body>
+</html>

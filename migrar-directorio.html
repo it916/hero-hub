@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Migrar Directorio · Hero Hub</title>
+<style>
+  body { font-family:system-ui,sans-serif; background:#0a3d4a; color:#fff; padding:40px; max-width:720px; margin:0 auto; }
+  h1 { color:#06a3b6; }
+  button { background:#06a3b6; color:#fff; border:none; padding:14px 28px; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; margin:20px 0; }
+  button:disabled { opacity:.5; cursor:wait; }
+  #log { background:#062a33; padding:20px; border-radius:10px; margin-top:20px; font-family:monospace; font-size:13px; white-space:pre-wrap; max-height:400px; overflow-y:auto; }
+  .ok { color:#10b981; } .err { color:#f43f5e; } .info { color:#7a9aa5; }
+  code { background:#062a33; padding:2px 6px; border-radius:4px; }
+</style>
+</head>
+<body>
+  <h1>📋 Migración del Directorio → Firestore</h1>
+  <p>Sube los contactos iniciales a <code>shared/directorio</code>. Ejecútalo una sola vez.</p>
+  <button id="btn-migrar" disabled>Cargando...</button>
+  <div id="log"></div>
+
+<script type="module">
+import { auth, db } from "./js/firebase-config.js";
+import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const CONTACTS = [
+  { name:'', company:'AETNA', dept:'Broker Support', email:'brokersupport@aetna.com', phones:['(866) 714-9301'], notes:'' },
+  { name:'Maria Cabeza', company:'SOLIS HEALTH', dept:'Broker Support', email:'mcabeza@solishealthplans.com', phones:['(305) 330-7486'], notes:'' },
+  { name:'Belissa Rodriguez', company:'SOLIS HEALTH', dept:'Broker Support', email:'brodriguez@solishealthplans.com', phones:['(786) 439-7071'], notes:'' },
+  { name:'Joseph Castro', company:'CIGNA', dept:'Broker Support', email:'cgj@cigna.com', phones:['(786) 492-2513'], notes:'' },
+  { name:'Rey Gomez', company:'GOLD KIDNEY HEALTH', dept:'Broker Manager', email:'rey.gomez@goldkidney.com', phones:['(305) 896-6501'], notes:'' },
+  { name:'Jean-Luc Batista', company:'DEVOTED HEALTH', dept:'Broker Manager', email:'jean-luc.batista@devoted.com', phones:['(786) 564-9305'], notes:'' },
+  { name:'', company:'ANTHEM', dept:'Broker Support', email:'medicareagentsupport@anthem.com', phones:['(800) 633-4368'], notes:'' },
+  { name:'', company:'HEALTHSUN', dept:'Broker Support', email:'info@healthsun.com', phones:['(305) 234-9292'], notes:'' },
+  { name:'', company:'OSCAR', dept:'Broker Support', email:'brokers@hioscar.com', phones:['(855) 672-2713'], notes:'' },
+  { name:'Michael Rummie', company:'CAREPOINT', dept:'Broker Support', email:'brokersupport@carepointinsurance.com', phones:['(305) 376-7532','(786) 770-9198'], notes:'' },
+  { name:'Michael Rumie', company:'CAREPOINT', dept:'Broker Support', email:'brokersupport@carepointinsurance.com', phones:['(786) 770-9198'], notes:'Sunfire, Portales Carepoint y Carriers, Entrenamientos' },
+  { name:'Nina y Samuel', company:'CAREPOINT', dept:'Contract', email:'contracting@carepointinsurance.com', phones:[], notes:'' },
+  { name:'Joselyn Alvarez', company:'HEALTH FAMILY', dept:'Broker Support', email:'jalvarez@hfifl.com', phones:['(888) 206-9133','(305) 529-5650'], notes:'' },
+  { name:'Maritza Romero', company:'HEALTH FAMILY', dept:'Finance', email:'MRomero@hfifl.com', phones:[], notes:'' },
+  { name:'Joel Carrion', company:'HEALTH FAMILY', dept:'Sales', email:'JCarrion@hfifl.com', phones:['(305) 384-7305'], notes:'' },
+  { name:'Fabian Iemma', company:'HUMANA', dept:'Broker Support', email:'flemma@humana.com', phones:['(502) 313-7916'], notes:'' },
+  { name:'Kalya Robles', company:'HUMANA', dept:'Broker Manager', email:'', phones:['(954) 258-1192'], notes:'' },
+  { name:'Lazaro Aragon', company:'UNITED', dept:'Broker Manager', email:'lazaro_aragon@uhc.com / phd@uhc.com', phones:['(305) 525-5692','(888) 381-8581'], notes:'' },
+  { name:'Mario Buendia', company:'UNITED', dept:'Broker Manager', email:'mario_buendia@uhc.com', phones:['(786) 205-7003'], notes:'' },
+  { name:'Ivette Almanza', company:'DOCTORS HEALTH', dept:'Finance', email:'i.alma01@doctorshcp.com', phones:['(305) 742-8699'], notes:'' },
+  { name:'', company:'WELLCARE', dept:'Broker Support', email:'', phones:['(866) 822-1339'], notes:'' },
+  { name:'Jose Peralta', company:'WELLCARE', dept:'Broker Support', email:'jose.peralta@wellcare.com', phones:['(954) 760-8071'], notes:'' },
+  { name:'Daniel Maldonado', company:'WELLCARE', dept:'Broker Support', email:'daniel.maldonadovasquez@wellcare.cc', phones:['(407) 619-1590'], notes:'' },
+  { name:'', company:'AGILITY', dept:'Broker Support', email:'concierge@enrollinsurance.com', phones:['(866) 592-3377'], notes:'' },
+  { name:'Jovanny S.', company:'AGILITY', dept:'Contract', email:'contratacion@enrollinsurance.com', phones:[], notes:'' },
+  { name:'Elizabeth S. Ramos', company:'TRIPLE-S', dept:'Events', email:'Elizabeth.Sierra@sssvida.com', phones:['(787) 707-7496'], notes:'Contactar para training' },
+  { name:'Karen Santana', company:'TRIPLE-S', dept:'Events', email:'Karen.Santana@sssvida.com', phones:['(787) 604-6465'], notes:'' },
+  { name:'Cindy Castorena', company:'WESTERN MARKETING', dept:'Contract', email:'cindy@wmacorp.com', phones:['(712) 642-4167'], notes:'' },
+  { name:'Sandy Marreno', company:'WESTERN MARKETING', dept:'Marketing', email:'Sandy@wmacorp.com', phones:['(800) 852-7152'], notes:'' },
+  { name:'Claudia', company:'WESTERN MARKETING', dept:'Marketing', email:'', phones:['(712) 201-0582'], notes:'' },
+];
+
+function log(msg, cls="") {
+  const el = document.getElementById("log");
+  el.innerHTML += `<span class="${cls}">${msg}</span>\n`;
+  el.scrollTop = el.scrollHeight;
+}
+
+onAuthStateChanged(auth, async (user) => {
+  const btn = document.getElementById("btn-migrar");
+  if (!user) {
+    log("🔐 Iniciando sesión...", "info");
+    try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+    catch(e) { log("❌ Login cancelado", "err"); }
+    return;
+  }
+  if (user.email !== "it@heroinsuranceusa.com") {
+    log(`❌ Solo it@heroinsuranceusa.com puede migrar. Estás como ${user.email}`, "err"); return;
+  }
+  log(`✅ Autenticado como ${user.email}`, "ok");
+  log(`📋 ${CONTACTS.length} contactos listos.`, "info");
+  btn.disabled = false;
+  btn.textContent = "Ejecutar migración";
+});
+
+document.getElementById("btn-migrar").addEventListener("click", async () => {
+  const btn = document.getElementById("btn-migrar");
+  btn.disabled = true; btn.textContent = "Migrando...";
+  try {
+    const contacts = CONTACTS.map(c => ({
+      id: crypto.randomUUID(),
+      ...c,
+      updatedBy: 'migration',
+      updatedAt: new Date().toISOString()
+    }));
+    log(`📤 Escribiendo ${contacts.length} contactos a shared/directorio...`, "info");
+    await setDoc(doc(db, "shared", "directorio"), { contacts });
+    log(`✅ ¡Completado! ${contacts.length} contactos guardados.`, "ok");
+    log(`🎉 Borra migrar-directorio.html del repo.`, "ok");
+    btn.textContent = "✅ Completado";
+  } catch (e) {
+    log(`❌ Error: ${e.message}`, "err");
+    console.error(e);
+    btn.disabled = false; btn.textContent = "Reintentar";
+  }
+});
+</script>
+</body>
+</html>
