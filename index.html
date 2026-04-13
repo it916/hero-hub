@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hero Hub — Hero Insurance USA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 </head>
@@ -20,15 +23,36 @@
 
   <div id="dashboard" style="display:none;">
     <header class="hero-header">
-      <div class="header-left"><h1>Hero Hub</h1></div>
+      <div class="header-left">
+        <div class="logo-mark">H</div>
+        <div>
+          <div class="header-brand">HERO HUB</div>
+          <div class="header-sub">Hero Insurance USA</div>
+        </div>
+      </div>
       <div class="header-right">
-        <span id="user-greeting"></span>
         <img id="user-avatar" src="" alt="avatar" class="avatar">
-        <a id="btn-admin" href="admin.html" class="btn-ghost" style="display:none;" title="Administración">🛡️ Admin</a>
+        <a id="btn-admin" href="admin.html" class="btn-ghost" style="display:none;" title="Admin">🛡️</a>
         <button id="btn-settings" class="btn-ghost" title="Configuración">⚙️</button>
-        <button id="btn-logout" class="btn-ghost">Salir</button>
+        <button id="btn-logout" class="btn-ghost" title="Salir">⎋</button>
       </div>
     </header>
+
+    <section class="hero-banner">
+      <div class="hero-banner-inner">
+        <div class="hero-greeting-block">
+          <div class="section-label">Bienvenido de vuelta</div>
+          <h1 id="user-greeting" class="hero-greeting">¡Hola!</h1>
+          <p id="hero-date" class="hero-date"></p>
+        </div>
+        <div class="hero-clock-block">
+          <div id="hero-clock" class="hero-clock">00:00</div>
+          <div id="hero-clock-meridiem" class="hero-meridiem">AM</div>
+        </div>
+      </div>
+      <div class="hero-decoration"></div>
+    </section>
+
     <main id="widgets-container">
       <p class="loading">Cargando tu Hub...</p>
     </main>
