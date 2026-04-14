@@ -1,196 +1,260 @@
 import { auth, db } from "./firebase-config.js";
-import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged }
+import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { doc, getDoc, setDoc }
+import { doc, getDoc, setDoc, updateDoc, collection, query, where, orderBy, limit, getDocs, Timestamp, deleteDoc }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const ADMIN_EMAILS = ["it@heroinsuranceusa.com"];
-let spotlight = { imageUrl: "", message: "", honorees: [] };
-let messages = [];
+const ADMIN_EMAIL = "it@heroinsuranceusa.com";
 
+// ══ AUTH ══
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     try { await signInWithPopup(auth, new GoogleAuthProvider()); }
-    catch (e) { alert("Debes iniciar sesión"); location.href = "index.html"; }
+    catch (e) { location.href = "index.html"; }
     return;
   }
-  if (!ADMIN_EMAILS.includes(user.email)) {
-    alert("No tienes permisos de administrador.");
+  if (user.email !== ADMIN_EMAIL) {
+    alert("Solo el admin puede acceder a este panel.");
     location.href = "index.html";
     return;
   }
   document.getElementById("loading").style.display = "none";
   document.getElementById("admin-panel").style.display = "block";
   if (window.refreshIcons) window.refreshIcons();
-  await loadAll();
-  wireHandlers();
+  loadSpotlight();
+  loadMessages();
 });
 
-async function loadAll() {
+// ══ SPOTLIGHT ══
+let spotlightData = { imageUrl: "", message: "", honorees: [] };
+
+async function loadSpotlight() {
   try {
-    const [sp, ms] = await Promise.all([
-      getDoc(doc(db, "shared", "spotlight")),
-      getDoc(doc(db, "shared", "messages"))
-    ]);
-
-    // SPOTLIGHT - migración de formato viejo a nuevo
-    if (sp.exists()) {
-      const data = sp.data();
-      if (data && Array.isArray(data.honorees)) {
-        spotlight = {
-          imageUrl: data.imageUrl || "",
-          message: data.message || "",
-          honorees: data.honorees
-        };
-      } else if (data && data.name) {
-        spotlight = {
-          imageUrl: "",
-          message: data.message || "",
-          honorees: [{ name: data.name, role: data.role || "" }]
-        };
-      }
-    }
-
-    // MENSAJES - guarda defensiva: solo aceptamos array
-    if (ms.exists()) {
-      const data = ms.data();
-      if (data && Array.isArray(data.items)) {
-        messages = data.items.filter(x => typeof x === 'string');
-      } else {
-        console.warn("shared/messages tiene formato inválido, reseteando a []", data);
-        messages = [];
-      }
-    } else {
-      messages = [];
-    }
-  } catch (e) {
-    console.error("Error cargando datos:", e);
-    messages = [];
-  }
-
-  // Render UI
-  document.getElementById("sp-image").value = spotlight.imageUrl;
-  document.getElementById("sp-message").value = spotlight.message;
-  renderHonorees();
-  renderImagePreview();
-  renderMessages();
-}
-
-function wireHandlers() {
-  // Imagen — preview en vivo
-  document.getElementById("sp-image").addEventListener("input", (e) => {
-    spotlight.imageUrl = e.target.value.trim();
-    renderImagePreview();
-  });
-
-  // Agregar honorado
-  document.getElementById("sp-add-honoree").onclick = () => {
-    if (spotlight.honorees.length >= 3) {
-      alert("Máximo 3 honorados");
-      return;
-    }
-    spotlight.honorees.push({ name: "", role: "" });
+    const snap = await getDoc(doc(db, "shared", "spotlight"));
+    if (snap.exists()) spotlightData = snap.data();
+    document.getElementById("sp-image").value = spotlightData.imageUrl || "";
+    document.getElementById("sp-message").value = spotlightData.message || "";
     renderHonorees();
-  };
-
-  // Guardar spotlight
-  document.getElementById("sp-save").onclick = async () => {
-    spotlight.message = document.getElementById("sp-message").value.trim();
-    spotlight.honorees = spotlight.honorees.filter(h => h.name && h.name.trim());
-    if (!spotlight.honorees.length) {
-      alert("Agrega al menos un honorado");
-      return;
-    }
-    try {
-      await setDoc(doc(db, "shared", "spotlight"), spotlight);
-      flash("sp-status", "✅ Guardado");
-    } catch (e) {
-      console.error(e);
-      flash("sp-status", "❌ Error: " + e.message);
-    }
-  };
-
-  // Mensajes
-  document.getElementById("ms-add").onclick = async () => {
-    const text = document.getElementById("ms-text").value.trim();
-    if (!text) return;
-    if (!Array.isArray(messages)) messages = [];
-    messages.push(text);
-    try {
-      await setDoc(doc(db, "shared", "messages"), { items: messages });
-      document.getElementById("ms-text").value = "";
-      renderMessages();
-    } catch (e) {
-      console.error(e);
-      alert("Error guardando: " + e.message);
-    }
-  };
+  } catch (e) { console.error(e); }
 }
 
 function renderHonorees() {
   const list = document.getElementById("sp-honorees-list");
-  if (!Array.isArray(spotlight.honorees)) spotlight.honorees = [];
-  list.innerHTML = spotlight.honorees.map((h, i) => `
+  if (!Array.isArray(spotlightData.honorees)) spotlightData.honorees = [];
+  list.innerHTML = spotlightData.honorees.map((h, i) => `
     <div class="honoree-row">
-      <div class="honoree-num">${i + 1}</div>
-      <input class="honoree-name" data-i="${i}" placeholder="Nombre" value="${(h.name || '').replace(/"/g, '&quot;')}">
-      <input class="honoree-role" data-i="${i}" placeholder="Rol (ej: Manager)" value="${(h.role || '').replace(/"/g, '&quot;')}">
-      <button class="btn-small-danger" data-i="${i}">Eliminar</button>
+      <input placeholder="Nombre" data-field="name" data-idx="${i}" value="${(h.name||'').replace(/"/g,'&quot;')}">
+      <input placeholder="Rol" data-field="role" data-idx="${i}" value="${(h.role||'').replace(/"/g,'&quot;')}">
+      <button class="btn-ghost-dark" data-del="${i}">✕</button>
     </div>
-  `).join("");
-
-  list.querySelectorAll(".honoree-name").forEach(inp => {
-    inp.addEventListener("input", e => {
-      spotlight.honorees[parseInt(e.target.dataset.i)].name = e.target.value;
+  `).join('');
+  list.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('input', () => {
+      spotlightData.honorees[parseInt(inp.dataset.idx)][inp.dataset.field] = inp.value;
     });
   });
-  list.querySelectorAll(".honoree-role").forEach(inp => {
-    inp.addEventListener("input", e => {
-      spotlight.honorees[parseInt(e.target.dataset.i)].role = e.target.value;
-    });
-  });
-  list.querySelectorAll(".btn-small-danger").forEach(btn => {
-    btn.onclick = () => {
-      if (!confirm("¿Eliminar este honorado?")) return;
-      spotlight.honorees.splice(parseInt(btn.dataset.i), 1);
+  list.querySelectorAll('[data-del]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      spotlightData.honorees.splice(parseInt(btn.dataset.del), 1);
       renderHonorees();
-    };
+    });
   });
 }
 
-function renderImagePreview() {
-  const wrap = document.getElementById("sp-preview-wrap");
-  const prev = document.getElementById("sp-preview");
-  if (spotlight.imageUrl) {
-    wrap.style.display = "block";
-    prev.style.backgroundImage = `url(${spotlight.imageUrl})`;
-  } else {
-    wrap.style.display = "none";
+document.getElementById("sp-add-honoree").addEventListener("click", () => {
+  if (!Array.isArray(spotlightData.honorees)) spotlightData.honorees = [];
+  if (spotlightData.honorees.length >= 3) { alert("Máximo 3 honorees"); return; }
+  spotlightData.honorees.push({ name: "", role: "" });
+  renderHonorees();
+});
+
+document.getElementById("sp-save").addEventListener("click", async () => {
+  spotlightData.imageUrl = document.getElementById("sp-image").value.trim();
+  spotlightData.message = document.getElementById("sp-message").value.trim();
+  spotlightData.honorees = (spotlightData.honorees || []).filter(h => h.name);
+  try {
+    await setDoc(doc(db, "shared", "spotlight"), spotlightData);
+    document.getElementById("sp-status").textContent = "✓ Guardado";
+    setTimeout(() => document.getElementById("sp-status").textContent = "", 2000);
+  } catch (e) { alert("Error: " + e.message); }
+});
+
+// ══ MENSAJES ══
+async function loadMessages() {
+  try {
+    const snap = await getDoc(doc(db, "shared", "messages"));
+    const items = snap.exists() ? (snap.data().items || []) : [];
+    const list = document.getElementById("ms-list");
+    if (!items.length) { list.innerHTML = "<p class='admin-note'>No hay mensajes todavía.</p>"; return; }
+    list.innerHTML = items.map((m, i) => `
+      <div class="msg-row">
+        <div>
+          <div class="msg-row-text">${m.frase || ''}</div>
+          <div class="msg-row-meta">— ${m.autor || 'Anónimo'}${m.created_at ? ' · ' + new Date(m.created_at).toLocaleDateString('es-ES') : ''}</div>
+        </div>
+        <button class="btn-ghost-dark" data-del="${i}" title="Eliminar">✕</button>
+      </div>
+    `).join('');
+    list.querySelectorAll('[data-del]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm("¿Eliminar este mensaje?")) return;
+        items.splice(parseInt(btn.dataset.del), 1);
+        await updateDoc(doc(db, "shared", "messages"), { items });
+        loadMessages();
+      });
+    });
+  } catch (e) {
+    document.getElementById("ms-list").innerHTML = `<p class='admin-note'>Error: ${e.message}</p>`;
   }
 }
 
-function renderMessages() {
-  const list = document.getElementById("ms-list");
-  if (!Array.isArray(messages)) messages = [];
-  list.innerHTML = messages.map((m, i) =>
-    `<div class="admin-item">
-      <span>"${m}"</span>
-      <button class="btn-small-danger" data-i="${i}">Eliminar</button>
-    </div>`).join("");
-  list.querySelectorAll("button").forEach(btn => {
-    btn.onclick = async () => {
-      if (!confirm("¿Eliminar?")) return;
-      messages.splice(parseInt(btn.dataset.i), 1);
-      try {
-        await setDoc(doc(db, "shared", "messages"), { items: messages });
-        renderMessages();
-      } catch (e) { alert("Error: " + e.message); }
-    };
-  });
+// ══ MÉTRICAS ══
+window.loadMetrics = async function() {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  try {
+    const q = query(
+      collection(db, "events"),
+      where("timestamp", ">=", Timestamp.fromDate(thirtyDaysAgo)),
+      orderBy("timestamp", "desc")
+    );
+    const snap = await getDocs(q);
+    const events = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    renderMetrics(events);
+  } catch (e) {
+    console.error("Error cargando métricas:", e);
+    if (e.message && e.message.includes("index")) {
+      document.getElementById("mt-chart").innerHTML = `<p class="empty">Firestore necesita crear un índice. Abre la consola del navegador (F12), busca el link en el error y créalo. Luego vuelve a cargar.</p>`;
+    } else {
+      document.getElementById("mt-chart").innerHTML = `<p class="empty">Error: ${e.message}</p>`;
+    }
+  }
 }
 
-function flash(id, text) {
-  const el = document.getElementById(id);
-  el.textContent = text;
-  setTimeout(() => el.textContent = "", 2500);
+function renderMetrics(events) {
+  // Card: visitas totales
+  document.getElementById("mt-total").textContent = events.length.toLocaleString();
+
+  // Card: usuarios activos únicos
+  const uniqueUsers = new Set(events.map(e => e.email));
+  document.getElementById("mt-users").textContent = uniqueUsers.size;
+
+  // Conteo por página
+  const pageCounts = {};
+  events.forEach(e => { pageCounts[e.page] = (pageCounts[e.page] || 0) + 1; });
+  const topPages = Object.entries(pageCounts).sort((a,b) => b[1] - a[1]);
+
+  // Card: página top
+  if (topPages.length) {
+    document.getElementById("mt-toppage").textContent = topPages[0][0];
+    document.getElementById("mt-toppage-count").textContent = topPages[0][1] + " visitas";
+  }
+
+  // Conteo por día de la semana
+  const daysOfWeek = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const dayCounts = {};
+  events.forEach(e => {
+    if (!e.timestamp) return;
+    const d = e.timestamp.toDate();
+    const day = daysOfWeek[d.getDay()];
+    dayCounts[day] = (dayCounts[day] || 0) + 1;
+  });
+  const topDays = Object.entries(dayCounts).sort((a,b) => b[1] - a[1]);
+  if (topDays.length) {
+    document.getElementById("mt-topday").textContent = topDays[0][0];
+    document.getElementById("mt-topday-count").textContent = topDays[0][1] + " visitas";
+  }
+
+  // Gráfico actividad diaria (últimos 30 días)
+  const dailyCounts = {};
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().split('T')[0];
+    dailyCounts[key] = 0;
+  }
+  events.forEach(e => {
+    if (!e.timestamp) return;
+    const key = e.timestamp.toDate().toISOString().split('T')[0];
+    if (key in dailyCounts) dailyCounts[key]++;
+  });
+  renderChart(dailyCounts);
+
+  // Top 5 páginas
+  const topPagesList = topPages.slice(0, 5);
+  const maxPageCount = topPagesList[0]?.[1] || 1;
+  document.getElementById("mt-top-pages").innerHTML = topPagesList.length
+    ? topPagesList.map(([page, count]) => `
+        <div class="mt-bar-row">
+          <div class="mt-bar-label">${page}</div>
+          <div class="mt-bar-wrap"><div class="mt-bar-fill" style="width:${(count/maxPageCount)*100}%"></div></div>
+          <div class="mt-bar-val">${count}</div>
+        </div>`).join('')
+    : `<p class="empty">Sin datos todavía.</p>`;
+
+  // Top 5 usuarios
+  const userCounts = {};
+  events.forEach(e => { userCounts[e.email] = (userCounts[e.email] || 0) + 1; });
+  const topUsers = Object.entries(userCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
+  const maxUserCount = topUsers[0]?.[1] || 1;
+  document.getElementById("mt-top-users").innerHTML = topUsers.length
+    ? topUsers.map(([email, count]) => `
+        <div class="mt-bar-row">
+          <div class="mt-bar-label">${email.split('@')[0]}</div>
+          <div class="mt-bar-wrap"><div class="mt-bar-fill" style="width:${(count/maxUserCount)*100}%"></div></div>
+          <div class="mt-bar-val">${count}</div>
+        </div>`).join('')
+    : `<p class="empty">Sin datos todavía.</p>`;
+
+  // Últimos 10 eventos
+  document.getElementById("mt-events").innerHTML = events.length
+    ? events.slice(0, 10).map(e => {
+        const d = e.timestamp?.toDate();
+        const when = d ? d.toLocaleString('es-ES', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '—';
+        return `<div class="mt-event-row">
+          <span class="mt-event-user">${e.email.split('@')[0]}</span>
+          <span class="mt-event-arrow">→</span>
+          <span class="mt-event-page">${e.page}</span>
+          <span class="mt-event-time">${when}</span>
+        </div>`;
+      }).join('')
+    : `<p class="empty">Sin eventos todavía. Las visitas empezarán a registrarse cuando el equipo use el Hub.</p>`;
 }
+
+function renderChart(dailyCounts) {
+  const entries = Object.entries(dailyCounts);
+  const maxVal = Math.max(...entries.map(([,v]) => v), 1);
+  const chart = document.getElementById("mt-chart");
+  chart.innerHTML = `<div class="mt-chart-inner">
+    ${entries.map(([date, count]) => {
+      const h = (count / maxVal) * 100;
+      const d = new Date(date + 'T12:00');
+      const label = d.getDate();
+      const isFirstOfMonth = label === 1 || entries[0][0] === date;
+      return `<div class="mt-chart-col" title="${date}: ${count} visitas">
+        <div class="mt-chart-bar" style="height:${h}%"></div>
+        <div class="mt-chart-lbl">${isFirstOfMonth ? d.toLocaleDateString('es',{month:'short'}) : ''}</div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+document.getElementById("mt-refresh").addEventListener("click", () => window.loadMetrics());
+
+document.getElementById("mt-cleanup").addEventListener("click", async () => {
+  if (!confirm("¿Eliminar eventos con más de 90 días? Esta acción no se puede deshacer.")) return;
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+  try {
+    const q = query(collection(db, "events"), where("timestamp", "<", Timestamp.fromDate(ninetyDaysAgo)));
+    const snap = await getDocs(q);
+    let count = 0;
+    for (const d of snap.docs) { await deleteDoc(d.ref); count++; }
+    alert(`✓ ${count} eventos antiguos eliminados`);
+    window.loadMetrics();
+  } catch (e) {
+    alert("Error: " + e.message);
+  }
+});
