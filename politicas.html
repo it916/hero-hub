@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Políticas — Hero Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<div id="loading" class="login-container"><div class="login-card"><p>Verificando acceso...</p></div></div>
+
+<div id="dashboard" style="display:none;">
+
+  <header class="hero-topbar">
+    <div class="topbar-inner">
+      <div class="brand-block">
+        <a href="index.html" class="brand-link">
+          <div class="logo-mark"><svg viewBox="0 0 100 100"><path d="M50 5 L60 35 L92 38 L67 58 L75 90 L50 72 L25 90 L33 58 L8 38 L40 35 Z" fill="currentColor"/></svg></div>
+          <div>
+            <div class="brand-name">HERO HUB</div>
+            <div class="brand-sub">Hero Insurance USA</div>
+          </div>
+        </a>
+      </div>
+      <nav class="topbar-nav" id="topbar-nav">
+        <a href="index.html" class="nav-link"><i data-lucide="home"></i><span>Inicio</span></a>
+        <a href="equipo.html" class="nav-link"><i data-lucide="users"></i><span>Equipo</span></a>
+        <a href="carriers.html" class="nav-link"><i data-lucide="shield"></i><span>Carriers</span></a>
+        <a href="directorio.html" class="nav-link"><i data-lucide="book-user"></i><span>Directorio</span></a>
+        <a href="guias.html" class="nav-link"><i data-lucide="book-open"></i><span>Guías</span></a>
+        <a href="politicas.html" class="nav-link active"><i data-lucide="scroll-text"></i><span>Políticas</span></a>
+      </nav>
+      <div class="topbar-actions">
+        <img id="user-avatar" src="" alt="" class="avatar">
+        <a id="btn-admin" href="admin.html" class="icon-btn" style="display:none;" title="Admin"><i data-lucide="shield-check"></i></a>
+        <button id="btn-logout" class="icon-btn" title="Salir"><i data-lucide="log-out"></i></button>
+        <button id="btn-menu" class="icon-btn menu-toggle" title="Menú"><i data-lucide="menu"></i></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+
+    <section class="page-header">
+      <div class="page-kicker">• Hero Insurance USA •</div>
+      <h1 class="page-title">Políticas Internas</h1>
+      <p class="page-sub">Seguridad de la Información & Gobernanza de Datos</p>
+    </section>
+
+    <div class="policies-wrap">
+
+      <!-- Doc Header -->
+      <div class="doc-header">
+        <div class="doc-header-left">
+          <div class="doc-eyebrow">Políticas Internas · Hero Insurance USA</div>
+          <div class="doc-title">Seguridad de la Información<br><span>&amp; Gobernanza de Datos</span></div>
+          <div class="doc-meta">
+            <span class="doc-meta-item">Hero Insurance USA</span>
+            <span class="doc-meta-item">Versión 2.0</span>
+            <span class="doc-meta-item">2026</span>
+            <span class="doc-meta-item">13 Políticas</span>
+          </div>
+        </div>
+        <div class="doc-version">🛡 v2.0 · 2026</div>
+      </div>
+
+      <!-- TOC -->
+      <div class="toc">
+        <a class="toc-item" href="#" data-i="0">01 · Seguridad</a>
+        <a class="toc-item" href="#" data-i="1">02 · Clasificación</a>
+        <a class="toc-item" href="#" data-i="2">03 · Acceso</a>
+        <a class="toc-item" href="#" data-i="3">04 · Datos Sensibles</a>
+        <a class="toc-item" href="#" data-i="4">05 · Autenticación</a>
+        <a class="toc-item" href="#" data-i="5">06 · Dispositivos</a>
+        <a class="toc-item" href="#" data-i="6">07 · Offboarding</a>
+        <a class="toc-item" href="#" data-i="7">08 · Incidentes</a>
+        <a class="toc-item" href="#" data-i="8">09 · Revisión</a>
+        <a class="toc-item" href="#" data-i="9">10 · Cumplimiento</a>
+        <a class="toc-item" href="#" data-i="10">11 · IA &amp; Servicios</a>
+        <a class="toc-item" href="#" data-i="11">12 · Credenciales Carriers</a>
+        <a class="toc-item" href="#" data-i="12">13 · Trabajo Remoto</a>
+      </div>
+
+      <div id="policiesContainer">
+
+        <!-- 01 Seguridad de la Información -->
+        <div class="policy-section">
+          <button class="section-trigger" aria-expanded="false">
+            <span class="section-num">01</span>
+            <div class="section-icon-wrap">🔐</div>
+            <div class="section-title-wrap">
+              <div class="section-title">Política de Seguridad de la Información</div>
+              <div class="section-desc">Propósito, alcance y sistemas cubiertos</div>
+            </div>
+            <svg class="section-chevron" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="section-body"><div class="section-content">
+            <div class="subsection">
+              <div class="subsection-title">Propósito</div>
+              <div class="subsection-body">Hero Insurance USA se compromete a proteger la información confidencial, personal y regulada de agentes, clientes, empleados y socios comerciales, mediante controles técnicos, administrativos y operativos adecuados al tamaño y naturaleza del negocio asegurador.</div>
+            </div>
+            <div class="subsection">
+              <div class="subsection-title">Aplica a</div>
+              <ul class="policy-list">
+                <li>Todos los empleados y agentes contratados por Hero Insurance USA</li>
+                <li>Personal administrativo, contractor o temporal</li>
+                <li>Proveedores externos con acceso a sistemas o datos</li>
+                <li>Cualquier sistema digital o repositorio gestionado por la empresa</li>
+              </ul>
+            </div>
+            <div class="subsection">
+              <div class="subsection-title">Sistemas cubiertos</div>
+              <ul class="policy-list">
+                <li><strong>Google Workspace</strong> (Gmail, Drive, Sheets, Docs, Calendar, Meet, Chat)</li>
+                <li><strong>Hero Hub</strong> (portal interno) y Firebase/Firestore</li>
+                <li><strong>Hero IT Console</strong> y Cloudflare Workers</li>
+                <li><strong>Base de datos de agentes</strong> (Railway, MySQL)</li>
+                <li><strong>Repositorios GitHub</strong> de la organización</li>
+                <li><strong>Portales de Carriers</strong> (Aetna, Humana, United, Wellcare, etc.)</li>
+                <li><strong>Herramientas de productividad</strong> autorizadas (ClickUp, Canva, Scribe, DeepL, ExpressVPN, Zoho Assist, HubSpot, GoHighLevel)</li>
+                <li><strong>Equipos corporativos</strong> y dispositivos personales con acceso a recursos Hero</li>
+              </ul>
+            </div>
+          </div></div>
+        </div>
+
+        <!-- 02 Clasificación de Datos -->
+        <div class="policy-section">
+          <button class="section-trigger" aria-expanded="false">
+            <span class="section-num">02</span>
+            <div class="section-icon-wrap">🗂️</div>
+            <div class="section-title-wrap">
+              <div class="section-title">Política de Clasificación de Datos</div>
+              <div class="section-desc">Tres niveles de sensibilidad de la información</div>
+            </div>
+            <svg class="section-chevron" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="section-body"><div class="section-content">
+            <div class="data-levels">
+              <div class="data-level">
+                <div class="level-badge level-1">NIVEL 1 · PÚBLICO</div>
+                <div class="level-content">
+                  <div class="level-title">Información Pública</div>
+                  <div class="level-desc">Puede compartirse externamente sin riesgo. Incluye: material de marketing aprobado, contenido publicado en redes sociales, sitio web heroinsuranceusa.com, comunicados de prensa.</div>
+                </div>
+              </div>
+              <div class="data-level">
+                <div class="level-badge level-2">NIVEL 2 · INTERNO</div>
+                <div class="level-content">
+                  <div class="level-title">Información Interna</div>
+                  <div class="level-desc">No debe compartirse fuera de la empresa. Incluye: organigrama, listas internas de agentes (sin datos sensibles), procesos operativos, comunicaciones internas, estrategias comerciales.</div>
+                </div>
+              </div>
+              <div class="data-level">
+                <div class="level-badge level-3">NIVEL 3 · CONFIDENCIAL</div>
+                <div class="level-content">
+                  <div class="level-title">Información Sensible</div>
+                  <div class="level-desc">Requiere controles estrictos. Incluye: SSN, ITIN, FEIN, fechas de nacimiento, direcciones residenciales completas, licencias estatales, NPN, información financiera y bancaria, PHI (información médica protegida), credenciales de portales, datos de comisiones, contratos firmados.</div>
+                </div>
+              </div>
+            </div>
+          </div></div>
+        </div>
+
+        <!-- 03 Control de Acceso -->
+        <div class="policy-section">
+          <button class="section-trigger" aria-expanded="false">
+            <span class="section-num">03</span>
+            <div class="section-icon-wrap">👤</div>
+            <div class="section-title-wrap">
+              <div class="section-title">Política de Control de Acceso (RBAC)</div>
+              <div class="section-desc">Principio de mínimo privilegio y roles definidos</div>
+            </div>
+            <svg class="section-chevron" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="section-body"><div class="section-content">
+            <div class="policy-note">
+              <span class="policy-note-icon">ℹ️</span>
+              <span><strong>Principio de Mínimo Privilegio:</strong> cada usuario tendrá acceso únicamente a la información necesaria para cumplir su función específica.</span>
+            </div>
+            <div class="subsection">
+              <div class="subsection-title">Roles y accesos</div>
+              <table class="roles-table">
+                <thead>
+                  <tr><th>Rol</th><th>Nivel de acceso</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><span class="role-name">Sales / Recruiters</span></td><td>Información operativa básica de agentes. Sin acceso a SSN, DOB ni dirección completa. Sin acceso a información financiera.</td></tr>
+                  <tr><td><span class="role-name">Operations / Support</span></td><td>Información operativa y de cumplimiento. Acceso limitado a datos sensibles según necesidad demostrada y aprobada.</td></tr>
+                  <tr><td><span class="role-name">Finance / HR</span></td><td>Información financiera, de comisiones y datos sensibles necesarios para nómina, impuestos y reporting regulatorio.</td></tr>
+                  <tr><td><span class="role-name">Leadership</span></td><td>Acceso completo según función ejecutiva. Sujeto a las mismas reglas de auditoría que el resto del equipo.</td></tr>
+                  <tr><td><span class="role-name">IT / Compliance</span></td><td>Acceso a sistemas, configuraciones y logs necesarios para mantenimiento, seguridad y cumplimiento normativo.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="subsection">
+              <div class="subsection-title">Gestión de accesos</div>
+              <ul class="policy-list">
+                <li>Los accesos al Hero Hub se gestionan vía Google Auth restringido a <span class="mono-inline">@heroinsuranceusa.com</span></li>
+                <li>Los accesos a Google Drive se asignan por carpeta según rol; evitando permisos individuales cuando sea posible</li>
+                <li>El acceso a sistemas críticos (Firestore, MySQL, GitHub, Cloudflare, dominios) está limitado al IT Manager</li>
+                <li>Revisión trimestral de accesos obligatoria por parte del IT Manager</li>
+                <li>Está prohibido compartir archivos con permisos públicos ("cualquiera con el enlace") cuando contengan información Nivel 2 o 3</li>
+                <li>Toda solicitud de acceso adicional debe quedar documentada por escrito (Gmail, Chat o ticket IT)</li>
+              </ul>
+            </div>
+          </div></div>
+        </div>
+
+        <!-- 04 Datos Sensibles -->
+        <div class="policy-section">
+          <button class="section-trigger" aria-expanded="false">
+            <span class="section-num">04</span>
+            <div class="section-icon-wrap">🗄️</div>
+            <div class="section-title-wrap">
+              <div class="section-title">Política de Manejo de Datos Sensibles</div>
+              <div class="section-desc">Separación, restricciones y registro de cambios</div>
+            </div>
+            <svg class="section-chevron" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="section-body"><div class="section-content">
+            <div class="subsection">
+              <div class="subsection-title">Separación de información</div>
+              <div class="subsection-body">La información Nivel 3 (Confidencial) debe almacenarse en repositorios separados de la información operativa general. En la base de datos de agentes, los campos sensibles (SSN, datos bancarios) deben estar cifrados en reposo.</div>
+            </div>
+            <div class="subsection">
+              <div class="subsection-title">Restricciones</div>
+              <ul class="policy-list">
+                <li>Prohibido compartir enlaces públicos a información sensible</li>
+                <li>Prohibido descargar bases de datos completas sin autorización del IT Manager</li>
+                <li>Prohibido reenviar información sensible a cuentas personales (Gmail personal, WhatsApp, Telegram, etc.)</li>
+                <li>Prohibido capturar pantalla de información sensible para uso fuera del entorno corporativo</li>
+                <li>Prohibido imprimir documentos con datos Nivel 3 sin justificación operativa</li>
+                <li>Prohibido enviar SSN, DOB, datos bancarios o credenciales por correo, chat o cualquier canal sin cifrado</li>
+              </ul>
+            </div>
+            <div class="subsection">
+              <div class="subsection-title">Registro de cambios</div>
+              <div class="subsection-body">Toda modificación en bases de datos críticas (agentes, comisiones, finanzas) deberá quedar registrada mediante: historial de cambios de Google Sheets/Docs, logs automáticos de Firestore y MySQL, y registro interno cuando aplique. Las eliminaciones de datos deben ser explícitamente autorizadas.</div>
+            </div>
+          </div></div>
+        </div>
+
+        <!-- 05 Autenticación -->
+        <div class="policy-section">
+          <button class="section-trigger" aria-expanded="false">
+            <span class="section-num">05</span>
+            <div class="section-icon-wrap">🔑</div>
+            <div class="section-title-wrap">
+              <div class="section-title">Política de Autenticación y Seguridad de Cuentas</div>
+              <div class="section-desc">MFA obligatorio y gestión de contraseñas</div>
+            </div>
+            <svg class="section-chevron" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="section-body"><div class="section-content">
+            <div class="subsection">
+              <div class="subsection-title">Autenticación Multifactor (MFA)</div>
+              <ul class="policy-list">
+                <li>MFA es obligatorio para todos los usuarios de cuentas <span class="mono-inline">@heroinsuranceusa.com</span> sin excepción</li>
+                <li>Se recomienda Google Prompt o Passkeys como métodos preferidos</li>
+                <li>SMS como segundo factor está permitido pero no es la opción preferida</li>
+                <li>Está prohibido desactivar MFA bajo cualquier circunstancia</li>
+                <li>El IT Manager puede forzar MFA en sistemas administrados (Firebase, Cloudflare, GitHub, dominios)</li>
+              </ul>
+            </div>
+            <div class="subsection">
+              <div class="subsection-title">Contraseñas</div>
+              <ul class="policy-list">
+                <li>Mínimo 12 caracteres para cuentas corporativas, con mezcla de letras, números y símbolos</li>
+                <li>Prohibido reutilizar contraseñas personales en cuentas corporativas</li>
+                <li>Prohibido compartir credenciales con otros usuarios (cada persona usa su propia cuenta)</li>
+                <li>Prohibido almacenar contraseñas en documentos planos, notas, hojas de Google, Word o similares</li>
+                <li>Para credenciales compartidas de carriers, usar el módulo "Carriers" del Hero Hub o un gestor aprobado</li>
+              </ul>
+            </div>
+          </div></div>
+        </div>
+
+        <!-- 06 Dispositivos -->
+        <div class="policy-section">
+          <button class="section-trigger" aria-expanded="false">
+            <span class="section-num">06</span>
+            <div class="section-icon-wrap">💻</div>
+            <div class="section-title-wrap">
+              <div class="section-title">Política de Dispositivos</div>
+              <div class="section-desc">Acceso seguro y equipos corporativos</div>
+            </div>
+            <svg class="section-chevron" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="section-body"><div class="section-content">
+            <div class="subsection">
+              <div class="subsection-title">Acceso desde dispositivos</div>
+              <ul class="policy-list">
+                <li>El acceso a sistemas corporativos debe realizarse desde dispositivos con sistema operativo actualizado y antivirus activo</li>
+                <li>Se recomienda el uso de Google Chrome o Microsoft Edge actualizados</li>
+                <li>Se prohíbe el acceso desde computadoras públicas (cibercafés, hoteles, terminales compartidos)</li>
+                <li>El acceso desde dispositivos personales (BYOD) está permitido siempre que cumpla las medidas de seguridad mínimas</li>
+              </ul>
+            </div>
+            <div class="subsection">
+              <div class="subsection-title">Equipos corporativos</div>
+              <ul class="policy-list">
+                <li>Los equipos asignados por la empresa están sujetos a configuraciones de seguridad obligatorias</li>
+                <li>Pantalla bloqueada automáticamente tras 10 minutos de inactividad</li>
+                <li>Cifrado de disco activo (BitLocker en Windows, FileVault en macOS)</li>
+                <li>Soporte y mantenimiento mediante Zoho Assist (con consentimiento del usuario en cada sesión)</li>
+                <li>Prohibido instalar software no autorizado o cracks de cualquier tipo</li>
+              </ul>
+            </div>
+            <div class="subsection">
+              <div class="subsection-title">Dispositivos móviles</div>
+              <ul class="policy-list">
+                <li>Cuentas Hero accedidas desde móvil deben tener PIN, huella o reconocimiento facial activo</li>
+                <li>En caso de pérdida o robo, reportar inmediatamente al IT Manager para suspender accesos</li>
+              </ul>
+            </div>
+          </div></div>
+        </div>
+
+        <!-- 07 Offboarding -->
+        <div class="policy-section">
+          <button class="section-trigger" aria-expanded="false">
+            <span class="section-num">07</span>
+            <div class="section-icon-wrap">🚪</div>
+            <div class="section-title-wrap">
+              <div class="section-title">Política de Offboarding</div>
+              <div class="section-desc">Procedimiento al finalizar una relación laboral</div>
+            </div>
+            <svg class="section-chevron" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="section-body"><div class="section-content">
+            <div class="policy-note">
+              <span class="policy-note-icon">⚠️</span>
+              <span>Este proceso debe completarse <strong>el mismo día de terminación</strong>, sin excepción. Los pasos son ejecutados por el IT Manager con apoyo de HR/Office Manager.</span>
+            </div>
+            <div class="subsection">
+              <div class="subsection-title">Pasos requeridos (mismo día)</div>
+              <ul class="policy-list">
+                <li>Suspensión inmediata de la cuenta corporativa <span class="mono-inline">@heroinsuranceusa.com</span></li>
+                <li>Revocación de todas las sesiones activas (Google Workspace, Hero Hub, Firebase)</li>
+                <li>Cambio de contraseñas de cuentas compartidas a las que el ex-empleado tenía acceso</li>
+                <li>Revocación de tokens y app passwords</li>
+                <li>Remoción de Google Groups y carpetas compartidas en Drive</li>
+                <li>Revocación de accesos a sistemas externos (carriers, ClickUp, HubSpot, etc.)</li>
+                <li>Recuperación de equipos y dispositivos asignados</li>
+                <li>Documentación formal del proceso por parte de IT</li>
+              </ul>
+            </div>
+            <div class="subsection">
+              <div class="subsection-title">Posterior al offboarding</div>
+              <ul class="policy-list">
+                <li>Transferencia de archivos del usuario a su supervisor directo</li>
+                <li>Retención de datos según política de cumplimiento (mínimo 7 años para registros financieros)</li>
+                <li>Eliminación de la cuenta tras 90 días, salvo retenciones legales activas</li>
+              </ul>
+            </div>
+          </div></div>
+        </div>
+
+        <!-- 08 Incidentes -->
+        <div class="policy-section">
+          <button class="section-trigger" aria-expanded="false">
+            <span class="section-num">08</span>
+            <div class="section-icon-wrap">🚨</div>
+            <div class="section-title-wrap">
+              <div class="section-title">Política de Respuesta a Incidentes</div>
+              <div class="section-desc">Qué constituye un incidente y cómo actuar</div>
+            </div>
+            <svg class="section-chevron" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="section-body"><div class="section-content">
+            <div class="subsection">
+              <div class="subsection-title">Se considera incidente</div>
+              <ul class="policy-list">
+                <li>Acceso no autorizado a sistemas o información Hero</li>
+                <li>Pérdida o robo de datos, equipos o credenciales</li>
+                <li>Compartición accidental de información sensible (envío al destinatario equivocado, archivo público por error)</li>
+                <li>Sospecha de phishing, smishing o ingeniería social dirigida al equipo</li>
+                <li>Exposición de información confidencial en herramientas de IA o redes públicas</li>
+                <li>Compromiso de cuentas (login no reconocido, MFA bypass, cambio de contraseña no solicitado)</li>
+                <li>Detección de malware o comportamiento anómalo en equipos</li>
+              </ul>
+            </div>
+            <div class="subsection">
+              <div class="subsection-title">Procedimiento de respuesta</div>
+              <ul class="policy-list">
+                <li><strong>Reporte inmediato</strong> al IT Manager (vía correo, WhatsApp o ticket de soporte) — no esperar a "ver qué pasa"</li>
+                <li>Evaluación inicial del alcance del incidente en menos de 4 horas</li>
+                <li>Contención: suspender cuentas comprometidas, revocar tokens, aislar equipos</li>
+                <li>Documentación formal con fecha, hora, sistemas afectados, datos comprometidos</li>
+                <li>Notificación al CEO y COO si el incidente involucra datos Nivel 3</li>
+                <li>Evaluación de obligación regulatoria (FTC Safeguards: notificación a FTC en 30 días si afecta a 500+ personas)</li>
+                <li>Lecciones aprendidas y actualización de controles si aplica</li>
+              </ul>
+            </div>
+            <div class="policy-note">
+              <span class="policy-note-icon">🛡️</span>
+              <span><strong>No hay penalización por reportar incidentes de buena fe.</strong> Sí la hay por ocultarlos. Reportar tarde o nunca es la falla más grave en seguridad.</span>
+            </div>
+          </div></div>
+        </div>
+
+        <!-- 09 Revisión -->
+        <div class="policy-section">
+          <button class="section-trigger" aria-expanded="false">
+            <span class="section-num">09</span>
+            <div class="section-icon-wrap">🔄</div>
+            <div class="section-title-wrap">
+              <div class="section-title">Política de Revisión y Mejora Continua</div>
+              <div class="section-desc">Ciclos de evaluación y actualización</div>
+            </div>
+            <svg class="section-chevron" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="section-body"><div class="section-content">
+            <ul class="policy-list">
+              <li><strong>Anual:</strong> Evaluación completa de riesgos de seguridad y revisión integral de estas políticas</li>
+              <li><strong>Trimestral:</strong> Revisión de accesos, permisos y cuentas activas</li>
+              <li><strong>Trimestral:</strong> Auditoría de uso de herramientas autorizadas (ClickUp, Canva, IA, etc.)</li>
+              <li><strong>Mensual:</strong> Revisión de logs de acceso a sistemas críticos</li>
+              <li><strong>Continua:</strong> Actualización de políticas según crecimiento de la empresa, nuevas regulaciones o herramientas adoptadas</li>
+              <li><strong>Post-incidente:</strong> Revisión específica tras cualquier incidente reportado</li>
+            </ul>
+          </div></div>
+        </div>
+
+        <!-- 10 Cumplimiento -->
+        <div class="policy-section">
+          <button class="section-trigger" aria-expanded="false">
+            <span class="section-num">10</span>
+            <div class="section-icon-wrap">⚖️</div>
+            <div class="section-title-wrap">
+              <div class="section-title">Cumplimiento Normativo</div>
+              <div class="section-desc">Regulaciones aplicables reconocidas por Hero</div>
+            </div>
+            <svg class="section-chevron" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="section-body"><div class="section-content">
+            <ul class="policy-list">
+              <li><strong>FTC Safeguards Rule (GLBA)</strong> — protección de información financiera del consumidor. Requiere programa formal de seguridad, designación de Qualified Individual, evaluación de riesgos y notificación de brechas.</li>
+              <li><strong>HIPAA</strong> — cuando aplique por manejo de PHI (Protected Health Information) en planes Medicare/Medicaid/ACA</li>
+              <li><strong>CMS Marketing Guidelines</strong> — cumplimiento de regulaciones de marketing y enrollment de Medicare</li>
+              <li><strong>State Insurance Regulations</strong> — leyes estatales aplicables en cada estado donde opera Hero (FL, CA, TX, NY y otros)</li>
+              <li><strong>FCRA</strong> — cuando se realicen consultas de antecedentes para contratación</li>
+              <li><strong>CAN-SPAM Act</strong> — cumplimiento en comunicaciones de marketing por email</li>
+              <li><strong>TCPA</strong> — cumplimiento en comunicaciones telefónicas y SMS automatizados</li>
+            </ul>
+          </div></div>
+        </div>
+
+        <!-- 11 IA & Servicios Externos (NUEVO) -->
+        <div class="policy-section">
+          <button class="section-trigger" aria-expanded="false">
+            <span class="section-num">11</span>
+            <div class="section-icon-wrap">🤖</div>
+            <div class="section-title-wrap">
+              <div class="section-title">Política de IA y Servicios Externos</div>
+              <div class="section-desc">Uso responsable de ChatGPT, Gemini, Claude y herramientas SaaS</div>
+            </div>
+            <svg class="section-chevron" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="section-body"><div class="section-content">
+            <div class="policy-note">
+              <span class="policy-note-icon">⚡</span>
+              <span>El uso de IA está <strong>permitido y promovido</strong> en Hero. Esta política define qué se puede y qué <strong>nunca</strong> debe pegarse en estas herramientas.</span>
+            </div>
+            <div class="subsection">
+              <div class="subsection-title">Herramientas autorizadas</div>
+              <ul class="policy-list">
+                <li>ChatGPT, Gemini, Claude — asistentes de IA generativa para apoyo en tareas operativas</li>
+                <li>DeepL — traducción de textos no sensibles</li>
+                <li>Canva, Scribe — creación de contenido y guías</li>
+                <li>HubSpot, GoHighLevel — CRM autorizados</li>
+                <li>Cualquier herramienta nueva debe ser aprobada por IT antes de su uso con datos corporativos</li>
+              </ul>
+            </div>
+            <div class="subsection">
+              <div class="subsection-title">PROHIBIDO pegar en herramientas de IA</div>
+              <ul class="policy-list">
+                <li><strong>SSN, ITIN, FEIN, números de cuenta bancaria, tarjetas de crédito</strong></li>
+                <li><strong>Direcciones residenciales completas</strong> de agentes o clientes</li>
+                <li><strong>Fechas de nacimiento</strong> reales de personas identificables</li>
+                <li><strong>Información médica (PHI):</strong> diagnósticos, condiciones, medicamentos, planes de salud específicos vinculados a personas</li>
+                <li><strong>Credenciales</strong> (usuarios, contraseñas, tokens, API keys) de cualquier sistema</li>
+                <li><strong>Contratos firmados</strong>, documentos legales internos, información financiera de la empresa no pública</li>
+                <li><strong>Bases de datos completas</strong> de agentes o clientes</li>
+              </ul>
+            </div>
+            <div class="subsection">
+              <div class="subsection-title">Permitido pegar en herramientas de IA</div>
+              <ul class="policy-list">
+                <li>Texto operativo genérico, plantillas de comunicación, ejemplos sin datos reales</li>
+                <li>Datos anonimizados o ficticios para pruebas y aprendizaje</li>
+                <li>Código fuente que no contenga credenciales hardcodeadas</li>
+                <li>Preguntas conceptuales sobre regulación, mercados, productos</li>
+                <li>Documentos públicos del sitio web heroinsuranceusa.com</li>
+              </ul>
+            </div>
+            <div class="subsection">
+              <div class="subsection-title">Cuentas y privacidad</div>
+              <ul class="policy-list">
+                <li>El uso debe hacerse desde cuentas personales separadas de la cuenta Hero, salvo licencias corporativas explícitas</li>
+                <li>Si la herramienta ofrece desactivar entrenamiento del modelo con tus datos, debe estar desactivado</li>
+                <li>Cuando exista versión Enterprise/API con acuerdo de privacidad, debe preferirse</li>
+              </ul>
+            </div>
+          </div></div>
+        </div>
+
+        <!-- 12 Credenciales Carriers (NUEVO) -->
+        <div class="policy-section">
+          <button class="section-trigger" aria-expanded="false">
+            <span class="section-num">12</span>
+            <div class="section-icon-wrap">🔐</div>
+            <div class="section-title-wrap">
+              <div class="section-title">Política de Credenciales de Carriers y Portales</div>
+              <div class="section-desc">Almacenamiento, uso y rotación de credenciales</div>
+            </div>
+            <svg class="section-chevron" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="section-body"><div class="section-content">
+            <div class="subsection">
+              <div class="subsection-title">Principios</div>
+              <ul class="policy-list">
+                <li>Cada agente y empleado debe tener su propia credencial individual cuando el carrier lo permita</li>
+                <li>Las credenciales compartidas de portales (cuando el carrier no ofrece multi-usuario) se gestionan exclusivamente desde el módulo "Carriers" del Hero Hub</li>
+                <li>Cada credencial es información Nivel 3 (Confidencial)</li>
+              </ul>
+            </div>
+            <div class="subsection">
+              <div class="subsection-title">Almacenamiento</div>
+              <ul class="policy-list">
+                <li>Las credenciales personales se almacenan exclusivamente en la sección personal del Hero Hub, accesible solo por el dueño</li>
+                <li>Las credenciales compartidas se almacenan cifradas y con acceso restringido a usuarios autorizados</li>
+                <li>Prohibido guardar credenciales en hojas de Google, documentos planos, correos, chats o capturas de pantalla</li>
+                <li>Prohibido usar el "Recordar contraseña" del navegador para credenciales compartidas</li>
+              </ul>
+            </div>
+            <div class="subsection">
+              <div class="subsection-title">Uso</div>
+              <ul class="policy-list">
+                <li>El acceso a portales debe registrarse mínimamente: quién accedió, cuándo y para qué propósito si se trata de cuentas compartidas</li>
+                <li>Cerrar sesión al terminar el uso, especialmente desde dispositivos compartidos</li>
+                <li>No realizar cambios estructurales en cuentas compartidas sin coordinación previa</li>
+              </ul>
+            </div>
+            <div class="subsection">
+              <div class="subsection-title">Rotación y revocación</div>
+              <ul class="policy-list">
+                <li>Las credenciales compartidas deben rotarse al menos cada 6 meses</li>
+                <li>Rotación inmediata cuando un usuario con acceso es desvinculado de la empresa (offboarding)</li>
+                <li>Rotación inmediata si se sospecha compromiso de la credencial</li>
+                <li>El IT Manager mantiene el registro de últimas rotaciones</li>
+              </ul>
+            </div>
+          </div></div>
+        </div>
+
+        <!-- 13 Trabajo Remoto (NUEVO) -->
+        <div class="policy-section">
+          <button class="section-trigger" aria-expanded="false">
+            <span class="section-num">13</span>
+            <div class="section-icon-wrap">🌎</div>
+            <div class="section-title-wrap">
+              <div class="section-title">Política de Trabajo Remoto y Equipo Distribuido</div>
+              <div class="section-desc">Hero opera con equipo en múltiples países</div>
+            </div>
+            <svg class="section-chevron" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="section-body"><div class="section-content">
+            <div class="policy-note">
+              <span class="policy-note-icon">🌐</span>
+              <span>Hero Insurance USA opera con equipo distribuido entre Estados Unidos, Venezuela, Cuba, Colombia y otros países. Esta política reconoce esa realidad y establece controles adicionales.</span>
+            </div>
+            <div class="subsection">
+              <div class="subsection-title">Conexión segura</div>
+              <ul class="policy-list">
+                <li>El uso de VPN corporativa (ExpressVPN u otra autorizada) es obligatorio cuando se accede a sistemas Nivel 3 desde redes públicas o no confiables</li>
+                <li>Prohibido conectarse a sistemas Hero desde redes WiFi públicas sin VPN activa</li>
+                <li>Recomendado el uso de conexión por cable o WiFi privado con WPA2/WPA3</li>
+              </ul>
+            </div>
+            <div class="subsection">
+              <div class="subsection-title">Espacio de trabajo</div>
+              <ul class="policy-list">
+                <li>Trabajar en espacio privado o donde la pantalla no sea visible por terceros cuando se manejen datos sensibles</li>
+                <li>No mantener llamadas que involucren información sensible en espacios públicos (cafés, transporte público, coworkings abiertos)</li>
+                <li>Bloquear el equipo al alejarse, aunque sea brevemente</li>
+              </ul>
+            </div>
+            <div class="subsection">
+              <div class="subsection-title">Comunicación del equipo</div>
+              <ul class="policy-list">
+                <li>Canales oficiales: Gmail, Google Chat, Google Meet, Gather Town</li>
+                <li>WhatsApp permitido para comunicación operativa; prohibido para envío de datos Nivel 3</li>
+                <li>Toda decisión importante debe quedar registrada en canal oficial, no solo en mensajería personal</li>
+                <li>Reuniones grabadas requieren consentimiento previo de todos los participantes</li>
+              </ul>
+            </div>
+            <div class="subsection">
+              <div class="subsection-title">Disponibilidad y zona horaria</div>
+              <ul class="policy-list">
+                <li>Hora oficial de la empresa: Eastern Time (Miami)</li>
+                <li>Cada miembro del equipo debe declarar su zona horaria habitual y horario de disponibilidad</li>
+                <li>Cambios prolongados de ubicación física (por ejemplo, viajes mayores a 30 días) deben notificarse al manager directo y a IT</li>
+              </ul>
+            </div>
+          </div></div>
+        </div>
+
+      </div><!-- /policiesContainer -->
+
+      <!-- Declaración final -->
+      <div class="policy-declaration">
+        <span class="declaration-icon">🛡️</span>
+        <div class="declaration-text">
+          <div class="declaration-title">Declaración Final</div>
+          <div class="declaration-body">La protección de la información no es opcional. Es una responsabilidad institucional y estratégica de Hero Insurance USA. Estas políticas se aplican a todos por igual, sin distinción de cargo o antigüedad.</div>
+        </div>
+      </div>
+
+    </div><!-- /policies-wrap -->
+
+  </main>
+
+  <footer class="hero-footer">
+    <span>HERO HUB · v4.3</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+  </footer>
+</div>
+
+<script>
+  window.refreshIcons = () => { if (window.lucide) lucide.createIcons(); };
+  document.addEventListener("DOMContentLoaded", () => {
+    window.refreshIcons();
+    const menuBtn = document.getElementById("btn-menu");
+    const nav = document.getElementById("topbar-nav");
+    if (menuBtn && nav) menuBtn.addEventListener("click", () => nav.classList.toggle("open"));
+
+    // Acordeón
+    document.querySelectorAll('.section-trigger').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const section = btn.closest('.policy-section');
+        const isOpen = section.classList.contains('open');
+        document.querySelectorAll('.policy-section.open').forEach(s => {
+          s.classList.remove('open');
+          s.querySelector('.section-trigger').setAttribute('aria-expanded', 'false');
+        });
+        if (!isOpen) {
+          section.classList.add('open');
+          btn.setAttribute('aria-expanded', 'true');
+        }
+      });
+    });
+
+    // TOC navigation
+    document.querySelectorAll('.toc-item').forEach(t => {
+      t.addEventListener('click', (e) => {
+        e.preventDefault();
+        const idx = parseInt(t.dataset.i);
+        const sections = document.querySelectorAll('.policy-section');
+        if (!sections[idx]) return;
+        sections.forEach(s => s.classList.remove('open'));
+        sections[idx].classList.add('open');
+        sections[idx].querySelector('.section-trigger').setAttribute('aria-expanded', 'true');
+        sections[idx].scrollIntoView({ behavior:'smooth', block:'start' });
+      });
+    });
+  });
+</script>
+<script type="module" src="js/firebase-config.js"></script>
+<script type="module" src="js/politicas.js"></script>
+</body>
+</html>
