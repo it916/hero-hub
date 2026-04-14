@@ -52,7 +52,7 @@
     <section class="page-header">
       <div class="page-kicker">• Hero Insurance USA •</div>
       <h1 class="page-title">Conoce Nuestro Equipo</h1>
-      <p class="page-sub">Presiona en cualquier perfil para ver información de contacto</p>
+      <p class="page-sub">Haz click en cualquier héroe para ver su ficha completa</p>
     </section>
 
     <section class="team-toolbar">
@@ -68,8 +68,66 @@
 
   </main>
 
+  <!-- ═══ POP-UP PERFIL HEROICO ═══ -->
+  <div id="hero-profile" class="hero-profile-overlay">
+    <div class="hero-profile">
+      <div class="hp-rays"></div>
+
+      <button class="hp-edit" id="hp-edit-btn" title="Editar ficha"><i data-lucide="edit-3"></i></button>
+      <button class="hp-close" id="hp-close"><i data-lucide="x"></i></button>
+
+      <div class="hp-header">
+        <div class="hp-avatar-wrap">
+          <div class="hp-avatar-rings"></div>
+          <img class="hp-avatar" id="hp-avatar" src="" alt="">
+          <div class="hp-flag" id="hp-flag"></div>
+        </div>
+        <div class="hp-identity-label">NOMBRE DEL HÉROE</div>
+        <div class="hp-name" id="hp-name">—</div>
+        <div class="hp-role" id="hp-role">—</div>
+      </div>
+
+      <div class="hp-body">
+
+        <div class="hp-fields" id="hp-fields">
+          <div class="hp-field">
+            <div class="hp-field-label"><i data-lucide="shield-check"></i> IDENTIDAD SECRETA</div>
+            <div class="hp-field-value" data-field="identidad">—</div>
+          </div>
+          <div class="hp-field">
+            <div class="hp-field-label"><i data-lucide="map-pin"></i> ORIGEN</div>
+            <div class="hp-field-value" data-field="origen">—</div>
+          </div>
+          <div class="hp-field">
+            <div class="hp-field-label"><i data-lucide="graduation-cap"></i> FORMACIÓN</div>
+            <div class="hp-field-value" data-field="formacion">—</div>
+          </div>
+          <div class="hp-field">
+            <div class="hp-field-label"><i data-lucide="zap"></i> SUPERPODER</div>
+            <div class="hp-field-value" data-field="superpoder">—</div>
+          </div>
+          <div class="hp-field full">
+            <div class="hp-field-label"><i data-lucide="calendar"></i> SE UNIÓ AL EQUIPO</div>
+            <div class="hp-field-value" data-field="union">—</div>
+          </div>
+        </div>
+
+        <div class="hp-quote">
+          <div class="hp-quote-label">✦ FRASE ICÓNICA ✦</div>
+          <div class="hp-quote-text" data-field="frase">—</div>
+        </div>
+
+        <div class="hp-contacts">
+          <div class="hp-contacts-title">Canales de comunicación</div>
+          <div class="hp-contact-rows" id="hp-contacts-list"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <footer class="hero-footer">
-    <span>HERO HUB · v4.3</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+    <span>HERO HUB · v5.1</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
   </footer>
 </div>
 
