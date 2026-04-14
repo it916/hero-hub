@@ -1,83 +1,152 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Admin — Hero Hub</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="icons/favicon-hero.png">
 <link rel="apple-touch-icon" href="icons/favicon-hero.png">
 <meta name="theme-color" content="#06a3b6">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css">
-  <script src="https://unpkg.com/lucide@latest"></script>
+<title>Admin — Hero Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
   <div id="loading" class="login-container"><div class="login-card"><p>Verificando acceso...</p></div></div>
-
   <div id="admin-panel" style="display:none;">
+
     <header class="hero-topbar">
       <div class="topbar-inner">
         <div class="brand-block">
-          <div class="logo-mark"><svg viewBox="0 0 100 100"><path d="M50 5 L60 35 L92 38 L67 58 L75 90 L50 72 L25 90 L33 58 L8 38 L40 35 Z" fill="currentColor"/></svg></div>
-          <div>
-            <div class="brand-name">ADMIN · HERO HUB</div>
-            <div class="brand-sub">Panel de administración</div>
-          </div>
+          <a href="index.html" class="brand-link">
+            <div class="logo-mark"><svg viewBox="0 0 100 100"><path d="M50 5 L60 35 L92 38 L67 58 L75 90 L50 72 L25 90 L33 58 L8 38 L40 35 Z" fill="currentColor"/></svg></div>
+            <div>
+              <div class="brand-name">HERO HUB · ADMIN</div>
+              <div class="brand-sub">Panel de administración</div>
+            </div>
+          </a>
         </div>
         <div class="topbar-actions">
-          <a href="index.html" class="icon-btn" title="Volver al Hub"><i data-lucide="arrow-left"></i></a>
+          <a href="index.html" class="btn-ghost-dark"><i data-lucide="arrow-left"></i><span>Volver al Hub</span></a>
         </div>
       </div>
     </header>
 
     <main class="admin-main">
 
-      <!-- HERO SPOTLIGHT -->
-      <section class="admin-section">
+      <!-- TABS DEL ADMIN -->
+      <div class="admin-tabs">
+        <button class="admin-tab active" data-tab="spotlight"><i data-lucide="star"></i><span>Spotlight</span></button>
+        <button class="admin-tab" data-tab="messages"><i data-lucide="message-square"></i><span>Mensajes</span></button>
+        <button class="admin-tab" data-tab="metrics"><i data-lucide="bar-chart-3"></i><span>Métricas</span></button>
+      </div>
+
+      <!-- SECCIÓN SPOTLIGHT -->
+      <section class="admin-section" id="tab-spotlight">
         <h2>🌟 Hero Spotlight</h2>
-        <p class="admin-help">Configura el héroe (o los héroes) destacados del mes, con su imagen de portada.</p>
-
-        <label>URL de imagen de fondo
-          <input id="sp-image" type="url" placeholder="https://i.ibb.co/...">
-        </label>
-
-        <div id="sp-preview-wrap" style="display:none;">
-          <label>Vista previa</label>
-          <div class="sp-preview" id="sp-preview"></div>
-        </div>
-
-        <label>Mensaje destacado (opcional)
-          <textarea id="sp-message" rows="3" placeholder="Por ser los HERO's que con sus superpoderes..."></textarea>
-        </label>
-
-        <label style="margin-bottom:10px;">Honorados (hasta 3)</label>
+        <label>URL de imagen panorámica <input id="sp-image"></label>
+        <label>Mensaje <textarea id="sp-message" rows="3"></textarea></label>
+        <h3>Honorees (hasta 3)</h3>
         <div id="sp-honorees-list"></div>
-        <button class="btn-ghost-dark" id="sp-add-honoree" style="margin-top:10px;">+ Agregar honorado</button>
-
-        <div style="margin-top:24px;">
-          <button class="btn-primary" id="sp-save">Guardar Spotlight</button>
-          <span class="save-status" id="sp-status"></span>
-        </div>
+        <button class="btn-primary" id="sp-add-honoree"><i data-lucide="plus"></i> Agregar honoree</button>
+        <br><br>
+        <button class="btn-primary" id="sp-save">Guardar Spotlight</button>
+        <span class="save-status" id="sp-status"></span>
       </section>
 
-      <!-- MENSAJES -->
-      <section class="admin-section">
+      <!-- SECCIÓN MENSAJES -->
+      <section class="admin-section" id="tab-messages" style="display:none;">
         <h2>💬 Mensajes motivacionales</h2>
-        <p class="admin-help">Frases que rotan automáticamente en el widget "Mensaje del día".</p>
+        <p class="admin-note">Los usuarios pueden publicar mensajes. Aquí puedes eliminar cualquiera.</p>
         <div id="ms-list"></div>
-        <div class="add-row">
-          <input id="ms-text" placeholder="Nuevo mensaje motivacional...">
-          <button class="btn-primary" id="ms-add">Agregar</button>
+      </section>
+
+      <!-- SECCIÓN MÉTRICAS -->
+      <section class="admin-section" id="tab-metrics" style="display:none;">
+        <div class="metrics-header">
+          <div>
+            <h2 style="margin:0;">📊 Métricas de uso</h2>
+            <p class="admin-note" style="margin:4px 0 0;">Últimos 30 días · Datos agregados y anónimos para revisión interna</p>
+          </div>
+          <div class="metrics-actions">
+            <button class="btn-ghost-dark" id="mt-refresh"><i data-lucide="refresh-cw"></i><span>Actualizar</span></button>
+            <button class="btn-ghost-dark" id="mt-cleanup"><i data-lucide="trash-2"></i><span>Limpiar eventos &gt;90 días</span></button>
+          </div>
+        </div>
+
+        <!-- Cards de resumen -->
+        <div class="mt-cards">
+          <div class="mt-card">
+            <div class="mt-card-label">Visitas totales</div>
+            <div class="mt-card-value" id="mt-total">—</div>
+            <div class="mt-card-sub">Últimos 30 días</div>
+          </div>
+          <div class="mt-card">
+            <div class="mt-card-label">Usuarios activos</div>
+            <div class="mt-card-value" id="mt-users">—</div>
+            <div class="mt-card-sub">Únicos en 30 días</div>
+          </div>
+          <div class="mt-card">
+            <div class="mt-card-label">Página top</div>
+            <div class="mt-card-value mt-card-value-sm" id="mt-toppage">—</div>
+            <div class="mt-card-sub" id="mt-toppage-count">—</div>
+          </div>
+          <div class="mt-card">
+            <div class="mt-card-label">Día más activo</div>
+            <div class="mt-card-value mt-card-value-sm" id="mt-topday">—</div>
+            <div class="mt-card-sub" id="mt-topday-count">—</div>
+          </div>
+        </div>
+
+        <!-- Gráfico actividad diaria -->
+        <div class="mt-section">
+          <h3 class="mt-section-title">📈 Actividad diaria</h3>
+          <div class="mt-chart" id="mt-chart"><p class="loading">Cargando gráfico...</p></div>
+        </div>
+
+        <!-- Top páginas y usuarios -->
+        <div class="mt-grid-2">
+          <div class="mt-section">
+            <h3 class="mt-section-title">🏆 Top 5 páginas</h3>
+            <div class="mt-list" id="mt-top-pages"><p class="loading">Cargando...</p></div>
+          </div>
+          <div class="mt-section">
+            <h3 class="mt-section-title">👥 Top 5 usuarios</h3>
+            <div class="mt-list" id="mt-top-users"><p class="loading">Cargando...</p></div>
+          </div>
+        </div>
+
+        <!-- Últimos eventos -->
+        <div class="mt-section">
+          <h3 class="mt-section-title">🕐 Últimos 10 eventos</h3>
+          <div class="mt-events" id="mt-events"><p class="loading">Cargando...</p></div>
         </div>
       </section>
 
     </main>
+
+    <footer class="hero-footer">
+      <span>HERO HUB · ADMIN v4.3</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+    </footer>
   </div>
 
   <script>
     window.refreshIcons = () => { if (window.lucide) lucide.createIcons(); };
-    document.addEventListener("DOMContentLoaded", () => window.refreshIcons());
+    document.addEventListener("DOMContentLoaded", () => {
+      window.refreshIcons();
+      document.querySelectorAll('.admin-tab').forEach(b => {
+        b.addEventListener('click', () => {
+          document.querySelectorAll('.admin-tab').forEach(x => x.classList.remove('active'));
+          b.classList.add('active');
+          ['spotlight','messages','metrics'].forEach(t => {
+            document.getElementById('tab-' + t).style.display = (t === b.dataset.tab) ? 'block' : 'none';
+          });
+          if (b.dataset.tab === 'metrics' && window.loadMetrics) window.loadMetrics();
+        });
+      });
+    });
   </script>
   <script type="module" src="js/firebase-config.js"></script>
   <script type="module" src="js/admin.js"></script>
