@@ -2779,3 +2779,135 @@ body[data-theme="dark"] .hero-topbar { background:rgba(15,42,51,.92); }
   .daily-popup { padding:32px 24px 24px; }
   .dp-react-btn { width:46px; height:46px; font-size:22px; }
 }
+/* ═══════════════════════════════════════════
+   AGREGAR AL FINAL DE css/styles.css
+   Fondo global + Logo favicon
+   ═══════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════
+   FONDO GLOBAL — Cielo Hero
+   ══════════════════════════════════════════ */
+body {
+  position:relative;
+}
+
+body::before {
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:url('../images/background.jpg');
+  background-size:cover;
+  background-position:center center;
+  background-repeat:no-repeat;
+  background-attachment:fixed;
+  opacity:.4;
+  z-index:-2;
+  pointer-events:none;
+}
+
+body::after {
+  content:'';
+  position:fixed;
+  inset:0;
+  background:linear-gradient(
+    180deg,
+    rgba(240,244,248,.65) 0%,
+    rgba(240,244,248,.85) 70%,
+    rgba(240,244,248,.95) 100%
+  );
+  z-index:-1;
+  pointer-events:none;
+}
+
+/* Ocultar fondo en modo oscuro (el gradiente oscuro se ve mejor puro) */
+body[data-theme="dark"]::before {
+  opacity:.08;
+}
+body[data-theme="dark"]::after {
+  background:linear-gradient(
+    180deg,
+    rgba(15,26,42,.85) 0%,
+    rgba(15,26,42,.95) 70%,
+    rgba(15,26,42,1) 100%
+  );
+}
+
+/* Dar un poco más de "peso" a las cards para que destaquen sobre el fondo */
+.card-shell,
+.policies-wrap,
+.ob-section,
+.carrier-card,
+.guia-card,
+.contact-card,
+.team-card,
+.admin-section {
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+
+/* ══════════════════════════════════════════
+   LOGO HERO (favicon) — reemplaza estrella SVG
+   ══════════════════════════════════════════ */
+
+/* Topbar logo */
+.logo-mark {
+  width:40px !important;
+  height:40px !important;
+  border-radius:10px;
+  background:#fff;
+  padding:4px;
+  box-shadow:0 4px 12px rgba(6,163,182,.25);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+}
+.logo-mark img,
+.logo-mark svg {
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+.logo-mark svg path { fill:var(--cyan); }
+
+[data-theme="dark"] .logo-mark {
+  background:rgba(255,255,255,.95);
+}
+
+/* Login mark (grande) */
+.login-mark {
+  width:80px !important;
+  height:80px !important;
+  border-radius:20px;
+  background:linear-gradient(135deg, #fff, #f0f4f8);
+  padding:10px;
+  box-shadow:
+    0 10px 30px rgba(6,163,182,.3),
+    0 0 0 1px rgba(6,163,182,.15);
+  margin:0 auto 16px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  position:relative;
+}
+.login-mark img,
+.login-mark svg {
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  position:relative;
+  z-index:1;
+}
+.login-mark::before {
+  content:'';
+  position:absolute;
+  inset:-20%;
+  background:radial-gradient(circle, rgba(6,163,182,.2), transparent 60%);
+  animation:logo-pulse 3s ease-in-out infinite;
+  z-index:0;
+}
+@keyframes logo-pulse {
+  0%, 100% { opacity:.5; transform:scale(1); }
+  50% { opacity:1; transform:scale(1.1); }
+}
