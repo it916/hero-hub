@@ -3,6 +3,7 @@ import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, setDoc, updateDoc }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { renderWidgets } from "./widgets.js";
 
 const ALLOWED_DOMAIN = "heroinsuranceusa.com";
 const ADMIN_EMAILS = ["it@heroinsuranceusa.com"];
@@ -30,14 +31,26 @@ function showLogin() {
   if (window.refreshIcons) window.refreshIcons();
 }
 
-function showDashboard() {
+async function showDashboard() {
   document.getElementById("login-screen").style.display = "none";
   document.getElementById("dashboard").style.display = "block";
   document.getElementById("user-avatar").src = currentUser.photoURL;
   if (isAdmin) document.getElementById("btn-admin").style.display = "inline-flex";
 
+  // Cargar datos del usuario desde Firestore
+  let userData = {};
+  try {
+    const userSnap = await getDoc(doc(db, "users", currentUser.email));
+    if (userSnap.exists()) userData = userSnap.data();
+  } catch (e) { console.warn("Error cargando user data:", e.message); }
+
   initHeroCover();
-  loadWidgets();
+
+  // Llamar a renderWidgets del módulo widgets.js
+  await renderWidgets(userData);
+
+  // Pop-up mensaje del día (después de un delay para que todo cargue)
+  setTimeout(() => checkDailyPopup(), 1200);
 
   if (window.refreshIcons) window.refreshIcons();
 }
@@ -50,7 +63,6 @@ document.getElementById("btn-login")?.addEventListener("click", async () => {
   }
 });
 document.getElementById("btn-logout")?.addEventListener("click", () => signOut(auth));
-document.getElementById("btn-settings")?.addEventListener("click", () => openSettings());
 
 // ══ HERO COVER ══
 function getFirstName(user) {
@@ -87,19 +99,25 @@ function getDaySub() {
 }
 
 function initHeroCover() {
-  document.getElementById("greet-name").textContent = getFirstName(currentUser);
-  document.getElementById("hero-kicker").textContent = getDayKicker();
-  document.getElementById("hero-sub").textContent = getDaySub();
+  const greetNameEl = document.getElementById("greet-name");
+  const heroKickerEl = document.getElementById("hero-kicker");
+  const heroSubEl = document.getElementById("hero-sub");
+  const heroIssueEl = document.getElementById("hero-issue");
+  const metaDateEl = document.getElementById("meta-date");
+
+  if (greetNameEl) greetNameEl.textContent = getFirstName(currentUser);
+  if (heroKickerEl) heroKickerEl.textContent = getDayKicker();
+  if (heroSubEl) heroSubEl.textContent = getDaySub();
 
   // Issue number basado en los días desde Enero 1
   const start = new Date(new Date().getFullYear(), 0, 1);
   const diff = Math.floor((new Date() - start) / (1000 * 60 * 60 * 24)) + 1;
-  document.getElementById("hero-issue").textContent = `VOL. II · EDICIÓN Nº ${diff}`;
+  if (heroIssueEl) heroIssueEl.textContent = `VOL. II · EDICIÓN Nº ${diff}`;
 
   // Date chip
   const now = new Date();
   const dateStr = now.toLocaleDateString("es-ES", { weekday:"long", day:"2-digit", month:"short" });
-  document.getElementById("meta-date").textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+  if (metaDateEl) metaDateEl.textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
 
   // Clock
   updateClock();
@@ -110,37 +128,31 @@ function initHeroCover() {
 }
 
 function updateClock() {
+  const el = document.getElementById("meta-time");
+  if (!el) return;
   const now = new Date();
   const h = now.getHours();
   const m = now.getMinutes();
   const ampm = h >= 12 ? "PM" : "AM";
   const h12 = h % 12 || 12;
-  document.getElementById("meta-time").textContent = `${h12}:${m.toString().padStart(2,"0")} ${ampm}`;
+  el.textContent = `${h12}:${m.toString().padStart(2,"0")} ${ampm}`;
 }
 
 async function loadWeather() {
+  const iconEl = document.getElementById("meta-weather-icon");
+  const tempEl = document.getElementById("meta-weather");
+  if (!iconEl || !tempEl) return;
   try {
     const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=25.7617&longitude=-80.1918&current=temperature_2m,weather_code&temperature_unit=fahrenheit");
     const data = await res.json();
     const t = Math.round(data.current.temperature_2m);
     const code = data.current.weather_code;
     const icons = {0:"☀️",1:"🌤️",2:"⛅",3:"☁️",45:"🌫️",48:"🌫️",51:"🌦️",53:"🌦️",55:"🌦️",61:"🌧️",63:"🌧️",65:"⛈️",71:"🌨️",73:"🌨️",75:"❄️",80:"🌧️",81:"🌧️",82:"⛈️",95:"⛈️"};
-    document.getElementById("meta-weather-icon").textContent = icons[code] || "⛅";
-    document.getElementById("meta-weather").textContent = `${t}°F`;
+    iconEl.textContent = icons[code] || "⛅";
+    tempEl.textContent = `${t}°F`;
   } catch (e) {
-    document.getElementById("meta-weather").textContent = "—";
+    tempEl.textContent = "—";
   }
-}
-
-// ══ LOAD WIDGETS ══
-async function loadWidgets() {
-  // Cumpleaños, Spotlight, Mensajes — delegamos a widgets.js si existe
-  if (window.initWidgets) {
-    window.initWidgets(currentUser, isAdmin);
-  }
-
-  // Pop-up mensaje del día (después de 800ms para dejar que cargue todo)
-  setTimeout(() => checkDailyPopup(), 800);
 }
 
 // ══ POP-UP MENSAJE DEL DÍA ══
@@ -151,27 +163,23 @@ function getTodayKey() {
 
 async function checkDailyPopup() {
   try {
-    // 1. Verificar si el usuario ya vio hoy
     const userSnap = await getDoc(doc(db, "users", currentUser.email));
     const userData = userSnap.exists() ? userSnap.data() : {};
     const lastSeen = userData.lastMessageSeenDate;
     const todayKey = getTodayKey();
 
-    if (lastSeen === todayKey) return; // Ya lo vio hoy
+    if (lastSeen === todayKey) return;
 
-    // 2. Cargar mensajes
     const msgSnap = await getDoc(doc(db, "shared", "messages"));
     if (!msgSnap.exists()) return;
     const items = msgSnap.data().items || [];
     if (!items.length) return;
 
-    // 3. Elegir uno aleatorio DETERMINÍSTICO para el día
     const seed = hashString(todayKey);
     const idx = seed % items.length;
     const msg = items[idx];
     if (!msg) return;
 
-    // 4. Mostrar popup
     showDailyPopup(msg, idx);
   } catch (e) {
     console.warn("Daily popup failed:", e.message);
@@ -187,51 +195,49 @@ function hashString(str) {
   return Math.abs(hash);
 }
 
-let currentPopupMsgIdx = null;
-
 function showDailyPopup(msg, idx) {
-  currentPopupMsgIdx = idx;
+  const fraseEl = document.getElementById("dp-frase");
+  const nameEl = document.getElementById("dp-author-name");
+  const avEl = document.getElementById("dp-author-av");
+  const dateEl = document.getElementById("dp-author-date");
+  const popup = document.getElementById("daily-popup");
 
-  document.getElementById("dp-frase").textContent = msg.frase || "—";
-  document.getElementById("dp-author-name").textContent = msg.autor || "Anónimo";
+  if (!popup || !fraseEl) return;
 
-  // Avatar con iniciales
+  fraseEl.textContent = msg.frase || "—";
+  nameEl.textContent = msg.autor || "Anónimo";
+
   const initials = (msg.autor || "A").split(" ").slice(0,2).map(w => w[0] || "").join("").toUpperCase();
-  document.getElementById("dp-author-av").textContent = initials;
+  avEl.textContent = initials;
 
-  // Fecha
   if (msg.created_at) {
     const d = new Date(msg.created_at);
-    document.getElementById("dp-author-date").textContent = d.toLocaleDateString("es-ES", { day:"2-digit", month:"short", year:"numeric" });
+    dateEl.textContent = d.toLocaleDateString("es-ES", { day:"2-digit", month:"short", year:"numeric" });
   } else {
-    document.getElementById("dp-author-date").textContent = "—";
+    dateEl.textContent = "—";
   }
 
-  // Reacciones: cargar las existentes
   renderReactions(msg);
 
-  // Listener emojis
   document.querySelectorAll(".dp-react-btn").forEach(btn => {
     btn.onclick = () => reactToMessage(btn.dataset.emoji, idx);
   });
 
-  // Mostrar popup
-  document.getElementById("daily-popup").style.display = "flex";
+  popup.style.display = "flex";
   if (window.refreshIcons) window.refreshIcons();
 }
 
 function renderReactions(msg) {
   const reactions = msg.reactions || {};
   const summaryEl = document.getElementById("dp-reactions-summary");
+  if (!summaryEl) return;
 
-  // Agrupar por emoji
   const byEmoji = {};
   Object.entries(reactions).forEach(([email, emoji]) => {
     if (!byEmoji[emoji]) byEmoji[emoji] = [];
     byEmoji[emoji].push(email);
   });
 
-  // Mostrar chips
   summaryEl.innerHTML = Object.keys(byEmoji).length
     ? Object.entries(byEmoji).map(([emoji, emails]) => {
         const isMine = emails.includes(currentUser.email);
@@ -244,7 +250,6 @@ function renderReactions(msg) {
       }).join("")
     : `<span style="color:var(--muted);font-size:11.5px;">Sé el primero en reaccionar</span>`;
 
-  // Marcar el botón seleccionado si el usuario ya reaccionó
   document.querySelectorAll(".dp-react-btn").forEach(btn => btn.classList.remove("selected"));
   const myReaction = reactions[currentUser.email];
   if (myReaction) {
@@ -262,7 +267,6 @@ async function reactToMessage(emoji, idx) {
 
     if (!items[idx].reactions) items[idx].reactions = {};
 
-    // Si clickeó el mismo emoji, lo quita. Si no, lo cambia.
     if (items[idx].reactions[currentUser.email] === emoji) {
       delete items[idx].reactions[currentUser.email];
     } else {
@@ -270,64 +274,24 @@ async function reactToMessage(emoji, idx) {
     }
 
     await updateDoc(doc(db, "shared", "messages"), { items });
-
-    // Re-renderizar
     renderReactions(items[idx]);
   } catch (e) {
     alert("Error guardando reacción: " + e.message);
   }
 }
 
-document.getElementById("dp-close").addEventListener("click", async () => {
-  // Marcar como visto
-  try {
-    await setDoc(doc(db, "users", currentUser.email), {
-      lastMessageSeenDate: getTodayKey()
-    }, { merge:true });
-  } catch (e) { console.warn(e); }
-
-  document.getElementById("daily-popup").style.display = "none";
-});
-
-// ══ SETTINGS ══
-function openSettings() {
-  const existing = document.getElementById("settings-modal");
-  if (existing) existing.remove();
-
-  const modal = document.createElement("div");
-  modal.id = "settings-modal";
-  modal.className = "modal-overlay";
-  modal.innerHTML = `<div class="modal">
-    <h3>⚙️ Configuración</h3>
-    <label>Tema
-      <select id="pref-theme">
-        <option value="light">Claro</option>
-        <option value="dark">Oscuro</option>
-      </select>
-    </label>
-    <div class="modal-buttons">
-      <button class="btn-ghost-dark" id="pref-cancel">Cancelar</button>
-      <button class="btn-primary" id="pref-save">Guardar</button>
-    </div>
-  </div>`;
-  document.body.appendChild(modal);
-
-  // Cargar valor actual
-  const theme = document.body.dataset.theme || "light";
-  modal.querySelector("#pref-theme").value = theme;
-
-  modal.querySelector("#pref-cancel").onclick = () => modal.remove();
-  modal.querySelector("#pref-save").onclick = async () => {
-    const newTheme = modal.querySelector("#pref-theme").value;
-    document.body.dataset.theme = newTheme;
-    localStorage.setItem("hero-theme", newTheme);
+const dpClose = document.getElementById("dp-close");
+if (dpClose) {
+  dpClose.addEventListener("click", async () => {
     try {
-      await setDoc(doc(db, "users", currentUser.email), { theme: newTheme }, { merge:true });
+      await setDoc(doc(db, "users", currentUser.email), {
+        lastMessageSeenDate: getTodayKey()
+      }, { merge:true });
     } catch (e) { console.warn(e); }
-    modal.remove();
-  };
+    document.getElementById("daily-popup").style.display = "none";
+  });
 }
 
-// Cargar tema al inicio
+// Cargar tema al inicio (por si aún no hay userData)
 const savedTheme = localStorage.getItem("hero-theme");
 if (savedTheme) document.body.dataset.theme = savedTheme;
