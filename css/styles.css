@@ -3272,3 +3272,94 @@ body[data-theme="dark"]::after {
   .hp-fields { grid-template-columns:1fr; }
   .hp-avatar-wrap { width:140px; height:140px; }
 }
+/* ═══════════════════════════════════════════
+   AGREGAR AL FINAL DE css/styles.css
+   Scrollbar Custom — Hero Hub
+   ═══════════════════════════════════════════ */
+
+/* ══ Chrome, Edge, Safari, Opera ══ */
+::-webkit-scrollbar {
+  width:12px;
+  height:12px;
+}
+
+::-webkit-scrollbar-track {
+  background:rgba(6,163,182,.05);
+  border-radius:10px;
+  margin:4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background:linear-gradient(180deg, var(--cyan), var(--cyan-deep));
+  border-radius:10px;
+  border:2px solid transparent;
+  background-clip:padding-box;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.15);
+  transition:all .2s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background:linear-gradient(180deg, #19CDEB, var(--cyan));
+  background-clip:padding-box;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.25),
+    0 0 8px rgba(6,163,182,.4);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background:linear-gradient(180deg, var(--cyan-deep), #062a33);
+  background-clip:padding-box;
+}
+
+::-webkit-scrollbar-corner {
+  background:transparent;
+}
+
+/* ══ Firefox ══ */
+* {
+  scrollbar-width:thin;
+  scrollbar-color:var(--cyan) rgba(6,163,182,.05);
+}
+
+/* ══ Modo oscuro ══ */
+body[data-theme="dark"] ::-webkit-scrollbar-track {
+  background:rgba(255,255,255,.03);
+}
+
+body[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background:linear-gradient(180deg, var(--cyan), var(--cyan-deep));
+  background-clip:padding-box;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
+}
+
+body[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background:linear-gradient(180deg, #19CDEB, var(--cyan));
+  background-clip:padding-box;
+}
+
+body[data-theme="dark"] * {
+  scrollbar-color:var(--cyan) rgba(255,255,255,.05);
+}
+
+/* ══ Scrollbars internos (modales, popups) ══ */
+.modal::-webkit-scrollbar,
+.hero-profile::-webkit-scrollbar {
+  width:8px;
+}
+
+.modal::-webkit-scrollbar-track,
+.hero-profile::-webkit-scrollbar-track {
+  background:rgba(255,255,255,.05);
+}
+
+.modal::-webkit-scrollbar-thumb,
+.hero-profile::-webkit-scrollbar-thumb {
+  background:rgba(6,163,182,.5);
+  border:none;
+  background-clip:border-box;
+}
+
+.modal::-webkit-scrollbar-thumb:hover,
+.hero-profile::-webkit-scrollbar-thumb:hover {
+  background:var(--cyan);
+}
