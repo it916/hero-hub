@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="icons/favicon-hero.png">
+<link rel="apple-touch-icon" href="icons/favicon-hero.png">
+<meta name="theme-color" content="#06a3b6">
+<title>Onboarding — Hero Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<div id="loading" class="login-container"><div class="login-card"><p>Verificando acceso...</p></div></div>
+
+<div id="dashboard" style="display:none;">
+
+  <header class="hero-topbar">
+    <div class="topbar-inner">
+      <div class="brand-block">
+        <a href="index.html" class="brand-link">
+          <div class="logo-mark"><svg viewBox="0 0 100 100"><path d="M50 5 L60 35 L92 38 L67 58 L75 90 L50 72 L25 90 L33 58 L8 38 L40 35 Z" fill="currentColor"/></svg></div>
+          <div>
+            <div class="brand-name">HERO HUB</div>
+            <div class="brand-sub">Hero Insurance USA</div>
+          </div>
+        </a>
+      </div>
+      <nav class="topbar-nav" id="topbar-nav">
+        <a href="index.html" class="nav-link"><i data-lucide="home"></i><span>Inicio</span></a>
+        <a href="equipo.html" class="nav-link"><i data-lucide="users"></i><span>Equipo</span></a>
+        <a href="carriers.html" class="nav-link"><i data-lucide="shield"></i><span>Carriers</span></a>
+        <a href="directorio.html" class="nav-link"><i data-lucide="book-user"></i><span>Directorio</span></a>
+        <a href="guias.html" class="nav-link"><i data-lucide="book-open"></i><span>Guías</span></a>
+        <a href="politicas.html" class="nav-link"><i data-lucide="scroll-text"></i><span>Políticas</span></a>
+      </nav>
+      <div class="topbar-actions">
+        <img id="user-avatar" src="" alt="" class="avatar">
+        <a id="btn-admin" href="admin.html" class="icon-btn" style="display:none;" title="Admin"><i data-lucide="shield-check"></i></a>
+        <button id="btn-logout" class="icon-btn" title="Salir"><i data-lucide="log-out"></i></button>
+        <button id="btn-menu" class="icon-btn menu-toggle" title="Menú"><i data-lucide="menu"></i></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+
+    <section class="page-header">
+      <div class="page-kicker">• Guía para nuevos héroes •</div>
+      <h1 class="page-title">Onboarding</h1>
+      <p class="page-sub">Tu guía completa para volar alto en Hero Insurance USA</p>
+    </section>
+
+    <div class="ob-wrap">
+
+      <aside class="ob-toc">
+        <div class="ob-toc-title">📖 Contenido</div>
+        <a href="#bienvenida" class="ob-toc-link">1 · Bienvenida</a>
+        <a href="#primer-dia" class="ob-toc-link">2 · Tu primer día</a>
+        <a href="#hero-hub" class="ob-toc-link">3 · El Hero Hub</a>
+        <a href="#herramientas" class="ob-toc-link">4 · Herramientas</a>
+        <a href="#ayuda" class="ob-toc-link">5 · Cómo pedir ayuda</a>
+        <a href="#reglas" class="ob-toc-link">6 · Reglas importantes</a>
+        <a href="#glosario" class="ob-toc-link">7 · Glosario Hero</a>
+        <a href="#contactos" class="ob-toc-link">8 · Contactos clave</a>
+        <a href="#final" class="ob-toc-link">9 · Bienvenido, héroe</a>
+      </aside>
+
+      <div class="ob-content">
+
+        <section class="ob-section" id="bienvenida">
+          <div class="ob-num">01</div>
+          <h2 class="ob-h2">Bienvenida a Hero Insurance USA</h2>
+          <p class="ob-lead">Si estás leyendo esto, ya eres parte del equipo. ¡Bienvenido, héroe! 🦸</p>
+
+          <p>Hero Insurance USA es una agencia de seguros basada en Miami, Florida, especializada en planes Medicare, ACA, vida, dental y salud. Trabajamos con los principales carriers del mercado — Aetna, Humana, United, Wellcare, Cigna, Anthem, Molina y más de 30 otros — para ofrecer soluciones reales a cada cliente.</p>
+
+          <div class="ob-callout ob-callout-cyan">
+            <i data-lucide="target"></i>
+            <div>
+              <strong>Nuestra misión:</strong> <em>"Dale un Hero a tu vida."</em> Cada llamada, cada aplicación, cada agente que apoyamos, es una oportunidad de hacerle la vida más fácil y segura a una familia.
+            </div>
+          </div>
+
+          <h3 class="ob-h3">Un equipo distribuido</h3>
+          <p>Somos un equipo internacional. Tenemos héroes trabajando desde Estados Unidos, Venezuela, Cuba, Colombia y otros países. La diversidad nos hace más fuertes, pero también nos obliga a ser disciplinados con la comunicación, los horarios y la seguridad de la información.</p>
+
+          <p><strong>Hora oficial de la empresa:</strong> Eastern Time (Miami, FL).</p>
+        </section>
+
+        <section class="ob-section" id="primer-dia">
+          <div class="ob-num">02</div>
+          <h2 class="ob-h2">Tu primer día — Checklist</h2>
+          <p class="ob-lead">Estos son los pasos para activar tus superpoderes digitales. Tu supervisor o el equipo de IT te guiará, pero aquí tienes todo lo que necesitas.</p>
+
+          <div class="ob-checklist">
+            <div class="ob-check-item">
+              <div class="ob-check-num">1</div>
+              <div>
+                <div class="ob-check-title">Recibe tu correo Hero</div>
+                <div class="ob-check-desc">Te entregarán una cuenta <span class="ob-inline-code">tunombre@heroinsuranceusa.com</span> con una contraseña temporal. Cámbiala en el primer login.</div>
+              </div>
+            </div>
+
+            <div class="ob-check-item">
+              <div class="ob-check-num">2</div>
+              <div>
+                <div class="ob-check-title">Activa tu Autenticación Multifactor (MFA)</div>
+                <div class="ob-check-desc">Es <strong>obligatorio</strong>. Recomendamos Google Prompt en tu celular o Passkeys. Esto protege tu cuenta aunque alguien obtenga tu contraseña.</div>
+              </div>
+            </div>
+
+            <div class="ob-check-item">
+              <div class="ob-check-num">3</div>
+              <div>
+                <div class="ob-check-title">Entra al Hero Hub</div>
+                <div class="ob-check-desc">Ve a <a href="https://it916.github.io/hero-hub/" target="_blank" rel="noopener">it916.github.io/hero-hub/</a> e inicia sesión con tu nueva cuenta Hero. Aquí estará todo lo que necesitas día a día.</div>
+              </div>
+            </div>
+
+            <div class="ob-check-item">
+              <div class="ob-check-num">4</div>
+              <div>
+                <div class="ob-check-title">Únete a Gather Town</div>
+                <div class="ob-check-desc">Nuestra oficina virtual. Es donde "vivimos" durante el día: reuniones, consultas rápidas, vida del equipo. Tu supervisor te enviará la invitación o puedes entrar desde el Hub.</div>
+              </div>
+            </div>
+
+            <div class="ob-check-item">
+              <div class="ob-check-num">5</div>
+              <div>
+                <div class="ob-check-title">Descarga las apps esenciales</div>
+                <div class="ob-check-desc">Google Chat, Google Meet, Google Calendar (móvil y escritorio). Si tu rol lo requiere: CRM (HubSpot o GoHighLevel), Scribe, Canva.</div>
+              </div>
+            </div>
+
+            <div class="ob-check-item">
+              <div class="ob-check-num">6</div>
+              <div>
+                <div class="ob-check-title">Lee las políticas internas</div>
+                <div class="ob-check-desc">Ve a <a href="politicas.html">Políticas</a> y lee al menos las 5 primeras. No es opcional — manejas datos sensibles de clientes y agentes.</div>
+              </div>
+            </div>
+
+            <div class="ob-check-item">
+              <div class="ob-check-num">7</div>
+              <div>
+                <div class="ob-check-title">Preséntate al equipo</div>
+                <div class="ob-check-desc">En el chat general o en Gather Town. Di de dónde eres, qué harás en Hero, y cualquier cosa fun que quieras compartir. Somos un equipo cercano.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="ob-section" id="hero-hub">
+          <div class="ob-num">03</div>
+          <h2 class="ob-h2">El Hero Hub — Tu cuartel general</h2>
+          <p class="ob-lead">El Hub centraliza todo lo que necesitas en tu día a día. Conócelo sección por sección.</p>
+
+          <div class="ob-hub-grid">
+
+            <a href="index.html" class="ob-hub-card">
+              <div class="ob-hub-icon"><i data-lucide="home"></i></div>
+              <div class="ob-hub-name">Inicio</div>
+              <div class="ob-hub-desc">El dashboard principal. Saludo personalizado, arsenal de herramientas, misiones rápidas, clima, próximos cumpleaños, spotlight del héroe del mes y mensaje del día.</div>
+            </a>
+
+            <a href="equipo.html" class="ob-hub-card">
+              <div class="ob-hub-icon"><i data-lucide="users"></i></div>
+              <div class="ob-hub-name">Equipo</div>
+              <div class="ob-hub-desc">Directorio interno con foto, rol, correo, teléfono, país y cumpleaños de cada miembro. Aquí conocerás a todos tus compañeros héroes.</div>
+            </a>
+
+            <a href="carriers.html" class="ob-hub-card">
+              <div class="ob-hub-icon"><i data-lucide="shield"></i></div>
+              <div class="ob-hub-name">Carriers</div>
+              <div class="ob-hub-desc">Dos zonas: "Cuentas del Equipo" con los accesos compartidos de Jesús y Anny (los que todos usan), y "Mis Carriers" donde guardas tus accesos personales.</div>
+            </a>
+
+            <a href="directorio.html" class="ob-hub-card">
+              <div class="ob-hub-icon"><i data-lucide="book-user"></i></div>
+              <div class="ob-hub-name">Directorio</div>
+              <div class="ob-hub-desc">Contactos externos de carriers y socios (Broker Support, Finance, Contract, Sales, etc.). Colaborativo — cualquiera puede agregar o editar.</div>
+            </a>
+
+            <a href="guias.html" class="ob-hub-card">
+              <div class="ob-hub-icon"><i data-lucide="book-open"></i></div>
+              <div class="ob-hub-name">Guías</div>
+              <div class="ob-hub-desc">Manuales paso-a-paso de los procesos más comunes (creados con Scribe). Antes de preguntar, busca aquí — probablemente ya existe la guía.</div>
+            </a>
+
+            <a href="politicas.html" class="ob-hub-card">
+              <div class="ob-hub-icon"><i data-lucide="scroll-text"></i></div>
+              <div class="ob-hub-name">Políticas</div>
+              <div class="ob-hub-desc">Las 13 normativas internas: seguridad, clasificación de datos, MFA, uso de IA, credenciales, trabajo remoto, offboarding, respuesta a incidentes y más.</div>
+            </a>
+
+          </div>
+
+          <div class="ob-callout ob-callout-gold">
+            <i data-lucide="lightbulb"></i>
+            <div>
+              <strong>Tip de navegación:</strong> en cualquier página, haz click en el logo "HERO HUB" arriba a la izquierda para volver al inicio. Y si ves un ícono de escudo verde 🛡️ en tu topbar, significa que eres admin del Hub.
+            </div>
+          </div>
+        </section>
+
+        <section class="ob-section" id="herramientas">
+          <div class="ob-num">04</div>
+          <h2 class="ob-h2">Herramientas que usamos</h2>
+          <p class="ob-lead">Estas son las herramientas oficiales del equipo Hero. Todas están en el "Arsenal del Héroe" del inicio del Hub.</p>
+
+          <h3 class="ob-h3">🟦 Google Workspace</h3>
+          <ul class="ob-list">
+            <li><strong>Gmail</strong> — correo corporativo, el canal oficial más importante</li>
+            <li><strong>Google Drive</strong> — archivos compartidos del equipo</li>
+            <li><strong>Google Calendar</strong> — reuniones, meetings, eventos. Todo pasa por aquí</li>
+            <li><strong>Google Meet</strong> — videollamadas formales</li>
+            <li><strong>Google Chat</strong> — mensajería interna del equipo</li>
+            <li><strong>Google Sheets / Docs</strong> — documentos colaborativos</li>
+          </ul>
+
+          <h3 class="ob-h3">🦸 Comunicación y trabajo</h3>
+          <ul class="ob-list">
+            <li><strong>Gather Town</strong> — oficina virtual, ahí "estamos" durante el día</li>
+            <li><strong>WhatsApp</strong> — comunicación operativa rápida (nunca datos sensibles)</li>
+          </ul>
+
+          <h3 class="ob-h3">🤖 Inteligencia Artificial</h3>
+          <ul class="ob-list">
+            <li><strong>ChatGPT, Gemini, Claude</strong> — asistentes de IA para apoyo en tareas</li>
+            <li><strong>DeepL</strong> — traducción</li>
+          </ul>
+          <div class="ob-warn">
+            <i data-lucide="alert-triangle"></i>
+            <span><strong>Importante:</strong> nunca pegues SSN, direcciones, datos médicos, credenciales o información financiera real en herramientas de IA. Ver <a href="politicas.html">Política #11</a>.</span>
+          </div>
+
+          <h3 class="ob-h3">💼 Herramientas de trabajo</h3>
+          <ul class="ob-list">
+            <li><strong>Scribe</strong> — crear guías paso a paso</li>
+            <li><strong>Canva</strong> — diseño de material visual</li>
+            <li><strong>Zoho Assist</strong> — soporte técnico remoto (IT se conecta a tu PC para ayudarte)</li>
+            <li><strong>ExpressVPN</strong> — VPN corporativa (obligatoria para acceder a datos Nivel 3)</li>
+          </ul>
+
+          <h3 class="ob-h3">📊 CRM</h3>
+          <ul class="ob-list">
+            <li><strong>HubSpot</strong> — CRM principal</li>
+            <li><strong>GoHighLevel</strong> — automatización de marketing y ventas</li>
+          </ul>
+        </section>
+
+        <section class="ob-section" id="ayuda">
+          <div class="ob-num">05</div>
+          <h2 class="ob-h2">Cómo pedir ayuda</h2>
+          <p class="ob-lead">En Hero valoramos la autonomía, pero también la colaboración. Si estás atascado, <strong>pregunta</strong>. Preguntar no es debilidad, es inteligencia.</p>
+
+          <div class="ob-help-grid">
+
+            <div class="ob-help-card">
+              <div class="ob-help-icon tech"><i data-lucide="wrench"></i></div>
+              <div class="ob-help-title">Problemas técnicos, accesos, IT</div>
+              <div class="ob-help-person"><strong>Fernando Romero</strong></div>
+              <div class="ob-help-email">it@heroinsuranceusa.com</div>
+              <div class="ob-help-desc">Cuenta bloqueada, contraseña olvidada, aplicación que no funciona, acceso a sistemas, dudas sobre el Hub, seguridad de la información.</div>
+            </div>
+
+            <div class="ob-help-card">
+              <div class="ob-help-icon hr"><i data-lucide="heart"></i></div>
+              <div class="ob-help-title">Nómina, beneficios, HR</div>
+              <div class="ob-help-person"><strong>Aurys Rodriguez</strong></div>
+              <div class="ob-help-desc">Pagos, beneficios, días libres, vacaciones, dudas sobre tu contrato, problemas con tu supervisor.</div>
+            </div>
+
+            <div class="ob-help-card">
+              <div class="ob-help-icon sales"><i data-lucide="briefcase"></i></div>
+              <div class="ob-help-title">Ventas, producto, carriers</div>
+              <div class="ob-help-person"><strong>Alfredo Infante</strong> · <strong>María Lo Monaco</strong></div>
+              <div class="ob-help-desc">Dudas sobre productos, planes, procesos de venta, entrenamiento de carriers, scripts, objeciones comunes.</div>
+            </div>
+
+            <div class="ob-help-card">
+              <div class="ob-help-icon finance"><i data-lucide="dollar-sign"></i></div>
+              <div class="ob-help-title">Finanzas, comisiones</div>
+              <div class="ob-help-person"><strong>Gilbana Barroso</strong></div>
+              <div class="ob-help-desc">Comisiones, overrides, reportes financieros, dudas sobre pagos de carriers, bonos.</div>
+            </div>
+
+          </div>
+
+          <div class="ob-callout ob-callout-cyan">
+            <i data-lucide="message-circle"></i>
+            <div>
+              <strong>Tip:</strong> antes de escribir, revisa las <a href="guias.html">Guías</a> — muchas preguntas ya tienen una respuesta paso a paso ahí. Ahorras tiempo tuyo y del equipo.
+            </div>
+          </div>
+        </section>
+
+        <section class="ob-section" id="reglas">
+          <div class="ob-num">06</div>
+          <h2 class="ob-h2">Reglas importantes — en 6 puntos</h2>
+          <p class="ob-lead">Las políticas completas están en <a href="politicas.html">Políticas</a>. Si solo lees algo hoy, que sea esto:</p>
+
+          <div class="ob-rules">
+            <div class="ob-rule">
+              <div class="ob-rule-num">🔐</div>
+              <div>
+                <div class="ob-rule-title">MFA siempre activo</div>
+                <div class="ob-rule-desc">Nunca desactives la autenticación multifactor. Nunca compartas tu contraseña. Tu cuenta Hero es tuya y solo tuya.</div>
+              </div>
+            </div>
+
+            <div class="ob-rule">
+              <div class="ob-rule-num">🤖</div>
+              <div>
+                <div class="ob-rule-title">Nada sensible en IA</div>
+                <div class="ob-rule-desc">Prohibido pegar SSN, direcciones reales, datos bancarios, datos médicos o credenciales en ChatGPT, Gemini, Claude o cualquier herramienta externa.</div>
+              </div>
+            </div>
+
+            <div class="ob-rule">
+              <div class="ob-rule-num">🌐</div>
+              <div>
+                <div class="ob-rule-title">VPN para datos críticos</div>
+                <div class="ob-rule-desc">Si accedes a bases de datos de agentes o información Nivel 3, usa ExpressVPN. No trabajes con datos sensibles desde WiFi público.</div>
+              </div>
+            </div>
+
+            <div class="ob-rule">
+              <div class="ob-rule-num">🚨</div>
+              <div>
+                <div class="ob-rule-title">Reporta incidentes de inmediato</div>
+                <div class="ob-rule-desc">Si sospechas que tu cuenta fue comprometida, si enviaste info a la persona equivocada, si perdiste tu dispositivo — avisa a IT <strong>ya</strong>. No hay castigo por reportar de buena fe; sí lo hay por ocultar.</div>
+              </div>
+            </div>
+
+            <div class="ob-rule">
+              <div class="ob-rule-num">🔑</div>
+              <div>
+                <div class="ob-rule-title">Credenciales, siempre en el Hub</div>
+                <div class="ob-rule-desc">Las credenciales de carriers se guardan en la sección <a href="carriers.html">Carriers</a> del Hub. Nunca en Google Sheets, WhatsApp, correos ni post-its.</div>
+              </div>
+            </div>
+
+            <div class="ob-rule">
+              <div class="ob-rule-num">⏰</div>
+              <div>
+                <div class="ob-rule-title">Hora oficial: Eastern Time</div>
+                <div class="ob-rule-desc">Independientemente de dónde estés, nuestro horario se mide en Eastern Time (Miami). Comunica tu horario habitual a tu manager.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="ob-section" id="glosario">
+          <div class="ob-num">07</div>
+          <h2 class="ob-h2">Glosario Hero</h2>
+          <p class="ob-lead">Si el vocabulario de seguros te suena a chino, esta sección es para ti. Los términos más comunes que escucharás:</p>
+
+          <div class="ob-glossary">
+            <div class="ob-gloss-item">
+              <div class="ob-gloss-term">Agente</div>
+              <div class="ob-gloss-def">Persona licenciada que vende seguros. Trabaja bajo el paraguas de Hero.</div>
+            </div>
+            <div class="ob-gloss-item">
+              <div class="ob-gloss-term">Carrier</div>
+              <div class="ob-gloss-def">Compañía de seguros que emite las pólizas (Aetna, Humana, United, etc.).</div>
+            </div>
+            <div class="ob-gloss-item">
+              <div class="ob-gloss-term">NPN</div>
+              <div class="ob-gloss-def">National Producer Number. Número único que identifica a cada agente ante la NAIC.</div>
+            </div>
+            <div class="ob-gloss-item">
+              <div class="ob-gloss-term">Writing ID</div>
+              <div class="ob-gloss-def">Número interno que cada carrier le asigna a un agente para trackear sus ventas con ellos.</div>
+            </div>
+            <div class="ob-gloss-item">
+              <div class="ob-gloss-term">AEP</div>
+              <div class="ob-gloss-def">Annual Enrollment Period. Octubre 15 – Diciembre 7. Temporada alta de Medicare.</div>
+            </div>
+            <div class="ob-gloss-item">
+              <div class="ob-gloss-term">OEP</div>
+              <div class="ob-gloss-def">Open Enrollment Period. Enero 1 – Marzo 31. Segunda ventana de cambios.</div>
+            </div>
+            <div class="ob-gloss-item">
+              <div class="ob-gloss-term">SEP</div>
+              <div class="ob-gloss-def">Special Enrollment Period. Ventana especial por eventos de vida (mudanza, pérdida de empleo, etc.).</div>
+            </div>
+            <div class="ob-gloss-item">
+              <div class="ob-gloss-term">ACA</div>
+              <div class="ob-gloss-def">Affordable Care Act. La ley que creó el marketplace de seguros (Obamacare).</div>
+            </div>
+            <div class="ob-gloss-item">
+              <div class="ob-gloss-term">MA / MAPD</div>
+              <div class="ob-gloss-def">Medicare Advantage / Medicare Advantage Prescription Drug. Planes privados de Medicare.</div>
+            </div>
+            <div class="ob-gloss-item">
+              <div class="ob-gloss-term">PDP</div>
+              <div class="ob-gloss-def">Prescription Drug Plan. Plan Medicare solo de medicamentos (Parte D).</div>
+            </div>
+            <div class="ob-gloss-item">
+              <div class="ob-gloss-term">Override</div>
+              <div class="ob-gloss-def">Comisión que gana la agencia sobre las ventas de sus agentes.</div>
+            </div>
+            <div class="ob-gloss-item">
+              <div class="ob-gloss-term">Contracting</div>
+              <div class="ob-gloss-def">Proceso de dar de alta a un agente con un carrier específico.</div>
+            </div>
+            <div class="ob-gloss-item">
+              <div class="ob-gloss-term">E&amp;O</div>
+              <div class="ob-gloss-def">Errors and Omissions. Seguro de responsabilidad profesional que deben tener los agentes.</div>
+            </div>
+            <div class="ob-gloss-item">
+              <div class="ob-gloss-term">CMS</div>
+              <div class="ob-gloss-def">Centers for Medicare &amp; Medicaid Services. El regulador federal de Medicare.</div>
+            </div>
+            <div class="ob-gloss-item">
+              <div class="ob-gloss-term">PHI</div>
+              <div class="ob-gloss-def">Protected Health Information. Información médica protegida por HIPAA.</div>
+            </div>
+            <div class="ob-gloss-item">
+              <div class="ob-gloss-term">FMO / IMO</div>
+              <div class="ob-gloss-def">Field/Independent Marketing Organization. Nivel de agencia que tiene contratos directos con carriers.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="ob-section" id="contactos">
+          <div class="ob-num">08</div>
+          <h2 class="ob-h2">Contactos clave</h2>
+          <p class="ob-lead">El equipo de liderazgo de Hero Insurance USA. En <a href="equipo.html">Equipo</a> encuentras los datos completos de todos.</p>
+
+          <div class="ob-leaders">
+            <div class="ob-leader">
+              <div class="ob-leader-role">CEO</div>
+              <div class="ob-leader-name">Jesús Gutiérrez</div>
+              <div class="ob-leader-desc">Dirección estratégica, visión, decisiones ejecutivas.</div>
+            </div>
+            <div class="ob-leader">
+              <div class="ob-leader-role">COO</div>
+              <div class="ob-leader-name">Anny Medina</div>
+              <div class="ob-leader-desc">Operaciones, ejecución del día a día, coordinación entre áreas.</div>
+            </div>
+            <div class="ob-leader">
+              <div class="ob-leader-role">CFO</div>
+              <div class="ob-leader-name">Aurys Rodriguez</div>
+              <div class="ob-leader-desc">Finanzas, HR, nómina, beneficios.</div>
+            </div>
+            <div class="ob-leader">
+              <div class="ob-leader-role">Sales / Producto</div>
+              <div class="ob-leader-name">Alfredo Infante</div>
+              <div class="ob-leader-desc">Ventas, estrategia comercial, carriers.</div>
+            </div>
+            <div class="ob-leader">
+              <div class="ob-leader-role">Sales / Producto</div>
+              <div class="ob-leader-name">María Lo Monaco</div>
+              <div class="ob-leader-desc">Ventas, entrenamientos, soporte a agentes.</div>
+            </div>
+            <div class="ob-leader">
+              <div class="ob-leader-role">Finanzas / Comisiones</div>
+              <div class="ob-leader-name">Gilbana Barroso</div>
+              <div class="ob-leader-desc">Comisiones, overrides, reportes financieros.</div>
+            </div>
+            <div class="ob-leader">
+              <div class="ob-leader-role">IT &amp; Technology</div>
+              <div class="ob-leader-name">Fernando Romero</div>
+              <div class="ob-leader-desc">Infraestructura tecnológica, seguridad, el Hero Hub, soporte técnico.</div>
+            </div>
+            <div class="ob-leader">
+              <div class="ob-leader-role">Office Manager</div>
+              <div class="ob-leader-name">Eduardo Romero</div>
+              <div class="ob-leader-desc">Administración general de oficina, logística, eventos internos.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="ob-section ob-final" id="final">
+          <div class="ob-num">09</div>
+          <h2 class="ob-h2">Bienvenido, héroe 🦸</h2>
+
+          <p class="ob-lead">Llegaste hasta el final de la guía. Eso ya dice mucho de ti.</p>
+
+          <p>Hero Insurance USA no es solo una agencia de seguros. Es un equipo de personas que creen que cada cliente merece respeto, cada agente merece apoyo real, y cada día es una oportunidad para hacer algo mejor que ayer.</p>
+
+          <p>Vas a cometer errores. Todos los cometimos. Lo importante es que los reportes, aprendas y sigas. Aquí nadie camina solo.</p>
+
+          <p>Si tienes dudas durante tus primeras semanas, pregunta sin miedo. Si ves algo que se puede mejorar, dilo. Si descubres un truco nuevo, compártelo en <a href="guias.html">Guías</a>. Hero crece cuando cada héroe comparte su superpoder.</p>
+
+          <div class="ob-final-quote">
+            <div class="ob-final-quote-mark">"</div>
+            <div class="ob-final-quote-text">Dale un Hero a tu vida.</div>
+            <div class="ob-final-quote-author">— Hero Insurance USA</div>
+          </div>
+
+          <div class="ob-final-cta">
+            <a href="index.html" class="btn-primary ob-big-btn">
+              <i data-lucide="rocket"></i>
+              <span>Comenzar mi misión</span>
+            </a>
+          </div>
+        </section>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <footer class="hero-footer">
+    <span>HERO HUB · v4.3</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+  </footer>
+</div>
+
+<script>
+  window.refreshIcons = () => { if (window.lucide) lucide.createIcons(); };
+  document.addEventListener("DOMContentLoaded", () => {
+    window.refreshIcons();
+    const menuBtn = document.getElementById("btn-menu");
+    const nav = document.getElementById("topbar-nav");
+    if (menuBtn && nav) menuBtn.addEventListener("click", () => nav.classList.toggle("open"));
+
+    document.querySelectorAll('.ob-toc-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = document.querySelector(link.getAttribute('href'));
+        if (target) {
+          const offset = 90;
+          const top = target.getBoundingClientRect().top + window.scrollY - offset;
+          window.scrollTo({ top, behavior: 'smooth' });
+        }
+      });
+    });
+  });
+</script>
+<script type="module" src="js/firebase-config.js"></script>
+<script type="module" src="js/onboarding.js"></script>
+</body>
+</html>
