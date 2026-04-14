@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carriers — Hero Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<div id="loading" class="login-container"><div class="login-card"><p>Verificando acceso...</p></div></div>
+
+<div id="dashboard" style="display:none;">
+
+  <header class="hero-topbar">
+    <div class="topbar-inner">
+      <div class="brand-block">
+        <a href="index.html" class="brand-link">
+          <div class="logo-mark"><svg viewBox="0 0 100 100"><path d="M50 5 L60 35 L92 38 L67 58 L75 90 L50 72 L25 90 L33 58 L8 38 L40 35 Z" fill="currentColor"/></svg></div>
+          <div>
+            <div class="brand-name">HERO HUB</div>
+            <div class="brand-sub">Hero Insurance USA</div>
+          </div>
+        </a>
+      </div>
+      <nav class="topbar-nav" id="topbar-nav">
+        <a href="index.html" class="nav-link"><i data-lucide="home"></i><span>Inicio</span></a>
+        <a href="equipo.html" class="nav-link"><i data-lucide="users"></i><span>Equipo</span></a>
+        <a href="carriers.html" class="nav-link active"><i data-lucide="shield"></i><span>Carriers</span></a>
+        <a href="directorio.html" class="nav-link"><i data-lucide="book-user"></i><span>Directorio</span></a>
+        <a href="guias.html" class="nav-link"><i data-lucide="book-open"></i><span>Guías</span></a>
+        <a href="politicas.html" class="nav-link"><i data-lucide="scroll-text"></i><span>Políticas</span></a>
+      </nav>
+      <div class="topbar-actions">
+        <img id="user-avatar" src="" alt="" class="avatar">
+        <a id="btn-admin" href="admin.html" class="icon-btn" style="display:none;" title="Admin"><i data-lucide="shield-check"></i></a>
+        <button id="btn-logout" class="icon-btn" title="Salir"><i data-lucide="log-out"></i></button>
+        <button id="btn-menu" class="icon-btn menu-toggle" title="Menú"><i data-lucide="menu"></i></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+
+    <section class="page-header">
+      <div class="page-kicker">• Hero Insurance USA •</div>
+      <h1 class="page-title">Portal de Carriers</h1>
+      <p class="page-sub">Acceso rápido a portales y credenciales</p>
+    </section>
+
+    <!-- TABS PRINCIPALES: Equipo / Personal -->
+    <section class="carrier-zone-tabs">
+      <button class="zone-tab active" data-zone="team"><i data-lucide="users"></i><span>Cuentas del Equipo</span></button>
+      <button class="zone-tab" data-zone="personal"><i data-lucide="user"></i><span>Mis Carriers</span></button>
+    </section>
+
+    <!-- ZONA EQUIPO -->
+    <section id="zone-team" class="carrier-zone">
+
+      <div class="zone-info">
+        <i data-lucide="info"></i>
+        <span><strong>Cuentas compartidas:</strong> credenciales de Jesús y Anny que todo el equipo usa para acceder a los portales. <span id="team-admin-note" style="display:none;">Como admin, puedes editar o agregar.</span></span>
+      </div>
+
+      <div class="dir-toolbar">
+        <div class="search-wrap">
+          <i data-lucide="search" class="search-icon"></i>
+          <input type="text" id="team-search" placeholder="Buscar portal o usuario...">
+        </div>
+        <div class="dir-stats">
+          <div class="stat-pill"><strong id="team-count">0</strong> portales</div>
+        </div>
+        <button id="btn-add-team" class="btn-primary btn-add-contact" style="display:none;"><i data-lucide="plus"></i><span>Agregar</span></button>
+      </div>
+
+      <div class="account-tabs">
+        <button class="account-tab active" data-account="jesus">Jesús</button>
+        <button class="account-tab" data-account="anny">Anny</button>
+      </div>
+
+      <div id="team-grid" class="carriers-grid"><p class="loading">Cargando...</p></div>
+    </section>
+
+    <!-- ZONA PERSONAL -->
+    <section id="zone-personal" class="carrier-zone" style="display:none;">
+
+      <div class="zone-info">
+        <i data-lucide="lock"></i>
+        <span><strong>Tus carriers personales:</strong> portales de los agentes que tú apoyas. Solo tú puedes ver y editar esta sección.</span>
+      </div>
+
+      <div class="dir-toolbar">
+        <div class="search-wrap">
+          <i data-lucide="search" class="search-icon"></i>
+          <input type="text" id="personal-search" placeholder="Buscar...">
+        </div>
+        <div class="dir-stats">
+          <div class="stat-pill"><strong id="personal-count">0</strong> portales</div>
+        </div>
+        <button id="btn-add-personal" class="btn-primary btn-add-contact"><i data-lucide="plus"></i><span>Agregar carrier</span></button>
+      </div>
+
+      <div id="personal-grid" class="carriers-grid"><p class="loading">Cargando...</p></div>
+    </section>
+
+  </main>
+
+  <footer class="hero-footer">
+    <span>HERO HUB · v4.3</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+  </footer>
+</div>
+
+<script>
+  window.refreshIcons = () => { if (window.lucide) lucide.createIcons(); };
+  document.addEventListener("DOMContentLoaded", () => {
+    window.refreshIcons();
+    const menuBtn = document.getElementById("btn-menu");
+    const nav = document.getElementById("topbar-nav");
+    if (menuBtn && nav) menuBtn.addEventListener("click", () => nav.classList.toggle("open"));
+  });
+</script>
+<script type="module" src="js/firebase-config.js"></script>
+<script type="module" src="js/carriers.js"></script>
+</body>
+</html>
