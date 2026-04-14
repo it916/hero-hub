@@ -4,12 +4,14 @@ import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
 import { doc, getDoc, setDoc, updateDoc }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { renderWidgets } from "./widgets.js";
+import { openBirthdayCardModal, checkBirthdayPopup } from "./birthday-card.js";
 
 const ALLOWED_DOMAIN = "heroinsuranceusa.com";
 const ADMIN_EMAILS = ["it@heroinsuranceusa.com"];
 
 let currentUser = null;
 let isAdmin = false;
+let teamMembers = [];
 
 // ══ AUTH ══
 onAuthStateChanged(auth, async (user) => {
@@ -44,13 +46,27 @@ async function showDashboard() {
     if (userSnap.exists()) userData = userSnap.data();
   } catch (e) { console.warn("Error cargando user data:", e.message); }
 
+  // Cargar equipo (para pop-up de cumple y botón felicitación)
+  try {
+    const teamSnap = await getDoc(doc(db, "shared", "team"));
+    if (teamSnap.exists() && Array.isArray(teamSnap.data().members)) {
+      teamMembers = teamSnap.data().members;
+    }
+  } catch (e) { console.warn("Error cargando equipo:", e.message); }
+
   initHeroCover();
 
-  // Llamar a renderWidgets del módulo widgets.js
+  // Renderizar widgets (arsenal, spotlight, cumple, mensajes)
   await renderWidgets(userData);
 
-  // Pop-up mensaje del día (después de un delay para que todo cargue)
+  // Conectar botón "Preparar felicitación"
+  wireBirthdayButton();
+
+  // Pop-up mensaje del día
   setTimeout(() => checkDailyPopup(), 1200);
+
+  // Pop-up cumpleaños del día (si corresponde)
+  setTimeout(() => checkBirthdayPopup(currentUser, teamMembers), 1800);
 
   if (window.refreshIcons) window.refreshIcons();
 }
@@ -63,6 +79,40 @@ document.getElementById("btn-login")?.addEventListener("click", async () => {
   }
 });
 document.getElementById("btn-logout")?.addEventListener("click", () => signOut(auth));
+
+// ══ Botón Preparar Felicitación ══
+function wireBirthdayButton() {
+  const btn = document.getElementById("bdayWishBtn");
+  if (!btn) return;
+  btn.onclick = () => {
+    // Determinar al cumpleañero próximo (el mismo que muestra el banner)
+    const person = findNextBirthday();
+    if (!person) {
+      alert("No hay cumpleaños próximos registrados.");
+      return;
+    }
+    openBirthdayCardModal(person, currentUser);
+  };
+}
+
+function findNextBirthday() {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  const withDates = teamMembers
+    .map(m => {
+      if (!m.birthdate || !/^\d{2}-\d{2}$/.test(m.birthdate)) return null;
+      const [mo, d] = m.birthdate.split('-').map(x => parseInt(x));
+      const thisYear = new Date(today.getFullYear(), mo-1, d);
+      const target = thisYear >= today ? thisYear : new Date(today.getFullYear()+1, mo-1, d);
+      const days = Math.ceil((target - today) / (1000*60*60*24));
+      return { m, days };
+    })
+    .filter(x => x !== null)
+    .sort((a, b) => a.days - b.days);
+
+  return withDates.length ? withDates[0].m : null;
+}
 
 // ══ HERO COVER ══
 function getFirstName(user) {
@@ -109,21 +159,16 @@ function initHeroCover() {
   if (heroKickerEl) heroKickerEl.textContent = getDayKicker();
   if (heroSubEl) heroSubEl.textContent = getDaySub();
 
-  // Issue number basado en los días desde Enero 1
   const start = new Date(new Date().getFullYear(), 0, 1);
   const diff = Math.floor((new Date() - start) / (1000 * 60 * 60 * 24)) + 1;
   if (heroIssueEl) heroIssueEl.textContent = `VOL. II · EDICIÓN Nº ${diff}`;
 
-  // Date chip
   const now = new Date();
   const dateStr = now.toLocaleDateString("es-ES", { weekday:"long", day:"2-digit", month:"short" });
   if (metaDateEl) metaDateEl.textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
 
-  // Clock
   updateClock();
   setInterval(updateClock, 60000);
-
-  // Weather
   loadWeather();
 }
 
@@ -292,6 +337,6 @@ if (dpClose) {
   });
 }
 
-// Cargar tema al inicio (por si aún no hay userData)
+// Cargar tema al inicio
 const savedTheme = localStorage.getItem("hero-theme");
 if (savedTheme) document.body.dataset.theme = savedTheme;
