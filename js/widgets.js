@@ -177,7 +177,6 @@ function renderSpotlight() {
 
 // ═══ CUMPLEAÑOS (desde shared/team) ═══
 function parseBirthdate(bd) {
-  // Formato "MM-DD"
   if (!bd || typeof bd !== 'string' || !/^\d{2}-\d{2}$/.test(bd)) return null;
   const [m, d] = bd.split('-').map(x => parseInt(x));
   if (m < 1 || m > 12 || d < 1 || d > 31) return null;
@@ -195,7 +194,6 @@ function daysUntil(bd) {
 function renderBirthday() {
   const MONTHS = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
 
-  // Filtrar solo miembros con birthdate válido
   const withBirthday = SHARED_DATA.team
     .map(m => {
       const date = parseBirthdate(m.birthdate);
@@ -205,6 +203,7 @@ function renderBirthday() {
     .sort((a,b) => a.d - b.d);
 
   const el = id => document.getElementById(id);
+  const mega = document.querySelector('.bday-mega');
 
   if (!withBirthday.length) {
     if (el('bdayName')) el('bdayName').textContent = '—';
@@ -218,21 +217,22 @@ function renderBirthday() {
   const { p, d } = withBirthday[0];
   const isToday = d === 0, isTomorrow = d === 1;
 
+  // Marcar "today" para activar efectos especiales
+  if (mega) mega.classList.toggle('today', isToday);
+
   if (el('bdayAvatar')) {
     el('bdayAvatar').src = p.photo;
     el('bdayAvatar').onerror = function(){ this.src=`https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=06a3b6&color=fff&size=200`; };
   }
-  if (el('bdayFloat')) el('bdayFloat').textContent = isToday ? '🎊' : '🎈';
   if (el('bdayBadge')) el('bdayBadge').textContent = isToday ? '🎂 Cumpleaños hoy' : '🎈 Próximo cumpleaños';
   if (el('bdayName')) el('bdayName').textContent = p.name;
   if (el('bdayRole')) el('bdayRole').textContent = p.role || '';
   if (el('bdayDate')) el('bdayDate').textContent = `🗓️ ${p.date.d} ${MONTHS[p.date.m-1]}`;
   if (el('bdayCountdown')) {
-    if (isToday) el('bdayCountdown').innerHTML = '<strong>¡Es hoy! 🎉</strong>';
-    else if (isTomorrow) el('bdayCountdown').innerHTML = 'Faltan <strong>¡solo 1 día!</strong>';
-    else el('bdayCountdown').innerHTML = `Faltan <strong>${d} días</strong>`;
+    if (isToday) el('bdayCountdown').innerHTML = '¡HOY!';
+    else if (isTomorrow) el('bdayCountdown').innerHTML = 'MAÑANA';
+    else el('bdayCountdown').innerHTML = `EN ${d} DÍAS`;
   }
-  if (el('bdayConfetti')) el('bdayConfetti').textContent = isToday ? '🎊🎂🎊' : '🎈🎂🎈';
 }
 
 // ═══ MENSAJE DEL DÍA ═══
@@ -408,12 +408,10 @@ function attachSettingsHandler() {
 }
 function openSettingsModal() {
   const theme = currentUserData.theme || "light";
-  const greeting = currentUserData.greeting || "";
   const modal = document.createElement("div");
   modal.className = "modal-overlay";
   modal.innerHTML = `<div class="modal">
-    <h3>Configuración</h3>
-    <label>Saludo personalizado <input id="s-greeting" value="${greeting.replace(/"/g,'&quot;')}" maxlength="50" placeholder="(Vacío = automático)"></label>
+    <h3>⚙️ Configuración</h3>
     <label>Tema<div class="theme-toggle">
       <button class="theme-btn ${theme==='light'?'active':''}" data-theme="light">☀ Día</button>
       <button class="theme-btn ${theme==='dark'?'active':''}" data-theme="dark">☾ Noche</button>
@@ -421,11 +419,6 @@ function openSettingsModal() {
     <div class="modal-buttons"><button class="btn-primary" id="s-close">Cerrar</button></div>
   </div>`;
   document.body.appendChild(modal);
-  modal.querySelector("#s-greeting").addEventListener("blur", async (e) => {
-    currentUserData.greeting = e.target.value.trim();
-    await saveUserField({ greeting: currentUserData.greeting });
-    updateGreeting();
-  });
   modal.querySelectorAll(".theme-btn").forEach(b => {
     b.addEventListener("click", async () => {
       currentUserData.theme = b.dataset.theme;
@@ -436,19 +429,4 @@ function openSettingsModal() {
     });
   });
   modal.querySelector("#s-close").onclick = () => modal.remove();
-}
-
-export function updateGreeting() {
-  const user = auth.currentUser;
-  if (!user) return;
-  const h = new Date().getHours();
-  let greet = "Buenas noches";
-  if (h >= 5 && h < 12) greet = "Buenos días";
-  else if (h >= 12 && h < 19) greet = "Buenas tardes";
-  const firstName = user.displayName.split(" ")[0];
-  const custom = currentUserData?.greeting?.trim();
-  const tEl = document.getElementById('greet-text');
-  const nEl = document.getElementById('greet-name');
-  if (tEl) tEl.textContent = custom || greet;
-  if (nEl) nEl.textContent = firstName;
 }
