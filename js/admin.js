@@ -3,8 +3,8 @@ import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, setDoc, updateDoc, collection, query, where, orderBy, limit, getDocs, Timestamp, deleteDoc }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-const ADMIN_EMAIL = "it@heroinsuranceusa.com";
+import { loadUserRole, isAdmin as isAdminRole } from "./roles.js";
+import { initRolesPanel } from "./roles-admin.js";
 
 // ══ AUTH ══
 onAuthStateChanged(auth, async (user) => {
@@ -13,16 +13,30 @@ onAuthStateChanged(auth, async (user) => {
     catch (e) { location.href = "index.html"; }
     return;
   }
-  if (user.email !== ADMIN_EMAIL) {
-    alert("Solo el admin puede acceder a este panel.");
+
+  // Verificar dominio
+  if (!user.email.endsWith("@heroinsuranceusa.com")) {
+    alert("Acceso restringido a cuentas @heroinsuranceusa.com");
     location.href = "index.html";
     return;
   }
+
+  // Verificar rol admin mediante el sistema de roles
+  const userRole = await loadUserRole(user.email);
+  if (!isAdminRole(userRole)) {
+    alert("Solo los administradores pueden acceder a este panel.");
+    location.href = "index.html";
+    return;
+  }
+
   document.getElementById("loading").style.display = "none";
   document.getElementById("admin-panel").style.display = "block";
   if (window.refreshIcons) window.refreshIcons();
   loadSpotlight();
   loadMessages();
+
+  // Exponer email del admin actual para roles-admin.js
+  window._currentAdminEmail = user.email;
 });
 
 // ══ SPOTLIGHT ══
@@ -258,3 +272,14 @@ document.getElementById("mt-cleanup").addEventListener("click", async () => {
     alert("Error: " + e.message);
   }
 });
+
+// ══ ROLES ══
+// Expone la función para inicializar el panel de roles.
+// Se llama desde admin.html cuando el usuario abre el tab "Roles".
+window.loadRolesPanel = async function() {
+  if (!window._currentAdminEmail) {
+    console.warn("Admin email no disponible todavía");
+    return;
+  }
+  await initRolesPanel(window._currentAdminEmail);
+};
