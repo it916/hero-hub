@@ -1,112 +1,128 @@
-# Hero Hub — Sub-Fase 2b (Panel de Gestión de Roles)
+# Hero Hub — Sub-Fase 2c (Log de Auditoría)
 
-Agrega al admin panel un nuevo tab "Roles" para gestionar desde la UI quién tiene acceso al Hero Hub y con qué rol. Se acabó editar Firestore a mano.
+Agrega un sistema de auditoría completo al Hero Hub. Registra automáticamente las acciones importantes (cambios de roles, ediciones de carriers del equipo, cambios en el directorio, eliminación de mensajes, actualizaciones del spotlight) y te permite consultarlas desde un nuevo tab "Log" en el panel de admin.
 
 ---
 
-## Qué te permite hacer este panel
+## Qué registra el sistema
 
-- **Ver** todos los usuarios autorizados con su foto, email, rol y fecha de última actualización
-- **Agregar** un usuario nuevo con email + rol (con sugerencias auto-completadas desde el equipo)
-- **Cambiar** el rol de cualquier usuario haciendo click en el dropdown
-- **Eliminar** un usuario (le quita el acceso inmediatamente)
-- **Ver estadísticas** rápidas: cuántos usuarios tienes por cada rol
-- **Filtrar** la lista por rol (ej. "ver solo agentes")
-- **Buscar** por nombre, email o rol
+El log captura estos eventos automáticamente:
 
-Solo los usuarios con rol `admin` ven este panel.
+| Tipo | Cuándo se registra |
+|---|---|
+| **Usuario agregado** | Admin crea un usuario en el panel de roles |
+| **Rol cambiado** | Admin cambia el rol de un usuario existente |
+| **Usuario eliminado** | Admin elimina un usuario del sistema |
+| **Carrier del equipo agregado/editado/eliminado** | Cambios en credenciales de Jesús o Anny |
+| **Contacto agregado/editado/eliminado** | Cambios en el Directorio |
+| **Mensaje eliminado** | Admin borra un mensaje de la Playlist |
+| **Spotlight actualizado** | Admin cambia el Hero Spotlight |
+
+> **Importante:** NO se registran cambios en los carriers **personales** de cada usuario (esos son privados) ni las visitas/logins (para eso está el tab "Métricas").
+
+---
+
+## Dónde se guarda
+
+En Firestore, colección nueva llamada `audit-log`. Cada documento es un evento con estos campos:
+
+- `timestamp` — cuándo pasó
+- `actor` — email del que lo hizo
+- `actorName` — nombre del actor
+- `action` — tipo de evento (ej. `role.update`)
+- `target` — email/nombre del afectado
+- `details` — datos extra del cambio (ej. `{from: "agente", to: "interno"}`)
+
+Retención: **1 año**. Hay un botón "Limpiar >1 año" en el panel para eliminar eventos antiguos manualmente cuando quieras.
 
 ---
 
 ## Archivos a subir
 
 ### Nuevos (agregar):
-- `js/roles-admin.js`
-- `css/roles-admin.css`
+- `js/audit-log.js`
+- `js/audit-panel.js`
+- `css/audit-panel.css`
 
 ### Reemplazar (sustituyen los que ya tienes):
-- `js/admin.js`
 - `admin.html`
-
-### Sin cambios:
-- Todos los demás archivos del Hub quedan igual.
-
----
-
-## Pasos de despliegue
-
-**1. Sube los 4 archivos al repo** (respetando las carpetas `js/` y `css/`).
-
-**2. Hard refresh en el navegador** (`Ctrl+Shift+R`) para que cargue los archivos nuevos.
-
-**3. Entra al admin** (botón del escudo verde arriba a la derecha del Hub) y verás un nuevo tab llamado "Roles".
-
-**4. Primera vez que lo abras:** verás la tabla con todos los usuarios que tengas en `shared/roles`. Si hiciste cambios de rol desde Firestore antes, se ven aquí.
+- `js/admin.js`
+- `js/roles-admin.js`
+- `js/carriers.js`
+- `js/directorio.js`
+- `css/roles-admin.css` (columna de fecha compactada para que ya no se superponga)
 
 ---
 
-## Migración automática de formato
+## Qué cambió en la columna "Última actualización" del panel de roles
 
-Cuando cambies el rol de un usuario por primera vez desde este panel, el sistema guarda automáticamente la información enriquecida:
+Tal como pediste, la dejé pero más compacta:
+- Formato de fecha cambió de "20 abr, 2026" a "20/04/26" (más corto)
+- Ancho de columna reducido de 150px a 110px
+- El "por [usuario]" tiene ancho máximo para que no empuje contenido
 
-**Antes (formato viejo):**
-```json
-{ "it@heroinsuranceusa.com": "admin" }
+Con esto la columna respeta su espacio y no se sobrepone con la columna de rol.
+
+---
+
+## Instrucciones de despliegue
+
+**1. Sube los 9 archivos al repo** (nuevos y reemplazados). Respeta las carpetas `js/` y `css/`.
+
+**2. Hard refresh** (`Ctrl+Shift+R`) para asegurar que los archivos nuevos carguen.
+
+**3. Entra al admin → tab "Log".** La primera vez estará vacío porque el log se genera hacia adelante, no retroactivamente.
+
+**4. Genera eventos de prueba:** ve al tab Roles y haz un cambio pequeño (ej. cambia un rol y regrésalo a lo que estaba). Vuelve al tab Log y deberías ver tu evento registrado.
+
+---
+
+## Qué te permite hacer el panel Log
+
+**Ver eventos cronológicamente** (más recientes arriba), con:
+- Ícono de color según el tipo de evento (verde para crear, cyan para editar, rojo para eliminar, amarillo para alertas de seguridad)
+- Acción realizada
+- Sobre quién se hizo
+- Detalles del cambio (ej. "Cambio: agente → interno")
+- Quién lo hizo y cuándo
+
+**Filtros disponibles:**
+- Por tipo de acción (chips: Todos / Usuarios creados / Cambios de rol / Etc.)
+- Por rango de fechas (7/30/90/365 días o Todo)
+- Búsqueda libre por texto (busca en actor, target, acción y detalles)
+
+**Estadísticas rápidas arriba:**
+- Total de eventos en el rango seleccionado
+- Usuarios únicos que generaron eventos
+- Acción más frecuente
+
+---
+
+## Commit sugerido
+
+```
+feat: add audit log for sensitive actions
 ```
 
-**Después (formato nuevo):**
-```json
-{
-  "it@heroinsuranceusa.com": {
-    "role": "admin",
-    "updatedAt": "2026-04-20T15:30:00.000Z",
-    "updatedBy": "it@heroinsuranceusa.com"
-  }
-}
-```
+---
 
-Esto te da un registro de quién hizo cada cambio y cuándo. Los dos formatos funcionan sin problemas — `roles.js` los lee indistintamente.
+## Qué viene después
+
+Con esto queda cerrada toda la Fase 2 (roles + panel admin + auditoría). La próxima fase puede ser:
+
+**Fase 3 — Integrar IT Console al Hub**
+Crear una página `it-console.html` dentro del Hub con el dashboard de administración IT, accesible solo para rol `admin`.
+
+**Fase 4 — Crear módulo RRHH**
+Absorbiendo las funciones actuales del Office Manager (asistencia, permisos) más funciones nuevas.
+
+**Fase 5 — Módulo Finanzas**
+Reportes Medicare integrados.
 
 ---
 
-## Protecciones incluidas
+## Notas técnicas
 
-- **`it@heroinsuranceusa.com` no se puede eliminar** desde el panel (aparece con un escudo 🛡️ en la columna de acciones). Esto es por seguridad.
-- **No puedes eliminarte a ti mismo.** Si eres admin y quieres quitarte, pídele a otro admin que lo haga.
-- **Si intentas cambiar tu propio rol a algo que no sea admin**, te aparece una advertencia antes de guardar, para que no te bloquees accidentalmente.
-- **Solo se aceptan emails `@heroinsuranceusa.com`.** Cualquier otro dominio es rechazado.
-- **No se permiten emails duplicados.** Si el email ya existe, te sugiere cambiar el rol desde la tabla.
-
----
-
-## Pruebas sugeridas
-
-**1. Cargar el panel:** abre admin.html → tab "Roles". Deberías ver la tabla con los usuarios que ya están en Firestore.
-
-**2. Agregar un usuario de prueba:** usa el botón "Agregar usuario". Si el email pertenece a un miembro registrado en `shared/team`, aparecerán sugerencias mientras escribes.
-
-**3. Cambiar un rol:** usa el dropdown de cualquier usuario de prueba. Debe guardar automáticamente y mostrar un mensaje verde "✓ Rol cambiado".
-
-**4. Intentar eliminarte:** haz click en la ✕ de tu propia fila. Debe salir un alert diciendo que no puedes eliminarte.
-
-**5. Intentar eliminar `it@heroinsuranceusa.com`:** el botón ✕ debería estar reemplazado por un escudo 🛡️ (no clickeable).
-
-**6. Filtrar:** haz click en "Agentes" y verifica que solo muestre agentes.
-
----
-
-## Qué viene después (Sub-Fase 3)
-
-Ahora que tienes un sistema de roles robusto y fácil de gestionar, podemos avanzar a:
-
-- **Integrar IT Console al Hub** como una nueva página `it-console.html` con permisos de admin
-- **Crear módulo RRHH** absorbiendo Office Manager
-- **Crear módulo Finanzas** con reportes Medicare
-
----
-
-## Soporte
-
-- Si el tab "Roles" no aparece: verifica que hayas subido `admin.html` y hecho hard refresh.
-- Si el panel sale vacío: confirma que el documento `shared/roles` existe en Firestore con el campo `users`.
-- Si dice "Solo los administradores pueden acceder": tu usuario no tiene rol `admin` en Firestore. Edítalo a mano una última vez y listo.
+- El sistema es **"fire and forget"**: si falla el logging por algún motivo, NO bloquea la acción original del usuario. Solo queda un warning en consola del navegador.
+- Los eventos se guardan con `Timestamp.now()` del servidor, no del cliente, así que siempre tienen hora correcta.
+- La función `logEvent()` está exportada en `audit-log.js` — si más adelante quieres loguear algo desde otro módulo, solo importas `{ logEvent, ACTIONS }` y llamas `logEvent(ACTIONS.XXX, target, details)`.

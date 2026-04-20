@@ -13,6 +13,7 @@
 import { auth, db } from "./firebase-config.js";
 import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { ROLES } from "./roles.js";
+import { logEvent, ACTIONS } from "./audit-log.js";
 
 // ═══════════════════════════════════════════
 // ESTADO
@@ -174,7 +175,7 @@ function renderTable() {
     const photo = member?.photo || "";
     const initials = name.split(" ").slice(0, 2).map(w => w[0] || "").join("").toUpperCase();
     const updated = u.updatedAt
-      ? new Date(u.updatedAt).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" })
+      ? new Date(u.updatedAt).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "2-digit" })
       : "—";
     const updatedBy = u.updatedBy ? u.updatedBy.split("@")[0] : "";
     const isProtected = PROTECTED_EMAILS.includes(email);
@@ -299,6 +300,12 @@ async function onChangeRole(e) {
     return;
   }
 
+  // Log de auditoría
+  logEvent(ACTIONS.ROLE_UPDATE, email, {
+    from: ROLES[oldRole]?.label || oldRole,
+    to: ROLES[newRole]?.label || newRole
+  });
+
   renderStats();
   renderTable();
   showStatus(`✓ Rol de ${email.split("@")[0]} cambiado a ${ROLES[newRole].label}`);
@@ -319,9 +326,15 @@ async function onDeleteUser(e) {
 
   if (!confirm(`¿Eliminar a ${email} del sistema de roles?\n\nPerderá acceso al Hero Hub inmediatamente.`)) return;
 
+  const oldRole = usersData[email]?.role;
   delete usersData[email];
   const ok = await saveUsersToFirestore();
   if (ok) {
+    // Log de auditoría
+    logEvent(ACTIONS.ROLE_DELETE, email, {
+      role: ROLES[oldRole]?.label || oldRole || "desconocido"
+    });
+
     renderStats();
     renderTable();
     showStatus(`✓ Usuario ${email.split("@")[0]} eliminado`);
@@ -421,6 +434,11 @@ function openAddUserModal() {
 
     const ok = await saveUsersToFirestore();
     if (ok) {
+      // Log de auditoría
+      logEvent(ACTIONS.ROLE_CREATE, email, {
+        role: ROLES[role]?.label || role
+      });
+
       modal.remove();
       renderStats();
       renderTable();

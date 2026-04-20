@@ -5,6 +5,8 @@ import { doc, getDoc, setDoc, updateDoc, collection, query, where, orderBy, limi
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { loadUserRole, isAdmin as isAdminRole } from "./roles.js";
 import { initRolesPanel } from "./roles-admin.js";
+import { initAuditPanel } from "./audit-panel.js";
+import { logEvent, ACTIONS } from "./audit-log.js";
 
 // ══ AUTH ══
 onAuthStateChanged(auth, async (user) => {
@@ -90,6 +92,14 @@ document.getElementById("sp-save").addEventListener("click", async () => {
     await setDoc(doc(db, "shared", "spotlight"), spotlightData);
     document.getElementById("sp-status").textContent = "✓ Guardado";
     setTimeout(() => document.getElementById("sp-status").textContent = "", 2000);
+
+    // Log de auditoría
+    const honoreeNames = spotlightData.honorees.map(h => h.name).join(", ");
+    logEvent(ACTIONS.SPOTLIGHT_UPDATE, "", {
+      honorees: honoreeNames || "ninguno",
+      hasImage: !!spotlightData.imageUrl,
+      hasMessage: !!spotlightData.message
+    });
   } catch (e) { alert("Error: " + e.message); }
 });
 
@@ -112,8 +122,16 @@ async function loadMessages() {
     list.querySelectorAll('[data-del]').forEach(btn => {
       btn.addEventListener('click', async () => {
         if (!confirm("¿Eliminar este mensaje?")) return;
-        items.splice(parseInt(btn.dataset.del), 1);
+        const idx = parseInt(btn.dataset.del);
+        const deletedMsg = items[idx];
+        items.splice(idx, 1);
         await updateDoc(doc(db, "shared", "messages"), { items });
+
+        // Log de auditoría
+        logEvent(ACTIONS.MESSAGE_DELETE, deletedMsg?.autor || "—", {
+          frase: (deletedMsg?.frase || "").slice(0, 80)
+        });
+
         loadMessages();
       });
     });
@@ -282,4 +300,11 @@ window.loadRolesPanel = async function() {
     return;
   }
   await initRolesPanel(window._currentAdminEmail);
+};
+
+// ══ LOG DE AUDITORÍA ══
+// Expone la función para inicializar el panel de auditoría.
+// Se llama desde admin.html cuando el usuario abre el tab "Log".
+window.loadAuditPanel = async function() {
+  await initAuditPanel();
 };

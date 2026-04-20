@@ -4,6 +4,7 @@ import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
 import { doc, getDoc, setDoc }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { isAdmin as isAdminRole } from "./roles.js";
+import { logEvent, ACTIONS } from "./audit-log.js";
 
 const ALLOWED_DOMAIN = "heroinsuranceusa.com";
 // ADMIN_EMAILS eliminado: usamos el sistema de roles
@@ -138,6 +139,13 @@ function renderDirectory() {
       if (!c || !confirm(`¿Eliminar contacto "${c.name || c.company}"?`)) return;
       contacts = contacts.filter(x => x.id !== id);
       await setDoc(doc(db, "shared", "directorio"), { contacts });
+
+      // Log de auditoría
+      logEvent(ACTIONS.CONTACT_DELETE, c.name || c.company || "—", {
+        company: c.company || "—",
+        dept: c.dept || "—"
+      });
+
       renderDirectory();
     });
   });
@@ -218,6 +226,14 @@ function openContactModal(idx) {
 
     try {
       await setDoc(doc(db, "shared", "directorio"), { contacts });
+
+      // Log de auditoría
+      logEvent(
+        editing ? ACTIONS.CONTACT_EDIT : ACTIONS.CONTACT_ADD,
+        nuevo.name || nuevo.company,
+        { company: nuevo.company || "—", dept: nuevo.dept || "—" }
+      );
+
       modal.remove();
       renderDirectory();
     } catch (e) {

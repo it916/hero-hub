@@ -4,6 +4,7 @@ import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
 import { doc, getDoc, setDoc, updateDoc }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { isAdmin as isAdminRole } from "./roles.js";
+import { logEvent, ACTIONS } from "./audit-log.js";
 
 const ALLOWED_DOMAIN = "heroinsuranceusa.com";
 // ADMIN_EMAILS eliminado: usamos el sistema de roles
@@ -384,6 +385,14 @@ function openCarrierModal(scope, idx) {
         // Ordenar alfabéticamente
         teamData[currentAccount].sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
         await setDoc(doc(db, "shared", "carriers-team"), teamData);
+
+        // Log de auditoría (solo carriers del equipo, no los personales)
+        logEvent(
+          editing ? ACTIONS.CARRIER_TEAM_EDIT : ACTIONS.CARRIER_TEAM_ADD,
+          nuevo.nombre,
+          { account: currentAccount }
+        );
+
         closeModal(modal);
         renderTeam();
       } else {
@@ -408,6 +417,10 @@ async function deleteCarrier(scope, idx) {
     if (scope === 'team') {
       teamData[currentAccount].splice(idx, 1);
       await setDoc(doc(db, "shared", "carriers-team"), teamData);
+
+      // Log de auditoría
+      logEvent(ACTIONS.CARRIER_TEAM_DELETE, p.nombre, { account: currentAccount });
+
       renderTeam();
     } else {
       personalData.splice(idx, 1);
