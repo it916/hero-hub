@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/roles-admin.css">
 <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
@@ -41,6 +42,7 @@
         <button class="admin-tab active" data-tab="spotlight"><i data-lucide="star"></i><span>Spotlight</span></button>
         <button class="admin-tab" data-tab="messages"><i data-lucide="message-square"></i><span>Mensajes</span></button>
         <button class="admin-tab" data-tab="metrics"><i data-lucide="bar-chart-3"></i><span>Métricas</span></button>
+        <button class="admin-tab" data-tab="roles"><i data-lucide="shield-check"></i><span>Roles</span></button>
       </div>
 
       <!-- SECCIÓN SPOTLIGHT -->
@@ -125,10 +127,88 @@
         </div>
       </section>
 
+      <!-- ══════════════════════════════════════════════ -->
+      <!-- SECCIÓN ROLES (nuevo en Fase 2b)                -->
+      <!-- ══════════════════════════════════════════════ -->
+      <section class="admin-section" id="tab-roles" style="display:none;">
+        <div class="ra-header">
+          <div>
+            <h2 style="margin:0;">🛡️ Gestión de roles</h2>
+            <p class="admin-note" style="margin:4px 0 0;">Controla quién tiene acceso al Hero Hub y qué puede ver según su rol.</p>
+          </div>
+          <button class="btn-primary" id="ra-add-btn"><i data-lucide="user-plus"></i><span>Agregar usuario</span></button>
+        </div>
+
+        <!-- Cards de estadísticas -->
+        <div class="ra-stats">
+          <div class="ra-stat-card ra-stat-total">
+            <div class="ra-stat-label">Total de usuarios</div>
+            <div class="ra-stat-value" id="ra-total">—</div>
+          </div>
+          <div class="ra-stat-card">
+            <div class="ra-stat-label">Administradores</div>
+            <div class="ra-stat-value" id="ra-admin-count">—</div>
+          </div>
+          <div class="ra-stat-card">
+            <div class="ra-stat-label">Directivos</div>
+            <div class="ra-stat-value" id="ra-directivo-count">—</div>
+          </div>
+          <div class="ra-stat-card">
+            <div class="ra-stat-label">RRHH</div>
+            <div class="ra-stat-value" id="ra-rrhh-count">—</div>
+          </div>
+          <div class="ra-stat-card">
+            <div class="ra-stat-label">Internos</div>
+            <div class="ra-stat-value" id="ra-interno-count">—</div>
+          </div>
+          <div class="ra-stat-card">
+            <div class="ra-stat-label">Agentes</div>
+            <div class="ra-stat-value" id="ra-agente-count">—</div>
+          </div>
+        </div>
+
+        <!-- Barra de búsqueda y filtros -->
+        <div class="ra-toolbar">
+          <div class="search-wrap">
+            <i data-lucide="search" class="search-icon"></i>
+            <input type="text" id="ra-search" placeholder="Buscar por nombre, email o rol...">
+          </div>
+        </div>
+
+        <div class="ra-filter-row">
+          <div class="ra-filter-chip active" data-role="all">Todos</div>
+          <div class="ra-filter-chip" data-role="admin">Administradores</div>
+          <div class="ra-filter-chip" data-role="directivo">Directivos</div>
+          <div class="ra-filter-chip" data-role="rrhh">RRHH</div>
+          <div class="ra-filter-chip" data-role="interno">Internos</div>
+          <div class="ra-filter-chip" data-role="agente">Agentes</div>
+        </div>
+
+        <!-- Tabla de usuarios -->
+        <div class="ra-table-wrap">
+          <table class="ra-table">
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th>Rol</th>
+                <th>Última actualización</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="ra-table-body">
+              <tr><td colspan="4" class="empty">Cargando usuarios...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Status bar flotante -->
+        <div class="ra-status" id="ra-status"></div>
+      </section>
+
     </main>
 
     <footer class="hero-footer">
-      <span>HERO HUB · ADMIN v4.3</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+      <span>HERO HUB · ADMIN v4.4</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
     </footer>
   </div>
 
@@ -140,10 +220,11 @@
         b.addEventListener('click', () => {
           document.querySelectorAll('.admin-tab').forEach(x => x.classList.remove('active'));
           b.classList.add('active');
-          ['spotlight','messages','metrics'].forEach(t => {
+          ['spotlight','messages','metrics','roles'].forEach(t => {
             document.getElementById('tab-' + t).style.display = (t === b.dataset.tab) ? 'block' : 'none';
           });
           if (b.dataset.tab === 'metrics' && window.loadMetrics) window.loadMetrics();
+          if (b.dataset.tab === 'roles' && window.loadRolesPanel) window.loadRolesPanel();
         });
       });
     });
