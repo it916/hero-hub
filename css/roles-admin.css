@@ -132,29 +132,27 @@
   background: var(--card, #fff);
   border: 1px solid var(--border, #e8e8e8);
   border-radius: 12px;
-  overflow: hidden;
+  overflow-x: auto;
   box-shadow: 0 2px 8px rgba(6, 163, 182, 0.04);
 }
 
 .ra-table {
   width: 100%;
+  max-width: 100%;
   border-collapse: collapse;
   font-size: 14px;
-  table-layout: auto;
+  table-layout: fixed;
 }
 
-/* Anchos explícitos para que la columna de acciones no se colapse */
+/* Anchos explícitos de cada columna */
 .ra-table th:nth-child(1),
 .ra-table td:nth-child(1) { width: auto; }
 .ra-table th:nth-child(2),
-.ra-table td:nth-child(2) { width: 160px; }
+.ra-table td:nth-child(2) { width: 150px; }
 .ra-table th:nth-child(3),
-.ra-table td:nth-child(3) { width: 150px; }
+.ra-table td:nth-child(3) { width: 140px; }
 .ra-table th:nth-child(4),
-.ra-table td:nth-child(4) {
-  width: 60px;
-  min-width: 60px;
-}
+.ra-table td:nth-child(4) { width: 80px; }
 
 .ra-table thead {
   background: #f0f4f8;
@@ -193,12 +191,6 @@
 }
 
 /* ═══ Celda de usuario (avatar + nombre + email) ═══ */
-.ra-user-cell {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
 .ra-avatar {
   width: 38px;
   height: 38px;
@@ -221,12 +213,6 @@
   flex-shrink: 0;
 }
 
-.ra-user-info {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
 .ra-user-name {
   font-weight: 600;
   color: var(--text, #1a1a1a);
@@ -242,7 +228,20 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 280px;
+}
+
+.ra-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ra-user-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
 }
 
 .ra-me-tag {
