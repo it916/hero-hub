@@ -3,9 +3,10 @@ import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, setDoc }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { isAdmin as isAdminRole } from "./roles.js";
 
 const ALLOWED_DOMAIN = "heroinsuranceusa.com";
-const ADMIN_EMAILS = ["it@heroinsuranceusa.com"];
+// ADMIN_EMAILS eliminado: ahora usamos el sistema de roles desde roles.js
 
 const FLAGS_EMOJI = {
   'venezuela':'🇻🇪',
@@ -121,13 +122,16 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  isAdmin = ADMIN_EMAILS.includes(user.email);
+  // Esperar a que page-guard cargue el rol del usuario
+  const ctx = await window.getPageContext();
+  isAdmin = isAdminRole(ctx.userRole);
+
   document.getElementById("user-avatar").src = user.photoURL;
   if (isAdmin) {
-    document.getElementById("btn-admin").style.display = "inline-flex";
     document.getElementById("btn-add-member").style.display = "inline-flex";
     document.getElementById("hp-edit-btn").classList.add("visible");
   }
+  // El botón btn-admin ya fue manejado por page-guard.js (filterTopbarByRole)
   document.getElementById("loading").style.display = "none";
   document.getElementById("dashboard").style.display = "block";
 

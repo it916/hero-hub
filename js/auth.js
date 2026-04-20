@@ -5,11 +5,12 @@ import { doc, getDoc, setDoc, updateDoc }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { renderWidgets } from "./widgets.js";
 import { openBirthdayCardModal, checkBirthdayPopup } from "./birthday-card.js";
+import { loadUserRole, filterTopbarByRole, isAdmin as isAdminRole, clearRoleCache } from "./roles.js";
 
 const ALLOWED_DOMAIN = "heroinsuranceusa.com";
-const ADMIN_EMAILS = ["it@heroinsuranceusa.com"];
 
 let currentUser = null;
+let currentUserRole = null;  // Objeto { role, definition } del sistema de roles
 let isAdmin = false;
 let teamMembers = [];
 
@@ -22,8 +23,22 @@ onAuthStateChanged(auth, async (user) => {
     showLogin();
     return;
   }
+
+  // Cargar el rol del usuario desde Firestore (sistema de roles)
+  const roleInfo = await loadUserRole(user.email);
+  if (!roleInfo) {
+    await signOut(auth);
+    alert(
+      `La cuenta ${user.email} no tiene un rol asignado en el Hero Hub.\n\n` +
+      `Contacta a IT para que te asignen permisos.`
+    );
+    showLogin();
+    return;
+  }
+
   currentUser = user;
-  isAdmin = ADMIN_EMAILS.includes(user.email);
+  currentUserRole = roleInfo;
+  isAdmin = isAdminRole(roleInfo);
   showDashboard();
 });
 
@@ -37,7 +52,10 @@ async function showDashboard() {
   document.getElementById("login-screen").style.display = "none";
   document.getElementById("dashboard").style.display = "block";
   document.getElementById("user-avatar").src = currentUser.photoURL;
-  if (isAdmin) document.getElementById("btn-admin").style.display = "inline-flex";
+
+  // Filtrar el topbar según el rol del usuario
+  // (oculta links a páginas no permitidas y maneja el botón admin)
+  filterTopbarByRole(currentUserRole);
 
   // Cargar datos del usuario desde Firestore
   let userData = {};
@@ -78,7 +96,10 @@ document.getElementById("btn-login")?.addEventListener("click", async () => {
     document.getElementById("login-error").textContent = "Error: " + e.message;
   }
 });
-document.getElementById("btn-logout")?.addEventListener("click", () => signOut(auth));
+document.getElementById("btn-logout")?.addEventListener("click", () => {
+  clearRoleCache();
+  signOut(auth);
+});
 
 // ══ Botón Preparar Felicitación ══
 function wireBirthdayButton() {

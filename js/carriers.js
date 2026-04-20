@@ -3,9 +3,10 @@ import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, setDoc, updateDoc }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { isAdmin as isAdminRole } from "./roles.js";
 
 const ALLOWED_DOMAIN = "heroinsuranceusa.com";
-const ADMIN_EMAILS = ["it@heroinsuranceusa.com"];
+// ADMIN_EMAILS eliminado: usamos el sistema de roles
 
 let teamData = { jesus: [], anny: [] };
 let personalData = [];
@@ -28,17 +29,44 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  isAdmin = ADMIN_EMAILS.includes(user.email);
+  // Esperar a que page-guard cargue el rol
+  const ctx = await window.getPageContext();
+  isAdmin = isAdminRole(ctx.userRole);
+  const isAgente = ctx.userRole && ctx.userRole.role === "agente";
+
   document.getElementById("user-avatar").src = user.photoURL;
   if (isAdmin) {
-    document.getElementById("btn-admin").style.display = "inline-flex";
     document.getElementById("btn-add-team").style.display = "inline-flex";
     document.getElementById("team-admin-note").style.display = "inline";
   }
+  // btn-admin ya fue manejado por page-guard.js
+
+  // Para agentes: ocultar la pestaña "Cuentas del Equipo" y mostrar solo "Mis Carriers"
+  if (isAgente) {
+    const teamZoneTab = document.querySelector('.zone-tab[data-zone="team"]');
+    const personalZoneTab = document.querySelector('.zone-tab[data-zone="personal"]');
+    const teamZone = document.getElementById("zone-team");
+    const personalZone = document.getElementById("zone-personal");
+
+    if (teamZoneTab) teamZoneTab.style.display = "none";
+    if (teamZone) teamZone.style.display = "none";
+    if (personalZoneTab) {
+      personalZoneTab.classList.add("active");
+      // Los agentes entran directo a Mis Carriers
+      currentZone = "personal";
+    }
+    if (personalZone) personalZone.style.display = "block";
+  }
+
   document.getElementById("loading").style.display = "none";
   document.getElementById("dashboard").style.display = "block";
 
-  await Promise.all([loadTeam(), loadPersonal()]);
+  // Los agentes no necesitan cargar team (no lo verán)
+  if (isAgente) {
+    await loadPersonal();
+  } else {
+    await Promise.all([loadTeam(), loadPersonal()]);
+  }
   wireHandlers();
   if (window.refreshIcons) window.refreshIcons();
 });

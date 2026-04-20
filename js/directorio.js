@@ -3,9 +3,10 @@ import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, setDoc }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { isAdmin as isAdminRole } from "./roles.js";
 
 const ALLOWED_DOMAIN = "heroinsuranceusa.com";
-const ADMIN_EMAILS = ["it@heroinsuranceusa.com"];
+// ADMIN_EMAILS eliminado: usamos el sistema de roles
 
 const DEPT_COLORS = {
   'Broker Support':    { color:'#0097CC', bg:'rgba(0,151,204,.15)',   border:'rgba(0,151,204,.30)' },
@@ -34,10 +35,11 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
+  // Esperar a que page-guard cargue el rol
+  await window.getPageContext();
+  // btn-admin ya fue manejado por page-guard.js
+
   document.getElementById("user-avatar").src = user.photoURL;
-  if (ADMIN_EMAILS.includes(user.email)) {
-    document.getElementById("btn-admin").style.display = "inline-flex";
-  }
   document.getElementById("loading").style.display = "none";
   document.getElementById("dashboard").style.display = "block";
 

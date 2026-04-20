@@ -3,7 +3,6 @@ import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const ALLOWED_DOMAIN = "heroinsuranceusa.com";
-const ADMIN_EMAILS = ["it@heroinsuranceusa.com"];
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -17,10 +16,13 @@ onAuthStateChanged(auth, async (user) => {
     location.href = "index.html";
     return;
   }
+
+  // Esperar a que page-guard cargue el rol del usuario
+  // (si el usuario es agente, page-guard ya lo habrá redirigido a index antes
+  // de llegar aquí, porque politicas no está en sus páginas permitidas)
+  await window.getPageContext();
+
   document.getElementById("user-avatar").src = user.photoURL;
-  if (ADMIN_EMAILS.includes(user.email)) {
-    document.getElementById("btn-admin").style.display = "inline-flex";
-  }
   document.getElementById("loading").style.display = "none";
   document.getElementById("dashboard").style.display = "block";
   if (window.refreshIcons) window.refreshIcons();
