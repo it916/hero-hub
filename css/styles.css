@@ -320,6 +320,8 @@ body[data-theme="dark"] .hero-topbar { background:rgba(15,42,51,.92); }
   .honoree-row .honoree-role { grid-column:2/4; margin-top:8px; }
 }
 /* ═══════════════════════════════════════════
+   AGREGAR ESTO AL FINAL DE tu css/styles.css
+   (no reemplaza nada, solo agrega al final)
    ═══════════════════════════════════════════ */
 
 /* MSG SHELL extendido */
@@ -454,7 +456,7 @@ body[data-theme="dark"] .hero-topbar { background:rgba(15,42,51,.92); }
   .topbar-greet-row .meta-chip:not(.mono) { display:none; }
 }
 /* ═══════════════════════════════════════════
-
+   AGREGAR AL FINAL DE css/styles.css
    Estilos página Hero Team + compartidos de subpáginas
    ═══════════════════════════════════════════ */
 
@@ -684,7 +686,7 @@ body[data-theme="dark"] .hero-topbar { background:rgba(15,42,51,.92); }
   .team-toolbar .btn-add-member span { display:none; }
 }
 /* ═══════════════════════════════════════════
-
+   AGREGAR AL FINAL DE css/styles.css
    Estilos página Directorio
    ═══════════════════════════════════════════ */
 
@@ -818,7 +820,7 @@ body[data-theme="dark"] .hero-topbar { background:rgba(15,42,51,.92); }
   .dir-toolbar .btn-add-contact span { display:none; }
 }
 /* ═══════════════════════════════════════════
-
+   AGREGAR AL FINAL DE css/styles.css
    Estilos página Guías
    ═══════════════════════════════════════════ */
 
@@ -933,7 +935,7 @@ body[data-theme="dark"] .hero-topbar { background:rgba(15,42,51,.92); }
   .guias-grid { grid-template-columns:1fr; }
 }
 /* ═══════════════════════════════════════════
-
+   AGREGAR AL FINAL DE css/styles.css
    Estilos página Políticas
    ═══════════════════════════════════════════ */
 
@@ -1205,7 +1207,7 @@ body[data-theme="dark"] .hero-topbar { background:rgba(15,42,51,.92); }
   .section-body, .section-chevron { transition:none; }
 }
 /* ═══════════════════════════════════════════
-
+   AGREGAR AL FINAL DE css/styles.css
    Estilos página Carriers
    ═══════════════════════════════════════════ */
 
@@ -1439,7 +1441,7 @@ body[data-theme="dark"] .hero-topbar { background:rgba(15,42,51,.92); }
   .carrier-zone-tabs .zone-tab span { font-size:12px; }
 }
 /* ═══════════════════════════════════════════
-
+   AGREGAR AL FINAL DE css/styles.css
    Estilos Onboarding
    ═══════════════════════════════════════════ */
 
@@ -1862,7 +1864,7 @@ body[data-theme="dark"] .hero-topbar { background:rgba(15,42,51,.92); }
   .ob-hub-grid, .ob-help-grid, .ob-glossary, .ob-leaders { grid-template-columns:1fr; }
 }
 /* ═══════════════════════════════════════════
-
+   AGREGAR AL FINAL DE css/styles.css
    Panel Admin de Métricas
    ═══════════════════════════════════════════ */
 
@@ -2051,7 +2053,7 @@ body[data-theme="dark"] .hero-topbar { background:rgba(15,42,51,.92); }
   background:var(--card); color:var(--text);
 }
 /* ═══════════════════════════════════════════
-
+   AGREGAR AL FINAL DE css/styles.css
    Hero Hub v5.0 — Rediseño de Index
    ═══════════════════════════════════════════ */
 
@@ -2778,7 +2780,7 @@ body[data-theme="dark"] .hero-topbar { background:rgba(15,42,51,.92); }
   .dp-react-btn { width:46px; height:46px; font-size:22px; }
 }
 /* ═══════════════════════════════════════════
-
+   AGREGAR AL FINAL DE css/styles.css
    Fondo global + Logo favicon
    ═══════════════════════════════════════════ */
 
@@ -2910,7 +2912,7 @@ body[data-theme="dark"]::after {
   50% { opacity:1; transform:scale(1.1); }
 }
 /* ═══════════════════════════════════════════
-
+   AGREGAR AL FINAL DE css/styles.css
    Pop-up Perfil Heroico — Página Equipo
    ═══════════════════════════════════════════ */
 
@@ -3271,7 +3273,7 @@ body[data-theme="dark"]::after {
   .hp-avatar-wrap { width:140px; height:140px; }
 }
 /* ═══════════════════════════════════════════
-
+   AGREGAR AL FINAL DE css/styles.css
    Scrollbar Custom — Hero Hub
    ═══════════════════════════════════════════ */
 
@@ -3362,7 +3364,7 @@ body[data-theme="dark"] * {
   background:var(--cyan);
 }
 /* ═══════════════════════════════════════════
-
+   AGREGAR AL FINAL DE css/styles.css
    Tarjeta colectiva de cumpleaños
    ═══════════════════════════════════════════ */
 
@@ -3916,7 +3918,6 @@ body[data-theme="dark"] * {
   .bcel-messages { padding:10px 18px 16px; }
 }
 /* ═══════════════════════════════════════════
-
    Banner Onboarding — Destacado en Index
    ═══════════════════════════════════════════ */
 
@@ -3924,15 +3925,15 @@ body[data-theme="dark"] * {
   position:relative;
   display:flex;
   align-items:center;
-  gap:24px;
+  gap:22px;
   padding:22px 28px;
   border-radius:18px;
   overflow:hidden;
-  background:linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 40%, #111 100%);
-  border:1px solid rgba(6,163,182,.25);
+  background:linear-gradient(135deg, #062a33 0%, #0a5c8a 50%, #066b78 100%);
+  border:1px solid rgba(6,163,182,.3);
   text-decoration:none;
   color:#fff;
-  box-shadow:0 12px 35px rgba(0,0,0,.35);
+  box-shadow:0 12px 35px rgba(6,107,120,.25);
   transition:all .3s cubic-bezier(.22,1,.36,1);
   isolation:isolate;
   cursor:pointer;
@@ -3940,7 +3941,7 @@ body[data-theme="dark"] * {
 
 .onboarding-banner:hover {
   transform:translateY(-3px);
-  box-shadow:0 18px 45px rgba(6,163,182,.25);
+  box-shadow:0 18px 45px rgba(6,107,120,.35);
   border-color:rgba(6,163,182,.5);
 }
 
@@ -3948,7 +3949,7 @@ body[data-theme="dark"] * {
   position:absolute;
   top:-50%; right:-15%;
   width:350px; height:350px;
-  background:radial-gradient(circle, rgba(6,163,182,.15) 0%, transparent 70%);
+  background:radial-gradient(circle, rgba(245,184,48,.15) 0%, transparent 70%);
   pointer-events:none;
   z-index:0;
   animation:ob-glow-drift 8s ease-in-out infinite alternate;
@@ -3958,27 +3959,41 @@ body[data-theme="dark"] * {
   100% { transform:translate(-30px, 20px) scale(1.2); }
 }
 
-/* Logo Hero Insurance */
-.ob-banner-logo {
+/* Escudo Hero grande */
+.ob-banner-shield {
   position:relative;
   z-index:1;
-  width:180px;
+  width:72px; height:72px;
+  border-radius:18px;
+  background:linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.04));
+  border:1px solid rgba(255,255,255,.15);
+  padding:12px;
   flex-shrink:0;
   display:flex;
   align-items:center;
   justify-content:center;
+  box-shadow:
+    0 8px 24px rgba(6,163,182,.25),
+    0 0 0 1px rgba(6,163,182,.1) inset;
   transition:all .3s;
 }
-.ob-banner-logo img {
+.ob-banner-shield img {
   width:100%;
-  height:auto;
+  height:100%;
   object-fit:contain;
-  filter:brightness(1.1);
+  filter:drop-shadow(0 4px 10px rgba(6,163,182,.4));
   transition:all .3s;
 }
-.onboarding-banner:hover .ob-banner-logo img {
-  filter:brightness(1.25);
-  transform:scale(1.04);
+.onboarding-banner:hover .ob-banner-shield {
+  transform:rotate(-8deg) scale(1.1);
+  box-shadow:
+    0 12px 30px rgba(6,163,182,.4),
+    0 0 40px rgba(6,163,182,.15);
+  border-color:rgba(245,184,48,.3);
+  background:linear-gradient(135deg, rgba(245,184,48,.15), rgba(6,163,182,.1));
+}
+.onboarding-banner:hover .ob-banner-shield img {
+  filter:drop-shadow(0 4px 14px rgba(245,184,48,.5));
 }
 
 .ob-banner-body {
@@ -3992,7 +4007,7 @@ body[data-theme="dark"] * {
   font-family:var(--mono);
   font-size:9.5px; font-weight:700;
   letter-spacing:2.5px; text-transform:uppercase;
-  color:rgba(6,163,182,.9);
+  color:rgba(245,184,48,.9);
   margin-bottom:4px;
 }
 
@@ -4007,7 +4022,7 @@ body[data-theme="dark"] * {
 
 .ob-banner-sub {
   font-size:12.5px;
-  color:rgba(255,255,255,.6);
+  color:rgba(255,255,255,.65);
   line-height:1.45;
   max-width:500px;
 }
@@ -4020,13 +4035,13 @@ body[data-theme="dark"] * {
   gap:8px;
   padding:12px 22px;
   border-radius:12px;
-  background:linear-gradient(135deg, var(--cyan), var(--cyan-deep));
+  background:linear-gradient(135deg, #f5b830, #d97706);
   color:#fff;
   font-family:var(--display); font-weight:700;
   font-size:14px;
   letter-spacing:.5px;
   flex-shrink:0;
-  box-shadow:0 6px 16px rgba(6,163,182,.35);
+  box-shadow:0 6px 16px rgba(245,184,48,.35);
   transition:all .25s;
   white-space:nowrap;
 }
@@ -4034,8 +4049,18 @@ body[data-theme="dark"] * {
 
 .onboarding-banner:hover .ob-banner-cta {
   transform:translateX(4px);
-  box-shadow:0 10px 24px rgba(6,163,182,.5);
-  background:linear-gradient(135deg, #19CDEB, var(--cyan));
+  box-shadow:0 10px 24px rgba(245,184,48,.5);
+  background:linear-gradient(135deg, #fbbf24, #f5b830);
+}
+
+/* Modo oscuro */
+[data-theme="dark"] .onboarding-banner {
+  background:linear-gradient(135deg, #0f1a2a 0%, #0a3a5e 50%, #062a33 100%);
+  border-color:rgba(6,163,182,.2);
+  box-shadow:0 12px 35px rgba(0,0,0,.4);
+}
+[data-theme="dark"] .onboarding-banner:hover {
+  box-shadow:0 18px 45px rgba(0,0,0,.5);
 }
 
 /* Responsive */
@@ -4046,7 +4071,7 @@ body[data-theme="dark"] * {
     padding:24px 22px;
     gap:16px;
   }
-  .ob-banner-logo { width:140px; }
+  .ob-banner-shield { width:64px; height:64px; }
   .ob-banner-sub { max-width:100%; }
   .ob-banner-cta { width:100%; justify-content:center; }
 }
