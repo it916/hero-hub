@@ -81,6 +81,9 @@
           <span class="star s5">✧</span>
           <span class="star s6">✦</span>
         </div>
+        <!-- Energy bolts -->
+        <div class="hero-bolt bolt1"></div>
+        <div class="hero-bolt bolt2"></div>
       </div>
 
       <div class="hero-cover-content">
@@ -89,14 +92,25 @@
           <span class="hero-issue" id="hero-issue">VOL. II · EDICIÓN DIARIA</span>
         </div>
 
-        <div class="hero-cover-main">
-          <div class="hero-cover-kicker" id="hero-kicker">—</div>
-          <h1 class="hero-cover-title">
-            <span class="greet-word">¡Bienvenido,</span>
-            <span class="greet-name" id="greet-name">Héroe</span>
-            <span class="greet-punct">!</span>
-          </h1>
-          <p class="hero-cover-sub" id="hero-sub">—</p>
+        <div class="hero-cover-center">
+          <!-- Avatar heroico -->
+          <div class="hero-avatar-zone" id="hero-avatar-zone">
+            <div class="hero-av-energy"></div>
+            <div class="hero-av-ring"></div>
+            <img class="hero-av-photo" id="hero-av-photo" src="" alt="">
+            <div class="hero-av-rank">⭐</div>
+          </div>
+
+          <!-- Texto principal -->
+          <div class="hero-cover-main">
+            <div class="hero-cover-kicker" id="hero-kicker">—</div>
+            <h1 class="hero-cover-title">
+              <span class="greet-word">¡Bienvenido,</span>
+              <span class="greet-name" id="greet-name">Héroe</span>
+              <span class="greet-punct">!</span>
+            </h1>
+            <p class="hero-cover-sub" id="hero-sub">—</p>
+          </div>
         </div>
 
         <div class="hero-cover-meta">
@@ -378,18 +392,17 @@
     if (menuBtn && nav) {
       menuBtn.addEventListener("click", () => nav.classList.toggle("open"));
     }
-    // Sync onboarding banner avatar with user avatar
-    const obAv = document.getElementById("ob-hb-avatar");
-    if (obAv) {
-      const sync = () => {
-        const src = document.getElementById("user-avatar")?.src;
-        if (src && src !== "" && !src.endsWith("/")) obAv.src = src;
+    // Sync avatars with user avatar
+    const userAv = document.getElementById("user-avatar");
+    if (userAv) {
+      const syncAll = () => {
+        const src = userAv.src;
+        if (!src || src === "" || src.endsWith("/")) return;
+        const targets = ["ob-hb-avatar", "hero-av-photo"];
+        targets.forEach(id => { const el = document.getElementById(id); if (el) el.src = src; });
       };
-      const userAv = document.getElementById("user-avatar");
-      if (userAv) {
-        new MutationObserver(sync).observe(userAv, { attributes: true, attributeFilter: ["src"] });
-        sync();
-      }
+      new MutationObserver(syncAll).observe(userAv, { attributes: true, attributeFilter: ["src"] });
+      syncAll();
     }
   });
 </script>

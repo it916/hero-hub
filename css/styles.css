@@ -2160,7 +2160,7 @@ body[data-theme="dark"] .hero-topbar { background:rgba(15,42,51,.92); }
 .hero-cover-main {
   flex:1;
   display:flex; flex-direction:column; gap:4px;
-  padding:6px 0;
+  min-width:0;
 }
 .hero-cover-kicker {
   font-family:var(--mono);
@@ -2226,9 +2226,98 @@ body[data-theme="dark"] .hero-topbar { background:rgba(15,42,51,.92); }
 .hmeta-chip i { width:14px; height:14px; }
 .hmeta-chip span:first-child:not([id]) { font-size:14px; }
 
+/* Hero cover center layout (avatar + text side by side) */
+.hero-cover-center {
+  display:flex;
+  align-items:center;
+  gap:28px;
+  padding:6px 0;
+}
+
+/* Hero avatar in cover banner */
+.hero-avatar-zone {
+  position:relative;
+  width:120px; height:120px;
+  flex-shrink:0;
+}
+.hero-av-energy {
+  position:absolute; inset:-16px;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(6,163,182,.25) 0%, transparent 70%);
+  animation:hero-av-energy-pulse 3s ease-in-out infinite;
+  pointer-events:none;
+}
+@keyframes hero-av-energy-pulse {
+  0%, 100% { transform:scale(1); opacity:.4; }
+  50% { transform:scale(1.15); opacity:.8; }
+}
+.hero-av-ring {
+  position:absolute; inset:-5px;
+  border-radius:50%;
+  border:3px solid transparent;
+  background:conic-gradient(from 0deg, #06a3b6, #f5b830, #19CDEB, #06a3b6) border-box;
+  -webkit-mask:linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor;
+  mask-composite:exclude;
+  animation:hero-av-ring-spin 8s linear infinite;
+}
+@keyframes hero-av-ring-spin { to { transform:rotate(360deg); } }
+
+.hero-av-photo {
+  position:relative; z-index:1;
+  width:120px; height:120px;
+  border-radius:50%;
+  object-fit:cover;
+  border:4px solid rgba(255,255,255,.2);
+  box-shadow:0 10px 30px rgba(0,0,0,.35), 0 0 40px rgba(6,163,182,.2);
+  transition:all .3s;
+}
+.hero-cover:hover .hero-av-photo {
+  box-shadow:0 12px 35px rgba(0,0,0,.4), 0 0 50px rgba(6,163,182,.35);
+  border-color:rgba(255,255,255,.35);
+}
+
+.hero-av-rank {
+  position:absolute; bottom:2px; right:2px;
+  width:30px; height:30px;
+  background:linear-gradient(135deg, #f5b830, #d97706);
+  border:2px solid rgba(255,255,255,.3);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; z-index:2;
+  box-shadow:0 4px 12px rgba(245,184,48,.5);
+  animation:hero-av-rank-bounce 3s ease-in-out infinite;
+}
+@keyframes hero-av-rank-bounce {
+  0%, 100% { transform:scale(1); }
+  50% { transform:scale(1.1) rotate(10deg); }
+}
+
+.hero-cover-main { flex:1; min-width:0; }
+
+/* Energy bolts */
+.hero-bolt {
+  position:absolute;
+  width:2px; height:60px;
+  background:linear-gradient(180deg, transparent, rgba(6,163,182,.6), transparent);
+  border-radius:2px;
+  pointer-events:none;
+  animation:hero-bolt-flash 4s ease-in-out infinite;
+}
+.hero-bolt.bolt1 { top:10%; right:18%; transform:rotate(25deg); }
+.hero-bolt.bolt2 { bottom:15%; right:30%; transform:rotate(-15deg); animation-delay:2s; height:40px; }
+@keyframes hero-bolt-flash {
+  0%, 40%, 100% { opacity:0; }
+  45%, 55% { opacity:1; }
+  60% { opacity:0; }
+}
+
 @media (max-width:700px) {
   .hero-cover { padding:22px 20px; }
-  .hero-cover-title { font-size:clamp(30px, 8vw, 42px); }
+  .hero-cover-title { font-size:clamp(28px, 8vw, 38px); }
+  .hero-cover-center { flex-direction:column; text-align:center; gap:16px; }
+  .hero-avatar-zone { width:90px; height:90px; }
+  .hero-av-photo { width:90px; height:90px; }
 }
 
 /* ══════════════════════════════════════════
