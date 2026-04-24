@@ -124,37 +124,32 @@
 
     <div class="connector"></div>
 
-    <!-- ══ BANNER ONBOARDING — Misión Heroica ══ -->
-    <a href="onboarding.html" class="ob-hero-banner fade-in" id="ob-hero-banner">
-      <div class="ob-hb-rays"></div>
-      <div class="ob-hb-grid"></div>
-      <div class="ob-hb-glow"></div>
-      <div class="ob-hb-particles">
-        <span class="ob-hb-p p1">✦</span>
-        <span class="ob-hb-p p2">⚡</span>
-        <span class="ob-hb-p p3">✦</span>
-        <span class="ob-hb-p p4">★</span>
-      </div>
-
-      <div class="ob-hb-avatar-zone">
-        <div class="ob-hb-ring"></div>
-        <div class="ob-hb-ring-pulse"></div>
-        <img class="ob-hb-avatar" id="ob-hb-avatar" src="" alt="">
-        <div class="ob-hb-shield">🛡️</div>
-      </div>
-
-      <div class="ob-hb-content">
-        <div class="ob-hb-badge">
-          <span class="ob-hb-badge-dot"></span>
-          NUEVA MISIÓN DISPONIBLE
+    <!-- ══ BANNER ONBOARDING — Sobre / Carta ══ -->
+    <a href="onboarding.html" class="ob-welcome fade-in" id="ob-welcome">
+      <div class="ob-w-envelope">
+        <div class="ob-w-env-flap"></div>
+        <div class="ob-w-env-body"></div>
+        <div class="ob-w-card">
+          <div class="ob-w-card-stripe"></div>
+          <div class="ob-w-card-seal">H</div>
+          <div class="ob-w-card-lines">
+            <span></span><span></span><span></span>
+          </div>
         </div>
-        <div class="ob-hb-title">Tu guía de bienvenida te espera</div>
-        <div class="ob-hb-sub">Checklist del primer día, herramientas, contactos clave y todo lo que necesitas para activar tus superpoderes.</div>
       </div>
 
-      <div class="ob-hb-cta">
-        <span>Iniciar misión</span>
-        <i data-lucide="chevron-right"></i>
+      <div class="ob-w-content">
+        <div class="ob-w-kicker">
+          <i data-lucide="mail-open"></i>
+          <span>Tienes un mensaje del equipo Hero</span>
+        </div>
+        <div class="ob-w-title">Tu guía de bienvenida está lista</div>
+        <div class="ob-w-sub">Checklist del primer día, herramientas, contactos y todo lo que necesitas para empezar con pie derecho.</div>
+      </div>
+
+      <div class="ob-w-cta">
+        <span>Abrir mi guía</span>
+        <i data-lucide="arrow-right"></i>
       </div>
     </a>
 
@@ -398,7 +393,7 @@
       const syncAll = () => {
         const src = userAv.src;
         if (!src || src === "" || src.endsWith("/")) return;
-        const targets = ["ob-hb-avatar", "hero-av-photo"];
+        const targets = ["hero-av-photo"];
         targets.forEach(id => { const el = document.getElementById(id); if (el) el.src = src; });
       };
       new MutationObserver(syncAll).observe(userAv, { attributes: true, attributeFilter: ["src"] });
