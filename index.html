@@ -110,27 +110,37 @@
 
     <div class="connector"></div>
 
-    <!-- ══ BANNER ONBOARDING — Tarjeta de Bienvenida ══ -->
-    <a href="onboarding.html" class="ob-welcome fade-in">
-      <div class="ob-w-glow"></div>
-      <div class="ob-w-envelope">
-        <div class="ob-w-env-back"></div>
-        <div class="ob-w-env-flap"></div>
-        <div class="ob-w-card">
-          <div class="ob-w-card-line"></div>
-          <div class="ob-w-card-line"></div>
-          <div class="ob-w-card-line"></div>
+    <!-- ══ BANNER ONBOARDING — Misión Heroica ══ -->
+    <a href="onboarding.html" class="ob-hero-banner fade-in" id="ob-hero-banner">
+      <div class="ob-hb-rays"></div>
+      <div class="ob-hb-grid"></div>
+      <div class="ob-hb-glow"></div>
+      <div class="ob-hb-particles">
+        <span class="ob-hb-p p1">✦</span>
+        <span class="ob-hb-p p2">⚡</span>
+        <span class="ob-hb-p p3">✦</span>
+        <span class="ob-hb-p p4">★</span>
+      </div>
+
+      <div class="ob-hb-avatar-zone">
+        <div class="ob-hb-ring"></div>
+        <div class="ob-hb-ring-pulse"></div>
+        <img class="ob-hb-avatar" id="ob-hb-avatar" src="" alt="">
+        <div class="ob-hb-shield">🛡️</div>
+      </div>
+
+      <div class="ob-hb-content">
+        <div class="ob-hb-badge">
+          <span class="ob-hb-badge-dot"></span>
+          NUEVA MISIÓN DISPONIBLE
         </div>
-        <div class="ob-w-shimmer"></div>
+        <div class="ob-hb-title">Tu guía de bienvenida te espera</div>
+        <div class="ob-hb-sub">Checklist del primer día, herramientas, contactos clave y todo lo que necesitas para activar tus superpoderes.</div>
       </div>
-      <div class="ob-w-body">
-        <div class="ob-w-kicker">TIENES UN MENSAJE DEL EQUIPO HERO</div>
-        <div class="ob-w-title">Tu guía de bienvenida está lista</div>
-        <div class="ob-w-sub">Checklist del primer día, herramientas, contactos y todo lo que necesitas para activar tus superpoderes.</div>
-      </div>
-      <div class="ob-w-cta">
-        <span>Abrir mi guía</span>
-        <i data-lucide="arrow-right"></i>
+
+      <div class="ob-hb-cta">
+        <span>Iniciar misión</span>
+        <i data-lucide="chevron-right"></i>
       </div>
     </a>
 
@@ -367,6 +377,19 @@
     const nav = document.getElementById("topbar-nav");
     if (menuBtn && nav) {
       menuBtn.addEventListener("click", () => nav.classList.toggle("open"));
+    }
+    // Sync onboarding banner avatar with user avatar
+    const obAv = document.getElementById("ob-hb-avatar");
+    if (obAv) {
+      const sync = () => {
+        const src = document.getElementById("user-avatar")?.src;
+        if (src && src !== "" && !src.endsWith("/")) obAv.src = src;
+      };
+      const userAv = document.getElementById("user-avatar");
+      if (userAv) {
+        new MutationObserver(sync).observe(userAv, { attributes: true, attributeFilter: ["src"] });
+        sync();
+      }
     }
   });
 </script>
