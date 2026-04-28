@@ -39,7 +39,9 @@ export const ACTIONS = {
   AUTH_DENIED_NO_ROLE: "auth.denied.no_role",
   AUTH_DENIED_PAGE: "auth.denied.page",
 
-  // Carriers (solo los del equipo, las personales son privadas)
+  // Portales (solo los del equipo, los personales son privados).
+  // Las constantes mantienen el nombre "carrier" como vocabulario técnico interno
+  // para no romper los miles de eventos históricos ya guardados en Firestore.
   CARRIER_TEAM_ADD: "carrier.team.add",
   CARRIER_TEAM_EDIT: "carrier.team.edit",
   CARRIER_TEAM_DELETE: "carrier.team.delete",
@@ -64,9 +66,9 @@ export const ACTION_LABELS = {
   "auth.login": { label: "Inicio de sesión", icon: "log-in", color: "#5a6b7a" },
   "auth.denied.no_role": { label: "Acceso denegado (sin rol)", icon: "shield-off", color: "#e8a317" },
   "auth.denied.page": { label: "Acceso denegado (página)", icon: "shield-off", color: "#e8a317" },
-  "carrier.team.add": { label: "Carrier del equipo agregado", icon: "shield-plus", color: "#22a06b" },
-  "carrier.team.edit": { label: "Carrier del equipo editado", icon: "edit-3", color: "#06a3b6" },
-  "carrier.team.delete": { label: "Carrier del equipo eliminado", icon: "shield-off", color: "#c0392b" },
+  "carrier.team.add": { label: "Portal del equipo agregado", icon: "shield-plus", color: "#22a06b" },
+  "carrier.team.edit": { label: "Portal del equipo editado", icon: "edit-3", color: "#06a3b6" },
+  "carrier.team.delete": { label: "Portal del equipo eliminado", icon: "shield-off", color: "#c0392b" },
   "contact.add": { label: "Contacto agregado", icon: "user-plus", color: "#22a06b" },
   "contact.edit": { label: "Contacto editado", icon: "edit-3", color: "#06a3b6" },
   "contact.delete": { label: "Contacto eliminado", icon: "user-x", color: "#c0392b" },
