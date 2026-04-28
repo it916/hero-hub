@@ -21,28 +21,28 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-
 export const ROLES = {
   admin: {
     label: "Administrador",
-    pages: ["index", "equipo", "carriers", "directorio", "guias", "politicas", "onboarding", "admin"],
+    pages: ["index", "equipo", "portales", "directorio", "guias", "politicas", "onboarding", "admin"],
     isAdmin: true
   },
   directivo: {
     label: "Directivo",
-    pages: ["index", "equipo", "carriers", "directorio", "guias", "politicas", "onboarding"],
+    pages: ["index", "equipo", "portales", "directorio", "guias", "politicas", "onboarding"],
     isAdmin: false
   },
   rrhh: {
     label: "Recursos Humanos",
-    pages: ["index", "equipo", "carriers", "directorio", "guias", "politicas", "onboarding"],
+    pages: ["index", "equipo", "portales", "directorio", "guias", "politicas", "onboarding"],
     isAdmin: false
   },
   interno: {
     label: "Equipo interno",
-    pages: ["index", "equipo", "carriers", "directorio", "guias", "politicas", "onboarding"],
+    pages: ["index", "equipo", "portales", "directorio", "guias", "politicas", "onboarding"],
     isAdmin: false
   },
   agente: {
     label: "Agente",
-    // Los agentes SÍ ven carriers (solo su sección personal) pero NO políticas
-    pages: ["index", "equipo", "carriers", "directorio", "guias", "onboarding"],
+    // Los agentes SÍ ven portales (solo su sección personal) pero NO políticas
+    pages: ["index", "equipo", "portales", "directorio", "guias", "onboarding"],
     isAdmin: false
   }
 };
@@ -135,7 +135,7 @@ export async function loadUserRole(email) {
 
 /**
  * ¿El usuario puede ver esta página?
- * @param {string} pageName - ej. "carriers", "equipo", "admin"
+ * @param {string} pageName - ej. "portales", "equipo", "admin"
  * @param {object} userRole - objeto devuelto por loadUserRole()
  */
 export function canAccessPage(pageName, userRole) {
@@ -160,7 +160,7 @@ export function getVisiblePages(userRole) {
 
 /**
  * Detecta en qué página estamos actualmente según la URL.
- * Ejemplo: si estamos en /carriers.html → devuelve "carriers"
+ * Ejemplo: si estamos en /portales.html → devuelve "portales"
  */
 export function getCurrentPage() {
   const path = window.location.pathname.split('/').pop() || 'index.html';
@@ -264,7 +264,7 @@ function showAccessDenied(message) {
  * Oculta del topbar los enlaces a páginas que el usuario no puede ver.
  * Debe ejecutarse después de que Firebase y el rol estén cargados.
  *
- * Detecta los enlaces por su href (ej. "carriers.html") y los oculta
+ * Detecta los enlaces por su href (ej. "portales.html") y los oculta
  * si la página no está en la lista de permisos del usuario.
  */
 export function filterTopbarByRole(userRole) {
