@@ -172,6 +172,87 @@
 
     <div class="connector"></div>
 
+    <!-- ══ HUB CARDS — Equipo / Directorio / Guías ══ -->
+    <section class="section fade-in">
+      <div class="section-label"><span class="kicker-dot"></span>Tu cuartel general</div>
+
+      <div class="hub-cards">
+
+        <!-- CARD 1: EQUIPO (con avatares dinámicos) -->
+        <a href="equipo.html" class="hub-card hc-team">
+          <div class="hc-halftone"></div>
+          <div class="hc-stripe"></div>
+          <div class="hc-content">
+            <div class="hc-icon-wrap">
+              <div class="hc-icon"><i data-lucide="shield"></i></div>
+              <div class="hc-burst">★</div>
+            </div>
+            <div class="hc-label">EQUIPO</div>
+            <div class="hc-title">Conoce a los héroes</div>
+            <div class="hc-desc">Fichas, superpoderes y orígenes de cada miembro del equipo.</div>
+            <div class="hc-team-stack" id="hc-team-stack">
+              <span class="hc-loading">Cargando héroes…</span>
+            </div>
+            <div class="hc-cta">
+              <span>Entrar al equipo</span>
+              <i data-lucide="arrow-right"></i>
+            </div>
+          </div>
+        </a>
+
+        <!-- CARD 2: DIRECTORIO -->
+        <a href="directorio.html" class="hub-card hc-directory">
+          <div class="hc-halftone"></div>
+          <div class="hc-stripe"></div>
+          <div class="hc-content">
+            <div class="hc-icon-wrap">
+              <div class="hc-icon"><i data-lucide="book-user"></i></div>
+              <div class="hc-burst">⚡</div>
+            </div>
+            <div class="hc-label">DIRECTORIO</div>
+            <div class="hc-title">Contactos clave</div>
+            <div class="hc-desc">Portales, carriers y contactos directos por departamento. Filtra y encuentra al instante.</div>
+            <div class="hc-tags">
+              <span class="hc-tag">Broker Support</span>
+              <span class="hc-tag">Finance</span>
+              <span class="hc-tag">Sales</span>
+              <span class="hc-tag">+5</span>
+            </div>
+            <div class="hc-cta">
+              <span>Abrir directorio</span>
+              <i data-lucide="arrow-right"></i>
+            </div>
+          </div>
+        </a>
+
+        <!-- CARD 3: GUÍAS -->
+        <a href="guias.html" class="hub-card hc-guides">
+          <div class="hc-halftone"></div>
+          <div class="hc-stripe"></div>
+          <div class="hc-content">
+            <div class="hc-icon-wrap">
+              <div class="hc-icon"><i data-lucide="book-open"></i></div>
+              <div class="hc-burst">✦</div>
+            </div>
+            <div class="hc-label">GUÍAS</div>
+            <div class="hc-title">Procedimientos paso a paso</div>
+            <div class="hc-desc">Tutoriales visuales (Scribe) para los procesos del equipo. Resuelve dudas en 2 minutos.</div>
+            <div class="hc-feature">
+              <i data-lucide="play-circle"></i>
+              <span>Tutoriales visuales</span>
+            </div>
+            <div class="hc-cta">
+              <span>Ver guías</span>
+              <i data-lucide="arrow-right"></i>
+            </div>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+    <div class="connector"></div>
+
     <!-- ══ MISIONES COMPACTAS ══ -->
     <section class="section fade-in">
       <div class="section-label"><span class="kicker-dot"></span>Acceso rápido a misiones</div>
@@ -422,5 +503,46 @@
 <script type="module" src="js/auth.js"></script>
 <script type="module" src="js/tracker.js"></script>
 <script defer src="js/next-meeting.js"></script>
+<script type="module">
+  // ══ Hub Card "Equipo": cargar avatares dinámicos ══
+  import { db } from "./js/firebase-config.js";
+  import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  async function loadTeamStack() {
+    const stack = document.getElementById("hc-team-stack");
+    if (!stack) return;
+    try {
+      const snap = await getDoc(doc(db, "shared", "team"));
+      if (!snap.exists()) { stack.innerHTML = ""; return; }
+      const members = snap.data().members || [];
+      const total = members.length;
+      // Tomar 5 al azar para mostrar
+      const shown = [...members].sort(() => Math.random() - 0.5).slice(0, 5);
+      const remaining = Math.max(0, total - shown.length);
+
+      const avs = shown.map(m => {
+        const photo = m.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.name || '?')}&background=06a3b6&color=fff&size=64`;
+        return `<img class="hc-av" src="${photo}" alt="${(m.name || '').replace(/"/g,'&quot;')}" title="${(m.name || '').replace(/"/g,'&quot;')}" loading="lazy">`;
+      }).join("");
+
+      stack.innerHTML = `
+        ${avs}
+        ${remaining > 0 ? `<span class="hc-av hc-av-more">+${remaining}</span>` : ''}
+        <span class="hc-team-count">${total} héroes</span>
+      `;
+    } catch (e) {
+      console.warn("No se pudo cargar el equipo:", e.message);
+      stack.innerHTML = "";
+    }
+  }
+
+  // Esperar a que auth confirme el usuario antes de leer Firestore
+  // (Firestore rules requieren autenticación)
+  import { auth } from "./js/firebase-config.js";
+  import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  onAuthStateChanged(auth, (user) => {
+    if (user) loadTeamStack();
+  });
+</script>
 </body>
 </html>
