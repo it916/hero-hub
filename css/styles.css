@@ -393,7 +393,7 @@ body[data-theme="dark"] .hero-topbar { background:rgba(15,42,51,.92); }
 /* ═══ NAV LINKS ═══ */
 .topbar-nav {
   display:flex; align-items:center; gap:4px; flex:1;
-  justify-content:center; margin:0 auto;
+  justify-content:center; max-width:640px; margin:0 auto;
 }
 .nav-link {
   display:inline-flex; align-items:center; gap:7px;
@@ -430,7 +430,7 @@ body[data-theme="dark"] .hero-topbar { background:rgba(15,42,51,.92); }
 
 /* ═══ RESPONSIVE ═══ */
 @media (max-width:1100px) {
-  .topbar-nav { max-width:600px; }
+  .topbar-nav { max-width:520px; }
   .nav-link { padding:8px 10px; }
   .nav-link span { display:none; }
   .nav-link i { width:18px; height:18px; }
@@ -4263,4 +4263,134 @@ body[data-theme="dark"] * {
     width:100%;
     justify-content:center;
   }
+}
+
+/* ═══════════════════════════════════════════
+   Próxima Reunión — widget del topbar
+   ═══════════════════════════════════════════ */
+
+.next-meeting {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px 6px 8px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(6,163,182,.10), rgba(6,163,182,.04));
+  border: 1px solid rgba(6,163,182,.22);
+  max-width: 240px;
+  min-width: 0;
+  transition: all .2s ease;
+  cursor: default;
+}
+
+.next-meeting:hover {
+  background: linear-gradient(135deg, rgba(6,163,182,.16), rgba(6,163,182,.08));
+  border-color: rgba(6,163,182,.35);
+}
+
+.next-meeting .nm-icon {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #06a3b6, #058fa0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(6,163,182,.30);
+}
+
+.next-meeting .nm-icon i {
+  width: 16px;
+  height: 16px;
+  color: #fff;
+}
+
+.next-meeting .nm-body {
+  min-width: 0;
+  line-height: 1.15;
+}
+
+.next-meeting .nm-label {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--cyan-deep, #058fa0);
+  white-space: nowrap;
+}
+
+.next-meeting .nm-title {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text, #1a1a1a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+/* Estado: sin reuniones / error */
+.next-meeting.nm-empty {
+  background: rgba(0,0,0,.03);
+  border-color: rgba(0,0,0,.08);
+}
+
+.next-meeting.nm-empty .nm-icon {
+  background: linear-gradient(135deg, #94a3b8, #64748b);
+  box-shadow: none;
+}
+
+.next-meeting.nm-empty .nm-label {
+  color: var(--muted, #64748b);
+}
+
+/* Estado: reunión EN VIVO (empezó hace <5min) */
+.next-meeting.nm-live {
+  background: linear-gradient(135deg, rgba(220,38,38,.08), rgba(220,38,38,.03));
+  border-color: rgba(220,38,38,.30);
+  animation: nm-pulse 2.4s ease-in-out infinite;
+}
+
+.next-meeting.nm-live .nm-icon {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  box-shadow: 0 2px 8px rgba(220,38,38,.40);
+}
+
+.next-meeting.nm-live .nm-label {
+  color: #dc2626;
+}
+
+@keyframes nm-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,.18); }
+  50%      { box-shadow: 0 0 0 6px rgba(220,38,38,0); }
+}
+
+/* Dark mode */
+[data-theme="dark"] .next-meeting {
+  background: linear-gradient(135deg, rgba(6,163,182,.18), rgba(6,163,182,.06));
+  border-color: rgba(6,163,182,.30);
+}
+
+[data-theme="dark"] .next-meeting .nm-title {
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .next-meeting.nm-empty {
+  background: rgba(255,255,255,.04);
+  border-color: rgba(255,255,255,.10);
+}
+
+/* Responsive: ocultar el título en pantallas medianas, dejar solo el icono+countdown */
+@media (max-width: 1100px) {
+  .next-meeting { max-width: 130px; padding: 6px 10px 6px 6px; }
+  .next-meeting .nm-title { display: none; }
+  .next-meeting .nm-body { line-height: 1; }
+}
+
+/* Responsive: ocultar completo en mobile (el menú hamburguesa lo cubre) */
+@media (max-width: 720px) {
+  .next-meeting { display: none; }
 }
