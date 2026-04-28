@@ -182,7 +182,7 @@ function renderPersonal() {
   if (!filtered.length) {
     grid.innerHTML = personalFilter
       ? `<p class="empty">Sin resultados para "${personalFilter}"</p>`
-      : `<p class="empty">Aún no has agregado carriers personales. Click en "Agregar carrier" para empezar.</p>`;
+      : `<p class="empty">Aún no has agregado portales personales. Click en "Agregar portal" para empezar.</p>`;
     return;
   }
 
@@ -351,7 +351,7 @@ function openCarrierModal(scope, idx) {
   const modal = document.createElement('div');
   modal.className = 'modal-overlay';
   modal.innerHTML = `<div class="modal modal-wide">
-    <h3>${editing ? 'Editar carrier' : 'Nuevo carrier'} · ${scope === 'team' ? 'Cuenta '+currentAccount.toUpperCase() : 'Personal'}</h3>
+    <h3>${editing ? 'Editar portal' : 'Nuevo portal'} · ${scope === 'team' ? 'Cuenta '+currentAccount.toUpperCase() : 'Personal'}</h3>
     <label>Nombre del portal * <input id="cr-nombre" value="${(p.nombre||'').replace(/"/g,'&quot;')}" maxlength="50" placeholder="Ej. AETNA"></label>
     <div class="modal-grid-2">
       <label>Usuario <input id="cr-user" value="${(p.user||'').replace(/"/g,'&quot;')}" maxlength="80" placeholder="usuario o email"></label>
@@ -412,7 +412,7 @@ function openCarrierModal(scope, idx) {
 async function deleteCarrier(scope, idx) {
   const list = scope === 'team' ? teamData[currentAccount] : personalData;
   const p = list[idx];
-  if (!confirm(`¿Eliminar carrier "${p.nombre}"?`)) return;
+  if (!confirm(`¿Eliminar portal "${p.nombre}"?`)) return;
   try {
     if (scope === 'team') {
       teamData[currentAccount].splice(idx, 1);
