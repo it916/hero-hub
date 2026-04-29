@@ -33,7 +33,7 @@
       <nav class="topbar-nav" id="topbar-nav">
         <a href="index.html" class="nav-link"><i data-lucide="home"></i><span>Inicio</span></a>
         <a href="equipo.html" class="nav-link"><i data-lucide="users"></i><span>Equipo</span></a>
-        <a href="portales.html" class="nav-link"><i data-lucide="shield"></i><span>Portales</span></a>
+        <a href="carriers.html" class="nav-link"><i data-lucide="shield"></i><span>Carriers</span></a>
         <a href="directorio.html" class="nav-link"><i data-lucide="book-user"></i><span>Directorio</span></a>
         <a href="guias.html" class="nav-link"><i data-lucide="book-open"></i><span>Guías</span></a>
         <a href="politicas.html" class="nav-link active"><i data-lucide="scroll-text"></i><span>Políticas</span></a>
@@ -265,8 +265,7 @@
               <div class="subsection-title">Autenticación Multifactor (MFA)</div>
               <ul class="policy-list">
                 <li>MFA es obligatorio para todos los usuarios de cuentas <span class="mono-inline">@heroinsuranceusa.com</span> sin excepción</li>
-                <li>Se recomienda Google Prompt o Passkeys como métodos preferidos</li>
-                <li>SMS como segundo factor está permitido pero no es la opción preferida</li>
+                <li>El método autorizado es <strong>Google Authenticator</strong> instalado en el dispositivo móvil del usuario</li>
                 <li>Está prohibido desactivar MFA bajo cualquier circunstancia</li>
                 <li>El IT Manager puede forzar MFA en sistemas administrados (Firebase, Cloudflare, GitHub, dominios)</li>
               </ul>
@@ -278,7 +277,7 @@
                 <li>Prohibido reutilizar contraseñas personales en cuentas corporativas</li>
                 <li>Prohibido compartir credenciales con otros usuarios (cada persona usa su propia cuenta)</li>
                 <li>Prohibido almacenar contraseñas en documentos planos, notas, hojas de Google, Word o similares</li>
-                <li>Para credenciales compartidas de carriers, usar el módulo "Carriers" del Hero Hub o un gestor aprobado</li>
+                <li>Para credenciales compartidas de carriers, usar el módulo "Portales" del Hero Hub o un gestor aprobado</li>
               </ul>
             </div>
           </div></div>
@@ -521,7 +520,7 @@
             <span class="section-num">12</span>
             <div class="section-icon-wrap">🔐</div>
             <div class="section-title-wrap">
-              <div class="section-title">Política de Credenciales de Carriers y Portales</div>
+              <div class="section-title">Política de Credenciales de Portales</div>
               <div class="section-desc">Almacenamiento, uso y rotación de credenciales</div>
             </div>
             <svg class="section-chevron" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -531,7 +530,7 @@
               <div class="subsection-title">Principios</div>
               <ul class="policy-list">
                 <li>Cada agente y empleado debe tener su propia credencial individual cuando el carrier lo permita</li>
-                <li>Las credenciales compartidas de portales (cuando el carrier no ofrece multi-usuario) se gestionan exclusivamente desde el módulo "Carriers" del Hero Hub</li>
+                <li>Las credenciales compartidas de portales (cuando el carrier no ofrece multi-usuario) se gestionan exclusivamente desde el módulo "Portales" del Hero Hub</li>
                 <li>Cada credencial es información Nivel 3 (Confidencial)</li>
               </ul>
             </div>
@@ -539,7 +538,7 @@
               <div class="subsection-title">Almacenamiento</div>
               <ul class="policy-list">
                 <li>Las credenciales personales se almacenan exclusivamente en la sección personal del Hero Hub, accesible solo por el dueño</li>
-                <li>Las credenciales compartidas se almacenan cifradas y con acceso restringido a usuarios autorizados</li>
+                <li>Las credenciales compartidas se almacenan con acceso restringido a usuarios autorizados según reglas de seguridad de Firestore</li>
                 <li>Prohibido guardar credenciales en hojas de Google, documentos planos, correos, chats o capturas de pantalla</li>
                 <li>Prohibido usar el "Recordar contraseña" del navegador para credenciales compartidas</li>
               </ul>
@@ -578,7 +577,7 @@
           <div class="section-body"><div class="section-content">
             <div class="policy-note">
               <span class="policy-note-icon">🌐</span>
-              <span>Hero Insurance USA opera con equipo distribuido entre Estados Unidos, Venezuela, Cuba, Colombia y otros países. Esta política reconoce esa realidad y establece controles adicionales.</span>
+              <span>Hero Insurance USA opera con base en Estados Unidos y un equipo distribuido. Esta política reconoce esa realidad y establece controles adicionales para el trabajo remoto.</span>
             </div>
             <div class="subsection">
               <div class="subsection-title">Conexión segura</div>
