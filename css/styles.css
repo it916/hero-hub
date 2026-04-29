@@ -4007,263 +4007,320 @@ body[data-theme="dark"] * {
   .bcel-messages { padding:10px 18px 16px; }
 }
 /* ═══════════════════════════════════════════
-   Banner Onboarding — Sobre / Carta de bienvenida
+   Banner Onboarding — Bienvenida épica
    ═══════════════════════════════════════════ */
 
 .ob-welcome {
-  position:relative;
-  display:flex;
-  align-items:center;
-  gap:28px;
-  padding:22px 26px;
-  border-radius:22px;
-  background:linear-gradient(135deg, #fff8ea 0%, #fff3d4 50%, #ffe8b8 100%);
-  border:1px solid rgba(245,184,48,.35);
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  padding: 28px 32px 28px 28px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #062a33 0%, #0a4a5c 50%, #0d5a72 100%);
+  border: 1px solid rgba(245,184,48,.30);
   box-shadow:
-    0 2px 6px rgba(166,118,0,.08),
-    0 10px 30px rgba(166,118,0,.10);
-  text-decoration:none;
-  color:inherit;
-  overflow:hidden;
-  transition:transform .3s ease, box-shadow .3s ease;
-}
-.ob-welcome::before {
-  content:"";
-  position:absolute;
-  inset:0;
-  background:
-    radial-gradient(600px 200px at 15% 0%, rgba(255,255,255,.5), transparent 60%),
-    radial-gradient(400px 180px at 90% 100%, rgba(245,184,48,.15), transparent 70%);
-  pointer-events:none;
+    0 4px 12px rgba(0,0,0,.20),
+    0 16px 40px rgba(6,42,51,.35),
+    inset 0 1px 0 rgba(255,255,255,.08);
+  text-decoration: none;
+  color: inherit;
+  overflow: hidden;
+  isolation: isolate;
+  transition: transform .35s cubic-bezier(.22,1,.36,1),
+              box-shadow .35s cubic-bezier(.22,1,.36,1);
 }
 .ob-welcome:hover {
-  transform:translateY(-2px);
+  transform: translateY(-3px);
   box-shadow:
-    0 4px 10px rgba(166,118,0,.10),
-    0 18px 44px rgba(166,118,0,.16);
+    0 6px 16px rgba(0,0,0,.25),
+    0 22px 50px rgba(6,42,51,.45),
+    inset 0 1px 0 rgba(255,255,255,.10);
 }
 
-/* ── Sobre + carta ─────────────────────────── */
-.ob-w-envelope {
-  position:relative;
-  width:130px;
-  height:92px;
-  flex-shrink:0;
-  z-index:1;
-  transition:transform .4s ease;
-}
-.ob-welcome:hover .ob-w-envelope {
-  transform:rotate(-3deg) translateY(-2px);
+/* ── Capa 1: Rays (rayos radiales desde el centro) ── */
+.ob-w-rays {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 30% 50%, rgba(245,184,48,.18) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 50%, rgba(6,163,182,.22) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 1;
 }
 
-/* cuerpo del sobre */
-.ob-w-env-body {
-  position:absolute;
-  inset:0;
-  background:linear-gradient(180deg, #e9d4a0 0%, #d4b974 100%);
-  border-radius:4px;
+/* ── Capa 2: Grid sutil (líneas de cómic) ── */
+.ob-w-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Capa 3: Glow (resplandor dorado animado) ── */
+.ob-w-glow {
+  position: absolute;
+  top: -40%;
+  left: -10%;
+  width: 50%;
+  height: 180%;
+  background: radial-gradient(ellipse, rgba(245,184,48,.20) 0%, transparent 60%);
+  filter: blur(40px);
+  pointer-events: none;
+  z-index: 1;
+  animation: ob-w-glow-pulse 5s ease-in-out infinite;
+}
+@keyframes ob-w-glow-pulse {
+  0%, 100% { opacity: .6; transform: scale(1); }
+  50%      { opacity: 1;  transform: scale(1.08); }
+}
+
+/* ── Capa 4: Sparks (partículas decorativas) ── */
+.ob-w-sparks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.ob-w-spark {
+  position: absolute;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 14px;
+  color: rgba(245,184,48,.55);
+  text-shadow: 0 0 12px rgba(245,184,48,.6);
+  animation: ob-w-spark-float 4s ease-in-out infinite;
+}
+.ob-w-spark.s1 { top: 18%; left: 32%; animation-delay: 0s;   font-size: 12px; }
+.ob-w-spark.s2 { top: 65%; left: 42%; animation-delay: 1.2s; font-size: 16px; color: rgba(6,163,182,.65); }
+.ob-w-spark.s3 { top: 28%; left: 68%; animation-delay: 2.4s; font-size: 13px; }
+.ob-w-spark.s4 { top: 72%; left: 78%; animation-delay: 3.1s; font-size: 11px; }
+@keyframes ob-w-spark-float {
+  0%, 100% { transform: translateY(0) scale(1);    opacity: .55; }
+  50%      { transform: translateY(-6px) scale(1.15); opacity: 1; }
+}
+
+/* ── Sello con logo Hero (insignia) ── */
+.ob-w-seal {
+  position: relative;
+  flex-shrink: 0;
+  width: 96px;
+  height: 96px;
+  z-index: 3;
+  transition: transform .4s cubic-bezier(.22,1,.36,1);
+}
+.ob-welcome:hover .ob-w-seal {
+  transform: rotate(-6deg) scale(1.05);
+}
+
+/* Anillo dorado giratorio */
+.ob-w-seal-ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background:
+    conic-gradient(
+      from 0deg,
+      #f5b830 0deg, #fde68a 60deg, #f5b830 120deg,
+      #d4a017 180deg, #f5b830 240deg, #fde68a 300deg, #f5b830 360deg
+    );
+  animation: ob-w-ring-spin 8s linear infinite;
+  filter: drop-shadow(0 0 12px rgba(245,184,48,.5));
+}
+@keyframes ob-w-ring-spin {
+  to { transform: rotate(360deg); }
+}
+
+.ob-w-seal-inner {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #062a33 0%, #0a4a5c 100%);
+  border: 3px solid #062a33;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
   box-shadow:
-    inset 0 -2px 4px rgba(0,0,0,.10),
-    0 4px 10px rgba(166,118,0,.18);
+    inset 0 2px 4px rgba(0,0,0,.30),
+    inset 0 -2px 4px rgba(255,255,255,.08);
 }
-/* solapa triangular del sobre (detrás de la carta) */
-.ob-w-env-flap {
-  position:absolute;
-  top:0; left:0; right:0;
-  height:60px;
-  background:linear-gradient(180deg, #d4b974 0%, #c5a957 100%);
-  clip-path:polygon(0 0, 100% 0, 50% 100%);
-  border-radius:4px 4px 0 0;
-  z-index:3;
-  transform-origin:top center;
-  transition:transform .5s ease;
-  box-shadow:0 2px 4px rgba(0,0,0,.08);
-}
-.ob-welcome:hover .ob-w-env-flap {
-  transform:rotateX(170deg);
+.ob-w-seal-logo {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.40));
 }
 
-/* carta saliendo del sobre */
-.ob-w-card {
-  position:absolute;
-  top:-8px;
-  left:8px;
-  right:8px;
-  height:78px;
-  background:linear-gradient(180deg, #ffffff 0%, #fdf8ed 100%);
-  border-radius:3px;
-  box-shadow:
-    0 2px 4px rgba(166,118,0,.15),
-    0 6px 12px rgba(166,118,0,.10);
-  z-index:2;
-  overflow:hidden;
-  transition:transform .5s ease;
+/* Estrella en la esquina superior del sello */
+.ob-w-seal-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #f5b830, #d4a017);
+  border: 2px solid #062a33;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-weight: 900;
+  font-size: 14px;
+  color: #062a33;
+  z-index: 3;
+  transform: rotate(15deg);
+  box-shadow: 0 2px 6px rgba(0,0,0,.30);
+  transition: transform .3s ease;
 }
-.ob-welcome:hover .ob-w-card {
-  transform:translateY(-8px);
+.ob-welcome:hover .ob-w-seal-badge {
+  transform: rotate(-15deg) scale(1.15);
 }
-/* franja dorada superior de la carta */
-.ob-w-card-stripe {
-  position:absolute;
-  top:0; left:0; right:0;
-  height:8px;
-  background:linear-gradient(90deg, #f5b830 0%, #e8a920 50%, #f5b830 100%);
-}
-/* sello H en la carta */
-.ob-w-card-seal {
-  position:absolute;
-  top:18px;
-  right:10px;
-  width:22px;
-  height:22px;
-  border-radius:50%;
-  background:linear-gradient(135deg, #06a3b6 0%, #058fa0 100%);
-  color:#fff;
-  font-family:'Bricolage Grotesque', 'Trebuchet MS', sans-serif;
-  font-weight:900;
-  font-size:13px;
-  font-style:italic;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  box-shadow:0 2px 4px rgba(6,163,182,.30);
-}
-/* líneas decorativas (texto de la carta) */
-.ob-w-card-lines {
-  position:absolute;
-  top:22px;
-  left:10px;
-  right:38px;
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-}
-.ob-w-card-lines span {
-  height:3px;
-  border-radius:2px;
-  background:linear-gradient(90deg, rgba(6,163,182,.25) 0%, rgba(6,163,182,.08) 100%);
-}
-.ob-w-card-lines span:nth-child(1) { width:70%; }
-.ob-w-card-lines span:nth-child(2) { width:90%; }
-.ob-w-card-lines span:nth-child(3) { width:55%; }
 
-/* ── Contenido central ─────────────────────── */
+/* ── Contenido central ── */
 .ob-w-content {
-  position:relative;
-  z-index:1;
-  flex:1;
-  min-width:0;
-}
-.ob-w-kicker {
-  display:inline-flex;
-  align-items:center;
-  gap:7px;
-  padding:4px 10px 4px 8px;
-  border-radius:999px;
-  background:rgba(255,255,255,.55);
-  border:1px solid rgba(245,184,48,.35);
-  color:#a67600;
-  font-family:'Trebuchet MS', sans-serif;
-  font-size:10px;
-  font-weight:700;
-  letter-spacing:1px;
-  text-transform:uppercase;
-  margin-bottom:8px;
-}
-.ob-w-kicker i {
-  width:12px;
-  height:12px;
-  color:#d4a017;
-}
-.ob-w-title {
-  font-family:'Bricolage Grotesque', 'Trebuchet MS', sans-serif;
-  font-style:italic;
-  font-weight:800;
-  font-size:clamp(18px, 2.2vw, 22px);
-  color:#2a1f05;
-  line-height:1.15;
-  margin-bottom:4px;
-}
-.ob-w-sub {
-  font-family:'Trebuchet MS', sans-serif;
-  font-size:13px;
-  color:#6b5a2f;
-  line-height:1.4;
-  max-width:560px;
+  position: relative;
+  z-index: 3;
+  flex: 1;
+  min-width: 0;
+  color: #fff;
 }
 
-/* ── Botón CTA ─────────────────────────────── */
+.ob-w-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px 5px 10px;
+  border-radius: 999px;
+  background: rgba(245,184,48,.15);
+  border: 1px solid rgba(245,184,48,.40);
+  color: #fde68a;
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  backdrop-filter: blur(4px);
+}
+.ob-w-kicker-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f5b830;
+  box-shadow: 0 0 8px rgba(245,184,48,.8);
+  animation: ob-w-dot-pulse 1.6s ease-in-out infinite;
+}
+@keyframes ob-w-dot-pulse {
+  0%, 100% { opacity: 1;   transform: scale(1); }
+  50%      { opacity: .5;  transform: scale(.85); }
+}
+
+.ob-w-title {
+  font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: clamp(22px, 2.6vw, 28px);
+  color: #fff;
+  line-height: 1.1;
+  letter-spacing: -.5px;
+  margin-bottom: 6px;
+  text-shadow: 0 2px 8px rgba(0,0,0,.30);
+}
+
+.ob-w-sub {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 14px;
+  color: rgba(255,255,255,.85);
+  line-height: 1.45;
+  max-width: 540px;
+}
+
+/* ── Botón CTA dorado ── */
 .ob-w-cta {
-  position:relative;
-  z-index:1;
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  padding:11px 20px;
-  border-radius:12px;
-  background:linear-gradient(135deg, #06a3b6 0%, #058fa0 100%);
-  color:#fff;
-  font-family:'Trebuchet MS', sans-serif;
-  font-weight:700;
-  font-size:13.5px;
-  letter-spacing:.2px;
-  flex-shrink:0;
+  position: relative;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 22px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f5b830 0%, #e8a920 100%);
+  color: #062a33;
+  font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: .3px;
+  flex-shrink: 0;
+  border: 2px solid rgba(255,255,255,.20);
   box-shadow:
-    0 2px 6px rgba(6,163,182,.25),
-    0 8px 20px rgba(6,163,182,.20);
-  transition:transform .25s ease, box-shadow .25s ease;
+    0 4px 12px rgba(245,184,48,.35),
+    0 10px 28px rgba(245,184,48,.25),
+    inset 0 1px 0 rgba(255,255,255,.40);
+  transition: all .3s cubic-bezier(.22,1,.36,1);
+  overflow: hidden;
+}
+.ob-w-cta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,.40) 50%, transparent 70%);
+  transform: translateX(-100%);
+  transition: transform .6s ease;
 }
 .ob-w-cta i {
-  width:16px;
-  height:16px;
-  transition:transform .25s ease;
+  width: 18px;
+  height: 18px;
+  transition: transform .25s ease;
 }
 .ob-welcome:hover .ob-w-cta {
-  transform:translateX(2px);
+  transform: translateY(-2px);
   box-shadow:
-    0 4px 10px rgba(6,163,182,.30),
-    0 12px 28px rgba(6,163,182,.25);
+    0 6px 16px rgba(245,184,48,.45),
+    0 14px 36px rgba(245,184,48,.32),
+    inset 0 1px 0 rgba(255,255,255,.50);
+  background: linear-gradient(135deg, #fde68a 0%, #f5b830 100%);
+}
+.ob-welcome:hover .ob-w-cta::before {
+  transform: translateX(100%);
 }
 .ob-welcome:hover .ob-w-cta i {
-  transform:translateX(3px);
+  transform: translateX(4px);
 }
 
-/* ── Dark mode ─────────────────────────────── */
+/* ── Dark mode (mismos colores, ya es dark base) ── */
 [data-theme="dark"] .ob-welcome {
-  background:linear-gradient(135deg, #2a2416 0%, #33291a 50%, #3d2f1c 100%);
-  border-color:rgba(245,184,48,.28);
-  box-shadow:
-    0 2px 6px rgba(0,0,0,.25),
-    0 10px 30px rgba(0,0,0,.35);
+  background: linear-gradient(135deg, #041e25 0%, #073645 50%, #0a4a5c 100%);
 }
-[data-theme="dark"] .ob-w-kicker {
-  background:rgba(245,184,48,.10);
-  color:#f5b830;
-  border-color:rgba(245,184,48,.28);
-}
-[data-theme="dark"] .ob-w-title { color:#fef3d4; }
-[data-theme="dark"] .ob-w-sub { color:#c4b686; }
 
-/* ── Responsive ────────────────────────────── */
-@media (max-width:720px) {
+/* ── Responsive ── */
+@media (max-width:820px) {
   .ob-welcome {
-    flex-direction:column;
-    align-items:flex-start;
-    gap:18px;
-    padding:20px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 22px;
+    padding: 24px 22px;
   }
-  .ob-w-envelope {
-    width:100px;
-    height:72px;
-  }
-  .ob-w-env-flap { height:48px; }
-  .ob-w-card { height:62px; }
-  .ob-w-sub { max-width:100%; }
+  .ob-w-seal { width: 80px; height: 80px; }
+  .ob-w-seal-logo { width: 50px; height: 50px; }
+  .ob-w-sub { max-width: 100%; }
   .ob-w-cta {
-    width:100%;
-    justify-content:center;
+    width: 100%;
+    justify-content: center;
   }
+  .ob-w-glow { display: none; }
 }
+
+@media (max-width:480px) {
+  .ob-w-title { font-size: 20px; }
+  .ob-w-sub { font-size: 13px; }
+}
+
 
 /* ═══════════════════════════════════════════
    Próxima Reunión — widget del topbar
