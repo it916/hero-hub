@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════
    Hero Hub · Organigrama de Agencias
-   Paleta consistente con el resto del Hub
+   Vista única: jerarquía colapsable
    ═══════════════════════════════════════════ */
 
 :root {
@@ -14,7 +14,10 @@
   --ag-hold: #6b7280;
 }
 
-/* ── Stats cards ── */
+/* ─────────────────────────────────────────
+   Stats cards (sin cambios)
+   ───────────────────────────────────────── */
+
 .ag-stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -55,7 +58,10 @@
   color: var(--muted, #64748b);
 }
 
-/* ── Toolbar ── */
+/* ─────────────────────────────────────────
+   Toolbar
+   ───────────────────────────────────────── */
+
 .ag-toolbar {
   display: flex;
   align-items: center;
@@ -69,42 +75,10 @@
   min-width: 240px;
 }
 
-.ag-view-tabs {
-  display: flex;
-  gap: 4px;
-  background: rgba(0,0,0,.04);
-  border-radius: 10px;
-  padding: 3px;
-}
+/* ─────────────────────────────────────────
+   Filter chips (Hero / Friends / Pending)
+   ───────────────────────────────────────── */
 
-.ag-view-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  background: transparent;
-  border: 0;
-  border-radius: 8px;
-  font-family: 'Trebuchet MS', sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--muted, #64748b);
-  cursor: pointer;
-  transition: all .15s ease;
-}
-
-.ag-view-tab i {
-  width: 14px;
-  height: 14px;
-}
-
-.ag-view-tab.active {
-  background: #fff;
-  color: var(--ag-hero-dark);
-  box-shadow: 0 2px 6px rgba(0,0,0,.06);
-}
-
-/* ── Filtro de dot ── */
 .filter-dot {
   display: inline-block;
   width: 8px;
@@ -114,256 +88,12 @@
   vertical-align: middle;
 }
 
-.dot-hero { background: var(--ag-hero); }
+.dot-hero    { background: var(--ag-hero); }
 .dot-friends { background: var(--ag-friends); }
 .dot-pending { background: var(--ag-pending); }
 
-/* ── Vista CARDS ── */
-.ag-view {
-  margin-top: 12px;
-}
-
-.ag-cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-  gap: 16px;
-}
-
-.ag-card {
-  background: #fff;
-  border: 1px solid var(--border, #e2e8f0);
-  border-left-width: 4px;
-  border-radius: 14px;
-  padding: 18px 20px;
-  transition: transform .2s ease, box-shadow .2s ease;
-}
-
-.ag-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(6,163,182,.10);
-}
-
-/* Color del borde izquierdo según grupo */
-.ag-card.ag-group-hero { border-left-color: var(--ag-hero); }
-.ag-card.ag-group-friends { border-left-color: var(--ag-friends); }
-.ag-card.ag-group-pending { border-left-color: var(--ag-pending); }
-
-/* Variante sub-agencia (más sutil) */
-.ag-card.ag-kind-sub_goldpro {
-  margin-left: 24px;
-  border-left-color: #94a3b8;
-  background: #f8fafc;
-}
-
-/* Variante info_limited / no_data / unclear / on_hold */
-.ag-card.ag-kind-info_limited,
-.ag-card.ag-kind-no_data,
-.ag-card.ag-kind-unclear {
-  background: #fffbeb;
-  border-left-color: var(--ag-warn);
-}
-
-.ag-card.ag-kind-on_hold {
-  background: #f9fafb;
-  border-left-color: var(--ag-hold);
-  opacity: .85;
-}
-
-/* ── Header de card ── */
-.ag-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 8px;
-  flex-wrap: wrap;
-}
-
-.ag-card-name {
-  font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif;
-  font-style: italic;
-  font-weight: 800;
-  font-size: 16px;
-  color: var(--text, #1a1a1a);
-  letter-spacing: -.2px;
-}
-
-.ag-card-badges {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.ag-badge {
-  display: inline-block;
-  padding: 3px 8px;
-  border-radius: 999px;
-  font-family: 'Trebuchet MS', sans-serif;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: .3px;
-  white-space: nowrap;
-}
-
-.ag-badge-matrix {
-  background: var(--ag-hero-dark);
-  color: #fff;
-}
-
-.ag-badge-sub {
-  background: rgba(148,163,184,.25);
-  color: #475569;
-}
-
-.ag-badge-warn {
-  background: rgba(234,179,8,.18);
-  color: #92400e;
-  border: 1px solid rgba(234,179,8,.35);
-}
-
-.ag-badge-hold {
-  background: rgba(107,114,128,.18);
-  color: #4b5563;
-}
-
-.ag-badge-count {
-  background: rgba(6,163,182,.10);
-  color: var(--ag-hero-dark);
-  border: 1px solid rgba(6,163,182,.20);
-}
-
-/* ── Nota especial ── */
-.ag-note {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: rgba(234,179,8,.10);
-  border-radius: 8px;
-  font-family: 'Trebuchet MS', sans-serif;
-  font-size: 12.5px;
-  font-style: italic;
-  color: #92400e;
-  margin-bottom: 12px;
-}
-
-.ag-note i {
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
-}
-
-/* ── Sección AIC ── */
-.ag-aic-section {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid #f0f4f8;
-}
-
-.ag-section-label {
-  font-family: 'Trebuchet MS', sans-serif;
-  font-size: 10.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .8px;
-  color: var(--muted, #64748b);
-  margin-bottom: 8px;
-}
-
-.ag-aic-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 0;
-}
-
-.ag-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif;
-  font-style: italic;
-  font-weight: 800;
-  font-size: 11px;
-  color: #fff;
-  flex-shrink: 0;
-  letter-spacing: .3px;
-}
-
-.ag-avatar-aic {
-  background: linear-gradient(135deg, var(--ag-hero), var(--ag-hero-dark));
-  box-shadow: 0 2px 4px rgba(6,163,182,.25);
-}
-
-.ag-card.ag-group-friends .ag-avatar-aic {
-  background: linear-gradient(135deg, var(--ag-friends), var(--ag-friends-dark));
-  box-shadow: 0 2px 4px rgba(90,79,207,.25);
-}
-
-.ag-card.ag-group-pending .ag-avatar-aic {
-  background: linear-gradient(135deg, var(--ag-pending), var(--ag-pending-dark));
-  box-shadow: 0 2px 4px rgba(232,163,23,.25);
-}
-
-.ag-aic-name {
-  font-family: 'Trebuchet MS', sans-serif;
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--text, #1a1a1a);
-}
-
-/* ── Sección Brokers ── */
-.ag-brokers-section {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid #f0f4f8;
-}
-
-.ag-brokers-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.ag-broker-chip {
-  display: inline-block;
-  padding: 4px 10px;
-  background: rgba(6,163,182,.06);
-  border: 1px solid rgba(6,163,182,.15);
-  border-radius: 999px;
-  font-family: 'Trebuchet MS', sans-serif;
-  font-size: 11.5px;
-  color: var(--text, #1a1a1a);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 220px;
-}
-
-.ag-card.ag-group-friends .ag-broker-chip {
-  background: rgba(90,79,207,.06);
-  border-color: rgba(90,79,207,.15);
-}
-
-.ag-card.ag-group-pending .ag-broker-chip {
-  background: rgba(232,163,23,.08);
-  border-color: rgba(232,163,23,.20);
-}
-
-.ag-empty-card {
-  margin: 8px 0 0;
-  font-family: 'Trebuchet MS', sans-serif;
-  font-size: 12.5px;
-  font-style: italic;
-  color: var(--muted, #94a3b8);
-}
-
 /* ═══════════════════════════════════════════
-   Vista TREE (jerarquía)
+   JERARQUÍA — vista única
    ═══════════════════════════════════════════ */
 
 .ag-tree {
@@ -380,6 +110,7 @@
   padding: 24px;
 }
 
+/* Cabecera de grupo (HERO / FRIENDS / Pendientes) */
 .ag-tree-root {
   display: inline-block;
   padding: 14px 22px;
@@ -417,41 +148,104 @@
   margin-top: 2px;
 }
 
+/* Children (lista vertical en stack) */
 .ag-tree-children {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   position: relative;
-  padding-left: 12px;
+  padding-left: 16px;
   border-left: 2px dashed rgba(0,0,0,.10);
 }
+
+/* ─────────────────────────────────────────
+   NODO COLAPSABLE — agencia individual
+   ───────────────────────────────────────── */
 
 .ag-tree-node {
   background: #f8fafc;
   border: 1px solid var(--border, #e2e8f0);
   border-radius: 10px;
-  padding: 12px 14px;
-  transition: transform .15s ease, box-shadow .15s ease;
+  overflow: hidden;
+  transition: border-color .15s ease, box-shadow .15s ease;
 }
 
 .ag-tree-node:hover {
-  transform: translateX(2px);
-  box-shadow: 0 4px 10px rgba(0,0,0,.06);
+  border-color: rgba(6,163,182,.25);
+  box-shadow: 0 2px 6px rgba(0,0,0,.04);
+}
+
+.ag-tree-node.expanded {
+  border-color: var(--ag-hero);
+  box-shadow: 0 4px 12px rgba(6,163,182,.10);
+}
+
+/* Header clickeable (siempre visible) */
+.ag-tree-node-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  user-select: none;
+  transition: background .15s ease;
+}
+
+.ag-tree-node-header:hover {
+  background: rgba(6,163,182,.04);
+}
+
+.ag-tree-node.no-content .ag-tree-node-header {
+  cursor: default;
+}
+
+.ag-tree-node.no-content .ag-tree-node-header:hover {
+  background: transparent;
+}
+
+/* Chevron de despliegue */
+.ag-tree-chevron {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--muted, #64748b);
+  transition: transform .2s cubic-bezier(.22,1,.36,1);
+}
+
+.ag-tree-node.expanded .ag-tree-chevron {
+  transform: rotate(90deg);
+  color: var(--ag-hero-dark);
+}
+
+.ag-tree-chevron-empty {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Info principal del nodo */
+.ag-tree-node-info {
+  flex: 1;
+  min-width: 0;
 }
 
 .ag-tree-node-name {
   font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif;
   font-style: italic;
   font-weight: 800;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--text, #1a1a1a);
   margin-bottom: 2px;
+  letter-spacing: -.2px;
 }
 
 .ag-tree-node-sub {
   font-family: 'Trebuchet MS', sans-serif;
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--muted, #64748b);
+  line-height: 1.4;
 }
 
 .ag-tree-node-tags {
@@ -466,97 +260,207 @@
   padding: 2px 8px;
   border-radius: 999px;
   font-family: 'Trebuchet MS', sans-serif;
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 700;
+  letter-spacing: .3px;
+  white-space: nowrap;
+}
+
+.tag-matrix { background: var(--ag-hero-dark); color: #fff; }
+.tag-warn   { background: rgba(234,179,8,.18); color: #92400e; }
+.tag-hold   { background: rgba(107,114,128,.18); color: #4b5563; }
+.tag-count  { background: rgba(6,163,182,.10); color: var(--ag-hero-dark); }
+
+/* Nota especial dentro del header */
+.ag-tree-note {
+  margin-top: 6px;
+  padding: 6px 10px;
+  background: rgba(234,179,8,.10);
+  border-radius: 6px;
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 11.5px;
+  font-style: italic;
+  color: #92400e;
+  display: inline-block;
+}
+
+/* ─────────────────────────────────────────
+   Acciones admin (edit / delete)
+   ───────────────────────────────────────── */
+
+.ag-tree-node-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity .15s ease;
+}
+
+.ag-tree-node:hover .ag-tree-node-actions {
+  opacity: 1;
+}
+
+.ag-tree-edit,
+.ag-tree-delete {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 0;
+  background: rgba(255,255,255,.92);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  transition: all .15s ease;
+}
+
+.ag-tree-edit i,
+.ag-tree-delete i {
+  width: 13px;
+  height: 13px;
+  color: var(--text, #1a1a1a);
+}
+
+.ag-tree-edit:hover { background: var(--ag-hero-dark); }
+.ag-tree-edit:hover i { color: #fff; }
+
+.ag-tree-delete:hover { background: #dc2626; }
+.ag-tree-delete:hover i { color: #fff; }
+
+/* En móvil: siempre visibles */
+@media (hover: none) {
+  .ag-tree-node-actions { opacity: 1; }
+}
+
+/* ─────────────────────────────────────────
+   Detalles desplegables (AICs + lista de brokers)
+   ───────────────────────────────────────── */
+
+.ag-tree-node-details {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .35s cubic-bezier(.22,1,.36,1);
+  border-top: 0 solid transparent;
+}
+
+.ag-tree-node.expanded .ag-tree-node-details {
+  max-height: 5000px; /* alto para que quepa cualquier lista */
+  border-top: 1px solid var(--border, #e2e8f0);
+  padding: 14px 14px 16px 42px; /* alineado bajo el chevron */
+  background: #fff;
+}
+
+.ag-tree-detail-label {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--muted, #64748b);
+  margin-bottom: 8px;
+}
+
+/* Bloque de AICs */
+.ag-tree-aic-block {
+  margin-bottom: 14px;
+}
+
+.ag-tree-aic-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 0;
+}
+
+.ag-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: 11px;
+  color: #fff;
+  flex-shrink: 0;
   letter-spacing: .3px;
 }
 
-.tag-matrix {
-  background: var(--ag-hero-dark);
-  color: #fff;
+.ag-avatar-aic {
+  background: linear-gradient(135deg, var(--ag-hero), var(--ag-hero-dark));
+  box-shadow: 0 2px 4px rgba(6,163,182,.25);
 }
 
-.tag-warn {
-  background: rgba(234,179,8,.18);
-  color: #92400e;
+.ag-tree-aic-name {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text, #1a1a1a);
 }
 
-.tag-hold {
-  background: rgba(107,114,128,.18);
-  color: #4b5563;
+/* Lista vertical de brokers (numerada) */
+.ag-tree-brokers-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  counter-reset: broker;
+  display: flex;
+  flex-direction: column;
 }
 
-.tag-count {
-  background: rgba(6,163,182,.10);
-  color: var(--ag-hero-dark);
+.ag-tree-broker-row {
+  counter-increment: broker;
+  display: flex;
+  align-items: center;
+  padding: 6px 10px 6px 38px;
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 13px;
+  color: var(--text, #1a1a1a);
+  border-radius: 6px;
+  position: relative;
+  transition: background .15s ease;
 }
+
+.ag-tree-broker-row::before {
+  content: counter(broker);
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  text-align: right;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted, #94a3b8);
+}
+
+.ag-tree-broker-row:hover {
+  background: rgba(6,163,182,.05);
+}
+
+/* ─────────────────────────────────────────
+   Sub-agencias (anidadas, ej. AP INSURANCE bajo GOLD PRO)
+   ───────────────────────────────────────── */
 
 .ag-tree-sub-wrap {
   margin-left: 24px;
-  margin-top: -4px;
+  margin-top: -2px;
   padding-left: 16px;
   border-left: 2px dotted rgba(148,163,184,.4);
 }
 
-/* ── Dark mode ── */
-[data-theme="dark"] .ag-stat,
-[data-theme="dark"] .ag-card,
-[data-theme="dark"] .ag-tree-group {
-  background: #1e293b;
-  border-color: #334155;
+/* ─────────────────────────────────────────
+   Botón "Nueva agencia" (admin only)
+   ───────────────────────────────────────── */
+
+.page-header {
+  position: relative;
 }
 
-[data-theme="dark"] .ag-card.ag-kind-sub_goldpro,
-[data-theme="dark"] .ag-tree-node {
-  background: #0f172a;
-}
-
-[data-theme="dark"] .ag-card-name,
-[data-theme="dark"] .ag-aic-name,
-[data-theme="dark"] .ag-tree-node-name {
-  color: #f1f5f9;
-}
-
-[data-theme="dark"] .ag-broker-chip {
-  background: rgba(6,163,182,.12);
-  color: #cbd5e1;
-}
-
-[data-theme="dark"] .ag-aic-section,
-[data-theme="dark"] .ag-brokers-section {
-  border-top-color: #334155;
-}
-
-[data-theme="dark"] .ag-card.ag-kind-info_limited,
-[data-theme="dark"] .ag-card.ag-kind-no_data,
-[data-theme="dark"] .ag-card.ag-kind-unclear {
-  background: #2a2416;
-}
-
-/* ── Responsive ── */
-@media (max-width: 720px) {
-  .ag-stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .ag-stat-value {
-    font-size: 22px;
-  }
-  .ag-cards-grid {
-    grid-template-columns: 1fr;
-  }
-  .ag-card.ag-kind-sub_goldpro {
-    margin-left: 12px;
-  }
-  .ag-tree-children {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ═══════════════════════════════════════════
-   FASE 2a — Modo edición (admin only)
-   ═══════════════════════════════════════════ */
-
-/* Botón "Nueva agencia" en el header */
 .ag-btn-new {
   position: absolute;
   top: 50%;
@@ -579,19 +483,12 @@
   transition: all .2s ease;
 }
 
-.ag-btn-new i {
-  width: 16px;
-  height: 16px;
-}
+.ag-btn-new i { width: 16px; height: 16px; }
 
 .ag-btn-new:hover {
   background: var(--ag-hero);
   transform: translateY(-50%) translateY(-2px);
   box-shadow: 0 6px 16px rgba(6,163,182,.40);
-}
-
-.page-header {
-  position: relative;
 }
 
 @media (max-width: 720px) {
@@ -602,64 +499,6 @@
     width: 100%;
     justify-content: center;
   }
-}
-
-/* Acciones admin en cada card */
-.ag-card {
-  position: relative;
-}
-
-.ag-card-actions {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  display: flex;
-  gap: 4px;
-  opacity: 0;
-  transition: opacity .15s ease;
-  z-index: 5;
-}
-
-.ag-card:hover .ag-card-actions {
-  opacity: 1;
-}
-
-.ag-card-edit,
-.ag-card-delete {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  border: 0;
-  background: rgba(255,255,255,.92);
-  backdrop-filter: blur(4px);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 6px rgba(0,0,0,.10);
-  transition: all .15s ease;
-}
-
-.ag-card-edit i,
-.ag-card-delete i {
-  width: 14px;
-  height: 14px;
-  color: var(--text, #1a1a1a);
-}
-
-.ag-card-edit:hover {
-  background: var(--ag-hero-dark);
-}
-.ag-card-edit:hover i { color: #fff; }
-
-.ag-card-delete:hover {
-  background: #dc2626;
-}
-.ag-card-delete:hover i { color: #fff; }
-
-/* Móvil: siempre visible (no hay hover real) */
-@media (hover: none) {
-  .ag-card-actions { opacity: 1; }
 }
 
 /* ═══════════════════════════════════════════
@@ -720,14 +559,8 @@
   transition: background .15s ease;
 }
 
-.ag-modal-close:hover {
-  background: rgba(0,0,0,.12);
-}
-
-.ag-modal-close i {
-  width: 16px;
-  height: 16px;
-}
+.ag-modal-close:hover { background: rgba(0,0,0,.12); }
+.ag-modal-close i { width: 16px; height: 16px; }
 
 .ag-modal-header {
   padding: 24px 28px 16px;
@@ -755,7 +588,6 @@
   line-height: 1.2;
 }
 
-/* Body con scroll */
 .ag-modal-body {
   padding: 20px 28px;
   overflow-y: auto;
@@ -770,9 +602,7 @@
 }
 
 @media (max-width: 540px) {
-  .ag-form-grid {
-    grid-template-columns: 1fr;
-  }
+  .ag-form-grid { grid-template-columns: 1fr; }
 }
 
 .ag-form-field {
@@ -791,10 +621,7 @@
   color: var(--text, #1a1a1a);
 }
 
-.ag-required {
-  color: #dc2626;
-  margin-left: 2px;
-}
+.ag-required { color: #dc2626; margin-left: 2px; }
 
 .ag-form-hint {
   font-weight: 500;
@@ -842,7 +669,6 @@
   margin-top: -2px;
 }
 
-/* Footer con botones */
 .ag-modal-footer {
   padding: 16px 28px 24px;
   border-top: 1px solid var(--border, #e2e8f0);
@@ -868,9 +694,7 @@
   background: rgba(0,0,0,.06);
   color: var(--text, #1a1a1a);
 }
-.ag-modal-btn-cancel:hover {
-  background: rgba(0,0,0,.12);
-}
+.ag-modal-btn-cancel:hover { background: rgba(0,0,0,.12); }
 
 .ag-modal-btn-save {
   background: var(--ag-hero-dark);
@@ -887,7 +711,36 @@
   cursor: not-allowed;
 }
 
-/* Dark mode */
+/* ─────────────────────────────────────────
+   Dark mode
+   ───────────────────────────────────────── */
+
+[data-theme="dark"] .ag-stat,
+[data-theme="dark"] .ag-tree-group {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+[data-theme="dark"] .ag-tree-node {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+[data-theme="dark"] .ag-tree-node-name,
+[data-theme="dark"] .ag-tree-aic-name,
+[data-theme="dark"] .ag-tree-broker-row {
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .ag-tree-node.expanded .ag-tree-node-details {
+  background: #1e293b;
+  border-top-color: #334155;
+}
+
+[data-theme="dark"] .ag-tree-broker-row:hover {
+  background: rgba(6,163,182,.10);
+}
+
 [data-theme="dark"] .ag-modal {
   background: #1e293b;
 }
@@ -897,9 +750,7 @@
   border-color: #334155;
 }
 
-[data-theme="dark"] .ag-modal-footer {
-  background: #0f172a;
-}
+[data-theme="dark"] .ag-modal-footer { background: #0f172a; }
 
 [data-theme="dark"] .ag-modal-title,
 [data-theme="dark"] .ag-form-label {
@@ -914,12 +765,25 @@
   color: #f1f5f9;
 }
 
-[data-theme="dark"] .ag-card-edit,
-[data-theme="dark"] .ag-card-delete {
+[data-theme="dark"] .ag-tree-edit,
+[data-theme="dark"] .ag-tree-delete {
   background: rgba(15,23,42,.92);
 }
 
-[data-theme="dark"] .ag-card-edit i,
-[data-theme="dark"] .ag-card-delete i {
+[data-theme="dark"] .ag-tree-edit i,
+[data-theme="dark"] .ag-tree-delete i {
   color: #f1f5f9;
+}
+
+/* ─────────────────────────────────────────
+   Responsive
+   ───────────────────────────────────────── */
+
+@media (max-width: 720px) {
+  .ag-stats { grid-template-columns: repeat(2, 1fr); }
+  .ag-stat-value { font-size: 22px; }
+  .ag-tree-group { padding: 18px; }
+  .ag-tree-children { padding-left: 10px; }
+  .ag-tree-sub-wrap { margin-left: 12px; padding-left: 10px; }
+  .ag-tree-node.expanded .ag-tree-node-details { padding: 14px 14px 16px 28px; }
 }

@@ -82,7 +82,7 @@ async function loadData() {
     renderActiveView();
   } catch (e) {
     console.error("Error cargando agencias:", e);
-    document.getElementById("ag-cards-grid").innerHTML =
+    document.getElementById("ag-tree").innerHTML =
       `<p class="empty">Error: ${escapeHtml(e.message)}</p>`;
   }
 }
@@ -133,115 +133,7 @@ function getFilteredAgencies() {
   return result;
 }
 
-// ══ Vista CARDS ══
-function renderCards() {
-  const grid = document.getElementById("ag-cards-grid");
-  const filtered = getFilteredAgencies();
-
-  if (!filtered.length) {
-    grid.innerHTML = `<p class="empty">${filter.text ? "Sin resultados" : "No hay agencias todavía"}</p>`;
-    return;
-  }
-
-  grid.innerHTML = filtered.map(ag => buildAgencyCard(ag)).join("");
-
-  // Wire botones admin
-  if (canEdit) {
-    grid.querySelectorAll(".ag-card-edit").forEach(btn => {
-      btn.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        openAgencyModal(btn.dataset.id, btn.dataset.group);
-      });
-    });
-    grid.querySelectorAll(".ag-card-delete").forEach(btn => {
-      btn.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        deleteAgency(btn.dataset.id, btn.dataset.group);
-      });
-    });
-  }
-
-  if (window.refreshIcons) window.refreshIcons();
-}
-
-function buildAgencyCard(ag) {
-  const groupClass = `ag-group-${ag._group}`;
-  const kindClass = `ag-kind-${ag.kind || "normal"}`;
-
-  const badges = [];
-  if (ag.kind === "matrix") badges.push(`<span class="ag-badge ag-badge-matrix">Matriz</span>`);
-  if (ag.kind === "sub_goldpro") badges.push(`<span class="ag-badge ag-badge-sub">Sub-agencia · GOLD PRO</span>`);
-  if (ag.kind === "info_limited") badges.push(`<span class="ag-badge ag-badge-warn">Info limitada</span>`);
-  if (ag.kind === "no_data") badges.push(`<span class="ag-badge ag-badge-warn">Sin datos</span>`);
-  if (ag.kind === "unclear") badges.push(`<span class="ag-badge ag-badge-warn">Por aclarar</span>`);
-  if (ag.kind === "on_hold") badges.push(`<span class="ag-badge ag-badge-hold">On hold</span>`);
-
-  const aicCount = (ag.aic || []).length;
-  const brokerCount = (ag.brokers || []).length;
-  if (aicCount > 0) badges.push(`<span class="ag-badge ag-badge-count">${aicCount} AIC</span>`);
-  if (brokerCount > 0) badges.push(`<span class="ag-badge ag-badge-count">${brokerCount} brokers</span>`);
-
-  const adminActions = canEdit ? `
-    <div class="ag-card-actions">
-      <button class="ag-card-edit" data-id="${escapeAttr(ag.id)}" data-group="${ag._group}" title="Editar">
-        <i data-lucide="edit-3"></i>
-      </button>
-      <button class="ag-card-delete" data-id="${escapeAttr(ag.id)}" data-group="${ag._group}" title="Eliminar">
-        <i data-lucide="trash-2"></i>
-      </button>
-    </div>
-  ` : "";
-
-  const aicSection = aicCount > 0
-    ? `<div class="ag-aic-section">
-         <div class="ag-section-label">${aicCount === 1 ? "Agente a cargo" : "Agentes a cargo"}</div>
-         ${(ag.aic || []).map(name => `
-           <div class="ag-aic-row">
-             <div class="ag-avatar ag-avatar-aic">${getInitials(name)}</div>
-             <div class="ag-aic-name">${escapeHtml(name)}</div>
-           </div>
-         `).join("")}
-       </div>`
-    : "";
-
-  const brokersSection = brokerCount > 0
-    ? `<div class="ag-brokers-section">
-         <div class="ag-section-label">${brokerCount} ${brokerCount === 1 ? "broker" : "brokers"}</div>
-         <div class="ag-brokers-list">
-           ${(ag.brokers || []).map(name => `
-             <span class="ag-broker-chip" title="${escapeAttr(name)}">${escapeHtml(name)}</span>
-           `).join("")}
-         </div>
-       </div>`
-    : "";
-
-  let note = "";
-  if (ag.kind === "info_limited") {
-    note = `<div class="ag-note"><i data-lucide="info"></i> Información limitada disponible</div>`;
-  } else if (ag.kind === "no_data") {
-    note = `<div class="ag-note"><i data-lucide="alert-circle"></i> Sin información detallada</div>`;
-  } else if (ag.kind === "on_hold") {
-    note = `<div class="ag-note"><i data-lucide="pause-circle"></i> Estado en pausa</div>`;
-  }
-
-  return `
-    <div class="ag-card ${groupClass} ${kindClass}" data-id="${escapeAttr(ag.id)}">
-      ${adminActions}
-      <div class="ag-card-header">
-        <div class="ag-card-name">${escapeHtml(ag.name || "Sin nombre")}</div>
-        <div class="ag-card-badges">${badges.join("")}</div>
-      </div>
-      ${note}
-      ${aicSection}
-      ${brokersSection}
-      ${aicCount === 0 && brokerCount === 0 ? '<p class="ag-empty-card">Sin información de personas todavía.</p>' : ""}
-    </div>
-  `;
-}
-
-// ══ Vista TREE ══
+// ══ Vista TREE (única) — nodos colapsables ══
 function renderTree() {
   const container = document.getElementById("ag-tree");
   const filtered = getFilteredAgencies();
@@ -250,6 +142,9 @@ function renderTree() {
     container.innerHTML = `<p class="empty">${filter.text ? "Sin resultados" : "No hay agencias todavía"}</p>`;
     return;
   }
+
+  // Si hay búsqueda activa, las agencias coincidentes se auto-expanden
+  const autoExpand = filter.text.length > 0;
 
   const byGroup = { hero: [], friends: [], pending: [] };
   filtered.forEach(ag => byGroup[ag._group].push(ag));
@@ -268,12 +163,12 @@ function renderTree() {
       </div>
       <div class="ag-tree-children">`;
 
-    if (heroMatrix) html += buildTreeNode(heroMatrix, "Brokers directos");
+    if (heroMatrix) html += buildTreeNode(heroMatrix, autoExpand, "Brokers directos");
 
     heroAgencies.forEach(ag => {
-      html += buildTreeNode(ag);
+      html += buildTreeNode(ag, autoExpand);
       if (ag.name === "GOLD PRO" && subGoldpro) {
-        html += `<div class="ag-tree-sub-wrap">${buildTreeNode(subGoldpro, "Sub-agencia")}</div>`;
+        html += `<div class="ag-tree-sub-wrap">${buildTreeNode(subGoldpro, autoExpand, "Sub-agencia")}</div>`;
       }
     });
 
@@ -287,7 +182,7 @@ function renderTree() {
         <div class="ag-tree-root-sub">Grupo afiliado</div>
       </div>
       <div class="ag-tree-children">`;
-    byGroup.friends.forEach(ag => { html += buildTreeNode(ag); });
+    byGroup.friends.forEach(ag => { html += buildTreeNode(ag, autoExpand); });
     html += `</div></div>`;
   }
 
@@ -298,35 +193,142 @@ function renderTree() {
         <div class="ag-tree-root-sub">Por aclarar / on hold</div>
       </div>
       <div class="ag-tree-children">`;
-    byGroup.pending.forEach(ag => { html += buildTreeNode(ag); });
+    byGroup.pending.forEach(ag => { html += buildTreeNode(ag, autoExpand); });
     html += `</div></div>`;
   }
 
   container.innerHTML = html;
+
+  // Wire toggle handlers (click en header expande/colapsa)
+  container.querySelectorAll(".ag-tree-node").forEach(node => {
+    const header = node.querySelector(".ag-tree-node-header");
+    if (header) {
+      header.addEventListener("click", (e) => {
+        // Evitar toggle si se hace click en botones admin
+        if (e.target.closest(".ag-tree-node-actions")) return;
+        node.classList.toggle("expanded");
+      });
+    }
+  });
+
+  // Wire botones admin
+  if (canEdit) {
+    container.querySelectorAll(".ag-tree-edit").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openAgencyModal(btn.dataset.id, btn.dataset.group);
+      });
+    });
+    container.querySelectorAll(".ag-tree-delete").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        deleteAgency(btn.dataset.id, btn.dataset.group);
+      });
+    });
+  }
+
   if (window.refreshIcons) window.refreshIcons();
 }
 
-function buildTreeNode(ag, overrideLabel) {
+function buildTreeNode(ag, autoExpand, overrideLabel) {
   const aicNames = (ag.aic || []).map(n => escapeHtml(n)).join(", ");
   const brokerCount = (ag.brokers || []).length;
   const aicCount = (ag.aic || []).length;
+  const hasContent = aicCount > 0 || brokerCount > 0;
 
   const subLabel = overrideLabel || (
     aicCount > 0 ? `AIC: ${aicNames}` : "Sin AIC asignado"
   );
 
-  let badges = "";
-  if (ag.kind === "matrix") badges += `<span class="ag-tree-tag tag-matrix">Matriz</span>`;
-  if (ag.kind === "info_limited") badges += `<span class="ag-tree-tag tag-warn">Info limitada</span>`;
-  if (ag.kind === "no_data") badges += `<span class="ag-tree-tag tag-warn">Sin datos</span>`;
-  if (ag.kind === "on_hold") badges += `<span class="ag-tree-tag tag-hold">On hold</span>`;
-  if (ag.kind === "unclear") badges += `<span class="ag-tree-tag tag-warn">Por aclarar</span>`;
-  if (brokerCount > 0) badges += `<span class="ag-tree-tag tag-count">${brokerCount} brokers</span>`;
+  // Tags de estado
+  let tags = "";
+  if (ag.kind === "matrix") tags += `<span class="ag-tree-tag tag-matrix">Matriz</span>`;
+  if (ag.kind === "info_limited") tags += `<span class="ag-tree-tag tag-warn">Info limitada</span>`;
+  if (ag.kind === "no_data") tags += `<span class="ag-tree-tag tag-warn">Sin datos</span>`;
+  if (ag.kind === "on_hold") tags += `<span class="ag-tree-tag tag-hold">On hold</span>`;
+  if (ag.kind === "unclear") tags += `<span class="ag-tree-tag tag-warn">Por aclarar</span>`;
+  if (brokerCount > 0) tags += `<span class="ag-tree-tag tag-count">${brokerCount} brokers</span>`;
 
-  return `<div class="ag-tree-node">
-    <div class="ag-tree-node-name">${escapeHtml(ag.name)}</div>
-    <div class="ag-tree-node-sub">${subLabel}</div>
-    ${badges ? `<div class="ag-tree-node-tags">${badges}</div>` : ""}
+  // Acciones admin
+  const adminActions = canEdit ? `
+    <div class="ag-tree-node-actions">
+      <button class="ag-tree-edit" data-id="${escapeAttr(ag.id)}" data-group="${ag._group}" title="Editar">
+        <i data-lucide="edit-3"></i>
+      </button>
+      <button class="ag-tree-delete" data-id="${escapeAttr(ag.id)}" data-group="${ag._group}" title="Eliminar">
+        <i data-lucide="trash-2"></i>
+      </button>
+    </div>
+  ` : "";
+
+  // Detalles colapsables (AICs detallados + lista de brokers)
+  let details = "";
+  if (hasContent) {
+    let aicDetailHtml = "";
+    if (aicCount > 0) {
+      aicDetailHtml = `
+        <div class="ag-tree-aic-block">
+          <div class="ag-tree-detail-label">${aicCount === 1 ? "Agente a cargo" : "Agentes a cargo"}</div>
+          ${(ag.aic || []).map(name => `
+            <div class="ag-tree-aic-row">
+              <div class="ag-avatar ag-avatar-aic">${getInitials(name)}</div>
+              <div class="ag-tree-aic-name">${escapeHtml(name)}</div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    let brokerListHtml = "";
+    if (brokerCount > 0) {
+      brokerListHtml = `
+        <div class="ag-tree-brokers-block">
+          <div class="ag-tree-detail-label">${brokerCount} ${brokerCount === 1 ? "broker" : "brokers"}</div>
+          <ol class="ag-tree-brokers-list">
+            ${(ag.brokers || []).map(name => `
+              <li class="ag-tree-broker-row">${escapeHtml(name)}</li>
+            `).join("")}
+          </ol>
+        </div>
+      `;
+    }
+
+    details = `
+      <div class="ag-tree-node-details">
+        ${aicDetailHtml}
+        ${brokerListHtml}
+      </div>
+    `;
+  }
+
+  // Nota especial
+  let note = "";
+  if (ag.kind === "info_limited") note = `<div class="ag-tree-note">Información limitada disponible</div>`;
+  else if (ag.kind === "no_data") note = `<div class="ag-tree-note">Sin información detallada</div>`;
+  else if (ag.kind === "on_hold") note = `<div class="ag-tree-note">Estado en pausa</div>`;
+
+  // Indicador de expandible
+  const expandIcon = hasContent
+    ? `<i data-lucide="chevron-right" class="ag-tree-chevron"></i>`
+    : `<span class="ag-tree-chevron-empty"></span>`;
+
+  const expandedClass = (autoExpand && hasContent) ? " expanded" : "";
+  const noContentClass = !hasContent ? " no-content" : "";
+
+  return `<div class="ag-tree-node${expandedClass}${noContentClass}">
+    <div class="ag-tree-node-header">
+      ${expandIcon}
+      <div class="ag-tree-node-info">
+        <div class="ag-tree-node-name">${escapeHtml(ag.name)}</div>
+        <div class="ag-tree-node-sub">${subLabel}</div>
+        ${tags ? `<div class="ag-tree-node-tags">${tags}</div>` : ""}
+        ${note}
+      </div>
+      ${adminActions}
+    </div>
+    ${details}
   </div>`;
 }
 
@@ -627,7 +629,7 @@ function generateId() {
 function wireHandlers() {
   document.getElementById("ag-search").addEventListener("input", (e) => {
     filter.text = e.target.value.toLowerCase().trim();
-    renderActiveView();
+    renderTree();
   });
 
   document.querySelectorAll("#ag-filter-row .filter-chip").forEach(chip => {
@@ -635,18 +637,7 @@ function wireHandlers() {
       document.querySelectorAll("#ag-filter-row .filter-chip").forEach(c => c.classList.remove("active"));
       chip.classList.add("active");
       filter.group = chip.dataset.group;
-      renderActiveView();
-    });
-  });
-
-  document.querySelectorAll(".ag-view-tab").forEach(tab => {
-    tab.addEventListener("click", () => {
-      document.querySelectorAll(".ag-view-tab").forEach(t => t.classList.remove("active"));
-      tab.classList.add("active");
-      const view = tab.dataset.view;
-      document.getElementById("ag-view-cards").style.display = view === "cards" ? "block" : "none";
-      document.getElementById("ag-view-tree").style.display = view === "tree" ? "block" : "none";
-      renderActiveView();
+      renderTree();
     });
   });
 
@@ -657,9 +648,7 @@ function wireHandlers() {
 }
 
 function renderActiveView() {
-  const cardsActive = document.querySelector(".ag-view-tab[data-view='cards']").classList.contains("active");
-  if (cardsActive) renderCards();
-  else renderTree();
+  renderTree();
 }
 
 function getInitials(name) {

@@ -86,10 +86,6 @@
         <i data-lucide="search" class="search-icon"></i>
         <input type="text" id="ag-search" placeholder="Buscar agencia, AIC o broker...">
       </div>
-      <div class="ag-view-tabs">
-        <button class="ag-view-tab active" data-view="cards"><i data-lucide="layout-grid"></i><span>Cards</span></button>
-        <button class="ag-view-tab" data-view="tree"><i data-lucide="git-branch"></i><span>Jerarquía</span></button>
-      </div>
     </section>
 
     <!-- Filtros por grupo -->
@@ -109,17 +105,9 @@
       </div>
     </section>
 
-    <!-- Vistas -->
-    <div id="ag-view-cards" class="ag-view active">
-      <div id="ag-cards-grid" class="ag-cards-grid">
-        <p class="loading">Cargando agencias...</p>
-      </div>
-    </div>
-
-    <div id="ag-view-tree" class="ag-view" style="display:none;">
-      <div id="ag-tree" class="ag-tree">
-        <p class="loading">Cargando jerarquía...</p>
-      </div>
+    <!-- Vista de jerarquía (única) -->
+    <div id="ag-tree" class="ag-tree">
+      <p class="loading">Cargando agencias...</p>
     </div>
 
   </main>
