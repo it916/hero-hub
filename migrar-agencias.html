@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Migración de Agencias — Hero Hub (one-time)</title>
+<style>
+  body {
+    font-family: 'Trebuchet MS', sans-serif;
+    background: #062a33;
+    color: #fff;
+    min-height: 100vh;
+    padding: 40px 20px;
+    margin: 0;
+  }
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    background: #0a4a5c;
+    border: 1px solid rgba(245,184,48,.30);
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.40);
+  }
+  h1 {
+    margin: 0 0 8px;
+    font-size: 22px;
+    color: #fde68a;
+  }
+  .warn-box {
+    background: rgba(220,38,38,.15);
+    border: 1px solid rgba(220,38,38,.40);
+    padding: 14px 16px;
+    border-radius: 10px;
+    margin: 20px 0;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .stats {
+    background: rgba(255,255,255,.06);
+    padding: 14px 16px;
+    border-radius: 10px;
+    margin: 16px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+  }
+  button {
+    background: linear-gradient(135deg, #f5b830, #e8a920);
+    color: #062a33;
+    border: 0;
+    padding: 14px 28px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-weight: 800;
+    font-size: 15px;
+    cursor: pointer;
+    margin-top: 14px;
+  }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  #log {
+    margin-top: 20px;
+    background: #062a33;
+    padding: 16px;
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    max-height: 300px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+  }
+  .ok { color: #86efac; }
+  .err { color: #fca5a5; }
+  .info { color: #93c5fd; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🛠 Migración de Agencias a Firestore</h1>
+  <p>Este script migra el organigrama de agencias hardcoded al documento <code>shared/agencias</code> en Firestore. Es de un solo uso.</p>
+
+  <div class="warn-box">
+    <strong>⚠️ Importante:</strong>
+    <ul>
+      <li>Este script <strong>sobrescribe</strong> el documento <code>shared/agencias</code> completo.</li>
+      <li>Si ya existen datos en Firestore, se reemplazarán con los del JSON.</li>
+      <li>Solo el admin (<code>it@heroinsuranceusa.com</code>) puede ejecutarlo (regla Firestore).</li>
+      <li>Después de ejecutar exitosamente, <strong>borra este archivo</strong> del repo.</li>
+    </ul>
+  </div>
+
+  <div class="stats" id="stats">Cargando datos...</div>
+
+  <button id="btn-migrate" disabled>1. Esperando autenticación...</button>
+  <button id="btn-verify" disabled style="background: linear-gradient(135deg, #06a3b6, #058fa0); color:#fff;">2. Verificar migración</button>
+
+  <div id="log"></div>
+</div>
+
+<script type="module">
+import { auth, db } from "./js/firebase-config.js";
+import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup }
+  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { doc, setDoc, getDoc, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// ══ Datos a migrar (estructura completa) ══
+const DATA_TO_MIGRATE = {
+  "hero": [
+    {
+      "name": "HERO",
+      "kind": "matrix",
+      "aic": [
+        "Jesus Ernesto Gutierrez Jaimes"
+      ],
+      "brokers": [
+        "Cristina Jaimes Albornoz",
+        "Lucy Marlene Silva",
+        "Jhoennit Alvarez Sulbaran",
+        "Lisandra Fernandez Lopez",
+        "Carlos Daniel De San Martin",
+        "Lazara Bolanos",
+        "Jose Luis Guerra",
+        "Francine Cuervo",
+        "Ivan Mahecha",
+        "Pablo Pereira Galaviz",
+        "Inally Sanchez",
+        "Kelvin Bautista",
+        "Maria Esmeralda Rodriguez Escoto",
+        "Neris Lunar Alfonso",
+        "Maelys Hernandez Almaguer",
+        "Carlos Macero",
+        "Diego Pauya",
+        "Manuel Navarrete",
+        "Alex Pericles",
+        "Angela Isabel Diaz",
+        "Emmanuel Jules",
+        "Lisandra Carralero",
+        "Monica Menendez",
+        "Ana Cruz",
+        "Diego Sandoval Hernandez",
+        "Janett Tase",
+        "Jose L Cardoso",
+        "Odalys Emelia Pelayo",
+        "Rosa S Guzman",
+        "Yaritza Quevedo",
+        "Nelly Gordon",
+        "Yuri Crespo Humara",
+        "Walter Celdiver Lopez",
+        "Carla Gomez",
+        "Hedmi Oria",
+        "Anyelo Palacios",
+        "Oscar Enrique",
+        "Tania Andrade",
+        "Sara Cristina Velasquez",
+        "Yuan Ortiz",
+        "Dian Pier",
+        "Alba Villar Lopez",
+        "Yinet Pena",
+        "Ivan Fernandez",
+        "Marjorie Lozada Magri",
+        "Hector Marchena",
+        "Giordano Valentin",
+        "Victoria Huynh",
+        "Dayse Vazquez",
+        "Alina Borbonet",
+        "Ever Luis Pacheco",
+        "Alain Novas",
+        "Arianne Gonzalez",
+        "Bonny Jimenez",
+        "Claudia M Triana",
+        "Danay Chente",
+        "David Hernandez Guerrero",
+        "Deisy Lopez",
+        "Eduardo Lira",
+        "Elizabeth Garcia",
+        "Gabrriel J Saab Giannetti",
+        "Gabriel Rodriguez",
+        "Giselle Cardenas",
+        "Jhonny Ortiz",
+        "Josmari Clemente",
+        "Kenia Brito",
+        "Laura Lira",
+        "Mabel Rodriguez",
+        "Mailyn Rivas Guevara",
+        "Elvis Espinoza",
+        "Maria Clara LLanes Pereira",
+        "Maria de los Angeles Oliva",
+        "Maria Vergara",
+        "Maritza Molina",
+        "Mavel Mena Feliz",
+        "Maydalis Benitez",
+        "Michael Malagon",
+        "Milton Burke",
+        "Miriam Iglesias",
+        "Neylin Garcia",
+        "Rafael Rodriguez",
+        "Ruby Romero",
+        "Samuel Ortiz",
+        "Sandra Llanes",
+        "Sandra Mena",
+        "Yessenia Toribio",
+        "Yuniesky Ramirez",
+        "ROMINA P PINEIRO ROJAS",
+        "Mariela Jose Zabala de Portillo",
+        "Sanyela Gonzalez",
+        "Cecilia",
+        "Deborah Martina Lucena Calanche",
+        "Luis Michael Coll Lucena",
+        "Luis Coll Sr",
+        "Gladytza Acasio",
+        "Angely Hectgari Parra Salcedo",
+        "Alberto Caraballo Montoya",
+        "Cristina Castillo de Ramirez",
+        "Laura Martinez"
+      ],
+      "id": "eab12911-4fbb-4b9b-bef2-c22186b6ccb3"
+    },
+    {
+      "name": "THE KAIZEN TEAM",
+      "kind": "normal",
+      "aic": [
+        "Anny Medina Silva"
+      ],
+      "brokers": [
+        "Maria Valentina Gomez Moya",
+        "Noritsha Gimenez",
+        "Jhonnie Ardvison Garcia Montoya",
+        "Ana L Hernandez Gavidia",
+        "Jhonattan Heriberto Monsalve Dugarte",
+        "Carla Andrea Bermudez Escalona",
+        "Karin del Valle Gutierrez Beleno",
+        "Mariangel Rojas",
+        "Katerin Castillo"
+      ],
+      "id": "0b01925b-94d9-475a-b60b-88964e7d73d7"
+    },
+    {
+      "name": "A&Z COUPLE",
+      "kind": "normal",
+      "aic": [
+        "Alejandro Diaz Gonzalez"
+      ],
+      "brokers": [
+        "Vivian Gonzalez",
+        "Yaricel Rodriguez Romero",
+        "Arisdelbis Sr Fernandez Tovar",
+        "Ernelvys Perez",
+        "Yurima Soto",
+        "Leixy Dominguez Rodriguez",
+        "Magdalena Santamaria Luna",
+        "Isabel Maria Pedroso",
+        "Tahimi Sosa Alfonso"
+      ],
+      "id": "0cc65ee8-5bf1-4533-9299-376d60ae3e7f"
+    },
+    {
+      "name": "VIPERCARE",
+      "kind": "normal",
+      "aic": [
+        "Eduardo Jose Viquez"
+      ],
+      "brokers": [
+        "Cecilia Perera",
+        "Roberto Pena",
+        "Reneria Garcia"
+      ],
+      "id": "65bf6b34-fdf4-4fec-bcde-98e87a9ada85"
+    },
+    {
+      "name": "KHAN FINANCIAL SERVICES",
+      "kind": "normal",
+      "aic": [
+        "Diana Khan"
+      ],
+      "brokers": [
+        "Fiona Angus-Powell",
+        "Analizser Royer",
+        "Marsha Philippa Spence",
+        "Tamara Bantin Latoya"
+      ],
+      "id": "4f9faa5c-296b-43df-ad0a-de92afa5500a"
+    },
+    {
+      "name": "ZT INSURANCE",
+      "kind": "normal",
+      "aic": [
+        "Zulima Torres"
+      ],
+      "brokers": [
+        "Madaisy Cueto Sanchez",
+        "Maria A Diaz Alvarez",
+        "Luis Caicedo"
+      ],
+      "id": "a3ceb6f1-b7f2-4833-8d24-9edc4c2b301c"
+    },
+    {
+      "name": "ALLTIMES SAFE",
+      "kind": "normal",
+      "aic": [
+        "Karina D. Farias"
+      ],
+      "brokers": [
+        "Pedro Pacheco",
+        "Dulfa Carolina Martinez"
+      ],
+      "id": "08da7d49-5df2-4f92-b492-c93b2834bfd1"
+    },
+    {
+      "name": "GROWING UP",
+      "kind": "normal",
+      "aic": [
+        "Angel Hernandez"
+      ],
+      "brokers": [],
+      "id": "6db7658c-70fb-4bb4-af6b-978f19c271d2"
+    },
+    {
+      "name": "ENSURE",
+      "kind": "normal",
+      "aic": [
+        "Maydelis Cabrera"
+      ],
+      "brokers": [
+        "Francisco Umana",
+        "Livan Mujica",
+        "Marcelle Fatal",
+        "Maria A Trejos",
+        "Nelson Bravo Figueredo",
+        "Odaimys Perez",
+        "Odalys Valdes Fernandez",
+        "Yaines Pujol Santana",
+        "Christina Tejeda",
+        "Daniel Sierra",
+        "Maydelis Cabrera Ensenat",
+        "Mirelys Cabrera Ensenat",
+        "Vanessa Feliciano Blanco",
+        "Kristen Umanzor",
+        "Alexander Gil Diaz",
+        "Yailien Perez Carrillo",
+        "Noslen Sanchez-Mesa",
+        "Julian Abreu-Machado",
+        "Jessenia Jimenez",
+        "Jeslene Somohano",
+        "Mirelys Cabrera Ensenat",
+        "Claribel Secin"
+      ],
+      "id": "339a0224-a396-478b-ab23-eb8890d02dc0"
+    },
+    {
+      "name": "GOLD PRO",
+      "kind": "normal",
+      "aic": [],
+      "brokers": [
+        "Leidy Lizarazo"
+      ],
+      "id": "47437007-a242-4d4b-8c07-2286927ee8dd"
+    },
+    {
+      "name": "CORVIDA",
+      "kind": "normal",
+      "aic": [
+        "Aida Rojas"
+      ],
+      "brokers": [
+        "Omar Ogra",
+        "Nancy Barbara Rojas",
+        "Jorge Félix Socarras",
+        "Yamila Socarra",
+        "Daimara Cardenas Vargas"
+      ],
+      "id": "28fdd498-1a9d-4152-bac0-b4accfef26ad"
+    },
+    {
+      "name": "AP INSURANCE SERVICES",
+      "kind": "sub_goldpro",
+      "aic": [
+        "Ahsley Pineda"
+      ],
+      "brokers": [],
+      "id": "eca070b1-c316-4385-bdc6-0189924a0475"
+    },
+    {
+      "name": "Vivo Insurance Group",
+      "kind": "normal",
+      "aic": [
+        "Gina Torregroza"
+      ],
+      "brokers": [],
+      "id": "520326b8-7c12-4258-a4e4-878133233c62"
+    },
+    {
+      "name": "SECURE HEALTH",
+      "kind": "normal",
+      "aic": [],
+      "brokers": [
+        "Pedro Dominguez"
+      ],
+      "id": "a3168469-d167-46f9-a8fa-17392fe872f1"
+    },
+    {
+      "name": "Premium Lifetime Insurance Group LLC",
+      "kind": "info_limited",
+      "aic": [],
+      "brokers": [
+        "Jhonn Galindo"
+      ],
+      "id": "1c506f8d-5b22-4751-b920-aae26295938b"
+    }
+  ],
+  "friends": [
+    {
+      "name": "FRIENDS",
+      "kind": "matrix",
+      "aic": [
+        "Cristiam Camilo Morales"
+      ],
+      "brokers": [
+        "Leidys De La Pena"
+      ],
+      "id": "65c0031c-7472-42c8-81c6-82ffe67a7453"
+    },
+    {
+      "name": "PSGROUPADVISOR",
+      "kind": "normal",
+      "aic": [
+        "Maria Polanco"
+      ],
+      "brokers": [],
+      "id": "4232ef24-1be3-4430-9948-559e54acc1f8"
+    },
+    {
+      "name": "VITANOVA",
+      "kind": "normal",
+      "aic": [],
+      "brokers": [
+        "John Martinez"
+      ],
+      "id": "12e48245-5805-4277-a198-56181366edfa"
+    },
+    {
+      "name": "FAST TRACK",
+      "kind": "normal",
+      "aic": [],
+      "brokers": [
+        "Juan Manuel Lopez",
+        "Luis Gomez"
+      ],
+      "id": "88240cf5-0d28-400c-9484-2824d20b4b90"
+    },
+    {
+      "name": "MISSION CARE",
+      "kind": "normal",
+      "aic": [],
+      "brokers": [
+        "Carlos Lopez Gamma",
+        "Helena Gato",
+        "Alexander Cabeza Cots"
+      ],
+      "id": "faed8858-595d-4289-bf49-fd1ba7dfd414"
+    },
+    {
+      "name": "BLUE HORIZONS",
+      "kind": "no_data",
+      "aic": [],
+      "brokers": [],
+      "id": "b1626b51-29a7-4ecb-b65c-fa1148e88d04"
+    }
+  ],
+  "pending": [
+    {
+      "name": "SPARTANS",
+      "kind": "unclear",
+      "aic": [
+        "Carolina Correa"
+      ],
+      "brokers": [
+        "Jonathan Ramirez",
+        "Monica Isabel Gomez Hoyos (Released)",
+        "Marcela Cecilia Bermudez Vega",
+        "Gaspar R Cardero",
+        "Adiavaleska Diaz Rodriguez",
+        "Pahola Cota",
+        "Vanessa Jimenez Canelon",
+        "Pedro Arnaldo Milanes Rodriguez"
+      ],
+      "id": "b7cfc51f-f101-42f1-9962-83bfe5000f0d"
+    },
+    {
+      "name": "CB INSURANCE",
+      "kind": "on_hold",
+      "aic": [
+        "Cesar Jose Jr. Bringas"
+      ],
+      "brokers": [],
+      "id": "3bf09371-d92d-4cd9-b6c7-6d4ec2c8720f"
+    }
+  ]
+};
+
+const logEl = document.getElementById("log");
+const statsEl = document.getElementById("stats");
+const btnMigrate = document.getElementById("btn-migrate");
+const btnVerify = document.getElementById("btn-verify");
+
+function log(msg, cls = "info") {
+  const span = document.createElement("div");
+  span.className = cls;
+  span.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  logEl.appendChild(span);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+// Mostrar stats del JSON
+let totalAg = 0, totalAic = 0, totalBrokers = 0;
+["hero", "friends", "pending"].forEach(g => {
+  DATA_TO_MIGRATE[g].forEach(a => {
+    totalAg++;
+    totalAic += a.aic.length;
+    totalBrokers += a.brokers.length;
+  });
+});
+statsEl.textContent = `Datos a migrar:
+  hero:    ${DATA_TO_MIGRATE.hero.length} agencias
+  friends: ${DATA_TO_MIGRATE.friends.length} agencias
+  pending: ${DATA_TO_MIGRATE.pending.length} agencias
+  ─────────────────────────────
+  Total:   ${totalAg} agencias, ${totalAic} AIC, ${totalBrokers} brokers`;
+
+// ══ Auth ══
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    log("Sin sesión. Iniciando login...", "info");
+    try {
+      await signInWithPopup(auth, new GoogleAuthProvider());
+    } catch (e) {
+      log("Error en login: " + e.message, "err");
+    }
+    return;
+  }
+
+  log(`Autenticado como ${user.email}`, "ok");
+
+  if (user.email !== "it@heroinsuranceusa.com") {
+    log("⛔ Solo el admin (it@) puede ejecutar la migración.", "err");
+    btnMigrate.textContent = "Acceso denegado";
+    return;
+  }
+
+  btnMigrate.disabled = false;
+  btnMigrate.textContent = "1. Migrar datos a Firestore";
+  btnVerify.disabled = false;
+});
+
+// ══ Botón migrar ══
+btnMigrate.addEventListener("click", async () => {
+  if (!confirm("¿Sobrescribir shared/agencias con los datos del JSON?\n\nEsta acción NO se puede deshacer.")) return;
+
+  btnMigrate.disabled = true;
+  btnMigrate.textContent = "Migrando...";
+
+  try {
+    log("Subiendo a Firestore: shared/agencias...", "info");
+
+    await setDoc(doc(db, "shared", "agencias"), {
+      hero: DATA_TO_MIGRATE.hero,
+      friends: DATA_TO_MIGRATE.friends,
+      pending: DATA_TO_MIGRATE.pending,
+      updatedAt: serverTimestamp(),
+      updatedBy: auth.currentUser.email,
+      version: 1
+    });
+
+    log("✓ Migración completada exitosamente", "ok");
+    log(`✓ ${totalAg} agencias guardadas`, "ok");
+    btnMigrate.textContent = "✓ Migrado";
+
+  } catch (e) {
+    log("Error: " + e.message, "err");
+    btnMigrate.disabled = false;
+    btnMigrate.textContent = "1. Reintentar";
+  }
+});
+
+// ══ Botón verificar ══
+btnVerify.addEventListener("click", async () => {
+  btnVerify.disabled = true;
+  btnVerify.textContent = "Verificando...";
+  try {
+    const snap = await getDoc(doc(db, "shared", "agencias"));
+    if (!snap.exists()) {
+      log("⚠ El documento shared/agencias NO existe todavía.", "err");
+    } else {
+      const data = snap.data();
+      log("✓ Documento shared/agencias existe en Firestore:", "ok");
+      log(`  hero: ${(data.hero || []).length} agencias`, "info");
+      log(`  friends: ${(data.friends || []).length} agencias`, "info");
+      log(`  pending: ${(data.pending || []).length} agencias`, "info");
+      if (data.updatedAt) {
+        const date = data.updatedAt.toDate ? data.updatedAt.toDate() : new Date(data.updatedAt);
+        log(`  actualizado: ${date.toLocaleString()}`, "info");
+      }
+    }
+  } catch (e) {
+    log("Error: " + e.message, "err");
+  }
+  btnVerify.textContent = "2. Verificar migración";
+  btnVerify.disabled = false;
+});
+</script>
+</body>
+</html>
