@@ -787,3 +787,58 @@
   .ag-tree-sub-wrap { margin-left: 12px; padding-left: 10px; }
   .ag-tree-node.expanded .ag-tree-node-details { padding: 14px 14px 16px 28px; }
 }
+
+/* ─────────────────────────────────────────
+   Búsqueda — resaltado y badges
+   ───────────────────────────────────────── */
+
+/* Highlight de coincidencias (texto encontrado) */
+.ag-hl {
+  background: rgba(6,163,182,.18);
+  color: var(--ag-hero-dark);
+  font-weight: 700;
+  padding: 1px 3px;
+  margin: 0 -1px;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(6,163,182,.25);
+}
+
+/* Badge "+N más" / "+N ocultos" cuando se filtran brokers/AICs */
+.ag-hidden-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  background: rgba(6,163,182,.10);
+  color: var(--ag-hero-dark);
+  border: 1px solid rgba(6,163,182,.25);
+  border-radius: 999px;
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .3px;
+  text-transform: none;
+  vertical-align: middle;
+}
+
+/* Mensaje cuando el match es solo por nombre de agencia */
+.ag-empty-search {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--muted, #94a3b8);
+  margin: 0;
+  padding: 6px 0;
+}
+
+/* Dark mode para highlight */
+[data-theme="dark"] .ag-hl {
+  background: rgba(6,163,182,.30);
+  color: #7dd3df;
+  box-shadow: 0 0 0 1px rgba(6,163,182,.50);
+}
+
+[data-theme="dark"] .ag-hidden-badge {
+  background: rgba(6,163,182,.18);
+  color: #7dd3df;
+  border-color: rgba(6,163,182,.40);
+}

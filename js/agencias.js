@@ -120,14 +120,33 @@ function getFilteredAgencies() {
     ? ["hero", "friends", "pending"]
     : [filter.group];
 
+  const terms = getSearchTerms();
   const result = [];
+
   groups.forEach(g => {
     DATA[g].forEach(ag => {
-      if (filter.text) {
-        const hay = `${ag.name || ""} ${(ag.aic || []).join(" ")} ${(ag.brokers || []).join(" ")}`.toLowerCase();
-        if (!hay.includes(filter.text)) return;
+      // Sin búsqueda: incluir todo
+      if (!terms.length) {
+        result.push({ ...ag, _group: g, _matchedBrokers: null, _matchedAic: null });
+        return;
       }
-      result.push({ ...ag, _group: g });
+
+      // Con búsqueda: detectar matches
+      const nameMatch = matchesAllTerms(ag.name || "", terms);
+      const matchedAic = (ag.aic || []).filter(n => matchesAllTerms(n, terms));
+      const matchedBrokers = (ag.brokers || []).filter(n => matchesAllTerms(n, terms));
+
+      const hasAnyMatch = nameMatch || matchedAic.length > 0 || matchedBrokers.length > 0;
+      if (!hasAnyMatch) return;
+
+      result.push({
+        ...ag,
+        _group: g,
+        // Si el match es por nombre de agencia, mostrar TODO el contenido.
+        // Si el match es solo por broker/AIC, mostrar solo los que matchean.
+        _matchedBrokers: nameMatch ? null : matchedBrokers,
+        _matchedAic: nameMatch ? null : matchedAic
+      });
     });
   });
   return result;
@@ -233,14 +252,23 @@ function renderTree() {
 }
 
 function buildTreeNode(ag, autoExpand, overrideLabel) {
-  const aicNames = (ag.aic || []).map(n => escapeHtml(n)).join(", ");
-  const brokerCount = (ag.brokers || []).length;
-  const aicCount = (ag.aic || []).length;
-  const hasContent = aicCount > 0 || brokerCount > 0;
+  const terms = getSearchTerms();
+  const isFiltered = terms.length > 0;
 
-  const subLabel = overrideLabel || (
-    aicCount > 0 ? `AIC: ${aicNames}` : "Sin AIC asignado"
-  );
+  // Si hay match filtrado, usar SOLO los AICs/brokers que matchean
+  const aicList = (isFiltered && ag._matchedAic !== null) ? ag._matchedAic : (ag.aic || []);
+  const brokerList = (isFiltered && ag._matchedBrokers !== null) ? ag._matchedBrokers : (ag.brokers || []);
+
+  const totalAic = (ag.aic || []).length;
+  const totalBrokers = (ag.brokers || []).length;
+  const aicCount = aicList.length;
+  const brokerCount = brokerList.length;
+
+  // Cuántos NO se muestran (para el badge "+N más")
+  const aicHidden = totalAic - aicCount;
+  const brokerHidden = totalBrokers - brokerCount;
+
+  const hasContent = totalAic > 0 || totalBrokers > 0;
 
   // Tags de estado
   let tags = "";
@@ -249,7 +277,7 @@ function buildTreeNode(ag, autoExpand, overrideLabel) {
   if (ag.kind === "no_data") tags += `<span class="ag-tree-tag tag-warn">Sin datos</span>`;
   if (ag.kind === "on_hold") tags += `<span class="ag-tree-tag tag-hold">On hold</span>`;
   if (ag.kind === "unclear") tags += `<span class="ag-tree-tag tag-warn">Por aclarar</span>`;
-  if (brokerCount > 0) tags += `<span class="ag-tree-tag tag-count">${brokerCount} brokers</span>`;
+  if (totalBrokers > 0) tags += `<span class="ag-tree-tag tag-count">${totalBrokers} brokers</span>`;
 
   // Acciones admin
   const adminActions = canEdit ? `
@@ -263,18 +291,21 @@ function buildTreeNode(ag, autoExpand, overrideLabel) {
     </div>
   ` : "";
 
-  // Detalles colapsables (AICs detallados + lista de brokers)
+  // Detalles colapsables
   let details = "";
   if (hasContent) {
     let aicDetailHtml = "";
     if (aicCount > 0) {
       aicDetailHtml = `
         <div class="ag-tree-aic-block">
-          <div class="ag-tree-detail-label">${aicCount === 1 ? "Agente a cargo" : "Agentes a cargo"}</div>
-          ${(ag.aic || []).map(name => `
+          <div class="ag-tree-detail-label">
+            ${aicCount === 1 ? "Agente a cargo" : "Agentes a cargo"}
+            ${aicHidden > 0 ? `<span class="ag-hidden-badge">+${aicHidden} oculto${aicHidden === 1 ? "" : "s"}</span>` : ""}
+          </div>
+          ${aicList.map(name => `
             <div class="ag-tree-aic-row">
               <div class="ag-avatar ag-avatar-aic">${getInitials(name)}</div>
-              <div class="ag-tree-aic-name">${escapeHtml(name)}</div>
+              <div class="ag-tree-aic-name">${highlight(name, terms)}</div>
             </div>
           `).join("")}
         </div>
@@ -285,14 +316,23 @@ function buildTreeNode(ag, autoExpand, overrideLabel) {
     if (brokerCount > 0) {
       brokerListHtml = `
         <div class="ag-tree-brokers-block">
-          <div class="ag-tree-detail-label">${brokerCount} ${brokerCount === 1 ? "broker" : "brokers"}</div>
+          <div class="ag-tree-detail-label">
+            ${brokerCount} ${brokerCount === 1 ? "broker" : "brokers"}
+            ${brokerHidden > 0 ? `<span class="ag-hidden-badge">+${brokerHidden} más</span>` : ""}
+          </div>
           <ol class="ag-tree-brokers-list">
-            ${(ag.brokers || []).map(name => `
-              <li class="ag-tree-broker-row">${escapeHtml(name)}</li>
+            ${brokerList.map(name => `
+              <li class="ag-tree-broker-row">${highlight(name, terms)}</li>
             `).join("")}
           </ol>
         </div>
       `;
+    }
+
+    // Si hay búsqueda y NO hay nada visible (ni AIC ni brokers matchean,
+    // pero el match fue por nombre de agencia), mostrar mensaje suave
+    if (isFiltered && aicCount === 0 && brokerCount === 0) {
+      brokerListHtml = `<p class="ag-empty-search">El nombre de la agencia coincide. Sin AIC/brokers que coincidan.</p>`;
     }
 
     details = `
@@ -317,12 +357,23 @@ function buildTreeNode(ag, autoExpand, overrideLabel) {
   const expandedClass = (autoExpand && hasContent) ? " expanded" : "";
   const noContentClass = !hasContent ? " no-content" : "";
 
+  // Sub label: si hay override usar texto plano, si no, AIC names con highlight
+  let subLabelHtml;
+  if (overrideLabel) {
+    subLabelHtml = escapeHtml(overrideLabel);
+  } else if (totalAic > 0) {
+    const aicHl = (ag.aic || []).map(n => highlight(n, terms)).join(", ");
+    subLabelHtml = `AIC: ${aicHl}`;
+  } else {
+    subLabelHtml = "Sin AIC asignado";
+  }
+
   return `<div class="ag-tree-node${expandedClass}${noContentClass}">
     <div class="ag-tree-node-header">
       ${expandIcon}
       <div class="ag-tree-node-info">
-        <div class="ag-tree-node-name">${escapeHtml(ag.name)}</div>
-        <div class="ag-tree-node-sub">${subLabel}</div>
+        <div class="ag-tree-node-name">${highlight(ag.name || "", terms)}</div>
+        <div class="ag-tree-node-sub">${subLabelHtml}</div>
         ${tags ? `<div class="ag-tree-node-tags">${tags}</div>` : ""}
         ${note}
       </div>
@@ -669,4 +720,77 @@ function escapeHtml(str) {
 
 function escapeAttr(str) {
   return String(str || "").replace(/"/g, "&quot;");
+}
+
+// ══ Búsqueda mejorada ══
+
+// Normaliza un string: minúsculas + sin acentos
+function normalize(str) {
+  return String(str || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, ""); // remueve diacríticos
+}
+
+// Convierte el filtro en un array de términos no vacíos (separados por espacios)
+function getSearchTerms() {
+  if (!filter.text) return [];
+  return normalize(filter.text)
+    .split(/\s+/)
+    .filter(t => t.length > 0);
+}
+
+// Devuelve true si el texto contiene TODOS los términos (AND)
+function matchesAllTerms(text, terms) {
+  if (!terms.length) return true;
+  const norm = normalize(text);
+  return terms.every(t => norm.includes(t));
+}
+
+// Resalta los términos en el texto. Devuelve HTML con <mark>...</mark>
+// Maneja overlapping (ej. "ana" y "an" no se duplican).
+function highlight(text, terms) {
+  const safeText = escapeHtml(text);
+  if (!terms.length || !text) return safeText;
+
+  // Construir array de rangos a resaltar [start, end] sobre el texto NORMALIZADO
+  const norm = normalize(text);
+  const ranges = [];
+  terms.forEach(term => {
+    if (!term) return;
+    let idx = 0;
+    while (true) {
+      const found = norm.indexOf(term, idx);
+      if (found === -1) break;
+      ranges.push([found, found + term.length]);
+      idx = found + term.length;
+    }
+  });
+
+  if (!ranges.length) return safeText;
+
+  // Mergear rangos solapados / adyacentes
+  ranges.sort((a, b) => a[0] - b[0]);
+  const merged = [ranges[0]];
+  for (let i = 1; i < ranges.length; i++) {
+    const last = merged[merged.length - 1];
+    if (ranges[i][0] <= last[1]) {
+      last[1] = Math.max(last[1], ranges[i][1]);
+    } else {
+      merged.push(ranges[i]);
+    }
+  }
+
+  // Reconstruir el HTML usando el TEXTO ORIGINAL (no el normalizado)
+  // Las posiciones en `norm` corresponden 1:1 con las del original porque
+  // normalize() solo cambia mayúsculas y diacríticos, sin alterar la longitud.
+  let result = "";
+  let cursor = 0;
+  for (const [start, end] of merged) {
+    result += escapeHtml(text.slice(cursor, start));
+    result += `<mark class="ag-hl">${escapeHtml(text.slice(start, end))}</mark>`;
+    cursor = end;
+  }
+  result += escapeHtml(text.slice(cursor));
+  return result;
 }
