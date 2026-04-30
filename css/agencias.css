@@ -551,3 +551,375 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ═══════════════════════════════════════════
+   FASE 2a — Modo edición (admin only)
+   ═══════════════════════════════════════════ */
+
+/* Botón "Nueva agencia" en el header */
+.ag-btn-new {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: 13px;
+  background: var(--ag-hero-dark);
+  color: #fff;
+  border: 0;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(6,163,182,.30);
+  transition: all .2s ease;
+}
+
+.ag-btn-new i {
+  width: 16px;
+  height: 16px;
+}
+
+.ag-btn-new:hover {
+  background: var(--ag-hero);
+  transform: translateY(-50%) translateY(-2px);
+  box-shadow: 0 6px 16px rgba(6,163,182,.40);
+}
+
+.page-header {
+  position: relative;
+}
+
+@media (max-width: 720px) {
+  .ag-btn-new {
+    position: static;
+    transform: none;
+    margin-top: 14px;
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Acciones admin en cada card */
+.ag-card {
+  position: relative;
+}
+
+.ag-card-actions {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity .15s ease;
+  z-index: 5;
+}
+
+.ag-card:hover .ag-card-actions {
+  opacity: 1;
+}
+
+.ag-card-edit,
+.ag-card-delete {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 0;
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,.10);
+  transition: all .15s ease;
+}
+
+.ag-card-edit i,
+.ag-card-delete i {
+  width: 14px;
+  height: 14px;
+  color: var(--text, #1a1a1a);
+}
+
+.ag-card-edit:hover {
+  background: var(--ag-hero-dark);
+}
+.ag-card-edit:hover i { color: #fff; }
+
+.ag-card-delete:hover {
+  background: #dc2626;
+}
+.ag-card-delete:hover i { color: #fff; }
+
+/* Móvil: siempre visible (no hay hover real) */
+@media (hover: none) {
+  .ag-card-actions { opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════
+   MODAL: Nueva / Editar agencia
+   ═══════════════════════════════════════════ */
+
+.ag-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(6,42,51,.65);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+  animation: ag-modal-fade-in .2s ease;
+}
+
+@keyframes ag-modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.ag-modal {
+  position: relative;
+  background: #fff;
+  border-radius: 18px;
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0,0,0,.30);
+  overflow: hidden;
+  animation: ag-modal-slide-up .25s cubic-bezier(.22,1,.36,1);
+}
+
+@keyframes ag-modal-slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.ag-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(0,0,0,.06);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  transition: background .15s ease;
+}
+
+.ag-modal-close:hover {
+  background: rgba(0,0,0,.12);
+}
+
+.ag-modal-close i {
+  width: 16px;
+  height: 16px;
+}
+
+.ag-modal-header {
+  padding: 24px 28px 16px;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+}
+
+.ag-modal-kicker {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--ag-hero-dark);
+  margin-bottom: 6px;
+}
+
+.ag-modal-title {
+  margin: 0;
+  font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: 22px;
+  color: var(--text, #1a1a1a);
+  letter-spacing: -.3px;
+  line-height: 1.2;
+}
+
+/* Body con scroll */
+.ag-modal-body {
+  padding: 20px 28px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.ag-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+@media (max-width: 540px) {
+  .ag-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ag-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.ag-form-label {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--text, #1a1a1a);
+}
+
+.ag-required {
+  color: #dc2626;
+  margin-left: 2px;
+}
+
+.ag-form-hint {
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--muted, #64748b);
+  font-size: 11.5px;
+}
+
+.ag-form-field input,
+.ag-form-field select,
+.ag-form-field textarea {
+  font-family: inherit;
+  font-size: 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--text, #1a1a1a);
+  transition: border-color .15s ease, box-shadow .15s ease;
+  resize: vertical;
+}
+
+.ag-form-field input:focus,
+.ag-form-field select:focus,
+.ag-form-field textarea:focus {
+  outline: 0;
+  border-color: var(--ag-hero);
+  box-shadow: 0 0 0 3px rgba(6,163,182,.15);
+}
+
+.ag-form-field textarea {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+  min-height: 80px;
+}
+
+.ag-form-counter {
+  align-self: flex-end;
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted, #64748b);
+  margin-top: -2px;
+}
+
+/* Footer con botones */
+.ag-modal-footer {
+  padding: 16px 28px 24px;
+  border-top: 1px solid var(--border, #e2e8f0);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  background: #fafbfc;
+}
+
+.ag-modal-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  border: 0;
+  transition: all .15s ease;
+}
+
+.ag-modal-btn-cancel {
+  background: rgba(0,0,0,.06);
+  color: var(--text, #1a1a1a);
+}
+.ag-modal-btn-cancel:hover {
+  background: rgba(0,0,0,.12);
+}
+
+.ag-modal-btn-save {
+  background: var(--ag-hero-dark);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(6,163,182,.30);
+}
+.ag-modal-btn-save:hover:not(:disabled) {
+  background: var(--ag-hero);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(6,163,182,.40);
+}
+.ag-modal-btn-save:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+/* Dark mode */
+[data-theme="dark"] .ag-modal {
+  background: #1e293b;
+}
+
+[data-theme="dark"] .ag-modal-header,
+[data-theme="dark"] .ag-modal-footer {
+  border-color: #334155;
+}
+
+[data-theme="dark"] .ag-modal-footer {
+  background: #0f172a;
+}
+
+[data-theme="dark"] .ag-modal-title,
+[data-theme="dark"] .ag-form-label {
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .ag-form-field input,
+[data-theme="dark"] .ag-form-field select,
+[data-theme="dark"] .ag-form-field textarea {
+  background: #0f172a;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .ag-card-edit,
+[data-theme="dark"] .ag-card-delete {
+  background: rgba(15,23,42,.92);
+}
+
+[data-theme="dark"] .ag-card-edit i,
+[data-theme="dark"] .ag-card-delete i {
+  color: #f1f5f9;
+}

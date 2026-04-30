@@ -55,7 +55,12 @@ export const ACTIONS = {
   MESSAGE_DELETE: "message.delete",
 
   // Spotlight
-  SPOTLIGHT_UPDATE: "spotlight.update"
+  SPOTLIGHT_UPDATE: "spotlight.update",
+
+  // Agencias (Fase 2a)
+  AGENCY_ADD: "agency.add",
+  AGENCY_EDIT: "agency.edit",
+  AGENCY_DELETE: "agency.delete"
 };
 
 // Etiquetas amigables para mostrar en la UI
@@ -73,7 +78,10 @@ export const ACTION_LABELS = {
   "contact.edit": { label: "Contacto editado", icon: "edit-3", color: "#06a3b6" },
   "contact.delete": { label: "Contacto eliminado", icon: "user-x", color: "#c0392b" },
   "message.delete": { label: "Mensaje eliminado", icon: "trash-2", color: "#c0392b" },
-  "spotlight.update": { label: "Spotlight actualizado", icon: "star", color: "#e8a317" }
+  "spotlight.update": { label: "Spotlight actualizado", icon: "star", color: "#e8a317" },
+  "agency.add": { label: "Agencia agregada", icon: "plus-circle", color: "#22a06b" },
+  "agency.edit": { label: "Agencia editada", icon: "edit-3", color: "#06a3b6" },
+  "agency.delete": { label: "Agencia eliminada", icon: "trash-2", color: "#c0392b" }
 };
 
 
