@@ -21,28 +21,28 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-
 export const ROLES = {
   admin: {
     label: "Administrador",
-    pages: ["index", "equipo", "portales", "directorio", "guias", "politicas", "onboarding", "admin"],
+    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "admin"],
     isAdmin: true
   },
   directivo: {
     label: "Directivo",
-    pages: ["index", "equipo", "portales", "directorio", "guias", "politicas", "onboarding"],
+    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding"],
     isAdmin: false
   },
   rrhh: {
     label: "Recursos Humanos",
-    pages: ["index", "equipo", "portales", "directorio", "guias", "politicas", "onboarding"],
+    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding"],
     isAdmin: false
   },
   interno: {
     label: "Equipo interno",
-    pages: ["index", "equipo", "portales", "directorio", "guias", "politicas", "onboarding"],
+    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding"],
     isAdmin: false
   },
   agente: {
     label: "Agente",
     // Los agentes SÍ ven portales (solo su sección personal) pero NO políticas
-    pages: ["index", "equipo", "portales", "directorio", "guias", "onboarding"],
+    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "onboarding"],
     isAdmin: false
   }
 };

@@ -19,7 +19,7 @@ async function trackVisit(user) {
   const page = getPageName();
 
   // Evitar tracking si la página no es del Hub
-  const validPages = ['index', 'equipo', 'portales', 'directorio', 'guias', 'politicas', 'onboarding', 'admin'];
+  const validPages = ['index', 'equipo', 'agencias', 'portales', 'directorio', 'guias', 'politicas', 'onboarding', 'admin'];
   if (!validPages.includes(page)) return;
 
   // Evitar doble tracking: si ya trackeamos esta página en los últimos 30 segundos, saltar

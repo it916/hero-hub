@@ -1,0 +1,553 @@
+/* ═══════════════════════════════════════════
+   Hero Hub · Organigrama de Agencias
+   Paleta consistente con el resto del Hub
+   ═══════════════════════════════════════════ */
+
+:root {
+  --ag-hero: #06a3b6;
+  --ag-hero-dark: #058fa0;
+  --ag-friends: #5a4fcf;
+  --ag-friends-dark: #463cab;
+  --ag-pending: #e8a317;
+  --ag-pending-dark: #d4910c;
+  --ag-warn: #d97706;
+  --ag-hold: #6b7280;
+}
+
+/* ── Stats cards ── */
+.ag-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.ag-stat {
+  background: #fff;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 14px;
+  padding: 18px 20px;
+  text-align: center;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.ag-stat:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(6,163,182,.10);
+}
+
+.ag-stat-value {
+  font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: 28px;
+  color: var(--ag-hero-dark);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.ag-stat-label {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--muted, #64748b);
+}
+
+/* ── Toolbar ── */
+.ag-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.ag-toolbar .search-wrap {
+  flex: 1;
+  min-width: 240px;
+}
+
+.ag-view-tabs {
+  display: flex;
+  gap: 4px;
+  background: rgba(0,0,0,.04);
+  border-radius: 10px;
+  padding: 3px;
+}
+
+.ag-view-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted, #64748b);
+  cursor: pointer;
+  transition: all .15s ease;
+}
+
+.ag-view-tab i {
+  width: 14px;
+  height: 14px;
+}
+
+.ag-view-tab.active {
+  background: #fff;
+  color: var(--ag-hero-dark);
+  box-shadow: 0 2px 6px rgba(0,0,0,.06);
+}
+
+/* ── Filtro de dot ── */
+.filter-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.dot-hero { background: var(--ag-hero); }
+.dot-friends { background: var(--ag-friends); }
+.dot-pending { background: var(--ag-pending); }
+
+/* ── Vista CARDS ── */
+.ag-view {
+  margin-top: 12px;
+}
+
+.ag-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 16px;
+}
+
+.ag-card {
+  background: #fff;
+  border: 1px solid var(--border, #e2e8f0);
+  border-left-width: 4px;
+  border-radius: 14px;
+  padding: 18px 20px;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.ag-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(6,163,182,.10);
+}
+
+/* Color del borde izquierdo según grupo */
+.ag-card.ag-group-hero { border-left-color: var(--ag-hero); }
+.ag-card.ag-group-friends { border-left-color: var(--ag-friends); }
+.ag-card.ag-group-pending { border-left-color: var(--ag-pending); }
+
+/* Variante sub-agencia (más sutil) */
+.ag-card.ag-kind-sub_goldpro {
+  margin-left: 24px;
+  border-left-color: #94a3b8;
+  background: #f8fafc;
+}
+
+/* Variante info_limited / no_data / unclear / on_hold */
+.ag-card.ag-kind-info_limited,
+.ag-card.ag-kind-no_data,
+.ag-card.ag-kind-unclear {
+  background: #fffbeb;
+  border-left-color: var(--ag-warn);
+}
+
+.ag-card.ag-kind-on_hold {
+  background: #f9fafb;
+  border-left-color: var(--ag-hold);
+  opacity: .85;
+}
+
+/* ── Header de card ── */
+.ag-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.ag-card-name {
+  font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--text, #1a1a1a);
+  letter-spacing: -.2px;
+}
+
+.ag-card-badges {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.ag-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .3px;
+  white-space: nowrap;
+}
+
+.ag-badge-matrix {
+  background: var(--ag-hero-dark);
+  color: #fff;
+}
+
+.ag-badge-sub {
+  background: rgba(148,163,184,.25);
+  color: #475569;
+}
+
+.ag-badge-warn {
+  background: rgba(234,179,8,.18);
+  color: #92400e;
+  border: 1px solid rgba(234,179,8,.35);
+}
+
+.ag-badge-hold {
+  background: rgba(107,114,128,.18);
+  color: #4b5563;
+}
+
+.ag-badge-count {
+  background: rgba(6,163,182,.10);
+  color: var(--ag-hero-dark);
+  border: 1px solid rgba(6,163,182,.20);
+}
+
+/* ── Nota especial ── */
+.ag-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(234,179,8,.10);
+  border-radius: 8px;
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 12.5px;
+  font-style: italic;
+  color: #92400e;
+  margin-bottom: 12px;
+}
+
+.ag-note i {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* ── Sección AIC ── */
+.ag-aic-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f4f8;
+}
+
+.ag-section-label {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--muted, #64748b);
+  margin-bottom: 8px;
+}
+
+.ag-aic-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+}
+
+.ag-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: 11px;
+  color: #fff;
+  flex-shrink: 0;
+  letter-spacing: .3px;
+}
+
+.ag-avatar-aic {
+  background: linear-gradient(135deg, var(--ag-hero), var(--ag-hero-dark));
+  box-shadow: 0 2px 4px rgba(6,163,182,.25);
+}
+
+.ag-card.ag-group-friends .ag-avatar-aic {
+  background: linear-gradient(135deg, var(--ag-friends), var(--ag-friends-dark));
+  box-shadow: 0 2px 4px rgba(90,79,207,.25);
+}
+
+.ag-card.ag-group-pending .ag-avatar-aic {
+  background: linear-gradient(135deg, var(--ag-pending), var(--ag-pending-dark));
+  box-shadow: 0 2px 4px rgba(232,163,23,.25);
+}
+
+.ag-aic-name {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text, #1a1a1a);
+}
+
+/* ── Sección Brokers ── */
+.ag-brokers-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f4f8;
+}
+
+.ag-brokers-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.ag-broker-chip {
+  display: inline-block;
+  padding: 4px 10px;
+  background: rgba(6,163,182,.06);
+  border: 1px solid rgba(6,163,182,.15);
+  border-radius: 999px;
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 11.5px;
+  color: var(--text, #1a1a1a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.ag-card.ag-group-friends .ag-broker-chip {
+  background: rgba(90,79,207,.06);
+  border-color: rgba(90,79,207,.15);
+}
+
+.ag-card.ag-group-pending .ag-broker-chip {
+  background: rgba(232,163,23,.08);
+  border-color: rgba(232,163,23,.20);
+}
+
+.ag-empty-card {
+  margin: 8px 0 0;
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--muted, #94a3b8);
+}
+
+/* ═══════════════════════════════════════════
+   Vista TREE (jerarquía)
+   ═══════════════════════════════════════════ */
+
+.ag-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 8px 0;
+}
+
+.ag-tree-group {
+  background: #fff;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.ag-tree-root {
+  display: inline-block;
+  padding: 14px 22px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--ag-hero), var(--ag-hero-dark));
+  color: #fff;
+  margin-bottom: 18px;
+  box-shadow: 0 4px 12px rgba(6,163,182,.25);
+}
+
+.ag-tree-root-friends {
+  background: linear-gradient(135deg, var(--ag-friends), var(--ag-friends-dark));
+  box-shadow: 0 4px 12px rgba(90,79,207,.25);
+}
+
+.ag-tree-root-pending {
+  background: linear-gradient(135deg, var(--ag-pending), var(--ag-pending-dark));
+  box-shadow: 0 4px 12px rgba(232,163,23,.25);
+}
+
+.ag-tree-root-name {
+  font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: .5px;
+  line-height: 1.1;
+}
+
+.ag-tree-root-sub {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 11.5px;
+  font-weight: 600;
+  opacity: .85;
+  margin-top: 2px;
+}
+
+.ag-tree-children {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  position: relative;
+  padding-left: 12px;
+  border-left: 2px dashed rgba(0,0,0,.10);
+}
+
+.ag-tree-node {
+  background: #f8fafc;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 10px;
+  padding: 12px 14px;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.ag-tree-node:hover {
+  transform: translateX(2px);
+  box-shadow: 0 4px 10px rgba(0,0,0,.06);
+}
+
+.ag-tree-node-name {
+  font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--text, #1a1a1a);
+  margin-bottom: 2px;
+}
+
+.ag-tree-node-sub {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 12px;
+  color: var(--muted, #64748b);
+}
+
+.ag-tree-node-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.ag-tree-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .3px;
+}
+
+.tag-matrix {
+  background: var(--ag-hero-dark);
+  color: #fff;
+}
+
+.tag-warn {
+  background: rgba(234,179,8,.18);
+  color: #92400e;
+}
+
+.tag-hold {
+  background: rgba(107,114,128,.18);
+  color: #4b5563;
+}
+
+.tag-count {
+  background: rgba(6,163,182,.10);
+  color: var(--ag-hero-dark);
+}
+
+.ag-tree-sub-wrap {
+  margin-left: 24px;
+  margin-top: -4px;
+  padding-left: 16px;
+  border-left: 2px dotted rgba(148,163,184,.4);
+}
+
+/* ── Dark mode ── */
+[data-theme="dark"] .ag-stat,
+[data-theme="dark"] .ag-card,
+[data-theme="dark"] .ag-tree-group {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+[data-theme="dark"] .ag-card.ag-kind-sub_goldpro,
+[data-theme="dark"] .ag-tree-node {
+  background: #0f172a;
+}
+
+[data-theme="dark"] .ag-card-name,
+[data-theme="dark"] .ag-aic-name,
+[data-theme="dark"] .ag-tree-node-name {
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .ag-broker-chip {
+  background: rgba(6,163,182,.12);
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .ag-aic-section,
+[data-theme="dark"] .ag-brokers-section {
+  border-top-color: #334155;
+}
+
+[data-theme="dark"] .ag-card.ag-kind-info_limited,
+[data-theme="dark"] .ag-card.ag-kind-no_data,
+[data-theme="dark"] .ag-card.ag-kind-unclear {
+  background: #2a2416;
+}
+
+/* ── Responsive ── */
+@media (max-width: 720px) {
+  .ag-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .ag-stat-value {
+    font-size: 22px;
+  }
+  .ag-cards-grid {
+    grid-template-columns: 1fr;
+  }
+  .ag-card.ag-kind-sub_goldpro {
+    margin-left: 12px;
+  }
+  .ag-tree-children {
+    grid-template-columns: 1fr;
+  }
+}

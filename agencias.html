@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="icons/favicon-hero.png">
+<link rel="apple-touch-icon" href="icons/favicon-hero.png">
+<meta name="theme-color" content="#06a3b6">
+<title>Agencias — Hero Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/agencias.css">
+<script defer src="https://unpkg.com/lucide@0.474.0"></script>
+</head>
+<body>
+
+<div id="loading" class="login-container"><div class="login-card"><p>Verificando acceso...</p></div></div>
+
+<div id="dashboard" style="display:none;">
+
+  <header class="hero-topbar">
+    <div class="topbar-inner">
+      <div class="brand-block">
+        <a href="index.html" class="brand-link">
+          <div class="logo-mark"><img src="icons/favicon-hero.png" alt="Hero"></div>
+          <div>
+            <div class="brand-name">HERO HUB</div>
+            <div class="brand-sub">Hero Insurance USA</div>
+          </div>
+        </a>
+      </div>
+      <nav class="topbar-nav" id="topbar-nav">
+        <a href="index.html" class="nav-link"><i data-lucide="home"></i><span>Inicio</span></a>
+        <a href="equipo.html" class="nav-link"><i data-lucide="users"></i><span>Equipo</span></a>
+        <a href="agencias.html" class="nav-link active"><i data-lucide="network"></i><span>Agencias</span></a>
+        <a href="portales.html" class="nav-link"><i data-lucide="shield"></i><span>Portales</span></a>
+        <a href="directorio.html" class="nav-link"><i data-lucide="book-user"></i><span>Directorio</span></a>
+        <a href="guias.html" class="nav-link"><i data-lucide="book-open"></i><span>Guías</span></a>
+        <a href="politicas.html" class="nav-link"><i data-lucide="scroll-text"></i><span>Políticas</span></a>
+      </nav>
+      <div class="topbar-actions">
+        <img id="user-avatar" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="" class="avatar">
+        <a id="btn-admin" href="admin.html" class="icon-btn" style="display:none;" title="Admin"><i data-lucide="shield-check"></i></a>
+        <button id="btn-logout" class="icon-btn" title="Salir"><i data-lucide="log-out"></i></button>
+        <button id="btn-menu" class="icon-btn menu-toggle" title="Menú"><i data-lucide="menu"></i></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+
+    <section class="page-header">
+      <div class="page-kicker">• Hero Insurance USA •</div>
+      <h1 class="page-title">Organigrama de Agencias</h1>
+      <p class="page-sub">Estructura completa: agencias, agentes a cargo y brokers</p>
+    </section>
+
+    <!-- Stats cards -->
+    <section class="ag-stats">
+      <div class="ag-stat">
+        <div class="ag-stat-value" id="ag-stat-total">—</div>
+        <div class="ag-stat-label">Agencias</div>
+      </div>
+      <div class="ag-stat">
+        <div class="ag-stat-value" id="ag-stat-aic">—</div>
+        <div class="ag-stat-label">Agentes a cargo</div>
+      </div>
+      <div class="ag-stat">
+        <div class="ag-stat-value" id="ag-stat-brokers">—</div>
+        <div class="ag-stat-label">Brokers</div>
+      </div>
+      <div class="ag-stat">
+        <div class="ag-stat-value" id="ag-stat-updated">—</div>
+        <div class="ag-stat-label">Actualizado</div>
+      </div>
+    </section>
+
+    <!-- Toolbar -->
+    <section class="ag-toolbar">
+      <div class="search-wrap">
+        <i data-lucide="search" class="search-icon"></i>
+        <input type="text" id="ag-search" placeholder="Buscar agencia, AIC o broker...">
+      </div>
+      <div class="ag-view-tabs">
+        <button class="ag-view-tab active" data-view="cards"><i data-lucide="layout-grid"></i><span>Cards</span></button>
+        <button class="ag-view-tab" data-view="tree"><i data-lucide="git-branch"></i><span>Jerarquía</span></button>
+      </div>
+    </section>
+
+    <!-- Filtros por grupo -->
+    <section class="filter-row" id="ag-filter-row">
+      <div class="filter-chip active" data-group="all">Todos</div>
+      <div class="filter-chip" data-group="hero">
+        <span class="filter-dot dot-hero"></span>
+        Bajo HERO
+      </div>
+      <div class="filter-chip" data-group="friends">
+        <span class="filter-dot dot-friends"></span>
+        Bajo FRIENDS
+      </div>
+      <div class="filter-chip" data-group="pending">
+        <span class="filter-dot dot-pending"></span>
+        Pendientes
+      </div>
+    </section>
+
+    <!-- Vistas -->
+    <div id="ag-view-cards" class="ag-view active">
+      <div id="ag-cards-grid" class="ag-cards-grid">
+        <p class="loading">Cargando agencias...</p>
+      </div>
+    </div>
+
+    <div id="ag-view-tree" class="ag-view" style="display:none;">
+      <div id="ag-tree" class="ag-tree">
+        <p class="loading">Cargando jerarquía...</p>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="hero-footer">
+    <span>HERO HUB · v4.4</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+  </footer>
+</div>
+
+<script>
+  window.refreshIcons = () => { if (window.lucide) lucide.createIcons(); };
+  document.addEventListener("DOMContentLoaded", () => {
+    window.refreshIcons();
+    const menuBtn = document.getElementById("btn-menu");
+    const nav = document.getElementById("topbar-nav");
+    if (menuBtn && nav) menuBtn.addEventListener("click", () => nav.classList.toggle("open"));
+  });
+</script>
+<script type="module" src="js/firebase-config.js"></script>
+<script type="module" src="js/page-guard.js"></script>
+<script type="module" src="js/agencias.js"></script>
+<script type="module" src="js/tracker.js"></script>
+</body>
+</html>
