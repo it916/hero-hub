@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Migración de Planes — Hero Hub (one-time)</title>
+<style>
+  body {
+    font-family: 'Trebuchet MS', sans-serif;
+    background: #062a33;
+    color: #fff;
+    min-height: 100vh;
+    padding: 40px 20px;
+    margin: 0;
+  }
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    background: #0a4a5c;
+    border: 1px solid rgba(245,184,48,.30);
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.40);
+  }
+  h1 {
+    margin: 0 0 8px;
+    font-size: 22px;
+    color: #fde68a;
+  }
+  .warn-box {
+    background: rgba(220,38,38,.15);
+    border: 1px solid rgba(220,38,38,.40);
+    padding: 14px 16px;
+    border-radius: 10px;
+    margin: 20px 0;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .stats {
+    background: rgba(255,255,255,.06);
+    padding: 14px 16px;
+    border-radius: 10px;
+    margin: 16px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    max-height: 320px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+  }
+  button {
+    background: linear-gradient(135deg, #f5b830, #e8a920);
+    color: #062a33;
+    border: 0;
+    padding: 14px 28px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-weight: 800;
+    font-size: 15px;
+    cursor: pointer;
+    margin-top: 14px;
+    margin-right: 8px;
+  }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  button.secondary {
+    background: linear-gradient(135deg, #06a3b6, #058fa0);
+    color: #fff;
+  }
+  #log {
+    margin-top: 20px;
+    background: #062a33;
+    padding: 16px;
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    max-height: 360px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+  }
+  .ok { color: #86efac; }
+  .err { color: #fca5a5; }
+  .info { color: #93c5fd; }
+  .warn { color: #fcd34d; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🛠 Migración de Planes a las Agencias</h1>
+  <p>Este script agrega el campo <code>planes</code> a cada agencia en <code>shared/agencias</code>, según los datos que tú indicaste.</p>
+
+  <div class="warn-box">
+    <strong>⚠️ Importante:</strong>
+    <ul>
+      <li>Este script <strong>solo modifica el campo <code>planes</code></strong> de cada agencia. No borra ni cambia nada más.</li>
+      <li>El matching de nombre es <strong>insensible a mayúsculas</strong> (VITANOVA = Vitanova).</li>
+      <li>Las agencias que no tengan info de planes en la captura recibirán <code>planes: []</code> (array vacío).</li>
+      <li>Solo el admin (<code>it@heroinsuranceusa.com</code>) puede ejecutarlo.</li>
+      <li>Después de ejecutar exitosamente, <strong>borra este archivo</strong> del repo.</li>
+    </ul>
+  </div>
+
+  <div id="preview-stats" class="stats">Cargando datos actuales...</div>
+
+  <button id="btn-preview" disabled>1. Previsualizar cambios</button>
+  <button id="btn-migrate" disabled>2. Aplicar migración</button>
+  <button id="btn-verify" disabled class="secondary">3. Verificar</button>
+
+  <div id="log"></div>
+</div>
+
+<script type="module">
+import { auth, db } from "./js/firebase-config.js";
+import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup }
+  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { doc, getDoc, updateDoc, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// ══ Mapeo de planes según captura ══
+// Las claves son nombres de agencias en MAYÚSCULAS (matching case-insensitive)
+const PLANES_BY_NAME = {
+  "HERO":                    ["MEDICARE", "ACA", "SUPLEMENTARIOS", "VIDA"],
+  "THE KAIZEN TEAM":         ["MEDICARE", "ACA", "SUPLEMENTARIOS", "VIDA"],
+  "A&Z COUPLE":              ["MEDICARE", "ACA", "SUPLEMENTARIOS"],
+  "VIPERCARE":               ["MEDICARE", "ACA", "SUPLEMENTARIOS"],
+  "KHAN FINANCIAL SERVICES": ["MEDICARE", "ACA", "SUPLEMENTARIOS", "VIDA"],
+  "ZT INSURANCE":            ["MEDICARE", "ACA"],
+  "ALLTIMES SAFE":           ["MEDICARE", "ACA", "SUPLEMENTARIOS", "VIDA"],
+  "SPARTANS":                ["MEDICARE"],
+  "GROWING UP":              ["MEDICARE", "ACA", "SUPLEMENTARIOS"],
+  "ENSURE":                  ["MEDICARE", "ACA"],
+  "GOLD PRO":                ["ACA", "SUPLEMENTARIOS", "VIDA"],
+  "CORVIDA":                 ["MEDICARE", "ACA", "SUPLEMENTARIOS", "VIDA"],
+  "SECURE HEALTH":           ["MEDICARE", "ACA", "SUPLEMENTARIOS", "VIDA"],
+  "FRIENDS":                 ["MEDICARE", "ACA", "SUPLEMENTARIOS", "VIDA"],
+  "VITANOVA":                ["SUPLEMENTARIOS", "VIDA"],
+  "FAST TRACK":              ["MEDICARE", "ACA", "SUPLEMENTARIOS"],
+  "MISSION CARE":            ["MEDICARE", "ACA", "SUPLEMENTARIOS", "VIDA"],
+  "BLUE HORIZONS":           ["MEDICARE", "ACA"],
+};
+
+const logEl = document.getElementById("log");
+const previewEl = document.getElementById("preview-stats");
+const btnPreview = document.getElementById("btn-preview");
+const btnMigrate = document.getElementById("btn-migrate");
+const btnVerify = document.getElementById("btn-verify");
+
+let currentData = null;
+let plannedChanges = null;
+
+function log(msg, cls = "info") {
+  const span = document.createElement("div");
+  span.className = cls;
+  span.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  logEl.appendChild(span);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+// ══ Auth ══
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    log("Sin sesión. Iniciando login...", "info");
+    try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+    catch (e) { log("Error en login: " + e.message, "err"); }
+    return;
+  }
+
+  log(`Autenticado como ${user.email}`, "ok");
+
+  if (user.email !== "it@heroinsuranceusa.com") {
+    log("⛔ Solo el admin (it@) puede ejecutar la migración.", "err");
+    return;
+  }
+
+  btnPreview.disabled = false;
+  btnVerify.disabled = false;
+  await loadCurrentData();
+});
+
+async function loadCurrentData() {
+  try {
+    const snap = await getDoc(doc(db, "shared", "agencias"));
+    if (!snap.exists()) {
+      log("⚠ No existe shared/agencias. Migra primero los datos base.", "err");
+      return;
+    }
+    currentData = snap.data();
+
+    // Resumen
+    let summary = "Datos actuales:\n";
+    let total = 0;
+    let withPlanes = 0;
+    for (const group of ["hero", "friends", "pending"]) {
+      const arr = currentData[group] || [];
+      summary += `  ${group}: ${arr.length} agencias\n`;
+      total += arr.length;
+      arr.forEach(ag => { if (Array.isArray(ag.planes) && ag.planes.length > 0) withPlanes++; });
+    }
+    summary += `\nTotal: ${total} agencias`;
+    summary += `\nCon planes ya asignados: ${withPlanes}`;
+    summary += `\nSin planes: ${total - withPlanes}`;
+    previewEl.textContent = summary;
+  } catch (e) {
+    log("Error cargando datos: " + e.message, "err");
+  }
+}
+
+// ══ Botón previsualizar ══
+btnPreview.addEventListener("click", () => {
+  if (!currentData) return;
+
+  plannedChanges = { hero: [], friends: [], pending: [] };
+  const matchedNames = new Set();
+  const unmatchedKeys = new Set(Object.keys(PLANES_BY_NAME));
+  let willChange = 0;
+  let willSetEmpty = 0;
+  let alreadyOk = 0;
+
+  for (const group of ["hero", "friends", "pending"]) {
+    const arr = (currentData[group] || []).map(ag => {
+      const upperName = (ag.name || "").toUpperCase().trim();
+      const planes = PLANES_BY_NAME[upperName];
+
+      let newPlanes;
+      if (planes !== undefined) {
+        // Hay match en captura
+        newPlanes = [...planes];
+        matchedNames.add(upperName);
+        unmatchedKeys.delete(upperName);
+      } else {
+        // No está en captura → vacío
+        newPlanes = [];
+      }
+
+      // Comparar con actual
+      const currentPlanes = ag.planes || [];
+      const isSame = currentPlanes.length === newPlanes.length &&
+                     currentPlanes.every(p => newPlanes.includes(p));
+
+      if (!isSame) {
+        if (newPlanes.length > 0) willChange++;
+        else willSetEmpty++;
+      } else {
+        alreadyOk++;
+      }
+
+      return { ...ag, planes: newPlanes };
+    });
+    plannedChanges[group] = arr;
+  }
+
+  // Construir reporte
+  let report = "=== REPORTE DE CAMBIOS ===\n\n";
+  report += `Cambiarán: ${willChange} agencias\n`;
+  report += `Quedarán vacías: ${willSetEmpty} agencias\n`;
+  report += `Ya correctas: ${alreadyOk} agencias\n\n`;
+
+  if (unmatchedKeys.size > 0) {
+    report += "⚠ Nombres en la captura que NO se encontraron en Firestore:\n";
+    for (const k of unmatchedKeys) report += `   - ${k}\n`;
+    report += "\n";
+  }
+
+  report += "Detalle por agencia:\n";
+  for (const group of ["hero", "friends", "pending"]) {
+    const arr = plannedChanges[group];
+    arr.forEach(ag => {
+      const upperName = (ag.name || "").toUpperCase().trim();
+      const wasInCapture = PLANES_BY_NAME[upperName] !== undefined;
+      const planesStr = ag.planes.length > 0 ? ag.planes.join(", ") : "(vacío)";
+      const tag = wasInCapture ? "✓" : "○";
+      report += `  ${tag} [${group}] ${ag.name}: ${planesStr}\n`;
+    });
+  }
+
+  previewEl.textContent = report;
+  log(`Preview generado. ${willChange + willSetEmpty} cambios pendientes.`, "info");
+  btnMigrate.disabled = false;
+});
+
+// ══ Botón migrar ══
+btnMigrate.addEventListener("click", async () => {
+  if (!plannedChanges) { alert("Primero presiona 'Previsualizar'"); return; }
+  if (!confirm("¿Aplicar todos los cambios al campo `planes` de las agencias?\n\nEsta acción NO se puede deshacer fácilmente.")) return;
+
+  btnMigrate.disabled = true;
+  btnMigrate.textContent = "Migrando...";
+
+  try {
+    log("Aplicando cambios en shared/agencias...", "info");
+
+    await updateDoc(doc(db, "shared", "agencias"), {
+      hero: plannedChanges.hero,
+      friends: plannedChanges.friends,
+      pending: plannedChanges.pending,
+      updatedAt: serverTimestamp(),
+      updatedBy: auth.currentUser.email
+    });
+
+    log("✓ Migración completada exitosamente", "ok");
+    log("Recarga el Hub para ver los planes en cada agencia.", "info");
+    btnMigrate.textContent = "✓ Migrado";
+
+  } catch (e) {
+    log("Error: " + e.message, "err");
+    btnMigrate.disabled = false;
+    btnMigrate.textContent = "2. Reintentar";
+  }
+});
+
+// ══ Botón verificar ══
+btnVerify.addEventListener("click", async () => {
+  btnVerify.disabled = true;
+  btnVerify.textContent = "Verificando...";
+  try {
+    const snap = await getDoc(doc(db, "shared", "agencias"));
+    const data = snap.data();
+    let withPlanes = 0;
+    let withoutPlanes = 0;
+    let summary = "=== ESTADO ACTUAL EN FIRESTORE ===\n\n";
+    for (const group of ["hero", "friends", "pending"]) {
+      const arr = data[group] || [];
+      summary += `${group}:\n`;
+      arr.forEach(ag => {
+        const planes = ag.planes || [];
+        if (planes.length > 0) withPlanes++; else withoutPlanes++;
+        summary += `  ${ag.name}: [${planes.join(", ") || "vacío"}]\n`;
+      });
+      summary += "\n";
+    }
+    summary += `Total con planes: ${withPlanes}\n`;
+    summary += `Total sin planes: ${withoutPlanes}\n`;
+    previewEl.textContent = summary;
+    log(`Verificación completa: ${withPlanes} con planes, ${withoutPlanes} sin planes.`, "ok");
+  } catch (e) {
+    log("Error: " + e.message, "err");
+  }
+  btnVerify.textContent = "3. Verificar";
+  btnVerify.disabled = false;
+});
+</script>
+</body>
+</html>

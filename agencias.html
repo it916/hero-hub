@@ -86,6 +86,14 @@
         <i data-lucide="search" class="search-icon"></i>
         <input type="text" id="ag-search" placeholder="Buscar agencia, AIC o broker...">
       </div>
+      <div class="ag-view-tabs">
+        <button class="ag-view-tab active" data-view="list" title="Vista lista">
+          <i data-lucide="list-tree"></i><span>Lista</span>
+        </button>
+        <button class="ag-view-tab" data-view="org" title="Organigrama">
+          <i data-lucide="git-branch"></i><span>Organigrama</span>
+        </button>
+      </div>
     </section>
 
     <!-- Filtros por grupo -->
@@ -105,9 +113,58 @@
       </div>
     </section>
 
-    <!-- Vista de jerarquía (única) -->
-    <div id="ag-tree" class="ag-tree">
-      <p class="loading">Cargando agencias...</p>
+    <!-- Filtros por planes -->
+    <section class="filter-row ag-plan-filter-row" id="ag-plan-filter-row">
+      <span class="ag-plan-filter-label">Planes:</span>
+      <div class="filter-chip ag-plan-chip" data-plan="MEDICARE">
+        <span class="ag-plan-dot ag-plan-dot-medicare"></span>
+        MEDICARE
+      </div>
+      <div class="filter-chip ag-plan-chip" data-plan="ACA">
+        <span class="ag-plan-dot ag-plan-dot-aca"></span>
+        ACA
+      </div>
+      <div class="filter-chip ag-plan-chip" data-plan="SUPLEMENTARIOS">
+        <span class="ag-plan-dot ag-plan-dot-supp"></span>
+        SUPLEMENTARIOS
+      </div>
+      <div class="filter-chip ag-plan-chip" data-plan="VIDA">
+        <span class="ag-plan-dot ag-plan-dot-vida"></span>
+        VIDA
+      </div>
+      <button class="ag-plan-clear" id="ag-plan-clear" style="display:none;">
+        <i data-lucide="x"></i><span>Limpiar</span>
+      </button>
+    </section>
+
+    <!-- Vista LISTA (jerarquía colapsable) -->
+    <div id="ag-view-list" class="ag-view active">
+      <div id="ag-tree" class="ag-tree">
+        <p class="loading">Cargando agencias...</p>
+      </div>
+    </div>
+
+    <!-- Vista ORGANIGRAMA (árbol vertical SVG) -->
+    <div id="ag-view-org" class="ag-view" style="display:none;">
+      <div class="ag-org-controls">
+        <button class="ag-org-btn" id="ag-zoom-out" title="Alejar">
+          <i data-lucide="minus"></i>
+        </button>
+        <span class="ag-zoom-level" id="ag-zoom-level">100%</span>
+        <button class="ag-org-btn" id="ag-zoom-in" title="Acercar">
+          <i data-lucide="plus"></i>
+        </button>
+        <div class="ag-org-divider"></div>
+        <button class="ag-org-btn" id="ag-zoom-fit" title="Ajustar a pantalla">
+          <i data-lucide="maximize-2"></i>
+          <span>Ajustar</span>
+        </button>
+      </div>
+      <div class="ag-org-canvas-wrap" id="ag-org-canvas-wrap">
+        <div class="ag-org-canvas" id="ag-org-canvas">
+          <p class="loading">Cargando organigrama...</p>
+        </div>
+      </div>
     </div>
 
   </main>

@@ -842,3 +842,710 @@
   color: #7dd3df;
   border-color: rgba(6,163,182,.40);
 }
+
+/* ═══════════════════════════════════════════
+   PLANES — colores y chips
+   ═══════════════════════════════════════════ */
+
+:root {
+  --plan-medicare: #06a3b6;
+  --plan-medicare-bg: rgba(6,163,182,.10);
+  --plan-medicare-border: rgba(6,163,182,.30);
+
+  --plan-aca: #5a4fcf;
+  --plan-aca-bg: rgba(90,79,207,.10);
+  --plan-aca-border: rgba(90,79,207,.30);
+
+  --plan-supp: #d97706;
+  --plan-supp-bg: rgba(217,119,6,.10);
+  --plan-supp-border: rgba(217,119,6,.30);
+
+  --plan-vida: #16a34a;
+  --plan-vida-bg: rgba(22,163,74,.10);
+  --plan-vida-border: rgba(22,163,74,.30);
+}
+
+/* Chip pequeño que se muestra en nodos */
+.ag-plan-chip-mini {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .4px;
+  white-space: nowrap;
+  text-transform: uppercase;
+  border: 1px solid;
+}
+
+.ag-plan-medicare       { background: var(--plan-medicare-bg); color: var(--plan-medicare); border-color: var(--plan-medicare-border); }
+.ag-plan-aca            { background: var(--plan-aca-bg);      color: var(--plan-aca);      border-color: var(--plan-aca-border); }
+.ag-plan-suplementarios { background: var(--plan-supp-bg);     color: var(--plan-supp);     border-color: var(--plan-supp-border); }
+.ag-plan-vida           { background: var(--plan-vida-bg);     color: var(--plan-vida);     border-color: var(--plan-vida-border); }
+
+/* Bloque de planes dentro del nodo de la lista */
+.ag-tree-planes {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+/* Dot de filtro de planes */
+.ag-plan-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.ag-plan-dot-medicare { background: var(--plan-medicare); }
+.ag-plan-dot-aca      { background: var(--plan-aca); }
+.ag-plan-dot-supp     { background: var(--plan-supp); }
+.ag-plan-dot-vida     { background: var(--plan-vida); }
+
+/* Filter row de planes */
+.ag-plan-filter-row {
+  margin-top: 8px;
+  align-items: center;
+}
+
+.ag-plan-filter-label {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--muted, #64748b);
+  margin-right: 4px;
+}
+
+.ag-plan-chip.active {
+  background: rgba(6,163,182,.15);
+  border-color: rgba(6,163,182,.40);
+  color: var(--ag-hero-dark);
+}
+
+.ag-plan-clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  background: transparent;
+  border: 0;
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted, #64748b);
+  cursor: pointer;
+  border-radius: 6px;
+  margin-left: 4px;
+  transition: background .15s ease;
+}
+.ag-plan-clear:hover { background: rgba(0,0,0,.06); color: var(--text, #1a1a1a); }
+.ag-plan-clear i { width: 12px; height: 12px; }
+
+/* Checkbox de planes en el modal */
+.ag-form-planes-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ag-form-plane-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all .15s ease;
+  background: #fff;
+}
+
+.ag-form-plane-check:hover {
+  border-color: var(--ag-hero);
+  background: rgba(6,163,182,.04);
+}
+
+.ag-form-plane-check input {
+  margin: 0;
+  cursor: pointer;
+}
+
+.ag-form-plane-check input:checked + .ag-plan-chip-mini {
+  filter: brightness(1.1);
+  box-shadow: 0 0 0 1px currentColor inset;
+}
+
+/* ═══════════════════════════════════════════
+   VIEW TABS — toggle Lista / Organigrama
+   ═══════════════════════════════════════════ */
+
+.ag-view-tabs {
+  display: flex;
+  gap: 4px;
+  background: rgba(0,0,0,.04);
+  border-radius: 10px;
+  padding: 3px;
+}
+
+.ag-view-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted, #64748b);
+  cursor: pointer;
+  transition: all .15s ease;
+}
+
+.ag-view-tab i { width: 14px; height: 14px; }
+
+.ag-view-tab.active {
+  background: #fff;
+  color: var(--ag-hero-dark);
+  box-shadow: 0 2px 6px rgba(0,0,0,.06);
+}
+
+.ag-view {
+  margin-top: 12px;
+}
+
+/* ═══════════════════════════════════════════
+   VISTA ORGANIGRAMA
+   ═══════════════════════════════════════════ */
+
+.ag-org-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 10px;
+  padding: 6px 10px;
+  margin-bottom: 14px;
+  width: fit-content;
+}
+
+.ag-org-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text, #1a1a1a);
+  cursor: pointer;
+  transition: background .15s ease;
+}
+.ag-org-btn:hover { background: rgba(6,163,182,.08); color: var(--ag-hero-dark); }
+.ag-org-btn i { width: 14px; height: 14px; }
+
+.ag-zoom-level {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted, #64748b);
+  min-width: 44px;
+  text-align: center;
+}
+
+.ag-org-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border, #e2e8f0);
+  margin: 0 4px;
+}
+
+/* Canvas del organigrama */
+.ag-org-canvas-wrap {
+  background: #fff;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 14px;
+  padding: 32px 16px;
+  overflow: auto;
+  min-height: 400px;
+  max-height: 80vh;
+}
+
+.ag-org-canvas {
+  transition: transform .25s ease;
+  display: flex;
+  justify-content: center;
+  min-width: fit-content;
+  padding: 0 32px;
+}
+
+.ag-org-tree {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Nodo raíz (HERO / FRIENDS / Pendientes) */
+.ag-org-root {
+  padding: 18px 28px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--ag-hero), var(--ag-hero-dark));
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(6,163,182,.30);
+  text-align: center;
+  min-width: 200px;
+  margin-bottom: 8px;
+}
+
+.ag-org-root-friends {
+  background: linear-gradient(135deg, var(--ag-friends), var(--ag-friends-dark));
+  box-shadow: 0 6px 20px rgba(90,79,207,.30);
+}
+
+.ag-org-root-pending {
+  background: linear-gradient(135deg, var(--ag-pending), var(--ag-pending-dark));
+  box-shadow: 0 6px 20px rgba(232,163,23,.30);
+}
+
+.ag-org-root-name {
+  font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: .5px;
+  line-height: 1.1;
+}
+
+.ag-org-root-sub {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: .9;
+  margin-top: 4px;
+}
+
+.ag-org-root-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 6px 14px;
+  background: rgba(255,255,255,.20);
+  border: 1px solid rgba(255,255,255,.30);
+  border-radius: 999px;
+  color: #fff;
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s ease;
+}
+
+.ag-org-root-btn:hover {
+  background: rgba(255,255,255,.30);
+}
+
+.ag-org-root-btn i { width: 13px; height: 13px; }
+
+/* Conector vertical raíz → primera fila */
+.ag-org-trunk {
+  width: 2px;
+  height: 32px;
+  background: var(--border, #cbd5e1);
+}
+
+/* Fila de agencias hijas (top-down con líneas conectoras) */
+.ag-org-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  position: relative;
+  padding-top: 0;
+}
+
+/* Línea horizontal conectando hermanos */
+.ag-org-row::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: calc(100% - 200px);
+  max-width: 100%;
+  height: 2px;
+  background: var(--border, #cbd5e1);
+  transform: translateX(-50%);
+}
+
+/* Cuando solo hay 1 hijo, no se ve la línea horizontal */
+.ag-org-row:has(.ag-org-branch:only-child)::before {
+  display: none;
+}
+
+/* Branch = una agencia + sus posibles sub-agencias */
+.ag-org-branch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  padding-top: 24px;
+}
+
+/* Conector vertical desde la línea horizontal hasta cada nodo */
+.ag-org-branch::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 2px;
+  height: 24px;
+  background: var(--border, #cbd5e1);
+  transform: translateX(-50%);
+}
+
+/* Nodo de agencia (compact card) */
+.ag-org-node {
+  background: #fff;
+  border: 2px solid var(--border, #e2e8f0);
+  border-radius: 12px;
+  padding: 12px 14px;
+  width: 200px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.04);
+  transition: all .2s ease;
+  text-align: left;
+}
+
+.ag-org-node-clickable {
+  cursor: pointer;
+}
+
+.ag-org-node-clickable:hover {
+  border-color: var(--ag-hero);
+  box-shadow: 0 6px 20px rgba(6,163,182,.20);
+  transform: translateY(-2px);
+}
+
+.ag-org-node-hero { border-top: 4px solid var(--ag-hero); }
+.ag-org-node-friends { border-top: 4px solid var(--ag-friends); }
+.ag-org-node-pending { border-top: 4px solid var(--ag-pending); }
+
+/* Variante info_limited / no_data / unclear */
+.ag-org-kind-info_limited,
+.ag-org-kind-no_data,
+.ag-org-kind-unclear {
+  background: #fffbeb;
+}
+
+.ag-org-kind-on_hold {
+  background: #f9fafb;
+  opacity: .85;
+}
+
+.ag-org-node-name {
+  font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--text, #1a1a1a);
+  line-height: 1.2;
+  letter-spacing: -.2px;
+  margin-bottom: 4px;
+}
+
+.ag-org-node-aic {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 11.5px;
+  color: var(--muted, #64748b);
+  line-height: 1.3;
+  margin-bottom: 8px;
+}
+
+.ag-org-no-aic {
+  font-style: italic;
+  opacity: .7;
+}
+
+.ag-org-node-state {
+  margin-bottom: 8px;
+}
+
+.ag-org-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .3px;
+}
+
+.ag-org-tag.tag-warn { background: rgba(234,179,8,.18); color: #92400e; }
+.ag-org-tag.tag-hold { background: rgba(107,114,128,.18); color: #4b5563; }
+
+.ag-org-node-planes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-bottom: 8px;
+}
+
+.ag-org-node-footer {
+  padding-top: 8px;
+  border-top: 1px solid var(--border, #f0f4f8);
+}
+
+.ag-org-broker-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 11.5px;
+  color: var(--ag-hero-dark);
+}
+
+.ag-org-broker-count i {
+  width: 13px;
+  height: 13px;
+}
+
+/* Sub-agencias anidadas */
+.ag-org-sub-trunk {
+  width: 2px;
+  height: 22px;
+  background: rgba(148,163,184,.4);
+  margin-top: 6px;
+}
+
+.ag-org-sub-row {
+  display: flex;
+  gap: 12px;
+  position: relative;
+  padding-top: 0;
+}
+
+/* ═══════════════════════════════════════════
+   POPOVER de brokers
+   ═══════════════════════════════════════════ */
+
+.ag-popover {
+  position: absolute;
+  z-index: 9998;
+  width: 320px;
+  max-height: 480px;
+  background: #fff;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 14px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.18);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: ag-popover-in .18s cubic-bezier(.22,1,.36,1);
+}
+
+@keyframes ag-popover-in {
+  from { opacity: 0; transform: scale(.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.ag-popover-arrow {
+  display: none; /* simple placement, sin flecha por ahora */
+}
+
+.ag-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, var(--ag-hero), var(--ag-hero-dark));
+  color: #fff;
+}
+
+.ag-popover-title {
+  font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: -.2px;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ag-popover-close {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 0;
+  background: rgba(255,255,255,.20);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .15s ease;
+  flex-shrink: 0;
+}
+
+.ag-popover-close:hover { background: rgba(255,255,255,.32); }
+.ag-popover-close i { width: 14px; height: 14px; }
+
+.ag-popover-body {
+  overflow-y: auto;
+  flex: 1;
+  padding: 4px 0;
+}
+
+.ag-popover-section {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border, #f0f4f8);
+}
+.ag-popover-section:last-child { border-bottom: 0; }
+
+.ag-popover-label {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--muted, #64748b);
+  margin-bottom: 8px;
+}
+
+.ag-popover-aic {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.ag-popover-aic span {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text, #1a1a1a);
+}
+
+.ag-popover-planes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ag-popover-brokers {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  counter-reset: pop-broker;
+}
+
+.ag-popover-brokers li {
+  counter-increment: pop-broker;
+  padding: 5px 8px 5px 32px;
+  position: relative;
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 12.5px;
+  color: var(--text, #1a1a1a);
+  border-radius: 5px;
+  transition: background .15s ease;
+}
+
+.ag-popover-brokers li::before {
+  content: counter(pop-broker);
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  text-align: right;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--muted, #94a3b8);
+}
+
+.ag-popover-brokers li:hover {
+  background: rgba(6,163,182,.05);
+}
+
+.ag-popover-empty {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--muted, #94a3b8);
+  margin: 0;
+}
+
+/* ─────────────────────────────────────────
+   Dark mode
+   ───────────────────────────────────────── */
+
+[data-theme="dark"] .ag-org-canvas-wrap,
+[data-theme="dark"] .ag-org-controls {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+[data-theme="dark"] .ag-org-node {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+[data-theme="dark"] .ag-org-node-name {
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .ag-org-kind-info_limited,
+[data-theme="dark"] .ag-org-kind-no_data,
+[data-theme="dark"] .ag-org-kind-unclear {
+  background: #2a2416;
+}
+
+[data-theme="dark"] .ag-popover {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+[data-theme="dark"] .ag-popover-section {
+  border-color: #334155;
+}
+
+[data-theme="dark"] .ag-popover-aic span,
+[data-theme="dark"] .ag-popover-brokers li {
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .ag-form-plane-check {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+/* ─────────────────────────────────────────
+   Responsive
+   ───────────────────────────────────────── */
+
+@media (max-width: 720px) {
+  .ag-view-tabs {
+    width: 100%;
+    justify-content: center;
+  }
+  .ag-org-canvas-wrap {
+    padding: 16px 8px;
+  }
+  .ag-popover {
+    width: calc(100vw - 32px);
+    max-width: 360px;
+  }
+}

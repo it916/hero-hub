@@ -27,9 +27,14 @@ const ACT_AGENCY_ADD = "agency.add";
 const ACT_AGENCY_EDIT = "agency.edit";
 const ACT_AGENCY_DELETE = "agency.delete";
 
+// Tipos de planes (lista cerrada)
+const PLAN_TYPES = ["MEDICARE", "ACA", "SUPLEMENTARIOS", "VIDA"];
+
 let DATA = { hero: [], friends: [], pending: [], updatedAt: null };
-let filter = { text: "", group: "all" };
+let filter = { text: "", group: "all", planes: [] };
 let canEdit = false;
+let activeView = "list"; // "list" | "org"
+let zoomLevel = 1;
 
 // ══ Auth flow ══
 onAuthStateChanged(auth, async (user) => {
@@ -125,6 +130,13 @@ function getFilteredAgencies() {
 
   groups.forEach(g => {
     DATA[g].forEach(ag => {
+      // Filtro por planes (AND): la agencia debe tener TODOS los planes seleccionados
+      if (filter.planes.length > 0) {
+        const agPlanes = ag.planes || [];
+        const hasAll = filter.planes.every(p => agPlanes.includes(p));
+        if (!hasAll) return;
+      }
+
       // Sin búsqueda: incluir todo
       if (!terms.length) {
         result.push({ ...ag, _group: g, _matchedBrokers: null, _matchedAic: null });
@@ -279,6 +291,15 @@ function buildTreeNode(ag, autoExpand, overrideLabel) {
   if (ag.kind === "unclear") tags += `<span class="ag-tree-tag tag-warn">Por aclarar</span>`;
   if (totalBrokers > 0) tags += `<span class="ag-tree-tag tag-count">${totalBrokers} brokers</span>`;
 
+  // Chips de planes
+  const planesChips = (ag.planes || [])
+    .filter(p => PLAN_TYPES.includes(p))
+    .map(p => `<span class="ag-plan-chip-mini ag-plan-${p.toLowerCase()}">${p}</span>`)
+    .join("");
+  const planesBlock = planesChips
+    ? `<div class="ag-tree-planes">${planesChips}</div>`
+    : "";
+
   // Acciones admin
   const adminActions = canEdit ? `
     <div class="ag-tree-node-actions">
@@ -375,12 +396,360 @@ function buildTreeNode(ag, autoExpand, overrideLabel) {
         <div class="ag-tree-node-name">${highlight(ag.name || "", terms)}</div>
         <div class="ag-tree-node-sub">${subLabelHtml}</div>
         ${tags ? `<div class="ag-tree-node-tags">${tags}</div>` : ""}
+        ${planesBlock}
         ${note}
       </div>
       ${adminActions}
     </div>
     ${details}
   </div>`;
+}
+
+// ══════════════════════════════════════════
+// VISTA ORGANIGRAMA — árbol vertical SVG
+// ══════════════════════════════════════════
+//
+// El organigrama muestra UN grupo a la vez (filter.group).
+// Si filter.group === "all", se usa "hero" como default visual.
+//
+// Layout: top-down, raíz arriba, agencias hijas abajo.
+// Sub-agencias (sub_goldpro) se anidan bajo su parent.
+
+function renderOrg() {
+  const canvas = document.getElementById("ag-org-canvas");
+
+  // Determinar grupo a mostrar
+  let group = filter.group === "all" ? "hero" : filter.group;
+  const groupLabel = group === "hero" ? "HERO" : group === "friends" ? "FRIENDS" : "Pendientes";
+  const groupSub = group === "hero" ? "Casa matriz" : group === "friends" ? "Grupo afiliado" : "Por aclarar / on hold";
+
+  // Aplicar filtros (búsqueda + planes) sobre el grupo elegido
+  const allAgencies = DATA[group] || [];
+  const filtered = filterAgenciesForOrg(allAgencies);
+
+  if (!filtered.length) {
+    canvas.innerHTML = `<p class="empty">${(filter.text || filter.planes.length) ? "Sin resultados con los filtros aplicados" : "No hay agencias en este grupo"}</p>`;
+    return;
+  }
+
+  // Identificar matriz, agencias normales, sub-agencias
+  const matrix = filtered.find(a => a.kind === "matrix");
+  const subAgencies = filtered.filter(a => a.kind === "sub_goldpro");
+  const mainAgencies = filtered.filter(a => a.kind !== "matrix" && a.kind !== "sub_goldpro");
+
+  // Mapa de sub-agencias por nombre del padre
+  // (Por ahora la única convención es: GOLD PRO → AP INSURANCE)
+  const subsByParent = {};
+  subAgencies.forEach(sub => {
+    // Heurística simple: GOLD PRO es el único parent conocido
+    subsByParent["GOLD PRO"] = subsByParent["GOLD PRO"] || [];
+    subsByParent["GOLD PRO"].push(sub);
+  });
+
+  // Construir HTML del árbol
+  let html = `
+    <div class="ag-org-tree">
+
+      <!-- Raíz -->
+      <div class="ag-org-root ag-org-root-${group}">
+        <div class="ag-org-root-name">${escapeHtml(groupLabel)}</div>
+        <div class="ag-org-root-sub">${escapeHtml(groupSub)}</div>
+        ${matrix ? `<button class="ag-org-root-btn" data-agency-id="${escapeAttr(matrix.id)}" data-group="${group}">
+          <i data-lucide="users"></i>
+          <span>${(matrix.brokers || []).length} brokers directos</span>
+        </button>` : ""}
+      </div>
+
+      <!-- Conector raíz → hijos -->
+      ${mainAgencies.length > 0 ? `<div class="ag-org-trunk"></div>` : ""}
+
+      <!-- Fila de agencias hijas -->
+      ${mainAgencies.length > 0 ? `<div class="ag-org-row">
+        ${mainAgencies.map(ag => buildOrgNode(ag, group, subsByParent[ag.name] || [])).join("")}
+      </div>` : ""}
+
+    </div>
+  `;
+
+  canvas.innerHTML = html;
+
+  // Aplicar zoom actual
+  applyZoom();
+
+  // Wire clicks: abrir popover de brokers al hacer click en el nodo
+  canvas.querySelectorAll(".ag-org-node-clickable").forEach(node => {
+    node.addEventListener("click", (e) => {
+      const id = node.dataset.agencyId;
+      const grp = node.dataset.group;
+      openBrokersPopover(id, grp, node);
+    });
+  });
+
+  // Wire click en el botón "X brokers directos" de la raíz
+  const rootBtn = canvas.querySelector(".ag-org-root-btn");
+  if (rootBtn) {
+    rootBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const id = rootBtn.dataset.agencyId;
+      const grp = rootBtn.dataset.group;
+      openBrokersPopover(id, grp, rootBtn);
+    });
+  }
+
+  if (window.refreshIcons) window.refreshIcons();
+}
+
+// Aplica filtro de búsqueda + planes a un array de agencias para el organigrama
+function filterAgenciesForOrg(agencies) {
+  const terms = getSearchTerms();
+
+  return agencies.filter(ag => {
+    // Filtro por planes
+    if (filter.planes.length > 0) {
+      const agPlanes = ag.planes || [];
+      if (!filter.planes.every(p => agPlanes.includes(p))) return false;
+    }
+
+    // Filtro por búsqueda
+    if (terms.length > 0) {
+      const nameMatch = matchesAllTerms(ag.name || "", terms);
+      const aicMatch = (ag.aic || []).some(n => matchesAllTerms(n, terms));
+      const brokerMatch = (ag.brokers || []).some(n => matchesAllTerms(n, terms));
+      if (!nameMatch && !aicMatch && !brokerMatch) return false;
+    }
+
+    return true;
+  });
+}
+
+function buildOrgNode(ag, group, subAgencies) {
+  const aicNames = (ag.aic || []).map(n => escapeHtml(n)).join(" · ");
+  const brokerCount = (ag.brokers || []).length;
+
+  // Tag de estado especial
+  let stateTag = "";
+  if (ag.kind === "info_limited") stateTag = `<span class="ag-org-tag tag-warn">Info limitada</span>`;
+  else if (ag.kind === "no_data") stateTag = `<span class="ag-org-tag tag-warn">Sin datos</span>`;
+  else if (ag.kind === "on_hold") stateTag = `<span class="ag-org-tag tag-hold">On hold</span>`;
+  else if (ag.kind === "unclear") stateTag = `<span class="ag-org-tag tag-warn">Por aclarar</span>`;
+
+  // Chips de planes
+  const planesChips = (ag.planes || [])
+    .filter(p => PLAN_TYPES.includes(p))
+    .map(p => `<span class="ag-plan-chip-mini ag-plan-${p.toLowerCase()}">${p}</span>`)
+    .join("");
+
+  // Sub-agencias anidadas
+  let subsBlock = "";
+  if (subAgencies && subAgencies.length > 0) {
+    subsBlock = `
+      <div class="ag-org-sub-trunk"></div>
+      <div class="ag-org-sub-row">
+        ${subAgencies.map(sub => buildOrgNode(sub, group, [])).join("")}
+      </div>
+    `;
+  }
+
+  return `<div class="ag-org-branch">
+    <div class="ag-org-node ag-org-node-clickable ag-org-node-${group} ag-org-kind-${ag.kind || "normal"}"
+         data-agency-id="${escapeAttr(ag.id)}"
+         data-group="${group}"
+         title="Click para ver brokers">
+      <div class="ag-org-node-name">${escapeHtml(ag.name || "Sin nombre")}</div>
+      ${aicNames ? `<div class="ag-org-node-aic">${aicNames}</div>` : `<div class="ag-org-node-aic ag-org-no-aic">Sin AIC</div>`}
+      ${stateTag ? `<div class="ag-org-node-state">${stateTag}</div>` : ""}
+      ${planesChips ? `<div class="ag-org-node-planes">${planesChips}</div>` : ""}
+      <div class="ag-org-node-footer">
+        <span class="ag-org-broker-count">
+          <i data-lucide="users"></i>
+          <strong>${brokerCount}</strong> ${brokerCount === 1 ? "broker" : "brokers"}
+        </span>
+      </div>
+    </div>
+    ${subsBlock}
+  </div>`;
+}
+
+// ══ Popover de brokers ══
+
+function openBrokersPopover(agencyId, group, anchorEl) {
+  // Cerrar popover existente
+  closeBrokersPopover();
+
+  const agency = findAgency(agencyId, group);
+  if (!agency) return;
+
+  const brokers = agency.brokers || [];
+  const aic = agency.aic || [];
+  const planes = agency.planes || [];
+
+  // Crear popover
+  const popover = document.createElement("div");
+  popover.className = "ag-popover";
+  popover.id = "ag-popover";
+
+  // Construir contenido
+  const aicHtml = aic.length > 0
+    ? `<div class="ag-popover-section">
+         <div class="ag-popover-label">${aic.length === 1 ? "Agente a cargo" : "Agentes a cargo"}</div>
+         ${aic.map(n => `
+           <div class="ag-popover-aic">
+             <div class="ag-avatar ag-avatar-aic">${getInitials(n)}</div>
+             <span>${escapeHtml(n)}</span>
+           </div>
+         `).join("")}
+       </div>`
+    : `<div class="ag-popover-section">
+         <div class="ag-popover-empty">Sin AIC asignado</div>
+       </div>`;
+
+  const planesHtml = planes.length > 0
+    ? `<div class="ag-popover-section">
+         <div class="ag-popover-label">Planes</div>
+         <div class="ag-popover-planes">
+           ${planes.filter(p => PLAN_TYPES.includes(p)).map(p =>
+             `<span class="ag-plan-chip-mini ag-plan-${p.toLowerCase()}">${p}</span>`
+           ).join("")}
+         </div>
+       </div>`
+    : "";
+
+  const brokersHtml = brokers.length > 0
+    ? `<div class="ag-popover-section">
+         <div class="ag-popover-label">${brokers.length} ${brokers.length === 1 ? "broker" : "brokers"}</div>
+         <ol class="ag-popover-brokers">
+           ${brokers.map(n => `<li>${escapeHtml(n)}</li>`).join("")}
+         </ol>
+       </div>`
+    : `<div class="ag-popover-section">
+         <div class="ag-popover-empty">Sin brokers todavía</div>
+       </div>`;
+
+  popover.innerHTML = `
+    <div class="ag-popover-arrow"></div>
+    <div class="ag-popover-header">
+      <div class="ag-popover-title">${escapeHtml(agency.name)}</div>
+      <button class="ag-popover-close" id="ag-popover-close" title="Cerrar">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <div class="ag-popover-body">
+      ${aicHtml}
+      ${planesHtml}
+      ${brokersHtml}
+    </div>
+  `;
+
+  document.body.appendChild(popover);
+
+  // Posicionar popover anclado al nodo
+  positionPopover(popover, anchorEl);
+
+  // Wire close
+  popover.querySelector("#ag-popover-close").addEventListener("click", closeBrokersPopover);
+
+  // Cerrar al hacer click fuera
+  setTimeout(() => {
+    document.addEventListener("click", closePopoverOnOutsideClick);
+  }, 0);
+
+  // Cerrar con Escape
+  document.addEventListener("keydown", closePopoverOnEsc);
+
+  if (window.refreshIcons) window.refreshIcons();
+}
+
+function positionPopover(popover, anchorEl) {
+  const rect = anchorEl.getBoundingClientRect();
+  const popRect = popover.getBoundingClientRect();
+  const margin = 12;
+
+  // Por defecto: a la derecha del anchor
+  let top = rect.top + window.scrollY;
+  let left = rect.right + margin + window.scrollX;
+  let placement = "right";
+
+  // Si no cabe a la derecha, ponerlo abajo
+  if (left + popRect.width > window.innerWidth - 16) {
+    left = rect.left + window.scrollX;
+    top = rect.bottom + margin + window.scrollY;
+    placement = "bottom";
+
+    // Ajustar horizontal si se sale por la derecha
+    if (left + popRect.width > window.innerWidth - 16) {
+      left = window.innerWidth - popRect.width - 16 + window.scrollX;
+    }
+  }
+
+  // Ajuste vertical si se sale por debajo
+  if (top + popRect.height > window.innerHeight + window.scrollY - 16) {
+    top = window.innerHeight + window.scrollY - popRect.height - 16;
+  }
+
+  // Asegurar no salir por arriba
+  if (top < window.scrollY + 16) {
+    top = window.scrollY + 16;
+  }
+
+  popover.style.top = top + "px";
+  popover.style.left = left + "px";
+  popover.dataset.placement = placement;
+}
+
+function closeBrokersPopover() {
+  const existing = document.getElementById("ag-popover");
+  if (existing) existing.remove();
+  document.removeEventListener("click", closePopoverOnOutsideClick);
+  document.removeEventListener("keydown", closePopoverOnEsc);
+}
+
+function closePopoverOnOutsideClick(e) {
+  const popover = document.getElementById("ag-popover");
+  if (!popover) return;
+  if (popover.contains(e.target)) return;
+  if (e.target.closest(".ag-org-node-clickable")) return; // dejar que el nuevo se abra
+  if (e.target.closest(".ag-org-root-btn")) return;
+  closeBrokersPopover();
+}
+
+function closePopoverOnEsc(e) {
+  if (e.key === "Escape") closeBrokersPopover();
+}
+
+// ══ Zoom controls ══
+
+function applyZoom() {
+  const canvas = document.getElementById("ag-org-canvas");
+  if (!canvas) return;
+  canvas.style.transform = `scale(${zoomLevel})`;
+  canvas.style.transformOrigin = "top center";
+  document.getElementById("ag-zoom-level").textContent = Math.round(zoomLevel * 100) + "%";
+}
+
+function zoomIn() {
+  zoomLevel = Math.min(zoomLevel + 0.1, 2.0);
+  applyZoom();
+}
+
+function zoomOut() {
+  zoomLevel = Math.max(zoomLevel - 0.1, 0.4);
+  applyZoom();
+}
+
+function zoomFit() {
+  const canvas = document.getElementById("ag-org-canvas");
+  const wrap = document.getElementById("ag-org-canvas-wrap");
+  if (!canvas || !wrap) return;
+  // Resetear a 1 para medir naturalmente
+  canvas.style.transform = "scale(1)";
+  const naturalWidth = canvas.scrollWidth;
+  const wrapWidth = wrap.clientWidth - 32;
+  if (naturalWidth > wrapWidth) {
+    zoomLevel = Math.max(0.4, wrapWidth / naturalWidth);
+  } else {
+    zoomLevel = 1;
+  }
+  applyZoom();
 }
 
 // ══════════════════════════════════════════
@@ -446,6 +815,19 @@ function openAgencyModal(agencyId, group) {
           </select>
         </label>
 
+        <div class="ag-form-field">
+          <span class="ag-form-label">Planes que vende</span>
+          <div class="ag-form-planes-grid">
+            ${PLAN_TYPES.map(p => {
+              const checked = (agency.planes || []).includes(p) ? "checked" : "";
+              return `<label class="ag-form-plane-check">
+                <input type="checkbox" name="ag-f-plane" value="${p}" ${checked}>
+                <span class="ag-plan-chip-mini ag-plan-${p.toLowerCase()}">${p}</span>
+              </label>`;
+            }).join("")}
+          </div>
+        </div>
+
         <label class="ag-form-field">
           <span class="ag-form-label">
             Agentes a cargo (AIC) <span class="ag-form-hint">— uno por línea</span>
@@ -503,6 +885,8 @@ function openAgencyModal(agencyId, group) {
       .split("\n").map(l => l.trim()).filter(l => l.length > 0);
     const brokers = overlay.querySelector("#ag-f-brokers").value
       .split("\n").map(l => l.trim()).filter(l => l.length > 0);
+    const planes = Array.from(overlay.querySelectorAll('input[name="ag-f-plane"]:checked'))
+      .map(inp => inp.value);
 
     if (!name) {
       alert("El nombre es obligatorio.");
@@ -515,9 +899,9 @@ function openAgencyModal(agencyId, group) {
 
     try {
       if (isNew) {
-        await createAgency({ name, kind, aic, brokers, group: newGroup });
+        await createAgency({ name, kind, aic, brokers, planes, group: newGroup });
       } else {
-        await updateAgency(agencyId, originalGroup, { name, kind, aic, brokers, group: newGroup });
+        await updateAgency(agencyId, originalGroup, { name, kind, aic, brokers, planes, group: newGroup });
       }
       close();
       await loadData();
@@ -540,7 +924,8 @@ async function createAgency(input) {
     name: input.name,
     kind: input.kind || "normal",
     aic: input.aic || [],
-    brokers: input.brokers || []
+    brokers: input.brokers || [],
+    planes: input.planes || []
   };
 
   const updatedArray = [...(DATA[input.group] || []), newAg];
@@ -555,7 +940,8 @@ async function createAgency(input) {
     group: input.group,
     kind: newAg.kind,
     aicCount: newAg.aic.length,
-    brokerCount: newAg.brokers.length
+    brokerCount: newAg.brokers.length,
+    planes: newAg.planes.join(", ") || "(ninguno)"
   });
 }
 
@@ -569,7 +955,8 @@ async function updateAgency(agencyId, originalGroup, input) {
     name: input.name,
     kind: input.kind || "normal",
     aic: input.aic || [],
-    brokers: input.brokers || []
+    brokers: input.brokers || [],
+    planes: input.planes || []
   };
 
   const changes = detectChanges(original, updated);
@@ -669,6 +1056,11 @@ function detectChanges(original, updated) {
   if (oldBro !== newBro) {
     changes.push(`brokers: ${(original.brokers || []).length} → ${(updated.brokers || []).length}`);
   }
+  const oldPlanes = (original.planes || []).slice().sort().join("|");
+  const newPlanes = (updated.planes || []).slice().sort().join("|");
+  if (oldPlanes !== newPlanes) {
+    changes.push(`planes: [${(original.planes || []).join(", ") || "—"}] → [${(updated.planes || []).join(", ") || "—"}]`);
+  }
   return changes;
 }
 
@@ -680,7 +1072,7 @@ function generateId() {
 function wireHandlers() {
   document.getElementById("ag-search").addEventListener("input", (e) => {
     filter.text = e.target.value.toLowerCase().trim();
-    renderTree();
+    renderActiveView();
   });
 
   document.querySelectorAll("#ag-filter-row .filter-chip").forEach(chip => {
@@ -688,9 +1080,65 @@ function wireHandlers() {
       document.querySelectorAll("#ag-filter-row .filter-chip").forEach(c => c.classList.remove("active"));
       chip.classList.add("active");
       filter.group = chip.dataset.group;
-      renderTree();
+      renderActiveView();
     });
   });
+
+  // Filtro por planes (multi-select AND)
+  document.querySelectorAll(".ag-plan-chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      const plan = chip.dataset.plan;
+      const idx = filter.planes.indexOf(plan);
+      if (idx === -1) {
+        filter.planes.push(plan);
+        chip.classList.add("active");
+      } else {
+        filter.planes.splice(idx, 1);
+        chip.classList.remove("active");
+      }
+      // Mostrar/ocultar botón "Limpiar"
+      const clearBtn = document.getElementById("ag-plan-clear");
+      if (clearBtn) clearBtn.style.display = filter.planes.length > 0 ? "inline-flex" : "none";
+      renderActiveView();
+    });
+  });
+
+  const clearBtn = document.getElementById("ag-plan-clear");
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      filter.planes = [];
+      document.querySelectorAll(".ag-plan-chip").forEach(c => c.classList.remove("active"));
+      clearBtn.style.display = "none";
+      renderActiveView();
+    });
+  }
+
+  // Toggle de vistas List / Org
+  document.querySelectorAll(".ag-view-tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".ag-view-tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      activeView = tab.dataset.view;
+      const list = document.getElementById("ag-view-list");
+      const org = document.getElementById("ag-view-org");
+      if (activeView === "list") {
+        list.style.display = "block";
+        org.style.display = "none";
+      } else {
+        list.style.display = "none";
+        org.style.display = "block";
+      }
+      renderActiveView();
+    });
+  });
+
+  // Zoom controls
+  const zIn = document.getElementById("ag-zoom-in");
+  const zOut = document.getElementById("ag-zoom-out");
+  const zFit = document.getElementById("ag-zoom-fit");
+  if (zIn) zIn.addEventListener("click", zoomIn);
+  if (zOut) zOut.addEventListener("click", zoomOut);
+  if (zFit) zFit.addEventListener("click", zoomFit);
 
   const btnNew = document.getElementById("ag-btn-new");
   if (btnNew) {
@@ -699,7 +1147,11 @@ function wireHandlers() {
 }
 
 function renderActiveView() {
-  renderTree();
+  if (activeView === "list") {
+    renderTree();
+  } else {
+    renderOrg();
+  }
 }
 
 function getInitials(name) {
