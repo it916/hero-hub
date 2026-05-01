@@ -422,69 +422,35 @@ function buildTreeNode(ag, autoExpand, overrideLabel) {
 // VISTA ORGANIGRAMA — árbol vertical SVG
 // ══════════════════════════════════════════
 //
-// El organigrama muestra UN grupo a la vez (filter.group).
-// Si filter.group === "all", se usa "hero" como default visual.
-//
 // Layout: top-down, raíz arriba, agencias hijas abajo.
 // Sub-agencias (sub_goldpro) se anidan bajo su parent.
+//
+// Comportamiento según filter.group:
+//   - "hero", "friends", "pending": muestra ese grupo
+//   - "all": apila los 3 grupos verticalmente (HERO arriba, FRIENDS al medio, Pendientes abajo)
 
 function renderOrg() {
   const canvas = document.getElementById("ag-org-canvas");
 
-  // Determinar grupo a mostrar
-  let group = filter.group === "all" ? "hero" : filter.group;
-  const groupLabel = group === "hero" ? "HERO" : group === "friends" ? "FRIENDS" : "Pendientes";
-  const groupSub = group === "hero" ? "Casa matriz" : group === "friends" ? "Grupo afiliado" : "Por aclarar / on hold";
+  // Determinar qué grupos renderizar
+  const groupsToRender = filter.group === "all"
+    ? ["hero", "friends", "pending"]
+    : [filter.group];
 
-  // Aplicar filtros (búsqueda + planes) sobre el grupo elegido
-  const allAgencies = DATA[group] || [];
-  const filtered = filterAgenciesForOrg(allAgencies);
+  // Construir el HTML de cada grupo, omitiendo grupos vacíos tras filtros
+  const sections = [];
+  for (const group of groupsToRender) {
+    const sectionHtml = buildOrgGroupSection(group);
+    if (sectionHtml) sections.push(sectionHtml);
+  }
 
-  if (!filtered.length) {
-    canvas.innerHTML = `<p class="empty">${(filter.text || filter.planes.length) ? "Sin resultados con los filtros aplicados" : "No hay agencias en este grupo"}</p>`;
+  if (!sections.length) {
+    canvas.innerHTML = `<p class="empty">${(filter.text || filter.planes.length) ? "Sin resultados con los filtros aplicados" : "No hay agencias todavía"}</p>`;
+    applyTransform();
     return;
   }
 
-  // Identificar matriz, agencias normales, sub-agencias
-  const matrix = filtered.find(a => a.kind === "matrix");
-  const subAgencies = filtered.filter(a => a.kind === "sub_goldpro");
-  const mainAgencies = filtered.filter(a => a.kind !== "matrix" && a.kind !== "sub_goldpro");
-
-  // Mapa de sub-agencias por nombre del padre
-  // (Por ahora la única convención es: GOLD PRO → AP INSURANCE)
-  const subsByParent = {};
-  subAgencies.forEach(sub => {
-    // Heurística simple: GOLD PRO es el único parent conocido
-    subsByParent["GOLD PRO"] = subsByParent["GOLD PRO"] || [];
-    subsByParent["GOLD PRO"].push(sub);
-  });
-
-  // Construir HTML del árbol
-  let html = `
-    <div class="ag-org-tree">
-
-      <!-- Raíz -->
-      <div class="ag-org-root ag-org-root-${group}">
-        <div class="ag-org-root-name">${escapeHtml(groupLabel)}</div>
-        <div class="ag-org-root-sub">${escapeHtml(groupSub)}</div>
-        ${matrix ? `<button class="ag-org-root-btn" data-agency-id="${escapeAttr(matrix.id)}" data-group="${group}">
-          <i data-lucide="users"></i>
-          <span>${(matrix.brokers || []).length} brokers directos</span>
-        </button>` : ""}
-      </div>
-
-      <!-- Conector raíz → hijos -->
-      ${mainAgencies.length > 0 ? `<div class="ag-org-trunk"></div>` : ""}
-
-      <!-- Fila de agencias hijas -->
-      ${mainAgencies.length > 0 ? `<div class="ag-org-row">
-        ${mainAgencies.map(ag => buildOrgNode(ag, group, subsByParent[ag.name] || [])).join("")}
-      </div>` : ""}
-
-    </div>
-  `;
-
-  canvas.innerHTML = html;
+  canvas.innerHTML = `<div class="ag-org-stack">${sections.join("")}</div>`;
 
   // Aplicar zoom actual
   applyTransform();
@@ -500,9 +466,8 @@ function renderOrg() {
     });
   });
 
-  // Wire click en el botón "X brokers directos" de la raíz
-  const rootBtn = canvas.querySelector(".ag-org-root-btn");
-  if (rootBtn) {
+  // Wire click en los botones "X brokers directos" de cada raíz
+  canvas.querySelectorAll(".ag-org-root-btn").forEach(rootBtn => {
     rootBtn.addEventListener("click", (e) => {
       // Ignorar click si fue resultado de un drag
       if (panState.moved) return;
@@ -511,12 +476,65 @@ function renderOrg() {
       const grp = rootBtn.dataset.group;
       openBrokersPopover(id, grp, rootBtn);
     });
-  }
+  });
 
   // Activar pan handlers (idempotente — solo se enlaza una vez)
   setupPanHandlers();
 
   if (window.refreshIcons) window.refreshIcons();
+}
+
+// Construye el HTML de un grupo (HERO, FRIENDS o Pendientes) como árbol top-down.
+// Devuelve string vacío si tras filtros no hay nada para mostrar.
+function buildOrgGroupSection(group) {
+  const allAgencies = DATA[group] || [];
+  const filtered = filterAgenciesForOrg(allAgencies);
+  if (!filtered.length) return "";
+
+  const groupLabel =
+    group === "hero" ? "HERO" :
+    group === "friends" ? "FRIENDS" :
+    "Pendientes";
+  const groupSub =
+    group === "hero" ? "Casa matriz" :
+    group === "friends" ? "Grupo afiliado" :
+    "Por aclarar / on hold";
+
+  // Identificar matriz, agencias normales, sub-agencias
+  const matrix = filtered.find(a => a.kind === "matrix");
+  const subAgencies = filtered.filter(a => a.kind === "sub_goldpro");
+  const mainAgencies = filtered.filter(a => a.kind !== "matrix" && a.kind !== "sub_goldpro");
+
+  // Mapa de sub-agencias por nombre del padre
+  // (Por ahora la única convención es: GOLD PRO → AP INSURANCE)
+  const subsByParent = {};
+  subAgencies.forEach(sub => {
+    subsByParent["GOLD PRO"] = subsByParent["GOLD PRO"] || [];
+    subsByParent["GOLD PRO"].push(sub);
+  });
+
+  // Si NO hay matriz pero sí hay agencias (ej. Pendientes), igual mostramos
+  // una raíz visual con el nombre del grupo.
+  const matrixBtnHtml = matrix
+    ? `<button class="ag-org-root-btn" data-agency-id="${escapeAttr(matrix.id)}" data-group="${group}">
+         <i data-lucide="users"></i>
+         <span>${(matrix.brokers || []).length} brokers directos</span>
+       </button>`
+    : "";
+
+  return `
+    <div class="ag-org-tree" data-group="${group}">
+      <div class="ag-org-root ag-org-root-${group}">
+        <div class="ag-org-root-name">${escapeHtml(groupLabel)}</div>
+        <div class="ag-org-root-sub">${escapeHtml(groupSub)}</div>
+        ${matrixBtnHtml}
+      </div>
+      ${mainAgencies.length > 0 ? `<div class="ag-org-trunk"></div>` : ""}
+      ${mainAgencies.length > 0 ? `<div class="ag-org-row">
+        ${mainAgencies.map(ag => buildOrgNode(ag, group, subsByParent[ag.name] || [])).join("")}
+      </div>` : ""}
+    </div>
+  `;
 }
 
 // Aplica filtro de búsqueda + planes a un array de agencias para el organigrama

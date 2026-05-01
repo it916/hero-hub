@@ -1120,6 +1120,25 @@
   will-change: transform;
 }
 
+/* Stack: contenedor que apila múltiples grupos cuando filter='all' */
+.ag-org-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 56px;
+  width: fit-content;
+}
+
+/* Separador visual entre grupos apilados */
+.ag-org-stack > .ag-org-tree:not(:last-child)::after {
+  content: "";
+  display: block;
+  width: 60%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--border, #e2e8f0), transparent);
+  margin: 40px auto 0;
+}
+
 /* Durante drag: sin animación para que sea responsivo */
 .ag-org-canvas-wrap[data-dragging="1"] .ag-org-canvas {
   transition: none;
