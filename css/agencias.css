@@ -1078,17 +1078,51 @@
   border: 1px solid var(--border, #e2e8f0);
   border-radius: 14px;
   padding: 32px 16px;
-  overflow: auto;
+  overflow: hidden; /* pan reemplaza scroll */
   min-height: 400px;
   max-height: 80vh;
+  cursor: grab;
+  position: relative;
+  /* Hint del navegador: optimizar para transformaciones frecuentes */
+  touch-action: none;
+}
+
+.ag-org-canvas-wrap:active {
+  cursor: grabbing;
+}
+
+/* Hint visual sutil de que se puede arrastrar */
+.ag-org-canvas-wrap::after {
+  content: "Click y arrastra para mover";
+  position: absolute;
+  bottom: 12px;
+  right: 16px;
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--muted, #94a3b8);
+  background: rgba(255,255,255,.92);
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border, #e2e8f0);
+  pointer-events: none;
+  opacity: .7;
+  letter-spacing: .2px;
 }
 
 .ag-org-canvas {
-  transition: transform .25s ease;
+  transition: transform .15s ease-out;
   display: flex;
   justify-content: center;
   min-width: fit-content;
   padding: 0 32px;
+  /* Mientras se arrastra, no animamos */
+  will-change: transform;
+}
+
+/* Durante drag: sin animación para que sea responsivo */
+.ag-org-canvas-wrap[data-dragging="1"] .ag-org-canvas {
+  transition: none;
 }
 
 .ag-org-tree {

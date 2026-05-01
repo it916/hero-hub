@@ -36,6 +36,19 @@ let canEdit = false;
 let activeView = "list"; // "list" | "org"
 let zoomLevel = 1;
 
+// Pan state (drag para mover el canvas)
+let panState = {
+  isDragging: false,
+  startX: 0,
+  startY: 0,
+  offsetX: 0,        // offset acumulado del canvas
+  offsetY: 0,
+  initialOffsetX: 0, // offset al iniciar el drag actual
+  initialOffsetY: 0,
+  moved: false       // true si se movió más del threshold
+};
+const DRAG_THRESHOLD = 5; // píxeles para distinguir click de drag
+
 // ══ Auth flow ══
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -474,11 +487,13 @@ function renderOrg() {
   canvas.innerHTML = html;
 
   // Aplicar zoom actual
-  applyZoom();
+  applyTransform();
 
   // Wire clicks: abrir popover de brokers al hacer click en el nodo
   canvas.querySelectorAll(".ag-org-node-clickable").forEach(node => {
     node.addEventListener("click", (e) => {
+      // Ignorar click si fue resultado de un drag
+      if (panState.moved) return;
       const id = node.dataset.agencyId;
       const grp = node.dataset.group;
       openBrokersPopover(id, grp, node);
@@ -489,12 +504,17 @@ function renderOrg() {
   const rootBtn = canvas.querySelector(".ag-org-root-btn");
   if (rootBtn) {
     rootBtn.addEventListener("click", (e) => {
+      // Ignorar click si fue resultado de un drag
+      if (panState.moved) return;
       e.stopPropagation();
       const id = rootBtn.dataset.agencyId;
       const grp = rootBtn.dataset.group;
       openBrokersPopover(id, grp, rootBtn);
     });
   }
+
+  // Activar pan handlers (idempotente — solo se enlaza una vez)
+  setupPanHandlers();
 
   if (window.refreshIcons) window.refreshIcons();
 }
@@ -716,31 +736,38 @@ function closePopoverOnEsc(e) {
   if (e.key === "Escape") closeBrokersPopover();
 }
 
-// ══ Zoom controls ══
+// ══ Zoom + Pan controls ══
 
-function applyZoom() {
+function applyTransform() {
   const canvas = document.getElementById("ag-org-canvas");
   if (!canvas) return;
-  canvas.style.transform = `scale(${zoomLevel})`;
+  // Combinar pan + zoom en un solo transform
+  canvas.style.transform = `translate(${panState.offsetX}px, ${panState.offsetY}px) scale(${zoomLevel})`;
   canvas.style.transformOrigin = "top center";
-  document.getElementById("ag-zoom-level").textContent = Math.round(zoomLevel * 100) + "%";
+  const lvlEl = document.getElementById("ag-zoom-level");
+  if (lvlEl) lvlEl.textContent = Math.round(zoomLevel * 100) + "%";
 }
+
+// Backwards-compat: algunas partes llaman applyZoom()
+function applyZoom() { applyTransform(); }
 
 function zoomIn() {
   zoomLevel = Math.min(zoomLevel + 0.1, 2.0);
-  applyZoom();
+  applyTransform();
 }
 
 function zoomOut() {
   zoomLevel = Math.max(zoomLevel - 0.1, 0.4);
-  applyZoom();
+  applyTransform();
 }
 
 function zoomFit() {
   const canvas = document.getElementById("ag-org-canvas");
   const wrap = document.getElementById("ag-org-canvas-wrap");
   if (!canvas || !wrap) return;
-  // Resetear a 1 para medir naturalmente
+  // Resetear pan + zoom para medir naturalmente
+  panState.offsetX = 0;
+  panState.offsetY = 0;
   canvas.style.transform = "scale(1)";
   const naturalWidth = canvas.scrollWidth;
   const wrapWidth = wrap.clientWidth - 32;
@@ -749,7 +776,110 @@ function zoomFit() {
   } else {
     zoomLevel = 1;
   }
-  applyZoom();
+  applyTransform();
+}
+
+// ══ Pan (click + drag para mover el canvas) ══
+
+function setupPanHandlers() {
+  const wrap = document.getElementById("ag-org-canvas-wrap");
+  if (!wrap || wrap.dataset.panBound) return;
+  wrap.dataset.panBound = "1";
+
+  wrap.addEventListener("mousedown", onPanStart);
+  wrap.addEventListener("touchstart", onPanStart, { passive: true });
+
+  // Los listeners de move/end van a document para capturar movimientos
+  // que salen del wrap mientras se arrastra
+  document.addEventListener("mousemove", onPanMove);
+  document.addEventListener("mouseup", onPanEnd);
+  document.addEventListener("touchmove", onPanMove, { passive: false });
+  document.addEventListener("touchend", onPanEnd);
+
+  // Cursor inicial
+  wrap.style.cursor = "grab";
+}
+
+function getEventCoords(e) {
+  if (e.touches && e.touches.length > 0) {
+    return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }
+  return { x: e.clientX, y: e.clientY };
+}
+
+function onPanStart(e) {
+  // No iniciar pan si el target es un nodo o un botón clickeable
+  // (los nodos manejan su propio click via los handlers en buildOrgNode)
+  if (e.target.closest(".ag-org-controls")) return;
+
+  const wrap = document.getElementById("ag-org-canvas-wrap");
+  if (!wrap) return;
+
+  const coords = getEventCoords(e);
+  panState.isDragging = true;
+  panState.moved = false;
+  panState.startX = coords.x;
+  panState.startY = coords.y;
+  panState.initialOffsetX = panState.offsetX;
+  panState.initialOffsetY = panState.offsetY;
+
+  wrap.style.cursor = "grabbing";
+  wrap.dataset.dragging = "1";
+
+  // Prevenir text selection durante el drag
+  document.body.style.userSelect = "none";
+}
+
+function onPanMove(e) {
+  if (!panState.isDragging) return;
+
+  const coords = getEventCoords(e);
+  const dx = coords.x - panState.startX;
+  const dy = coords.y - panState.startY;
+
+  // Detectar si superó el threshold
+  if (!panState.moved && Math.hypot(dx, dy) > DRAG_THRESHOLD) {
+    panState.moved = true;
+  }
+
+  if (panState.moved) {
+    // Si es touch, prevenir scroll de la página
+    if (e.cancelable && e.touches) e.preventDefault();
+
+    panState.offsetX = panState.initialOffsetX + dx;
+    panState.offsetY = panState.initialOffsetY + dy;
+    applyTransform();
+  }
+}
+
+function onPanEnd(e) {
+  if (!panState.isDragging) return;
+  panState.isDragging = false;
+
+  const wrap = document.getElementById("ag-org-canvas-wrap");
+  if (wrap) {
+    wrap.style.cursor = "grab";
+    delete wrap.dataset.dragging;
+  }
+
+  document.body.style.userSelect = "";
+
+  // Si se movió, prevenir el click subsiguiente sobre nodos
+  // (el nodo escucha "click", y el click se dispara DESPUÉS del mouseup
+  // si no hubo movimiento significativo. Si sí hubo, marcamos el flag
+  // para que el handler del nodo lo ignore.)
+  if (panState.moved) {
+    // Pequeño truco: el handler de los nodos verifica panState.moved
+    // y limpia el flag tras ignorar el click
+    setTimeout(() => { panState.moved = false; }, 50);
+  }
+}
+
+// Reset del pan al cambiar de vista o de filtros
+function resetPan() {
+  panState.offsetX = 0;
+  panState.offsetY = 0;
+  applyTransform();
 }
 
 // ══════════════════════════════════════════
@@ -1127,6 +1257,8 @@ function wireHandlers() {
       } else {
         list.style.display = "none";
         org.style.display = "block";
+        // Reset pan al entrar a org (evita aparecer panneado)
+        resetPan();
       }
       renderActiveView();
     });
