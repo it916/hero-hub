@@ -1,0 +1,152 @@
+/* ═══════════════════════════════════════════
+   AGREGAR AL FINAL DE css/styles.css
+   Directorio — Filtros de Productos y Estado
+   ═══════════════════════════════════════════ */
+
+/* Labels al inicio de las filas de filtros */
+.dir-filter-label {
+  font-family:var(--mono);
+  font-size:10.5px; font-weight:700;
+  letter-spacing:2px; text-transform:uppercase;
+  color:var(--muted);
+  padding:7px 4px 7px 0;
+  display:inline-flex; align-items:center;
+}
+
+/* Fila de productos */
+.dir-product-filter-row {
+  align-items:center;
+}
+
+/* Chips de productos */
+.dir-product-chip {
+  display:inline-flex !important;
+  align-items:center;
+  gap:6px;
+}
+.dir-product-dot {
+  width:8px; height:8px;
+  border-radius:50%;
+  display:inline-block;
+}
+.dot-aca       { background:#10b981; }
+.dot-medicare  { background:#06a3b6; }
+.dot-life      { background:#a855f7; }
+.dot-supp      { background:#f5b830; }
+
+.dir-product-chip.active[data-product="ACA"] {
+  background:#10b981; border-color:#10b981; color:#fff;
+}
+.dir-product-chip.active[data-product="MEDICARE"] {
+  background:#06a3b6; border-color:#06a3b6; color:#fff;
+}
+.dir-product-chip.active[data-product="LIFE"] {
+  background:#a855f7; border-color:#a855f7; color:#fff;
+}
+.dir-product-chip.active[data-product="SUPLEMENTARIOS"] {
+  background:#f5b830; border-color:#f5b830; color:#fff;
+}
+.dir-product-chip.active .dir-product-dot {
+  background:#fff !important;
+}
+
+/* Botón limpiar */
+.dir-product-clear {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:5px 12px; border-radius:999px;
+  border:1px solid var(--border);
+  background:rgba(244,63,94,.08);
+  color:var(--rose);
+  font-family:inherit;
+  font-size:10.5px; font-weight:700;
+  letter-spacing:.5px;
+  cursor:pointer; transition:all .15s;
+}
+.dir-product-clear:hover {
+  background:var(--rose); color:#fff; border-color:var(--rose);
+}
+.dir-product-clear i { width:13px; height:13px; }
+
+/* Fila de estado */
+.dir-state-filter-row {
+  align-items:center;
+}
+.dir-state-select {
+  padding:7px 14px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  background:var(--card);
+  color:var(--text);
+  font-family:inherit;
+  font-size:11.5px; font-weight:700;
+  letter-spacing:.3px;
+  cursor:pointer;
+  outline:none;
+  min-width:240px;
+  transition:all .15s;
+}
+.dir-state-select:hover { border-color:rgba(6,163,182,.45); }
+.dir-state-select:focus { border-color:var(--cyan); box-shadow:0 0 0 3px rgba(6,163,182,.15); }
+
+/* ═══ Tarjetas de contacto: productos y estado ═══ */
+
+/* Contenedor de tags arriba (dept + estado) */
+.dir-card-tags {
+  display:flex; gap:6px; flex-wrap:wrap; align-items:center;
+  margin-bottom:4px;
+}
+
+/* Pill de estado */
+.dir-state-pill {
+  display:inline-flex; align-items:center; gap:4px;
+  font-size:9.5px; font-weight:800;
+  letter-spacing:1.5px; text-transform:uppercase;
+  padding:3px 9px; border-radius:999px;
+  background:rgba(6,163,182,.10);
+  color:var(--cyan-deep);
+  border:1px solid rgba(6,163,182,.25);
+}
+
+/* Mini chips de productos (también usados en modal) */
+.dir-product-mini {
+  display:inline-flex;
+  font-family:var(--mono);
+  font-size:9px; font-weight:700;
+  letter-spacing:1px; text-transform:uppercase;
+  padding:3px 7px; border-radius:5px;
+  border:1px solid;
+  white-space:nowrap;
+}
+.dir-product-mini.dir-product-aca       { color:#10b981; background:rgba(16,185,129,.10);  border-color:rgba(16,185,129,.30); }
+.dir-product-mini.dir-product-medicare  { color:#06a3b6; background:rgba(6,163,182,.10);   border-color:rgba(6,163,182,.30); }
+.dir-product-mini.dir-product-life      { color:#a855f7; background:rgba(168,85,247,.10);  border-color:rgba(168,85,247,.30); }
+.dir-product-mini.dir-product-suplementarios { color:#d97706; background:rgba(245,184,48,.12); border-color:rgba(245,184,48,.32); }
+
+/* Fila de productos en la card */
+.dir-products-row {
+  display:flex; gap:4px; flex-wrap:wrap;
+  margin-top:6px;
+}
+
+/* ═══ Modal: checkboxes de productos ═══ */
+.dir-modal-products {
+  display:flex; flex-wrap:wrap; gap:8px;
+  margin-top:8px;
+  padding:10px 12px;
+  background:var(--paper);
+  border:1px solid var(--border);
+  border-radius:10px;
+}
+.dir-modal-product-check {
+  display:inline-flex; align-items:center; gap:6px;
+  cursor:pointer;
+  padding:4px 8px; border-radius:6px;
+  transition:background .15s;
+}
+.dir-modal-product-check:hover { background:rgba(6,163,182,.06); }
+.dir-modal-product-check input { margin:0; cursor:pointer; }
+
+@media (max-width:600px) {
+  .dir-state-select { min-width:100%; width:100%; }
+  .dir-state-filter-row { flex-wrap:wrap; }
+}

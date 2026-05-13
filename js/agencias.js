@@ -30,6 +30,9 @@ const ACT_AGENCY_DELETE = "agency.delete";
 // Tipos de planes (lista cerrada)
 const PLAN_TYPES = ["MEDICARE", "ACA", "SUPLEMENTARIOS", "VIDA"];
 
+// Profundidad máxima de jerarquía (HERO = 0, hijos = 1, 2, 3, 4)
+const MAX_DEPTH = 4;
+
 let DATA = { hero: [], friends: [], pending: [], updatedAt: null };
 let filter = { text: "", group: "all", planes: [] };
 let canEdit = false;
@@ -96,6 +99,7 @@ async function loadData() {
         updatedAt: data.updatedAt || null
       };
     }
+    migrateLegacyHierarchy();
     renderStats();
     renderActiveView();
   } catch (e) {
@@ -103,6 +107,90 @@ async function loadData() {
     document.getElementById("ag-tree").innerHTML =
       `<p class="empty">Error: ${escapeHtml(e.message)}</p>`;
   }
+}
+
+// ══ Migración: convertir sub_goldpro (legacy) a parentId ══
+// Cualquier agencia con kind === "sub_goldpro" y sin parentId se asigna
+// como hija de GOLD PRO (si existe en el mismo grupo). El kind se preserva
+// solo si era un kind real (info_limited, etc); sub_goldpro se normaliza a "normal".
+function migrateLegacyHierarchy() {
+  ["hero", "friends", "pending"].forEach(group => {
+    const arr = DATA[group];
+    const goldPro = arr.find(a => a.name === "GOLD PRO");
+    arr.forEach(a => {
+      // Asegurar campo parentId
+      if (typeof a.parentId === "undefined") a.parentId = null;
+      // Migrar sub_goldpro
+      if (a.kind === "sub_goldpro") {
+        if (!a.parentId && goldPro) a.parentId = goldPro.id;
+        a.kind = "normal";
+      }
+    });
+  });
+}
+
+// ══════════════════════════════════════════
+// Helpers de jerarquía
+// ══════════════════════════════════════════
+
+// Profundidad de una agencia (HERO/FRIENDS/Pendientes = nivel 0)
+// Una agencia raíz (parentId = null) tiene depth = 1
+// Su hijo directo = 2, etc. Máximo permitido = MAX_DEPTH (4)
+function getDepth(agency, group) {
+  if (!agency.parentId) return 1;
+  const parent = DATA[group].find(a => a.id === agency.parentId);
+  if (!parent) return 1; // padre roto = tratar como raíz
+  return getDepth(parent, group) + 1;
+}
+
+// Hijos directos de una agencia en su grupo
+function getChildren(agencyId, group) {
+  return DATA[group].filter(a => a.parentId === agencyId);
+}
+
+// Agencias raíz del grupo (sin padre, excluyendo la matriz)
+function getRootAgencies(group) {
+  return DATA[group].filter(a => !a.parentId && a.kind !== "matrix");
+}
+
+// Verifica si asignar `newParentId` a `agency` crearía un ciclo
+// (es decir, el nuevo padre es descendiente de agency)
+function wouldCreateCycle(agencyId, newParentId, group) {
+  if (!newParentId) return false;
+  if (agencyId === newParentId) return true;
+  let current = DATA[group].find(a => a.id === newParentId);
+  let safety = 0;
+  while (current && safety < 20) {
+    if (current.id === agencyId) return true;
+    if (!current.parentId) return false;
+    current = DATA[group].find(a => a.id === current.parentId);
+    safety++;
+  }
+  return false;
+}
+
+// Lista de candidatos válidos para padre de `agency` en el grupo dado.
+// Excluye: la propia agencia, descendientes (ciclos), matriz, y agencias
+// cuyo depth haría que el hijo supere MAX_DEPTH.
+function getValidParents(agencyId, group, agencyOwnDepthIfRoot) {
+  return DATA[group].filter(candidate => {
+    if (candidate.id === agencyId) return false;
+    if (candidate.kind === "matrix") return false; // la matriz se maneja aparte
+    if (wouldCreateCycle(agencyId, candidate.id, group)) return false;
+    // Si la agencia ya existe, calcular su altura (descendientes) para
+    // evitar que padre + altura supere MAX_DEPTH
+    const candidateDepth = getDepth(candidate, group);
+    const heightOfAgency = agencyId ? getSubtreeHeight(agencyId, group) : 0;
+    if (candidateDepth + 1 + heightOfAgency > MAX_DEPTH) return false;
+    return true;
+  });
+}
+
+// Altura del subárbol bajo `agencyId` (0 si no tiene hijos, 1 si tiene hijos hoja, etc.)
+function getSubtreeHeight(agencyId, group) {
+  const children = getChildren(agencyId, group);
+  if (!children.length) return 0;
+  return 1 + Math.max(...children.map(c => getSubtreeHeight(c.id, group)));
 }
 
 // ══ Stats ══
@@ -142,8 +230,11 @@ function getFilteredAgencies() {
   const result = [];
 
   groups.forEach(g => {
+    const matchedInGroup = new Map(); // id -> matched object
+    const ancestorsToInclude = new Set();
+
     DATA[g].forEach(ag => {
-      // Filtro por planes (AND): la agencia debe tener TODOS los planes seleccionados
+      // Filtro por planes (AND)
       if (filter.planes.length > 0) {
         const agPlanes = ag.planes || [];
         const hasAll = filter.planes.every(p => agPlanes.includes(p));
@@ -152,11 +243,10 @@ function getFilteredAgencies() {
 
       // Sin búsqueda: incluir todo
       if (!terms.length) {
-        result.push({ ...ag, _group: g, _matchedBrokers: null, _matchedAic: null });
+        matchedInGroup.set(ag.id, { ...ag, _group: g, _matchedBrokers: null, _matchedAic: null });
         return;
       }
 
-      // Con búsqueda: detectar matches
       const nameMatch = matchesAllTerms(ag.name || "", terms);
       const matchedAic = (ag.aic || []).filter(n => matchesAllTerms(n, terms));
       const matchedBrokers = (ag.brokers || []).filter(n => matchesAllTerms(n, terms));
@@ -164,15 +254,40 @@ function getFilteredAgencies() {
       const hasAnyMatch = nameMatch || matchedAic.length > 0 || matchedBrokers.length > 0;
       if (!hasAnyMatch) return;
 
-      result.push({
+      matchedInGroup.set(ag.id, {
         ...ag,
         _group: g,
-        // Si el match es por nombre de agencia, mostrar TODO el contenido.
-        // Si el match es solo por broker/AIC, mostrar solo los que matchean.
         _matchedBrokers: nameMatch ? null : matchedBrokers,
         _matchedAic: nameMatch ? null : matchedAic
       });
+
+      // Marcar ancestros para incluir (preservar la cadena jerárquica)
+      let p = ag.parentId;
+      let safety = 0;
+      while (p && safety < 10) {
+        ancestorsToInclude.add(p);
+        const parentAg = DATA[g].find(a => a.id === p);
+        p = parentAg ? parentAg.parentId : null;
+        safety++;
+      }
     });
+
+    // Agregar ancestros que no matchearon pero deben mostrarse para conservar la jerarquía
+    ancestorsToInclude.forEach(id => {
+      if (matchedInGroup.has(id)) return;
+      const ag = DATA[g].find(a => a.id === id);
+      if (!ag) return;
+      // Si el ancestro fue filtrado por planes, no lo agregamos
+      if (filter.planes.length > 0) {
+        const agPlanes = ag.planes || [];
+        if (!filter.planes.every(p => agPlanes.includes(p))) return;
+      }
+      matchedInGroup.set(id, {
+        ...ag, _group: g, _matchedBrokers: [], _matchedAic: [], _isAncestorOnly: true
+      });
+    });
+
+    matchedInGroup.forEach(v => result.push(v));
   });
   return result;
 }
@@ -190,62 +305,50 @@ function renderTree() {
   // Si hay búsqueda activa, las agencias coincidentes se auto-expanden
   const autoExpand = filter.text.length > 0;
 
-  const byGroup = { hero: [], friends: [], pending: [] };
-  filtered.forEach(ag => byGroup[ag._group].push(ag));
+  // Mapa de agencias filtradas por id (para acceso rápido)
+  // y agrupadas por grupo
+  const filteredByGroup = { hero: [], friends: [], pending: [] };
+  const filteredIds = new Set();
+  filtered.forEach(ag => {
+    filteredByGroup[ag._group].push(ag);
+    filteredIds.add(ag.id);
+  });
 
   let html = "";
 
-  if (byGroup.hero.length) {
-    const heroMatrix = byGroup.hero.find(a => a.kind === "matrix");
-    const heroAgencies = byGroup.hero.filter(a => a.kind !== "matrix" && a.kind !== "sub_goldpro");
-    const subGoldpro = byGroup.hero.find(a => a.kind === "sub_goldpro");
+  // Renderiza un grupo completo (HERO, FRIENDS, Pendientes)
+  const renderGroup = (group, rootName, rootSub, rootClass) => {
+    const agenciesInGroup = filteredByGroup[group];
+    if (!agenciesInGroup.length) return "";
 
-    html += `<div class="ag-tree-group ag-tree-hero">
-      <div class="ag-tree-root">
-        <div class="ag-tree-root-name">HERO</div>
-        <div class="ag-tree-root-sub">Casa matriz</div>
-      </div>
-      <div class="ag-tree-children">`;
+    const matrix = agenciesInGroup.find(a => a.kind === "matrix");
+    // Solo raíces (sin padre y no matriz) van al primer nivel
+    const roots = agenciesInGroup.filter(a => !a.parentId && a.kind !== "matrix");
 
-    if (heroMatrix) html += buildTreeNode(heroMatrix, autoExpand, "Brokers directos");
-
-    heroAgencies.forEach(ag => {
-      html += buildTreeNode(ag, autoExpand);
-      if (ag.name === "GOLD PRO" && subGoldpro) {
-        html += `<div class="ag-tree-sub-wrap">${buildTreeNode(subGoldpro, autoExpand, "Sub-agencia")}</div>`;
-      }
+    let inner = "";
+    if (matrix) inner += buildTreeNode(matrix, autoExpand, "Brokers directos", group, filteredIds);
+    roots.forEach(ag => {
+      inner += buildTreeNodeRecursive(ag, autoExpand, group, filteredIds);
     });
 
-    html += `</div></div>`;
-  }
-
-  if (byGroup.friends.length) {
-    html += `<div class="ag-tree-group ag-tree-friends">
-      <div class="ag-tree-root ag-tree-root-friends">
-        <div class="ag-tree-root-name">FRIENDS</div>
-        <div class="ag-tree-root-sub">Grupo afiliado</div>
+    return `<div class="ag-tree-group ag-tree-${group}">
+      <div class="ag-tree-root ${rootClass}">
+        <div class="ag-tree-root-name">${rootName}</div>
+        <div class="ag-tree-root-sub">${rootSub}</div>
       </div>
-      <div class="ag-tree-children">`;
-    byGroup.friends.forEach(ag => { html += buildTreeNode(ag, autoExpand); });
-    html += `</div></div>`;
-  }
+      <div class="ag-tree-children">${inner}</div>
+    </div>`;
+  };
 
-  if (byGroup.pending.length) {
-    html += `<div class="ag-tree-group ag-tree-pending">
-      <div class="ag-tree-root ag-tree-root-pending">
-        <div class="ag-tree-root-name">Pendientes</div>
-        <div class="ag-tree-root-sub">Por aclarar / on hold</div>
-      </div>
-      <div class="ag-tree-children">`;
-    byGroup.pending.forEach(ag => { html += buildTreeNode(ag, autoExpand); });
-    html += `</div></div>`;
-  }
+  html += renderGroup("hero", "HERO", "Casa matriz", "");
+  html += renderGroup("friends", "FRIENDS", "Grupo afiliado", "ag-tree-root-friends");
+  html += renderGroup("pending", "Pendientes", "Por aclarar / on hold", "ag-tree-root-pending");
 
   container.innerHTML = html;
 
   // Wire toggle handlers (click en header expande/colapsa)
   container.querySelectorAll(".ag-tree-node").forEach(node => {
-    const header = node.querySelector(".ag-tree-node-header");
+    const header = node.querySelector(":scope > .ag-tree-node-header");
     if (header) {
       header.addEventListener("click", (e) => {
         // Evitar toggle si se hace click en botones admin
@@ -276,7 +379,29 @@ function renderTree() {
   if (window.refreshIcons) window.refreshIcons();
 }
 
-function buildTreeNode(ag, autoExpand, overrideLabel) {
+// Construye un nodo del árbol con sus hijos recursivos
+function buildTreeNodeRecursive(ag, autoExpand, group, filteredIds) {
+  // Hijos que pasaron el filtro
+  const allChildren = getChildren(ag.id, group);
+  const visibleChildren = allChildren.filter(c => filteredIds.has(c.id));
+
+  const nodeHtml = buildTreeNode(ag, autoExpand, null, group, filteredIds);
+
+  if (!visibleChildren.length) return nodeHtml;
+
+  // Renderizar hijos como bloque anidado
+  const childrenHtml = visibleChildren.map(c =>
+    buildTreeNodeRecursive(c, autoExpand, group, filteredIds)
+  ).join("");
+
+  // Insertar el bloque de sub-agencias justo después del nodo
+  return `<div class="ag-tree-sub-wrap">
+    ${nodeHtml}
+    <div class="ag-tree-sub-children">${childrenHtml}</div>
+  </div>`;
+}
+
+function buildTreeNode(ag, autoExpand, overrideLabel, group, filteredIds) {
   const terms = getSearchTerms();
   const isFiltered = terms.length > 0;
 
@@ -491,6 +616,8 @@ function buildOrgGroupSection(group) {
   const filtered = filterAgenciesForOrg(allAgencies);
   if (!filtered.length) return "";
 
+  const filteredIds = new Set(filtered.map(a => a.id));
+
   const groupLabel =
     group === "hero" ? "HERO" :
     group === "friends" ? "FRIENDS" :
@@ -500,21 +627,10 @@ function buildOrgGroupSection(group) {
     group === "friends" ? "Grupo afiliado" :
     "Por aclarar / on hold";
 
-  // Identificar matriz, agencias normales, sub-agencias
+  // Identificar matriz y raíces (sin parentId, no matriz)
   const matrix = filtered.find(a => a.kind === "matrix");
-  const subAgencies = filtered.filter(a => a.kind === "sub_goldpro");
-  const mainAgencies = filtered.filter(a => a.kind !== "matrix" && a.kind !== "sub_goldpro");
+  const rootAgencies = filtered.filter(a => !a.parentId && a.kind !== "matrix");
 
-  // Mapa de sub-agencias por nombre del padre
-  // (Por ahora la única convención es: GOLD PRO → AP INSURANCE)
-  const subsByParent = {};
-  subAgencies.forEach(sub => {
-    subsByParent["GOLD PRO"] = subsByParent["GOLD PRO"] || [];
-    subsByParent["GOLD PRO"].push(sub);
-  });
-
-  // Si NO hay matriz pero sí hay agencias (ej. Pendientes), igual mostramos
-  // una raíz visual con el nombre del grupo.
   const matrixBtnHtml = matrix
     ? `<button class="ag-org-root-btn" data-agency-id="${escapeAttr(matrix.id)}" data-group="${group}">
          <i data-lucide="users"></i>
@@ -529,38 +645,50 @@ function buildOrgGroupSection(group) {
         <div class="ag-org-root-sub">${escapeHtml(groupSub)}</div>
         ${matrixBtnHtml}
       </div>
-      ${mainAgencies.length > 0 ? `<div class="ag-org-trunk"></div>` : ""}
-      ${mainAgencies.length > 0 ? `<div class="ag-org-row">
-        ${mainAgencies.map(ag => buildOrgNode(ag, group, subsByParent[ag.name] || [])).join("")}
+      ${rootAgencies.length > 0 ? `<div class="ag-org-trunk"></div>` : ""}
+      ${rootAgencies.length > 0 ? `<div class="ag-org-row">
+        ${rootAgencies.map(ag => buildOrgNode(ag, group, filteredIds)).join("")}
       </div>` : ""}
     </div>
   `;
 }
 
-// Aplica filtro de búsqueda + planes a un array de agencias para el organigrama
+// Aplica filtro de búsqueda + planes a un array de agencias para el organigrama.
+// Si una agencia matchea, también se incluyen sus ancestros para mantener la cadena.
 function filterAgenciesForOrg(agencies) {
   const terms = getSearchTerms();
+  const hasFilters = terms.length > 0 || filter.planes.length > 0;
+  if (!hasFilters) return agencies.slice();
 
-  return agencies.filter(ag => {
-    // Filtro por planes
+  const matchSet = new Set();
+
+  agencies.forEach(ag => {
     if (filter.planes.length > 0) {
       const agPlanes = ag.planes || [];
-      if (!filter.planes.every(p => agPlanes.includes(p))) return false;
+      if (!filter.planes.every(p => agPlanes.includes(p))) return;
     }
-
-    // Filtro por búsqueda
     if (terms.length > 0) {
       const nameMatch = matchesAllTerms(ag.name || "", terms);
       const aicMatch = (ag.aic || []).some(n => matchesAllTerms(n, terms));
       const brokerMatch = (ag.brokers || []).some(n => matchesAllTerms(n, terms));
-      if (!nameMatch && !aicMatch && !brokerMatch) return false;
+      if (!nameMatch && !aicMatch && !brokerMatch) return;
     }
-
-    return true;
+    matchSet.add(ag.id);
+    // Agregar ancestros
+    let p = ag.parentId;
+    let safety = 0;
+    while (p && safety < 10) {
+      matchSet.add(p);
+      const parent = agencies.find(a => a.id === p);
+      p = parent ? parent.parentId : null;
+      safety++;
+    }
   });
+
+  return agencies.filter(a => matchSet.has(a.id));
 }
 
-function buildOrgNode(ag, group, subAgencies) {
+function buildOrgNode(ag, group, filteredIds) {
   const aicNames = (ag.aic || []).map(n => escapeHtml(n)).join(" · ");
   const brokerCount = (ag.brokers || []).length;
 
@@ -577,13 +705,14 @@ function buildOrgNode(ag, group, subAgencies) {
     .map(p => `<span class="ag-plan-chip-mini ag-plan-${p.toLowerCase()}">${p}</span>`)
     .join("");
 
-  // Sub-agencias anidadas
+  // Hijos vía parentId (filtrados también)
+  const children = getChildren(ag.id, group).filter(c => !filteredIds || filteredIds.has(c.id));
   let subsBlock = "";
-  if (subAgencies && subAgencies.length > 0) {
+  if (children.length > 0) {
     subsBlock = `
       <div class="ag-org-sub-trunk"></div>
       <div class="ag-org-sub-row">
-        ${subAgencies.map(sub => buildOrgNode(sub, group, [])).join("")}
+        ${children.map(sub => buildOrgNode(sub, group, filteredIds)).join("")}
       </div>
     `;
   }
@@ -955,12 +1084,21 @@ function openAgencyModal(agencyId, group) {
           <select id="ag-f-kind">
             <option value="normal" ${agency.kind === "normal" ? "selected" : ""}>Normal</option>
             <option value="matrix" ${agency.kind === "matrix" ? "selected" : ""}>Matriz (HERO o FRIENDS)</option>
-            <option value="sub_goldpro" ${agency.kind === "sub_goldpro" ? "selected" : ""}>Sub-agencia · GOLD PRO</option>
             <option value="info_limited" ${agency.kind === "info_limited" ? "selected" : ""}>Información limitada</option>
             <option value="no_data" ${agency.kind === "no_data" ? "selected" : ""}>Sin datos</option>
             <option value="unclear" ${agency.kind === "unclear" ? "selected" : ""}>Por aclarar</option>
             <option value="on_hold" ${agency.kind === "on_hold" ? "selected" : ""}>On hold</option>
           </select>
+        </label>
+
+        <label class="ag-form-field">
+          <span class="ag-form-label">
+            Agencia padre <span class="ag-form-hint">— déjala vacía si es agencia raíz</span>
+          </span>
+          <select id="ag-f-parent">
+            <option value="">— Sin padre (raíz) —</option>
+          </select>
+          <span class="ag-form-hint" id="ag-f-parent-hint" style="margin-top:6px;display:block;"></span>
         </label>
 
         <div class="ag-form-field">
@@ -1012,6 +1150,45 @@ function openAgencyModal(agencyId, group) {
   overlay.querySelector("#ag-f-brokers").addEventListener("input", updateCounter);
   updateCounter();
 
+  // Poblar dropdown de padre según el grupo seleccionado
+  const parentSelect = overlay.querySelector("#ag-f-parent");
+  const parentHint = overlay.querySelector("#ag-f-parent-hint");
+  const refreshParentOptions = () => {
+    const currentGroup = overlay.querySelector("#ag-f-group").value;
+    const currentKind = overlay.querySelector("#ag-f-kind").value;
+    parentSelect.innerHTML = `<option value="">— Sin padre (raíz) —</option>`;
+
+    // Si es matriz, no puede tener padre
+    if (currentKind === "matrix") {
+      parentSelect.disabled = true;
+      parentHint.textContent = "Las agencias matriz no tienen padre.";
+      return;
+    }
+    parentSelect.disabled = false;
+
+    // Calcular candidatos válidos
+    const validParents = getValidParents(agencyId, currentGroup);
+    if (!validParents.length) {
+      parentHint.textContent = "Sin candidatos disponibles en este grupo.";
+    } else {
+      parentHint.textContent = `Máximo ${MAX_DEPTH} niveles desde la raíz del grupo.`;
+    }
+
+    validParents.forEach(p => {
+      const opt = document.createElement("option");
+      opt.value = p.id;
+      const depthLabel = "·".repeat(getDepth(p, currentGroup) - 1) || "";
+      opt.textContent = `${depthLabel} ${p.name}`.trim();
+      if (agency.parentId === p.id) opt.selected = true;
+      parentSelect.appendChild(opt);
+    });
+  };
+  refreshParentOptions();
+
+  // Cuando cambia grupo o tipo, recalcular padres válidos
+  overlay.querySelector("#ag-f-group").addEventListener("change", refreshParentOptions);
+  overlay.querySelector("#ag-f-kind").addEventListener("change", refreshParentOptions);
+
   const close = () => overlay.remove();
   overlay.querySelector("#ag-modal-close").addEventListener("click", close);
   overlay.querySelector("#ag-modal-cancel").addEventListener("click", close);
@@ -1029,6 +1206,7 @@ function openAgencyModal(agencyId, group) {
     const name = overlay.querySelector("#ag-f-name").value.trim();
     const newGroup = overlay.querySelector("#ag-f-group").value;
     const kind = overlay.querySelector("#ag-f-kind").value;
+    const parentId = overlay.querySelector("#ag-f-parent").value || null;
     const aic = overlay.querySelector("#ag-f-aic").value
       .split("\n").map(l => l.trim()).filter(l => l.length > 0);
     const brokers = overlay.querySelector("#ag-f-brokers").value
@@ -1041,15 +1219,18 @@ function openAgencyModal(agencyId, group) {
       return;
     }
 
+    // Si es matriz, forzar parentId null
+    const finalParentId = (kind === "matrix") ? null : parentId;
+
     const saveBtn = overlay.querySelector("#ag-modal-save");
     saveBtn.disabled = true;
     saveBtn.textContent = "Guardando...";
 
     try {
       if (isNew) {
-        await createAgency({ name, kind, aic, brokers, planes, group: newGroup });
+        await createAgency({ name, kind, aic, brokers, planes, group: newGroup, parentId: finalParentId });
       } else {
-        await updateAgency(agencyId, originalGroup, { name, kind, aic, brokers, planes, group: newGroup });
+        await updateAgency(agencyId, originalGroup, { name, kind, aic, brokers, planes, group: newGroup, parentId: finalParentId });
       }
       close();
       await loadData();
@@ -1071,6 +1252,7 @@ async function createAgency(input) {
     id: generateId(),
     name: input.name,
     kind: input.kind || "normal",
+    parentId: input.parentId || null,
     aic: input.aic || [],
     brokers: input.brokers || [],
     planes: input.planes || []
@@ -1084,9 +1266,17 @@ async function createAgency(input) {
     updatedBy: auth.currentUser.email
   });
 
+  // Resolver nombre del padre para el log
+  let parentName = "(raíz)";
+  if (newAg.parentId) {
+    const parent = (DATA[input.group] || []).find(a => a.id === newAg.parentId);
+    if (parent) parentName = parent.name;
+  }
+
   await logEvent(ACT_AGENCY_ADD, newAg.name, {
     group: input.group,
     kind: newAg.kind,
+    parent: parentName,
     aicCount: newAg.aic.length,
     brokerCount: newAg.brokers.length,
     planes: newAg.planes.join(", ") || "(ninguno)"
@@ -1102,6 +1292,7 @@ async function updateAgency(agencyId, originalGroup, input) {
     id: agencyId,
     name: input.name,
     kind: input.kind || "normal",
+    parentId: input.parentId || null,
     aic: input.aic || [],
     brokers: input.brokers || [],
     planes: input.planes || []
@@ -1117,7 +1308,13 @@ async function updateAgency(agencyId, originalGroup, input) {
       updatedBy: auth.currentUser.email
     });
   } else {
-    const oldArr = DATA[originalGroup].filter(a => a.id !== agencyId);
+    // Cambio de grupo: la agencia y sus descendientes deben moverse juntos.
+    // Si no se mueven todos los descendientes, los hijos quedarían huérfanos.
+    // Para simplicidad: movemos solo la agencia y convertimos a sus hijos en raíces.
+    // (Si quisieras cascada completa, sería un cambio mayor.)
+    const oldArr = DATA[originalGroup]
+      .map(a => a.parentId === agencyId ? { ...a, parentId: null } : a)
+      .filter(a => a.id !== agencyId);
     const newArr = [...DATA[newGroup], updated];
     await updateDoc(doc(db, "shared", "agencias"), {
       [originalGroup]: oldArr,
@@ -1125,7 +1322,7 @@ async function updateAgency(agencyId, originalGroup, input) {
       updatedAt: serverTimestamp(),
       updatedBy: auth.currentUser.email
     });
-    changes.push(`grupo: ${originalGroup} → ${newGroup}`);
+    changes.push(`grupo: ${originalGroup} → ${newGroup} (hijos en ${originalGroup} ahora son raíces)`);
   }
 
   await logEvent(ACT_AGENCY_EDIT, updated.name, {
@@ -1138,8 +1335,15 @@ async function deleteAgency(agencyId, group) {
   const agency = findAgency(agencyId, group);
   if (!agency) { alert("Agencia no encontrada."); return; }
 
+  // Verificar si tiene hijos
+  const children = getChildren(agencyId, group);
+  const childWarning = children.length > 0
+    ? `\n\n⚠️ Esta agencia tiene ${children.length} sub-agencia${children.length === 1 ? "" : "s"} directa${children.length === 1 ? "" : "s"}. ` +
+      `Al eliminar, esa${children.length === 1 ? "" : "s"} sub-agencia${children.length === 1 ? "" : "s"} se convertirá${children.length === 1 ? "" : "n"} en agencia${children.length === 1 ? "" : "s"} raíz del grupo.\n`
+    : "";
+
   const typed = prompt(
-    `⚠️ Esta acción es PERMANENTE.\n\n` +
+    `⚠️ Esta acción es PERMANENTE.${childWarning}\n` +
     `Para confirmar, escribe el nombre exacto de la agencia:\n\n${agency.name}`
   );
   if (typed === null) return;
@@ -1149,7 +1353,11 @@ async function deleteAgency(agencyId, group) {
   }
 
   try {
-    const newArr = DATA[group].filter(a => a.id !== agencyId);
+    // Eliminar la agencia y convertir sus hijos en raíces
+    const newArr = DATA[group]
+      .filter(a => a.id !== agencyId)
+      .map(a => a.parentId === agencyId ? { ...a, parentId: null } : a);
+
     await updateDoc(doc(db, "shared", "agencias"), {
       [group]: newArr,
       updatedAt: serverTimestamp(),
@@ -1160,7 +1368,8 @@ async function deleteAgency(agencyId, group) {
       group,
       kind: agency.kind,
       aicCount: (agency.aic || []).length,
-      brokerCount: (agency.brokers || []).length
+      brokerCount: (agency.brokers || []).length,
+      orphanedChildren: children.length
     });
 
     await loadData();
@@ -1193,6 +1402,17 @@ function detectChanges(original, updated) {
   }
   if (original.kind !== updated.kind) {
     changes.push(`tipo: ${original.kind} → ${updated.kind}`);
+  }
+  // Cambio de padre: resolver nombres para el log
+  if ((original.parentId || null) !== (updated.parentId || null)) {
+    const groupArr = DATA.hero.concat(DATA.friends, DATA.pending);
+    const oldParentName = original.parentId
+      ? (groupArr.find(a => a.id === original.parentId)?.name || "(padre desconocido)")
+      : "(raíz)";
+    const newParentName = updated.parentId
+      ? (groupArr.find(a => a.id === updated.parentId)?.name || "(padre desconocido)")
+      : "(raíz)";
+    changes.push(`padre: ${oldParentName} → ${newParentName}`);
   }
   const oldAic = (original.aic || []).join("|");
   const newAic = (updated.aic || []).join("|");

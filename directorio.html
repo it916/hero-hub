@@ -80,6 +80,32 @@
       <div class="filter-chip" data-dept="Technical Support">Technical Support</div>
     </section>
 
+    <section class="filter-row dir-product-filter-row" id="product-filter-row">
+      <span class="dir-filter-label">Productos:</span>
+      <div class="filter-chip dir-product-chip" data-product="ACA">
+        <span class="dir-product-dot dot-aca"></span>ACA
+      </div>
+      <div class="filter-chip dir-product-chip" data-product="MEDICARE">
+        <span class="dir-product-dot dot-medicare"></span>MEDICARE
+      </div>
+      <div class="filter-chip dir-product-chip" data-product="LIFE">
+        <span class="dir-product-dot dot-life"></span>LIFE
+      </div>
+      <div class="filter-chip dir-product-chip" data-product="SUPLEMENTARIOS">
+        <span class="dir-product-dot dot-supp"></span>SUPLEMENTARIOS
+      </div>
+      <button class="dir-product-clear" id="product-clear" style="display:none;">
+        <i data-lucide="x"></i><span>Limpiar</span>
+      </button>
+    </section>
+
+    <section class="filter-row dir-state-filter-row">
+      <span class="dir-filter-label">Estado:</span>
+      <select id="dir-state-filter" class="dir-state-select">
+        <option value="all">Todos los estados</option>
+      </select>
+    </section>
+
     <section id="dir-body" class="dir-body"><p class="loading">Cargando directorio...</p></section>
 
   </main>
