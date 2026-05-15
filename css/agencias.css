@@ -442,15 +442,136 @@
   background: rgba(6,163,182,.05);
 }
 
-/* ─────────────────────────────────────────
-   Sub-agencias (anidadas, ej. AP INSURANCE bajo GOLD PRO)
-   ───────────────────────────────────────── */
+/* ═══════════════════════════════════════════
+   JERARQUÍA ESCALABLE — N niveles anidados
+   ═══════════════════════════════════════════
+   Cada nivel cambia el color del borde lateral conector:
+   Nivel 1 → cyan (Hero)
+   Nivel 2 → dorado (acento)
+   Nivel 3 → morado (variación)
+   ═══════════════════════════════════════════ */
 
+/* Contenedor envoltorio del bloque "padre + hijos" */
 .ag-tree-sub-wrap {
-  margin-left: 24px;
-  margin-top: -2px;
+  position: relative;
+}
+
+/* Lista de hijos anidados (ej. AP INSURANCE bajo GOLD PRO) */
+.ag-tree-sub-children {
+  margin-left: 32px;
+  margin-top: 4px;
   padding-left: 16px;
-  border-left: 2px dotted rgba(148,163,184,.4);
+  border-left: 1.5px dashed rgba(6,163,182,.30); /* nivel 1: cyan */
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Niveles más profundos cambian de color */
+.ag-tree-sub-children .ag-tree-sub-children {
+  border-left-color: rgba(245,184,48,.40); /* nivel 2: dorado */
+}
+.ag-tree-sub-children .ag-tree-sub-children .ag-tree-sub-children {
+  border-left-color: rgba(168,85,247,.40); /* nivel 3: morado */
+}
+
+/* Línea horizontal conectora del borde lateral hacia cada nodo hijo */
+.ag-tree-sub-children > .ag-tree-node {
+  position: relative;
+}
+
+.ag-tree-sub-children > .ag-tree-node::before {
+  content: "";
+  position: absolute;
+  left: -17px;
+  top: 28px;
+  width: 14px;
+  height: 1.5px;
+  background: rgba(6,163,182,.30);
+  border-radius: 2px;
+}
+
+/* Conector horizontal cambia de color por nivel */
+.ag-tree-sub-children .ag-tree-sub-children > .ag-tree-node::before {
+  background: rgba(245,184,48,.45);
+}
+.ag-tree-sub-children .ag-tree-sub-children .ag-tree-sub-children > .ag-tree-node::before {
+  background: rgba(168,85,247,.45);
+}
+
+/* Para wrappers anidados dentro de sub-children (cuando un hijo tiene su propio sub-wrap) */
+.ag-tree-sub-children > .ag-tree-sub-wrap > .ag-tree-node::before {
+  content: "";
+  position: absolute;
+  left: -17px;
+  top: 28px;
+  width: 14px;
+  height: 1.5px;
+  background: rgba(6,163,182,.30);
+  border-radius: 2px;
+}
+
+.ag-tree-sub-children .ag-tree-sub-children > .ag-tree-sub-wrap > .ag-tree-node::before {
+  background: rgba(245,184,48,.45);
+}
+
+/* Select de agencia padre en el modal admin */
+#ag-f-parent {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border-2, var(--border, #e2e8f0));
+  border-radius: 10px;
+  background: var(--paper, #fff);
+  color: var(--text, #1a1a1a);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+#ag-f-parent:hover {
+  border-color: rgba(6,163,182,.40);
+}
+
+#ag-f-parent:focus {
+  border-color: var(--ag-hero, #06a3b6);
+  box-shadow: 0 0 0 3px rgba(6,163,182,.15);
+}
+
+#ag-f-parent:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+  background: rgba(0,0,0,.05);
+}
+
+/* Dark mode */
+[data-theme="dark"] .ag-tree-sub-children {
+  border-left-color: rgba(6,163,182,.40);
+}
+[data-theme="dark"] .ag-tree-sub-children .ag-tree-sub-children {
+  border-left-color: rgba(245,184,48,.50);
+}
+[data-theme="dark"] .ag-tree-sub-children .ag-tree-sub-children .ag-tree-sub-children {
+  border-left-color: rgba(168,85,247,.50);
+}
+[data-theme="dark"] #ag-f-parent {
+  background: #0f172a;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+/* Responsive */
+@media (max-width: 700px) {
+  .ag-tree-sub-children {
+    margin-left: 18px;
+    padding-left: 12px;
+  }
+  .ag-tree-sub-children > .ag-tree-node::before,
+  .ag-tree-sub-children > .ag-tree-sub-wrap > .ag-tree-node::before {
+    left: -13px;
+    width: 10px;
+  }
 }
 
 /* ─────────────────────────────────────────
@@ -784,7 +905,6 @@
   .ag-stat-value { font-size: 22px; }
   .ag-tree-group { padding: 18px; }
   .ag-tree-children { padding-left: 10px; }
-  .ag-tree-sub-wrap { margin-left: 12px; padding-left: 10px; }
   .ag-tree-node.expanded .ag-tree-node-details { padding: 14px 14px 16px 28px; }
 }
 
