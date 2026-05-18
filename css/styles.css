@@ -2226,6 +2226,29 @@ body[data-theme="dark"] .hero-topbar { background:rgba(15,42,51,.92); }
 .hmeta-chip i { width:14px; height:14px; }
 .hmeta-chip span:first-child:not([id]) { font-size:14px; }
 
+/* CTA Gather Town integrado en el banner de bienvenida */
+.hmeta-gather {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:8px 16px;
+  border-radius:10px;
+  background:linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+  border:1px solid rgba(255,255,255,.2);
+  color:#fff;
+  font-size:13px; font-weight:700;
+  text-decoration:none;
+  letter-spacing:.3px;
+  box-shadow:0 4px 14px rgba(244,63,94,.35);
+  transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
+}
+.hmeta-gather:hover {
+  transform:translateY(-2px);
+  box-shadow:0 6px 20px rgba(244,63,94,.5);
+  background:linear-gradient(135deg, #fb5570 0%, #f43f5e 100%);
+}
+.hmeta-gather i { width:15px; height:15px; }
+.hmeta-gather-arrow { transition:transform .2s ease; }
+.hmeta-gather:hover .hmeta-gather-arrow { transform:translateX(3px); }
+
 /* Hero cover center layout (avatar + text side by side) */
 .hero-cover-center {
   display:flex;
@@ -4664,4 +4687,47 @@ body[data-theme="dark"] * {
   .hub-cards { grid-template-columns: 1fr; }
   .hc-guides { grid-column: auto; }
   .hc-stripe { width: 140px; height: 70px; right: -40px; }
+}
+
+/* ══════════════════════════════════════════════════════════
+   FAB — Botón flotante de Soporte IT
+   Siempre visible en la esquina inferior derecha.
+   ══════════════════════════════════════════════════════════ */
+.fab-support {
+  position:fixed;
+  bottom:24px; right:24px;
+  z-index:900;
+  display:inline-flex; align-items:center; gap:10px;
+  height:56px;
+  padding:0 18px 0 16px;
+  border-radius:28px;
+  background:linear-gradient(135deg, #06a3b6 0%, #066b78 100%);
+  color:#fff;
+  text-decoration:none;
+  font-weight:700; font-size:14px;
+  letter-spacing:.3px;
+  box-shadow:0 8px 24px rgba(6,163,182,.4), 0 2px 6px rgba(0,0,0,.15);
+  transition:transform .2s ease, box-shadow .2s ease, padding .2s ease;
+}
+.fab-support:hover {
+  transform:translateY(-3px) scale(1.03);
+  box-shadow:0 12px 30px rgba(6,163,182,.55), 0 4px 8px rgba(0,0,0,.2);
+}
+.fab-support i {
+  width:22px; height:22px;
+  flex-shrink:0;
+}
+.fab-support-label {
+  white-space:nowrap;
+}
+
+/* En móvil: colapsar a botón circular, mostrar solo el ícono */
+@media (max-width: 640px) {
+  .fab-support {
+    padding:0;
+    width:56px;
+    justify-content:center;
+    bottom:16px; right:16px;
+  }
+  .fab-support-label { display:none; }
 }
