@@ -24,16 +24,6 @@ export const ROLES = {
     pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "admin"],
     isAdmin: true
   },
-  directivo: {
-    label: "Directivo",
-    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding"],
-    isAdmin: false
-  },
-  rrhh: {
-    label: "Recursos Humanos",
-    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding"],
-    isAdmin: false
-  },
   interno: {
     label: "Equipo interno",
     pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding"],
@@ -41,10 +31,18 @@ export const ROLES = {
   },
   agente: {
     label: "Agente",
-    // Los agentes SÍ ven portales (solo su sección personal) pero NO políticas
-    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "onboarding"],
+    // El agente solo ve inicio, equipo y portales (allí solo su sección personal — gestionado en portales.js)
+    pages: ["index", "equipo", "portales"],
     isAdmin: false
   }
+};
+
+// Alias para roles antiguos que ya no existen en el catálogo.
+// Si Firestore aún tiene usuarios como "directivo" o "rrhh", se tratan como "interno"
+// (sus permisos eran idénticos antes de la simplificación).
+const LEGACY_ROLE_ALIASES = {
+  directivo: "interno",
+  rrhh: "interno"
 };
 
 // Rol por defecto si algo falla — el más restrictivo
@@ -109,6 +107,11 @@ export async function loadUserRole(email) {
     }
 
     if (!roleName) return null;
+
+    // Migración de roles antiguos (directivo, rrhh → interno)
+    if (LEGACY_ROLE_ALIASES[roleName]) {
+      roleName = LEGACY_ROLE_ALIASES[roleName];
+    }
 
     // Verificar que el rol existe en nuestro catálogo
     const definition = ROLES[roleName];

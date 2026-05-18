@@ -133,8 +133,6 @@ function renderStats() {
 
   document.getElementById("ra-total").textContent = total;
   document.getElementById("ra-admin-count").textContent = counts.admin || 0;
-  document.getElementById("ra-directivo-count").textContent = counts.directivo || 0;
-  document.getElementById("ra-rrhh-count").textContent = counts.rrhh || 0;
   document.getElementById("ra-interno-count").textContent = counts.interno || 0;
   document.getElementById("ra-agente-count").textContent = counts.agente || 0;
 }
