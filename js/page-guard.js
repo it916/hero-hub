@@ -20,6 +20,7 @@
 import { auth } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { loadUserRole, canAccessPage, filterTopbarByRole, getCurrentPage, isAdmin as isAdminRole } from "./roles.js";
+import { logEvent, ACTIONS } from "./audit-log.js";
 
 // Exponemos el contexto en window para que otros scripts lo puedan usar
 window.HeroHubContext = {
@@ -50,7 +51,11 @@ onAuthStateChanged(auth, async (user) => {
   // 3. Cargar el rol del usuario
   const userRole = await loadUserRole(user.email);
   if (!userRole) {
-    // Sin rol asignado → redirigir a index donde auth.js mostrará el mensaje
+    // Sin rol asignado → redirigir a index donde auth.js mostrará el mensaje.
+    // Await el log para garantizar persistencia antes del redirect.
+    await logEvent(ACTIONS.AUTH_DENIED_NO_ROLE, user.email, {
+      page: getCurrentPage()
+    });
     location.href = "index.html";
     return;
   }
@@ -58,7 +63,12 @@ onAuthStateChanged(auth, async (user) => {
   // 4. Verificar que el usuario pueda ver esta página
   const currentPage = getCurrentPage();
   if (!canAccessPage(currentPage, userRole)) {
-    // Acceso denegado → redirigir silenciosamente al inicio
+    // Acceso denegado → redirigir silenciosamente al inicio.
+    // Await el log para garantizar persistencia antes del redirect.
+    await logEvent(ACTIONS.AUTH_DENIED_PAGE, user.email, {
+      page: currentPage,
+      role: userRole.role
+    });
     location.href = "index.html";
     return;
   }

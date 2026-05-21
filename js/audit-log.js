@@ -34,8 +34,7 @@ export const ACTIONS = {
   ROLE_UPDATE: "role.update",
   ROLE_DELETE: "role.delete",
 
-  // Autenticación
-  AUTH_LOGIN: "auth.login",
+  // Accesos denegados (se loguean desde page-guard.js)
   AUTH_DENIED_NO_ROLE: "auth.denied.no_role",
   AUTH_DENIED_PAGE: "auth.denied.page",
 
@@ -68,7 +67,6 @@ export const ACTION_LABELS = {
   "role.create": { label: "Usuario agregado", icon: "user-plus", color: "#22a06b" },
   "role.update": { label: "Rol cambiado", icon: "shuffle", color: "#06a3b6" },
   "role.delete": { label: "Usuario eliminado", icon: "user-x", color: "#c0392b" },
-  "auth.login": { label: "Inicio de sesión", icon: "log-in", color: "#5a6b7a" },
   "auth.denied.no_role": { label: "Acceso denegado (sin rol)", icon: "shield-off", color: "#e8a317" },
   "auth.denied.page": { label: "Acceso denegado (página)", icon: "shield-off", color: "#e8a317" },
   "carrier.team.add": { label: "Portal del equipo agregado", icon: "shield-plus", color: "#22a06b" },

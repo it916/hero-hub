@@ -18,14 +18,9 @@ import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
 import { doc, getDoc, updateDoc, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { isAdmin as isAdminRole } from "./roles.js";
-import { logEvent } from "./audit-log.js";
+import { logEvent, ACTIONS } from "./audit-log.js";
 
 const ALLOWED_DOMAIN = "heroinsuranceusa.com";
-
-// Action types nuevos para Fase 2a
-const ACT_AGENCY_ADD = "agency.add";
-const ACT_AGENCY_EDIT = "agency.edit";
-const ACT_AGENCY_DELETE = "agency.delete";
 
 // Tipos de planes (lista cerrada)
 const PLAN_TYPES = ["MEDICARE", "ACA", "SUPLEMENTARIOS", "VIDA"];
@@ -1273,7 +1268,7 @@ async function createAgency(input) {
     if (parent) parentName = parent.name;
   }
 
-  await logEvent(ACT_AGENCY_ADD, newAg.name, {
+  await logEvent(ACTIONS.AGENCY_ADD, newAg.name, {
     group: input.group,
     kind: newAg.kind,
     parent: parentName,
@@ -1325,7 +1320,7 @@ async function updateAgency(agencyId, originalGroup, input) {
     changes.push(`grupo: ${originalGroup} → ${newGroup} (hijos en ${originalGroup} ahora son raíces)`);
   }
 
-  await logEvent(ACT_AGENCY_EDIT, updated.name, {
+  await logEvent(ACTIONS.AGENCY_EDIT, updated.name, {
     group: newGroup,
     changes: changes.join("; ") || "(sin cambios detectados)"
   });
@@ -1364,7 +1359,7 @@ async function deleteAgency(agencyId, group) {
       updatedBy: auth.currentUser.email
     });
 
-    await logEvent(ACT_AGENCY_DELETE, agency.name, {
+    await logEvent(ACTIONS.AGENCY_DELETE, agency.name, {
       group,
       kind: agency.kind,
       aicCount: (agency.aic || []).length,
