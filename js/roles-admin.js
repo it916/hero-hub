@@ -270,12 +270,25 @@ async function onChangeRole(e) {
 
   if (oldRole === newRole) return;
 
-  // Advertencia si cambia su propio rol a algo que no sea admin
+  const oldLabel = ROLES[oldRole]?.label || oldRole;
+  const newLabel = ROLES[newRole]?.label || newRole;
+
+  // Caso especial: el admin se está degradando a sí mismo → advertencia fuerte
   if (email === currentAdminEmail && newRole !== "admin") {
     const confirmed = confirm(
-      `⚠️ Estás cambiando tu propio rol de "admin" a "${newRole}".\n\n` +
+      `⚠️ Estás cambiando tu propio rol de "${oldLabel}" a "${newLabel}".\n\n` +
       `Si guardas este cambio, perderás acceso al panel de admin al recargar la página.\n\n` +
       `¿Continuar?`
+    );
+    if (!confirmed) {
+      select.value = oldRole;
+      return;
+    }
+  } else {
+    // Cualquier otro cambio: confirmación simple antes de escribir en Firestore
+    const displayName = findTeamMember(email)?.name || email.split("@")[0];
+    const confirmed = confirm(
+      `¿Cambiar a ${displayName} de "${oldLabel}" a "${newLabel}"?`
     );
     if (!confirmed) {
       select.value = oldRole;

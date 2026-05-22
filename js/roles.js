@@ -31,9 +31,9 @@ export const ROLES = {
   },
   agente: {
     label: "Agente",
-    // Acceso a todas las páginas excepto /admin (gestión de roles, métricas, audit log).
+    // Acceso restringido: solo Inicio, Equipo y Portales.
     // En portales.js sigue habiendo lógica que muestra al agente solo su sección personal.
-    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding"],
+    pages: ["index", "equipo", "portales"],
     isAdmin: false
   }
 };
