@@ -85,26 +85,28 @@ function renderArsenal() {
     { key:'work', label:'Herramientas de Trabajo', cls:'work' },
     { key:'crm', label:'CRM', cls:'crm' },
   ];
-  container.innerHTML = groups.map(g => {
-    const items = arsenal[g.key] || [];
-    return `<div class="tools-group">
-      <div class="tools-group-label ${g.cls}">${g.label}</div>
-      <div class="tools-grid">
-        ${items.map((t,i) => `
-          <div class="tool-item-wrap">
-            <a href="${t.url}" target="_blank" rel="noopener" class="tool-item">
-              <span class="open-mark">↗</span>
-              <div class="icon-tile"><img src="${t.icon}" alt="${t.label}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1006/1006771.png'"></div>
-              <span class="tool-name">${t.label}</span>
-            </a>
-            <button class="tool-delete-btn" data-group="${g.key}" data-idx="${i}" title="Eliminar">×</button>
-          </div>`).join("")}
-        <button class="tool-add-card" data-group="${g.key}">
-          <i data-lucide="plus"></i><span>Agregar</span>
-        </button>
-      </div>
-    </div>`;
-  }).join("");
+  container.innerHTML = `<div class="arsenal-grid-2x2">
+    ${groups.map(g => {
+      const items = arsenal[g.key] || [];
+      return `<div class="arsenal-square-card arsenal-${g.cls}">
+        <div class="asc-header"><span class="asc-dot"></span>${g.label}</div>
+        <div class="tools-grid">
+          ${items.map((t,i) => `
+            <div class="tool-item-wrap">
+              <a href="${t.url}" target="_blank" rel="noopener" class="tool-item">
+                <span class="open-mark">↗</span>
+                <div class="icon-tile"><img src="${t.icon}" alt="${t.label}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1006/1006771.png'"></div>
+                <span class="tool-name">${t.label}</span>
+              </a>
+              <button class="tool-delete-btn" data-group="${g.key}" data-idx="${i}" title="Eliminar">×</button>
+            </div>`).join("")}
+          <button class="tool-add-card" data-group="${g.key}">
+            <i data-lucide="plus"></i><span>Agregar</span>
+          </button>
+        </div>
+      </div>`;
+    }).join("")}
+  </div>`;
 
   container.querySelectorAll('.tool-add-card').forEach(b => b.addEventListener('click', () => openAddToolModal(b.dataset.group)));
   container.querySelectorAll('.tool-delete-btn').forEach(b => b.addEventListener('click', async (e) => {
@@ -191,6 +193,33 @@ function daysUntil(bd) {
   return Math.ceil((target - today) / (1000*60*60*24));
 }
 
+// Estado del confeti (se limpia al re-renderizar)
+let bdayConfettiAdded = false;
+
+function bdaySpawnConfetti() {
+  const card = document.getElementById('bdayCard');
+  if (!card || bdayConfettiAdded) return;
+  const COLORS = ['#06a3b6','#3dbccc','#ffc83d','#ff7a59','#ff5d8f','#4fd1b8'];
+  for (let i = 0; i < 24; i++) {
+    const c = document.createElement('div');
+    c.className = 'bdc-confetti';
+    c.style.left = (Math.random() * 100) + '%';
+    c.style.background = COLORS[i % COLORS.length];
+    c.style.animationDuration = (3 + Math.random() * 3) + 's';
+    c.style.animationDelay = (Math.random() * 4) + 's';
+    if (i % 2 === 0) c.style.borderRadius = '50%';
+    card.appendChild(c);
+  }
+  bdayConfettiAdded = true;
+}
+
+function bdayClearConfetti() {
+  const card = document.getElementById('bdayCard');
+  if (!card) return;
+  card.querySelectorAll('.bdc-confetti').forEach(c => c.remove());
+  bdayConfettiAdded = false;
+}
+
 function renderBirthday() {
   const MONTHS = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
 
@@ -210,7 +239,6 @@ function renderBirthday() {
     if (el('bdayRole')) el('bdayRole').textContent = 'Sin cumpleaños registrados';
     if (el('bdayBadge')) el('bdayBadge').textContent = '🎈 Próximo cumpleaños';
     if (el('bdayDate')) el('bdayDate').textContent = '—';
-    if (el('bdayCountdown')) el('bdayCountdown').innerHTML = '—';
     return;
   }
 
@@ -224,15 +252,34 @@ function renderBirthday() {
     el('bdayAvatar').src = p.photo;
     el('bdayAvatar').onerror = function(){ this.src=`https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=06a3b6&color=fff&size=200`; };
   }
-  if (el('bdayBadge')) el('bdayBadge').textContent = isToday ? '🎂 Cumpleaños hoy' : '🎈 Próximo cumpleaños';
+  // Eyebrow dinámico según estado
+  if (el('bdayBadge')) {
+    el('bdayBadge').textContent =
+      isToday    ? 'Hoy celebramos a' :
+      isTomorrow ? 'Mañana celebramos a' :
+                   'Próximamente celebramos a';
+  }
   if (el('bdayName')) el('bdayName').textContent = p.name;
   if (el('bdayRole')) el('bdayRole').textContent = p.role || '';
-  if (el('bdayDate')) el('bdayDate').textContent = `🗓️ ${p.date.d} ${MONTHS[p.date.m-1]}`;
-  if (el('bdayCountdown')) {
-    if (isToday) el('bdayCountdown').innerHTML = '¡HOY!';
-    else if (isTomorrow) el('bdayCountdown').innerHTML = 'MAÑANA';
-    else el('bdayCountdown').innerHTML = `EN ${d} DÍAS`;
+  if (el('bdayDate')) {
+    // Formato legible: "23 de noviembre"
+    const MESES_FULL = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    el('bdayDate').textContent = `${p.date.d} de ${MESES_FULL[p.date.m-1]}`;
   }
+  // Caja única de días restantes (singular/plural; mensaje especial si es hoy)
+  if (el('cdDays') && el('cdDaysLabel')) {
+    if (isToday) {
+      el('cdDays').textContent = '🎂';
+      el('cdDaysLabel').textContent = '¡Hoy!';
+    } else {
+      el('cdDays').textContent = d;
+      el('cdDaysLabel').textContent = d === 1 ? 'Día' : 'Días';
+    }
+  }
+
+  // Confeti: solo el día del cumple
+  if (isToday) bdaySpawnConfetti();
+  else bdayClearConfetti();
 }
 
 // ═══ MENSAJE DEL DÍA ═══
