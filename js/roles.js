@@ -31,8 +31,9 @@ export const ROLES = {
   },
   agente: {
     label: "Agente",
-    // El agente solo ve inicio, equipo y portales (allí solo su sección personal — gestionado en portales.js)
-    pages: ["index", "equipo", "portales"],
+    // Acceso a todas las páginas excepto /admin (gestión de roles, métricas, audit log).
+    // En portales.js sigue habiendo lógica que muestra al agente solo su sección personal.
+    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding"],
     isAdmin: false
   }
 };
