@@ -98,15 +98,20 @@ export async function loadUserRole(email) {
     const users = data.users || {};
 
     // Buscar el email (los keys en Firestore son case-sensitive)
-    let roleName = users[normalizedEmail] || users[email];
-    if (!roleName) {
+    let roleEntry = users[normalizedEmail] || users[email];
+    if (!roleEntry) {
       // Intentar match case-insensitive como último recurso
       const foundKey = Object.keys(users).find(
         k => k.toLowerCase() === normalizedEmail
       );
-      if (foundKey) roleName = users[foundKey];
+      if (foundKey) roleEntry = users[foundKey];
     }
 
+    if (!roleEntry) return null;
+
+    // Normalizar: el panel admin guarda objetos {role, updatedAt, updatedBy};
+    // el formato legacy guarda strings directos.
+    let roleName = typeof roleEntry === "string" ? roleEntry : roleEntry.role;
     if (!roleName) return null;
 
     // Migración de roles antiguos (directivo, rrhh → interno)
