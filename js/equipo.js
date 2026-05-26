@@ -189,7 +189,13 @@ function renderGrid() {
   document.getElementById("team-count-num").textContent = filtered.length;
 
   if (!filtered.length) {
-    grid.innerHTML = `<p class="empty">${filter ? 'Sin resultados para "' + filter + '"' : 'Aún no hay miembros.'}</p>`;
+    grid.innerHTML = `
+      <div class="team-empty">
+        <div class="team-empty-icon"><i data-lucide="${filter ? 'search-x' : 'users'}"></i></div>
+        <div class="team-empty-title">${filter ? 'Sin resultados' : 'Aún no hay miembros'}</div>
+        <div class="team-empty-desc">${filter ? `No encontramos héroes con <strong>"${filter}"</strong>.` : 'Cuando un admin agregue al equipo, aparecerán aquí.'}</div>
+      </div>`;
+    if (window.refreshIcons) window.refreshIcons();
     return;
   }
   grid.innerHTML = '';
@@ -258,7 +264,6 @@ function openProfile(idx) {
   const merged = {
     identidad: bio.identidad || generic.identidad,
     origen: bio.origen || generic.origen,
-    formacion: bio.formacion || generic.formacion,
     superpoder: bio.superpoder || generic.superpoder,
     frase: bio.frase || generic.frase,
     union: bio.union || generic.union,
@@ -268,14 +273,16 @@ function openProfile(idx) {
 
   document.getElementById("hp-avatar").src = p.photo || '';
   document.getElementById("hp-avatar").onerror = function(){ this.src=`https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=06a3b6&color=fff&size=300`; };
-  document.getElementById("hp-flag").textContent = getFlagEmoji(p.country);
+  const flagUrl = getFlag(p.country);
+  document.getElementById("hp-flag").innerHTML = flagUrl
+    ? `<img src="${flagUrl}" alt="${p.country || ''}">`
+    : '';
   document.getElementById("hp-name").textContent = p.name || '—';
   document.getElementById("hp-role").textContent = p.role || '—';
 
   // Rellenar campos
   overlay.querySelector('[data-field="identidad"]').textContent = merged.identidad;
   overlay.querySelector('[data-field="origen"]').textContent = merged.origen;
-  overlay.querySelector('[data-field="formacion"]').textContent = merged.formacion;
   overlay.querySelector('[data-field="superpoder"]').textContent = merged.superpoder;
   overlay.querySelector('[data-field="union"]').textContent = merged.union;
   overlay.querySelector('[data-field="frase"]').textContent = merged.frase;
@@ -326,9 +333,6 @@ function openBioEditModal(idx) {
     <label>📍 Origen (dónde nació)
       <input id="bio-origen" value="${(bio.origen || '').replace(/"/g,'&quot;')}" placeholder="${generic.origen}">
     </label>
-    <label>🎓 Formación
-      <input id="bio-formacion" value="${(bio.formacion || '').replace(/"/g,'&quot;')}" placeholder="${generic.formacion}">
-    </label>
     <label>⚡ Superpoder
       <textarea id="bio-superpoder" rows="2" placeholder="${generic.superpoder}">${bio.superpoder || ''}</textarea>
     </label>
@@ -361,7 +365,6 @@ function openBioEditModal(idx) {
     const nuevo = {
       identidad: modal.querySelector("#bio-identidad").value.trim(),
       origen: modal.querySelector("#bio-origen").value.trim(),
-      formacion: modal.querySelector("#bio-formacion").value.trim(),
       superpoder: modal.querySelector("#bio-superpoder").value.trim(),
       union: modal.querySelector("#bio-union").value.trim(),
       frase: modal.querySelector("#bio-frase").value.trim(),
