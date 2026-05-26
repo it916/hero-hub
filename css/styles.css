@@ -5315,6 +5315,10 @@ body.mission-activating .ob-w-spark {
   background: linear-gradient(90deg, #0e7490 0%, #155e75 100%);
   box-shadow: 0 4px 14px rgba(14,116,144,.30);
 }
+.hc-trainings .hc-stripe {
+  background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 4px 14px rgba(16,185,129,.30);
+}
 
 .hub-card:hover .hc-stripe {
   transform: rotate(-12deg) translateY(-4px) scale(1.05);
@@ -5367,6 +5371,7 @@ body.mission-activating .ob-w-spark {
 .hc-directory .hc-icon i { color: #d97706; }
 .hc-guides .hc-icon i { color: #7c3aed; }
 .hc-portales .hc-icon i { color: #0e7490; }
+.hc-trainings .hc-icon i { color: #059669; }
 
 /* Burst (estrellita esquina del ícono) */
 .hc-burst {
@@ -5410,6 +5415,7 @@ body.mission-activating .ob-w-spark {
 .hc-directory .hc-label { color: #d97706; }
 .hc-guides .hc-label { color: #7c3aed; }
 .hc-portales .hc-label { color: #0e7490; }
+.hc-trainings .hc-label { color: #059669; }
 
 .hc-title {
   font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif;
@@ -5564,6 +5570,7 @@ body.mission-activating .ob-w-spark {
 .hc-directory:hover .hc-cta { background: #d97706; border-color: #d97706; }
 .hc-guides:hover .hc-cta { background: #7c3aed; border-color: #7c3aed; }
 .hc-portales:hover .hc-cta { background: #0e7490; border-color: #0e7490; }
+.hc-trainings:hover .hc-cta { background: #059669; border-color: #059669; }
 
 /* ── Dark mode ── */
 [data-theme="dark"] .hub-card {
@@ -5599,34 +5606,35 @@ body.mission-activating .ob-w-spark {
    ═══════════════════════════════════════════
    El agente solo ve un subconjunto del dashboard:
    - Banner superior (sin botón Gather)
-   - Tarjetas: Equipo + Portales
-   - Mission: solo "Calendario de Entrenamientos"
+   - Tarjetas hub: Equipo + Portales + Entrenamientos (3 cards)
    - Arsenal del Héroe (accesos directos)
-   Todo lo demás se oculta. */
+   Todo lo demás se oculta (incluida la sección "Acceso rápido a misiones"). */
 
-/* Tarjeta Portales: oculta por defecto, visible solo para agente */
-.hc-portales { display: none; }
-body.role-agente .hc-portales { display: block; }
+/* Tarjetas exclusivas del agente: ocultas por defecto, visibles solo para "agente" */
+.hc-portales,
+.hc-trainings { display: none; }
+body.role-agente .hc-portales,
+body.role-agente .hc-trainings { display: block; }
 
 /* Ocultos para el agente */
 body.role-agente .hero-cover-actions,
 body.role-agente .hub-card.hc-directory,
 body.role-agente .hub-card.hc-guides,
-body.role-agente .mission-card.m-db,
-body.role-agente .mission-card.m-alta,
+body.role-agente #sec-misiones,
 body.role-agente #sec-celebraciones,
 body.role-agente #sec-mensajes,
+body.role-agente .connector:has(+ #sec-misiones),
 body.role-agente .connector:has(+ #sec-celebraciones),
 body.role-agente .connector:has(+ #sec-mensajes) {
   display: none !important;
 }
 
-/* Hub-cards del agente: 2 columnas centradas para que Equipo + Portales
-   se vean balanceados (en lugar de 3 cols con 1 hueco vacío) */
+/* Hub-cards del agente: 3 columnas (Equipo + Portales + Entrenamientos) */
 body.role-agente .hub-cards {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  max-width: 880px;
-  margin: 0 auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (max-width: 980px) {
+  body.role-agente .hub-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 640px) {
   body.role-agente .hub-cards { grid-template-columns: 1fr; }
