@@ -5,7 +5,7 @@ import { doc, getDoc, setDoc, updateDoc }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { renderWidgets } from "./widgets.js";
 import { openBirthdayCardModal, checkBirthdayPopup } from "./birthday-card.js";
-import { loadUserRole, filterTopbarByRole, isAdmin as isAdminRole, clearRoleCache } from "./roles.js";
+import { loadUserRole, filterTopbarByRole, isAdmin as isAdminRole, clearRoleCache, canAccessPage } from "./roles.js";
 
 const ALLOWED_DOMAIN = "heroinsuranceusa.com";
 
@@ -56,6 +56,23 @@ async function showDashboard() {
   // Filtrar el topbar según el rol del usuario
   // (oculta links a páginas no permitidas y maneja el botón admin)
   filterTopbarByRole(currentUserRole);
+
+  // Marcar el body con el rol para que el CSS pueda mostrar/ocultar widgets
+  // (ej. tarjeta de Portales solo para "agente", celebraciones ocultas para "agente", etc.)
+  document.body.classList.add(`role-${currentUserRole.role}`);
+
+  // Ocultar el banner de Onboarding si el rol no tiene acceso a esa página
+  // (evita que el usuario haga clic y termine redirigido por page-guard.js).
+  if (!canAccessPage("onboarding", currentUserRole)) {
+    const obBanner = document.getElementById("ob-welcome");
+    if (obBanner) {
+      obBanner.style.display = "none";
+      const prevConnector = obBanner.previousElementSibling;
+      if (prevConnector && prevConnector.classList.contains("connector")) {
+        prevConnector.style.display = "none";
+      }
+    }
+  }
 
   // Cargar datos del usuario desde Firestore
   let userData = {};

@@ -14,6 +14,11 @@
 <link rel="stylesheet" href="css/styles.css">
 <script defer src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <script defer src="https://unpkg.com/lucide@0.474.0"></script>
+<!-- GSAP para la animación de "Activar Misión" -->
+<script defer src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<!-- Efecto eléctrico (Canvas procedural) para el clic de "Activar Misión" -->
+<script defer src="js/electricity.js"></script>
+<script defer src="js/topbar-dropdown.js"></script>
 </head>
 <body>
 
@@ -56,11 +61,30 @@
       <nav class="topbar-nav" id="topbar-nav">
         <a href="index.html" class="nav-link active"><i data-lucide="home"></i><span>Inicio</span></a>
         <a href="equipo.html" class="nav-link"><i data-lucide="users"></i><span>Equipo</span></a>
-        <a href="agencias.html" class="nav-link"><i data-lucide="network"></i><span>Agencias</span></a>
-        <a href="portales.html" class="nav-link"><i data-lucide="shield"></i><span>Portales</span></a>
-        <a href="directorio.html" class="nav-link"><i data-lucide="book-user"></i><span>Directorio</span></a>
-        <a href="guias.html" class="nav-link"><i data-lucide="book-open"></i><span>Guías</span></a>
-        <a href="politicas.html" class="nav-link"><i data-lucide="scroll-text"></i><span>Políticas</span></a>
+
+        <div class="nav-group">
+          <button class="nav-group-toggle" type="button" aria-expanded="false" aria-haspopup="true">
+            <i data-lucide="briefcase"></i><span>Operaciones</span>
+            <i data-lucide="chevron-down" class="nav-group-arrow"></i>
+          </button>
+          <div class="nav-dropdown" role="menu">
+            <a href="portales.html" class="nav-link" role="menuitem"><i data-lucide="shield"></i><span>Portales</span></a>
+            <a href="agencias.html" class="nav-link" role="menuitem"><i data-lucide="network"></i><span>Agencias</span></a>
+            <a href="directorio.html" class="nav-link" role="menuitem"><i data-lucide="book-user"></i><span>Directorio</span></a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-group-toggle" type="button" aria-expanded="false" aria-haspopup="true">
+            <i data-lucide="library"></i><span>Recursos</span>
+            <i data-lucide="chevron-down" class="nav-group-arrow"></i>
+          </button>
+          <div class="nav-dropdown" role="menu">
+            <a href="guias.html" class="nav-link" role="menuitem"><i data-lucide="book-open"></i><span>Guías</span></a>
+            <a href="politicas.html" class="nav-link" role="menuitem"><i data-lucide="scroll-text"></i><span>Políticas</span></a>
+            <a href="onboarding.html" class="nav-link" role="menuitem"><i data-lucide="rocket"></i><span>Onboarding</span></a>
+          </div>
+        </div>
       </nav>
 
       <div class="topbar-actions">
@@ -126,7 +150,8 @@
           <!-- Panel de acciones: Entrada / Salida + Oficina Virtual -->
           <div class="hero-cover-actions">
             <div class="hero-action-title">Acceso:</div>
-            <div class="hero-action-row">
+            <!-- Entrada / Salida — oculto temporalmente. Activar más adelante quitando style="display:none" -->
+            <div class="hero-action-row" style="display:none">
               <button class="hero-action-btn entry" id="btnEntrada" type="button">
                 <i data-lucide="log-in"></i>
                 <span>Entrada</span>
@@ -186,13 +211,13 @@
           <span class="ob-w-kicker-dot"></span>
           NUEVA MISIÓN DISPONIBLE
         </div>
-        <div class="ob-w-title">¡Bienvenido al equipo, héroe!</div>
-        <div class="ob-w-sub">Tu manual te espera. Activa tus superpoderes y comienza tu misión.</div>
+        <div class="ob-w-title">¿Listo para tu primera misión?</div>
+        <div class="ob-w-sub">Tu manual te espera. Activa tus superpoderes.</div>
       </div>
 
       <!-- CTA dorado -->
       <div class="ob-w-cta">
-        <span>Activar mi misión</span>
+        <span>Activar Misión</span>
         <i data-lucide="arrow-right"></i>
       </div>
     </a>
@@ -222,6 +247,29 @@
             </div>
             <div class="hc-cta">
               <span>Entrar al equipo</span>
+              <i data-lucide="arrow-right"></i>
+            </div>
+          </div>
+        </a>
+
+        <!-- CARD: PORTALES (oculta por defecto, visible solo para rol "agente") -->
+        <a href="portales.html" class="hub-card hc-portales">
+          <div class="hc-halftone"></div>
+          <div class="hc-stripe"></div>
+          <div class="hc-content">
+            <div class="hc-icon-wrap">
+              <div class="hc-icon"><i data-lucide="key-round"></i></div>
+              <div class="hc-burst">⚡</div>
+            </div>
+            <div class="hc-label">PORTALES</div>
+            <div class="hc-title">Tus accesos</div>
+            <div class="hc-desc">Credenciales y portales de carriers en un solo lugar — listos para que arranques tu día.</div>
+            <div class="hc-feature">
+              <i data-lucide="shield-check"></i>
+              <span>Acceso rápido y seguro</span>
+            </div>
+            <div class="hc-cta">
+              <span>Abrir portales</span>
               <i data-lucide="arrow-right"></i>
             </div>
           </div>
@@ -341,7 +389,7 @@
     <div class="connector"></div>
 
     <!-- ══ CELEBRACIONES DEL EQUIPO — Héroe del Mes + Próximo Cumple ══ -->
-    <section class="section fade-in">
+    <section class="section fade-in" id="sec-celebraciones">
       <div class="section-label"><span class="kicker-dot"></span>Celebraciones del equipo</div>
       <div class="celebrations-grid">
 
@@ -410,7 +458,7 @@
     <div class="connector"></div>
 
     <!-- ══ MENSAJE DEL DÍA — PLAYLIST ══ -->
-    <section class="section fade-in">
+    <section class="section fade-in" id="sec-mensajes">
       <div class="section-label"><span class="kicker-dot"></span>Mensajes del Equipo</div>
       <div class="card-shell msg-shell">
         <div class="msg-display">
@@ -500,6 +548,15 @@
   </footer>
 </div>
 
+<!-- Overlay del flash de "Activar Misión" — pantalla completa, animado vía JS -->
+<div id="mission-flash" class="mission-flash" aria-hidden="true">
+  <div class="mission-flash-burst"></div>
+  <div class="mission-flash-layer"></div>
+</div>
+
+<!-- Héroe que vuela durante la activación (precargado, oculto hasta el clic) -->
+<img id="heroFlight" class="hero-flight" src="images/heroe.png" alt="" aria-hidden="true">
+
 <script>
   window.refreshIcons = () => { if (window.lucide) lucide.createIcons(); };
   document.addEventListener("DOMContentLoaded", () => {
@@ -508,6 +565,270 @@
     const nav = document.getElementById("topbar-nav");
     if (menuBtn && nav) {
       menuBtn.addEventListener("click", () => nav.classList.toggle("open"));
+    }
+
+    // ── Activar Misión: animación cinemática (GSAP + confetti + Web Audio) + redirect ──
+    // Sonido sintetizado en vivo: power-up sweep + impacto + ring de resonancia
+    function playMissionSound() {
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        const ctx = new AC();
+        const now = ctx.currentTime;
+        const master = ctx.createGain();
+        master.gain.value = 0.7;
+        master.connect(ctx.destination);
+
+        // ── Power-up sweep (sawtooth filtrado: charge-up heroico) ──
+        const sweep = ctx.createOscillator();
+        sweep.type = "sawtooth";
+        sweep.frequency.setValueAtTime(110, now);
+        sweep.frequency.exponentialRampToValueAtTime(1900, now + 0.7);
+
+        const sweepFilter = ctx.createBiquadFilter();
+        sweepFilter.type = "lowpass";
+        sweepFilter.frequency.setValueAtTime(350, now);
+        sweepFilter.frequency.exponentialRampToValueAtTime(9000, now + 0.7);
+        sweepFilter.Q.value = 6;
+
+        const sweepGain = ctx.createGain();
+        sweepGain.gain.setValueAtTime(0, now);
+        sweepGain.gain.linearRampToValueAtTime(0.22, now + 0.08);
+        sweepGain.gain.linearRampToValueAtTime(0.28, now + 0.55);
+        sweepGain.gain.linearRampToValueAtTime(0.001, now + 0.8);
+
+        sweep.connect(sweepFilter); sweepFilter.connect(sweepGain); sweepGain.connect(master);
+        sweep.start(now); sweep.stop(now + 0.85);
+
+        // ── Impacto al momento del burst (boom + noise burst) en t=0.6 ──
+        const impact = now + 0.6;
+
+        const boom = ctx.createOscillator();
+        boom.type = "sine";
+        boom.frequency.setValueAtTime(120, impact);
+        boom.frequency.exponentialRampToValueAtTime(32, impact + 0.4);
+        const boomGain = ctx.createGain();
+        boomGain.gain.setValueAtTime(0, impact);
+        boomGain.gain.linearRampToValueAtTime(0.55, impact + 0.015);
+        boomGain.gain.exponentialRampToValueAtTime(0.001, impact + 0.55);
+        boom.connect(boomGain); boomGain.connect(master);
+        boom.start(impact); boom.stop(impact + 0.6);
+
+        // Ráfaga de ruido blanco para el "impacto"
+        const noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 0.35, ctx.sampleRate);
+        const noiseData = noiseBuf.getChannelData(0);
+        for (let i = 0; i < noiseData.length; i++) {
+          noiseData[i] = (Math.random() * 2 - 1) * (1 - i / noiseData.length);
+        }
+        const noise = ctx.createBufferSource(); noise.buffer = noiseBuf;
+        const noiseFilter = ctx.createBiquadFilter();
+        noiseFilter.type = "bandpass"; noiseFilter.frequency.value = 900; noiseFilter.Q.value = 1.4;
+        const noiseGain = ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.3, impact);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, impact + 0.35);
+        noise.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(master);
+        noise.start(impact);
+
+        // ── Ring de resonancia (cola brillante) ──
+        const ring = ctx.createOscillator();
+        ring.type = "sine";
+        ring.frequency.setValueAtTime(523, impact); // C5
+        const ringGain = ctx.createGain();
+        ringGain.gain.setValueAtTime(0, impact);
+        ringGain.gain.linearRampToValueAtTime(0.18, impact + 0.05);
+        ringGain.gain.exponentialRampToValueAtTime(0.001, impact + 1.0);
+        ring.connect(ringGain); ringGain.connect(master);
+        ring.start(impact); ring.stop(impact + 1.05);
+
+        // Cierre del contexto cuando ya nada suena
+        setTimeout(() => { try { ctx.close(); } catch (_) {} }, 2500);
+      } catch (e) {
+        console.warn("Sonido no disponible:", e.message);
+      }
+    }
+
+    const obWelcome = document.getElementById("ob-welcome");
+    const flashEl = document.getElementById("mission-flash");
+    if (obWelcome && flashEl) {
+      obWelcome.addEventListener("click", (e) => {
+        if (obWelcome.dataset.activating === "1") { e.preventDefault(); return; }
+        e.preventDefault();
+        obWelcome.dataset.activating = "1";
+        const destination = obWelcome.getAttribute("href") || "onboarding.html";
+
+        // Disparar sonido inmediatamente (gesto del usuario satisface la policy de autoplay)
+        playMissionSound();
+
+        // Calcular posición del CTA en fracciones del viewport (para burst + confetti)
+        const cta = obWelcome.querySelector(".ob-w-cta");
+        const seal = obWelcome.querySelector(".ob-w-seal");
+        let cx = 0.5, cy = 0.5;
+        if (cta) {
+          const r = cta.getBoundingClientRect();
+          cx = (r.left + r.width / 2) / window.innerWidth;
+          cy = (r.top + r.height / 2) / window.innerHeight;
+          flashEl.style.setProperty("--flash-x", (cx * 100) + "%");
+          flashEl.style.setProperty("--flash-y", (cy * 100) + "%");
+        }
+
+        const hasGsap = typeof gsap !== "undefined";
+
+        // Fallback puro CSS si GSAP no cargó
+        if (!hasGsap) {
+          document.body.classList.add("mission-activating");
+          setTimeout(() => { location.href = destination; }, 1500);
+          return;
+        }
+
+        const burstEl = flashEl.querySelector(".mission-flash-burst");
+        const layerEl = flashEl.querySelector(".mission-flash-layer");
+
+        // Origen en pixeles para los rayos (centro del CTA)
+        let originX = window.innerWidth / 2, originY = window.innerHeight / 2;
+        if (cta) {
+          const r = cta.getBoundingClientRect();
+          originX = r.left + r.width / 2;
+          originY = r.top + r.height / 2;
+        }
+
+        // Reset inicial
+        gsap.set(flashEl, { opacity: 1 });
+        gsap.set(burstEl, { scale: 0, opacity: 1 });
+        gsap.set(layerEl, { opacity: 0 });
+        gsap.set(obWelcome, { pointerEvents: "none", transformOrigin: "center center" });
+
+        const tl = gsap.timeline({
+          defaults: { ease: "power2.out" },
+          onComplete: () => { location.href = destination; }
+        });
+
+        // 1. CTA: press lento → overshoot pronunciado
+        if (cta) {
+          tl.to(cta, { scale: 0.9, duration: 0.12, ease: "power2.in" })
+            .to(cta, { scale: 1.14, duration: 0.32, ease: "back.out(3)" });
+        }
+
+        // 2. Onda dorada radial — más lenta y más amplia
+        tl.fromTo(burstEl,
+          { scale: 0, opacity: 1 },
+          { scale: 5.5, opacity: 0, duration: 1.4, ease: "expo.out" },
+          "-=0.2");
+
+        // 3. CORRIENTE ELÉCTRICA — sistema procedural en Canvas (rayos + chispas)
+        if (window.HeroElectricity) {
+          tl.call(() => window.HeroElectricity.play(originX, originY, 1500), null, "<");
+        }
+
+        // 3.5. HÉROE — entra al frente AGRANDADO, hover breve, luego vuela
+        const heroFlight = document.getElementById("heroFlight");
+        if (heroFlight) {
+          // Helper para chispas en el centro visual actual del héroe
+          const sparkAtHero = () => {
+            if (!window.HeroElectricity || Math.random() > 0.65) return;
+            const rect = heroFlight.getBoundingClientRect();
+            if (rect.width <= 0) return;
+            window.HeroElectricity.spark(
+              rect.left + rect.width / 2,
+              rect.top + rect.height / 2,
+              2 + Math.floor(Math.random() * 3)
+            );
+          };
+
+          // Estado inicial: oculto en el centro, escala 0, rotado
+          gsap.set(heroFlight, {
+            xPercent: -50,
+            yPercent: -50,
+            x: 0,
+            y: 0,
+            scale: 0,
+            rotation: -18,
+            opacity: 0
+          });
+
+          const heroTl = gsap.timeline({ delay: 0.18 });
+
+          // Fase 1: BURST IN — explota al frente, GRANDE (scale 1.4 con overshoot)
+          heroTl.to(heroFlight, {
+            scale: 1.4,
+            rotation: 0,
+            opacity: 1,
+            duration: 0.45,
+            ease: "back.out(2.4)",
+            onUpdate: sparkAtHero
+          });
+
+          // Fase 2: HOVER — flota brevemente con un sutil bobbing
+          heroTl.to(heroFlight, {
+            y: -14,
+            duration: 0.18,
+            ease: "sine.inOut",
+            yoyo: true,
+            repeat: 1,
+            onUpdate: sparkAtHero
+          });
+
+          // Fase 3: FLY AWAY — sale por arriba-derecha encogiendo (perspectiva)
+          heroTl.to(heroFlight, {
+            x: window.innerWidth * 0.55,
+            y: -window.innerHeight * 0.55,
+            scale: 0.12,
+            rotation: 28,
+            duration: 0.7,
+            ease: "power3.in",
+            onUpdate: sparkAtHero
+          });
+
+          // Fade final superpuesto con el tail del fly-away
+          heroTl.to(heroFlight, { opacity: 0, duration: 0.15 }, "-=0.18");
+        }
+
+        // 4. Banner: zoom prolongado + brillo intenso
+        tl.to(obWelcome, {
+          scale: 1.06,
+          filter: "brightness(1.75) saturate(1.5)",
+          duration: 1.1,
+          ease: "power2.out"
+        }, "<-0.55");
+
+        // 5. Sello: pulso heroico con rotación más marcada
+        if (seal) {
+          tl.to(seal, {
+            scale: 1.25,
+            rotation: -10,
+            duration: 0.5,
+            ease: "back.out(3)"
+          }, "<");
+        }
+
+        // 6. SHAKE FUERTE — más amplitud, más frames, ~0.85s
+        tl.to("#dashboard", {
+          keyframes: [
+            { x: -14, y:  5, duration: 0.05 },
+            { x:  16, y: -7, duration: 0.05 },
+            { x: -13, y:  6, duration: 0.05 },
+            { x:  14, y: -5, duration: 0.05 },
+            { x: -12, y:  4, duration: 0.05 },
+            { x:  13, y: -6, duration: 0.05 },
+            { x: -11, y:  5, duration: 0.05 },
+            { x:  10, y: -4, duration: 0.05 },
+            { x:  -9, y:  3, duration: 0.05 },
+            { x:   8, y: -3, duration: 0.05 },
+            { x:  -6, y:  2, duration: 0.05 },
+            { x:   5, y: -2, duration: 0.05 },
+            { x:  -3, y:  1, duration: 0.05 },
+            { x:   2, y: -1, duration: 0.05 },
+            { x:   0, y:  0, duration: 0.05 }
+          ],
+          ease: "none"
+        }, 0.15);
+
+        // 7. Flash blanco/dorado a pantalla completa (último golpe)
+        tl.to(layerEl, {
+          opacity: 1,
+          duration: 0.7,
+          ease: "power2.in"
+        }, "-=0.55");
+      });
     }
     // Sync avatars with user avatar
     const userAv = document.getElementById("user-avatar");

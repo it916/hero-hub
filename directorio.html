@@ -12,6 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
 <script src="https://unpkg.com/lucide@latest"></script>
+<script defer src="js/topbar-dropdown.js"></script>
 </head>
 <body>
 
@@ -33,11 +34,30 @@
       <nav class="topbar-nav" id="topbar-nav">
         <a href="index.html" class="nav-link"><i data-lucide="home"></i><span>Inicio</span></a>
         <a href="equipo.html" class="nav-link"><i data-lucide="users"></i><span>Equipo</span></a>
-        <a href="agencias.html" class="nav-link"><i data-lucide="network"></i><span>Agencias</span></a>
-        <a href="portales.html" class="nav-link"><i data-lucide="shield"></i><span>Portales</span></a>
-        <a href="directorio.html" class="nav-link active"><i data-lucide="book-user"></i><span>Directorio</span></a>
-        <a href="guias.html" class="nav-link"><i data-lucide="book-open"></i><span>Guías</span></a>
-        <a href="politicas.html" class="nav-link"><i data-lucide="scroll-text"></i><span>Políticas</span></a>
+
+        <div class="nav-group">
+          <button class="nav-group-toggle" type="button" aria-expanded="false" aria-haspopup="true">
+            <i data-lucide="briefcase"></i><span>Operaciones</span>
+            <i data-lucide="chevron-down" class="nav-group-arrow"></i>
+          </button>
+          <div class="nav-dropdown" role="menu">
+            <a href="portales.html" class="nav-link" role="menuitem"><i data-lucide="shield"></i><span>Portales</span></a>
+            <a href="agencias.html" class="nav-link" role="menuitem"><i data-lucide="network"></i><span>Agencias</span></a>
+            <a href="directorio.html" class="nav-link active" role="menuitem"><i data-lucide="book-user"></i><span>Directorio</span></a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-group-toggle" type="button" aria-expanded="false" aria-haspopup="true">
+            <i data-lucide="library"></i><span>Recursos</span>
+            <i data-lucide="chevron-down" class="nav-group-arrow"></i>
+          </button>
+          <div class="nav-dropdown" role="menu">
+            <a href="guias.html" class="nav-link" role="menuitem"><i data-lucide="book-open"></i><span>Guías</span></a>
+            <a href="politicas.html" class="nav-link" role="menuitem"><i data-lucide="scroll-text"></i><span>Políticas</span></a>
+            <a href="onboarding.html" class="nav-link" role="menuitem"><i data-lucide="rocket"></i><span>Onboarding</span></a>
+          </div>
+        </div>
       </nav>
       <div class="topbar-actions">
         <img id="user-avatar" src="" alt="" class="avatar">

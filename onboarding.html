@@ -11,7 +11,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
-<script src="https://unpkg.com/lucide@latest"></script>
+<script defer src="https://unpkg.com/lucide@0.474.0"></script>
+<script defer src="js/topbar-dropdown.js"></script>
 </head>
 <body>
 
@@ -33,11 +34,30 @@
       <nav class="topbar-nav" id="topbar-nav">
         <a href="index.html" class="nav-link"><i data-lucide="home"></i><span>Inicio</span></a>
         <a href="equipo.html" class="nav-link"><i data-lucide="users"></i><span>Equipo</span></a>
-        <a href="agencias.html" class="nav-link"><i data-lucide="network"></i><span>Agencias</span></a>
-        <a href="portales.html" class="nav-link"><i data-lucide="shield"></i><span>Portales</span></a>
-        <a href="directorio.html" class="nav-link"><i data-lucide="book-user"></i><span>Directorio</span></a>
-        <a href="guias.html" class="nav-link"><i data-lucide="book-open"></i><span>Guías</span></a>
-        <a href="politicas.html" class="nav-link"><i data-lucide="scroll-text"></i><span>Políticas</span></a>
+
+        <div class="nav-group">
+          <button class="nav-group-toggle" type="button" aria-expanded="false" aria-haspopup="true">
+            <i data-lucide="briefcase"></i><span>Operaciones</span>
+            <i data-lucide="chevron-down" class="nav-group-arrow"></i>
+          </button>
+          <div class="nav-dropdown" role="menu">
+            <a href="portales.html" class="nav-link" role="menuitem"><i data-lucide="shield"></i><span>Portales</span></a>
+            <a href="agencias.html" class="nav-link" role="menuitem"><i data-lucide="network"></i><span>Agencias</span></a>
+            <a href="directorio.html" class="nav-link" role="menuitem"><i data-lucide="book-user"></i><span>Directorio</span></a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-group-toggle" type="button" aria-expanded="false" aria-haspopup="true">
+            <i data-lucide="library"></i><span>Recursos</span>
+            <i data-lucide="chevron-down" class="nav-group-arrow"></i>
+          </button>
+          <div class="nav-dropdown" role="menu">
+            <a href="guias.html" class="nav-link" role="menuitem"><i data-lucide="book-open"></i><span>Guías</span></a>
+            <a href="politicas.html" class="nav-link" role="menuitem"><i data-lucide="scroll-text"></i><span>Políticas</span></a>
+            <a href="onboarding.html" class="nav-link active" role="menuitem"><i data-lucide="rocket"></i><span>Onboarding</span></a>
+          </div>
+        </div>
       </nav>
       <div class="topbar-actions">
         <img id="user-avatar" src="" alt="" class="avatar">
@@ -75,7 +95,7 @@
 
         <section class="ob-section" id="bienvenida">
           <div class="ob-num">01</div>
-          <h2 class="ob-h2">Bienvenida a Hero Insurance USA</h2>
+          <h2 class="ob-h2">Bienvenido a Hero Insurance USA</h2>
           <p class="ob-lead">Si estás leyendo esto, ya eres parte del equipo. ¡Bienvenido, héroe! 🦸</p>
 
           <p>Hero Insurance USA es una agencia de seguros basada en Miami, Florida, especializada en planes Medicare, ACA, vida, dental y salud. Trabajamos con los principales carriers del mercado — Aetna, Humana, United, Wellcare, Cigna, Anthem, Molina y más de 30 otros — para ofrecer soluciones reales a cada cliente.</p>
@@ -402,7 +422,14 @@
           <h2 class="ob-h2">Glosario Hero</h2>
           <p class="ob-lead">Si el vocabulario de seguros te suena a chino, esta sección es para ti. Los términos más comunes que escucharás:</p>
 
-          <div class="ob-glossary">
+          <div class="ob-gloss-search">
+            <i data-lucide="search"></i>
+            <input type="text" id="ob-gloss-input" placeholder="Buscar término…" autocomplete="off">
+            <button type="button" id="ob-gloss-clear" class="ob-gloss-clear" aria-label="Limpiar búsqueda">×</button>
+          </div>
+          <div class="ob-gloss-empty" id="ob-gloss-empty" hidden>Sin resultados para tu búsqueda.</div>
+
+          <div class="ob-glossary" id="ob-glossary">
             <div class="ob-gloss-item">
               <div class="ob-gloss-term">Agente</div>
               <div class="ob-gloss-def">Persona licenciada que vende seguros. Trabaja bajo el paraguas de Hero.</div>
@@ -567,11 +594,11 @@
 
           <div class="ob-final-cta">
             <div class="ob-hero-img-wrap">
-              <img src="https://i.ibb.co/spW6wzXy/heroe.png" alt="Héroe Hero Insurance" class="ob-hero-img">
+              <img src="images/heroe.png" alt="Héroe Hero Insurance" class="ob-hero-img">
             </div>
             <a href="index.html" class="ob-mission-btn">
               <i data-lucide="rocket"></i>
-              <span>Comenzar mi misión</span>
+              <span>Comenzar Misión</span>
               <i data-lucide="arrow-right"></i>
             </a>
           </div>
@@ -584,7 +611,7 @@
   </main>
 
   <footer class="hero-footer">
-    <span>HERO HUB · v4.4</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+    <span>HERO HUB · v5.1</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
   </footer>
 </div>
 
@@ -607,81 +634,79 @@
         }
       });
     });
+
+    // ── TOC active section: resalta el link de la sección visible al hacer scroll ──
+    const tocLinks = Array.from(document.querySelectorAll('.ob-toc-link'));
+    const sections = tocLinks
+      .map(link => document.querySelector(link.getAttribute('href')))
+      .filter(Boolean);
+    if (sections.length && 'IntersectionObserver' in window) {
+      const setActive = (id) => {
+        tocLinks.forEach(l => {
+          l.classList.toggle('active', l.getAttribute('href') === '#' + id);
+        });
+      };
+      // Observer con rootMargin que dispara cuando la sección cruza el tope visible.
+      // Se elige la sección más cercana al tope dentro de las que están intersecting.
+      const visible = new Set();
+      const obs = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+          if (e.isIntersecting) visible.add(e.target);
+          else visible.delete(e.target);
+        });
+        if (visible.size) {
+          // Tomar la sección visible más cercana al tope
+          const closest = [...visible].sort((a, b) =>
+            Math.abs(a.getBoundingClientRect().top - 100) -
+            Math.abs(b.getBoundingClientRect().top - 100)
+          )[0];
+          if (closest) setActive(closest.id);
+        }
+      }, { rootMargin: "-100px 0px -55% 0px", threshold: 0 });
+      sections.forEach(s => obs.observe(s));
+    }
+
+    // ── Buscador del glosario: filtra términos en tiempo real ──
+    const glossInput = document.getElementById('ob-gloss-input');
+    const glossClear = document.getElementById('ob-gloss-clear');
+    const glossEmpty = document.getElementById('ob-gloss-empty');
+    const glossContainer = document.getElementById('ob-glossary');
+    if (glossInput && glossContainer) {
+      const items = Array.from(glossContainer.querySelectorAll('.ob-gloss-item'));
+      const norm = s => (s || '')
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[̀-ͯ]/g, "");
+
+      const filterGloss = () => {
+        const q = norm(glossInput.value.trim());
+        glossClear.style.display = glossInput.value ? "flex" : "none";
+        let visibleCount = 0;
+        items.forEach(item => {
+          if (!q) {
+            item.style.display = "";
+            visibleCount++;
+            return;
+          }
+          const term = norm(item.querySelector('.ob-gloss-term')?.textContent);
+          const def  = norm(item.querySelector('.ob-gloss-def')?.textContent);
+          const match = term.includes(q) || def.includes(q);
+          item.style.display = match ? "" : "none";
+          if (match) visibleCount++;
+        });
+        glossEmpty.hidden = visibleCount > 0;
+      };
+
+      glossInput.addEventListener('input', filterGloss);
+      glossClear.addEventListener('click', () => {
+        glossInput.value = "";
+        filterGloss();
+        glossInput.focus();
+      });
+      filterGloss(); // estado inicial (oculta el botón × si está vacío)
+    }
   });
 </script>
-<style>
-/* ══ Botón Comenzar mi Misión ══ */
-.ob-section a.ob-mission-btn,
-a.ob-mission-btn {
-  display:inline-flex;
-  align-items:center;
-  gap:10px;
-  padding:18px 40px;
-  border-radius:16px;
-  background:linear-gradient(135deg, #06a3b6, #058fa0);
-  color:#fff !important;
-  font-family:var(--display);
-  font-weight:800;
-  font-size:18px;
-  text-decoration:none;
-  letter-spacing:.5px;
-  border:none;
-  border-bottom:none !important;
-  box-shadow:0 8px 28px rgba(6,163,182,.35), 0 0 0 3px rgba(6,163,182,.15);
-  transition:all .3s cubic-bezier(.22,1,.36,1);
-  position:relative;
-  overflow:hidden;
-}
-.ob-section a.ob-mission-btn span,
-a.ob-mission-btn span {
-  color:#fff !important;
-}
-.ob-mission-btn::before {
-  content:'';
-  position:absolute;
-  inset:0;
-  background:linear-gradient(135deg, transparent 30%, rgba(255,255,255,.15) 50%, transparent 70%);
-  transform:translateX(-100%);
-  transition:transform .6s ease;
-}
-.ob-section a.ob-mission-btn:hover,
-a.ob-mission-btn:hover {
-  transform:translateY(-3px) scale(1.02);
-  color:#fff !important;
-  border-bottom-color:transparent !important;
-  box-shadow:0 14px 40px rgba(6,163,182,.45), 0 0 0 4px rgba(6,163,182,.2);
-  background:linear-gradient(135deg, #07b5ca, #06a3b6);
-}
-.ob-mission-btn:hover::before { transform:translateX(100%); }
-.ob-mission-btn i { width:20px; height:20px; color:#fff; }
-
-/* ══ Imagen del héroe ══ */
-.ob-hero-img-wrap {
-  text-align:center;
-  margin-bottom:28px;
-}
-.ob-hero-img {
-  max-width:280px;
-  width:100%;
-  height:auto;
-  filter:drop-shadow(0 12px 32px rgba(6,163,182,.25));
-  animation:ob-hero-float 4s ease-in-out infinite;
-}
-@keyframes ob-hero-float {
-  0%, 100% { transform:translateY(0); }
-  50% { transform:translateY(-10px); }
-}
-
-.ob-final-cta {
-  text-align:center;
-  padding:20px 0 10px;
-}
-
-@media (max-width:700px) {
-  .ob-mission-btn { padding:16px 28px; font-size:16px; }
-  .ob-hero-img { max-width:200px; }
-}
-</style>
 <script type="module" src="js/firebase-config.js"></script>
 <script type="module" src="js/page-guard.js"></script>
 <script type="module" src="js/onboarding.js"></script>

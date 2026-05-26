@@ -292,6 +292,18 @@ export function filterTopbarByRole(userRole) {
     }
   });
 
+  // Si todos los hijos de un .nav-group quedaron ocultos, ocultar también
+  // el grupo (toggle "Operaciones" o "Recursos") para no dejar dropdowns vacíos.
+  topbar.querySelectorAll(".nav-group").forEach(group => {
+    const children = group.querySelectorAll(".nav-dropdown .nav-link");
+    const visibleChildren = Array.from(children).filter(
+      c => c.style.display !== "none"
+    );
+    if (children.length && !visibleChildren.length) {
+      group.style.display = "none";
+    }
+  });
+
   // Botón de admin
   const adminBtn = document.getElementById("btn-admin");
   if (adminBtn) {
