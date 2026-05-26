@@ -5629,12 +5629,17 @@ body.role-agente .connector:has(+ #sec-mensajes) {
   display: none !important;
 }
 
-/* Hub-cards del agente: 3 columnas (Equipo + Portales + Entrenamientos) */
+/* Hub-cards del agente: SIEMPRE 3 columnas (Equipo + Portales + Entrenamientos)
+   en una sola fila. Solo colapsa a 1 columna en móvil. */
 body.role-agente .hub-cards {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
 }
+/* Override del media query general (.hub-cards a 980px usa 2 cols con hc-guides
+   span 2) — para el agente mantenemos 3 cols hasta más abajo */
 @media (max-width: 980px) {
-  body.role-agente .hub-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body.role-agente .hub-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  body.role-agente .hc-content { padding: 22px 16px 18px; min-height: auto; }
 }
 @media (max-width: 640px) {
   body.role-agente .hub-cards { grid-template-columns: 1fr; }
