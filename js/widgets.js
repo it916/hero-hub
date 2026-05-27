@@ -122,31 +122,47 @@ function renderArsenal() {
 }
 
 function openAddToolModal(group) {
-  const modal = document.createElement("div");
-  modal.className = "modal-overlay";
-  modal.innerHTML = `<div class="modal">
-    <h3>Nuevo acceso · ${group}</h3>
-    <label>Nombre <input id="t-label" maxlength="20"></label>
-    <label>URL <input id="t-url" type="url" placeholder="https://..."></label>
-    <label>URL del ícono (PNG/SVG) <input id="t-icon" type="url" placeholder="https://..."></label>
-    <div class="modal-buttons"><button class="btn-ghost-dark" id="t-cancel">Cancelar</button><button class="btn-primary" id="t-save">Guardar</button></div>
-  </div>`;
-  document.body.appendChild(modal);
-  modal.querySelector("#t-cancel").onclick = () => modal.remove();
-  modal.querySelector("#t-save").onclick = async () => {
-    const label = modal.querySelector("#t-label").value.trim();
-    const url = modal.querySelector("#t-url").value.trim();
-    const icon = modal.querySelector("#t-icon").value.trim() || 'https://cdn-icons-png.flaticon.com/512/1006/1006771.png';
+  const dialog = document.createElement("sl-dialog");
+  dialog.label = `✦ Nuevo acceso · ${group}`;
+  dialog.className = "hh-dialog hh-tool-dialog";
+  dialog.innerHTML = `
+    <div class="hh-form">
+      <sl-input id="t-label" label="Nombre" maxlength="20" clearable required></sl-input>
+      <sl-input id="t-url" label="URL" type="url" placeholder="https://..." clearable required></sl-input>
+      <sl-input id="t-icon" label="URL del ícono (PNG/SVG)" type="url" placeholder="https://..." clearable></sl-input>
+    </div>
+    <sl-button slot="footer" id="t-cancel" variant="default">Cancelar</sl-button>
+    <sl-button slot="footer" id="t-save" variant="primary">
+      <i data-lucide="plus" slot="prefix" style="width:14px;height:14px;"></i>
+      Guardar
+    </sl-button>
+  `;
+  document.body.appendChild(dialog);
+  if (window.refreshIcons) window.refreshIcons();
+
+  dialog.addEventListener("sl-after-hide", () => dialog.remove());
+  dialog.querySelector("#t-cancel").addEventListener("click", () => dialog.hide());
+
+  dialog.querySelector("#t-save").addEventListener("click", async () => {
+    const label = (dialog.querySelector("#t-label").value || "").trim();
+    const url = (dialog.querySelector("#t-url").value || "").trim();
+    const icon = (dialog.querySelector("#t-icon").value || "").trim()
+      || "https://cdn-icons-png.flaticon.com/512/1006/1006771.png";
     if (!label || !url) { alert("Nombre y URL requeridos"); return; }
-    const arsenal = (currentUserData.arsenal && Object.keys(currentUserData.arsenal).length) ? currentUserData.arsenal : JSON.parse(JSON.stringify(ARSENAL_DEFAULT));
+
+    const arsenal = (currentUserData.arsenal && Object.keys(currentUserData.arsenal).length)
+      ? currentUserData.arsenal
+      : JSON.parse(JSON.stringify(ARSENAL_DEFAULT));
     if (!arsenal[group]) arsenal[group] = [];
     arsenal[group].push({ label, url, icon });
     currentUserData.arsenal = arsenal;
     await saveUserField({ arsenal });
-    modal.remove();
+    dialog.hide();
     renderArsenal();
     if (window.refreshIcons) window.refreshIcons();
-  };
+  });
+
+  dialog.show();
 }
 
 // ═══ SPOTLIGHT ═══
@@ -455,25 +471,36 @@ function attachSettingsHandler() {
 }
 function openSettingsModal() {
   const theme = currentUserData.theme || "light";
-  const modal = document.createElement("div");
-  modal.className = "modal-overlay";
-  modal.innerHTML = `<div class="modal">
-    <h3>⚙️ Configuración</h3>
-    <label>Tema<div class="theme-toggle">
-      <button class="theme-btn ${theme==='light'?'active':''}" data-theme="light">☀ Día</button>
-      <button class="theme-btn ${theme==='dark'?'active':''}" data-theme="dark">☾ Noche</button>
-    </div></label>
-    <div class="modal-buttons"><button class="btn-primary" id="s-close">Cerrar</button></div>
-  </div>`;
-  document.body.appendChild(modal);
-  modal.querySelectorAll(".theme-btn").forEach(b => {
+  const dialog = document.createElement("sl-dialog");
+  dialog.label = "⚙️ Configuración";
+  dialog.className = "hh-dialog hh-settings-dialog";
+  dialog.innerHTML = `
+    <div class="hh-form">
+      <div class="hh-field">
+        <label class="hh-field-label">Tema</label>
+        <div class="theme-toggle">
+          <button type="button" class="theme-btn ${theme === 'light' ? 'active' : ''}" data-theme="light">☀ Día</button>
+          <button type="button" class="theme-btn ${theme === 'dark' ? 'active' : ''}" data-theme="dark">☾ Noche</button>
+        </div>
+      </div>
+    </div>
+    <sl-button slot="footer" id="s-close" variant="primary">Cerrar</sl-button>
+  `;
+  document.body.appendChild(dialog);
+  if (window.refreshIcons) window.refreshIcons();
+
+  dialog.addEventListener("sl-after-hide", () => dialog.remove());
+
+  dialog.querySelectorAll(".theme-btn").forEach(b => {
     b.addEventListener("click", async () => {
       currentUserData.theme = b.dataset.theme;
       document.body.dataset.theme = b.dataset.theme;
-      modal.querySelectorAll(".theme-btn").forEach(x => x.classList.remove("active"));
+      dialog.querySelectorAll(".theme-btn").forEach(x => x.classList.remove("active"));
       b.classList.add("active");
       await saveUserField({ theme: b.dataset.theme });
     });
   });
-  modal.querySelector("#s-close").onclick = () => modal.remove();
+
+  dialog.querySelector("#s-close").addEventListener("click", () => dialog.hide());
+  dialog.show();
 }

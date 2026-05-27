@@ -6,6 +6,7 @@ import { doc, getDoc, setDoc, updateDoc, collection, query, where, orderBy, limi
 import { loadUserRole, isAdmin as isAdminRole } from "./roles.js";
 import { initRolesPanel } from "./roles-admin.js";
 import { initAuditPanel } from "./audit-panel.js";
+import { initAsistenciaDashboard } from "./asistencia-dashboard.js";
 import { logEvent, ACTIONS } from "./audit-log.js";
 
 // ══ AUTH ══
@@ -307,4 +308,10 @@ window.loadRolesPanel = async function() {
 // Se llama desde admin.html cuando el usuario abre el tab "Log".
 window.loadAuditPanel = async function() {
   await initAuditPanel();
+};
+
+// ══ DASHBOARD DE ASISTENCIA ══
+// Se llama desde admin.html cuando el usuario abre el tab "Asistencia".
+window.loadAsistenciaDashboard = async function() {
+  await initAsistenciaDashboard();
 };

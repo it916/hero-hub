@@ -34,8 +34,7 @@ hero-hub/
 ├── README.md
 ├── index.html                   ← login y dashboard principal
 ├── admin.html                   ← panel de administración (roles, métricas, log)
-├── agencias.html                ← vista de agencias
-├── organigrama-agencias.html    ← organigrama de agencias
+├── agencias.html                ← vista de agencias (con organigrama integrado)
 ├── directorio.html              ← directorio de contactos
 ├── equipo.html                  ← página del equipo
 ├── portales.html                ← accesos a carriers

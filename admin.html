@@ -13,51 +13,224 @@
 <link rel="stylesheet" href="css/styles.css">
 <link rel="stylesheet" href="css/roles-admin.css">
 <link rel="stylesheet" href="css/audit-panel.css">
+
+<!-- Shoelace · component library -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css">
+<script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/shoelace-autoloader.js"></script>
+
+<!-- Tabulator · data tables -->
+<link rel="stylesheet" href="https://unpkg.com/tabulator-tables@6.3.0/dist/css/tabulator_modern.min.css">
+<script src="https://unpkg.com/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
+
+<!-- Flatpickr · date pickers -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+
+<!-- Chart.js · gráficos del Dashboard de Asistencia -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+
 <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
   <div id="loading" class="login-container"><div class="login-card"><p>Verificando acceso...</p></div></div>
   <div id="admin-panel" style="display:none;">
 
-    <header class="hero-topbar">
-      <div class="topbar-inner">
-        <div class="brand-block">
-          <a href="index.html" class="brand-link">
-            <div class="logo-mark"><img src="icons/favicon-hero.png" alt="Hero"></div>
-            <div>
-              <div class="brand-name">HERO HUB · ADMIN</div>
-              <div class="brand-sub">Panel de administración</div>
-            </div>
-          </a>
-        </div>
-        <div class="topbar-actions">
-          <a href="index.html" class="btn-ghost-dark"><i data-lucide="arrow-left"></i><span>Volver al Hub</span></a>
+    <!-- ══ HEADER ADMIN ══ -->
+    <header class="admin-shell-header">
+      <div class="admin-shell-header-inner">
+        <button class="admin-sidebar-toggle" id="admin-sidebar-toggle" type="button" aria-label="Menú">
+          <i data-lucide="menu"></i>
+        </button>
+        <a href="index.html" class="admin-shell-brand">
+          <div class="admin-shell-logo"><img src="icons/favicon-hero.png" alt="Hero"></div>
+          <div>
+            <div class="admin-shell-brand-name">HERO HUB · ADMIN</div>
+            <div class="admin-shell-brand-sub">Panel de administración</div>
+          </div>
+        </a>
+        <div class="admin-shell-header-actions">
+          <sl-button href="index.html" variant="default" size="small">
+            <i data-lucide="arrow-left" slot="prefix" style="width:14px;height:14px;"></i>
+            Volver al Hub
+          </sl-button>
         </div>
       </div>
     </header>
 
-    <main class="admin-main">
+    <!-- ══ SHELL: Sidebar + Main ══ -->
+    <div class="admin-shell">
 
-      <!-- TABS DEL ADMIN -->
-      <div class="admin-tabs">
-        <button class="admin-tab active" data-tab="spotlight"><i data-lucide="star"></i><span>Spotlight</span></button>
-        <button class="admin-tab" data-tab="messages"><i data-lucide="message-square"></i><span>Mensajes</span></button>
-        <button class="admin-tab" data-tab="metrics"><i data-lucide="bar-chart-3"></i><span>Métricas</span></button>
-        <button class="admin-tab" data-tab="roles"><i data-lucide="shield-check"></i><span>Roles</span></button>
-        <button class="admin-tab" data-tab="log"><i data-lucide="list"></i><span>Log</span></button>
-      </div>
+      <!-- Sidebar -->
+      <aside class="admin-sidebar" id="admin-sidebar">
+        <nav class="admin-sidebar-nav">
 
-      <!-- SECCIÓN SPOTLIGHT -->
+          <div class="admin-sidebar-group">
+            <div class="admin-sidebar-kicker">Resumen</div>
+            <button type="button" class="admin-sidebar-link" data-tab="asistencia">
+              <i data-lucide="line-chart"></i>
+              <span>Dashboard Asistencia</span>
+            </button>
+          </div>
+
+          <div class="admin-sidebar-group">
+            <div class="admin-sidebar-kicker">Contenido</div>
+            <button type="button" class="admin-sidebar-link active" data-tab="spotlight">
+              <i data-lucide="star"></i>
+              <span>Spotlight</span>
+            </button>
+            <button type="button" class="admin-sidebar-link" data-tab="messages">
+              <i data-lucide="message-square"></i>
+              <span>Mensajes</span>
+            </button>
+            <button type="button" class="admin-sidebar-link" data-tab="metrics">
+              <i data-lucide="bar-chart-3"></i>
+              <span>Métricas</span>
+            </button>
+          </div>
+
+          <div class="admin-sidebar-group">
+            <div class="admin-sidebar-kicker">Equipo</div>
+            <button type="button" class="admin-sidebar-link" data-tab="roles">
+              <i data-lucide="shield-check"></i>
+              <span>Roles</span>
+            </button>
+            <button type="button" class="admin-sidebar-link" data-tab="log">
+              <i data-lucide="list"></i>
+              <span>Log de auditoría</span>
+            </button>
+          </div>
+
+        </nav>
+      </aside>
+
+      <!-- Backdrop para sidebar en mobile -->
+      <div class="admin-sidebar-backdrop" id="admin-sidebar-backdrop"></div>
+
+      <!-- Main -->
+      <main class="admin-shell-main">
+
+        <!-- Breadcrumb -->
+        <div class="admin-section-header">
+          <div class="admin-breadcrumb">
+            <i data-lucide="home"></i>
+            <span>Admin</span>
+            <i data-lucide="chevron-right" class="admin-breadcrumb-sep"></i>
+            <span class="admin-breadcrumb-current" id="admin-breadcrumb-current">Spotlight</span>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════ -->
+        <!-- SECCIÓN DASHBOARD DE ASISTENCIA                -->
+        <!-- ══════════════════════════════════════════════ -->
+        <section class="admin-section" id="tab-asistencia" style="display:none;">
+          <div class="ad-toolbar">
+            <div>
+              <h2 style="margin:0;">📈 Dashboard de Asistencia</h2>
+              <p class="admin-note" style="margin:4px 0 0;">Estado del equipo, cortes de luz, ausencias y horas trabajadas.</p>
+            </div>
+            <div class="ad-toolbar-actions">
+              <select id="ad-period" class="ad-select">
+                <option value="today">Hoy</option>
+                <option value="week" selected>Esta semana</option>
+                <option value="month">Este mes</option>
+              </select>
+              <sl-button id="ad-refresh" variant="primary" size="medium">
+                <i data-lucide="refresh-cw" slot="prefix" style="width:14px;height:14px;"></i>
+                Actualizar
+              </sl-button>
+              <span class="ad-pill ad-pill-mono"><span id="ad-last-update">—</span></span>
+            </div>
+          </div>
+
+          <div id="ad-loading" class="ad-loading">Cargando datos del Sheet…</div>
+          <div id="ad-error" class="ad-error" style="display:none;"></div>
+
+          <div id="ad-content" style="display:none;">
+
+            <section class="ad-section">
+              <div class="section-label"><span class="kicker-dot"></span>Equipo ahora · <span id="ad-period-label">hoy</span></div>
+              <div class="ad-counters">
+                <div class="ad-counter ad-c-working">
+                  <div class="ad-counter-icon"><i data-lucide="check-circle-2"></i></div>
+                  <div class="ad-counter-value" id="ad-count-working">0</div>
+                  <div class="ad-counter-label">Trabajando</div>
+                </div>
+                <div class="ad-counter ad-c-break">
+                  <div class="ad-counter-icon"><i data-lucide="coffee"></i></div>
+                  <div class="ad-counter-value" id="ad-count-break">0</div>
+                  <div class="ad-counter-label">En break</div>
+                </div>
+                <div class="ad-counter ad-c-power">
+                  <div class="ad-counter-icon"><i data-lucide="zap-off"></i></div>
+                  <div class="ad-counter-value" id="ad-count-power">0</div>
+                  <div class="ad-counter-label">Sin luz</div>
+                </div>
+                <div class="ad-counter ad-c-out">
+                  <div class="ad-counter-icon"><i data-lucide="log-out"></i></div>
+                  <div class="ad-counter-value" id="ad-count-out">0</div>
+                  <div class="ad-counter-label">Fuera</div>
+                </div>
+              </div>
+            </section>
+
+            <section class="ad-section">
+              <div class="ad-split">
+                <div class="ad-team-list-wrap">
+                  <div class="section-label"><span class="kicker-dot"></span>Estado por persona</div>
+                  <div class="ad-team-list" id="ad-team-list"></div>
+                </div>
+                <div class="ad-donut-wrap">
+                  <div class="section-label"><span class="kicker-dot"></span>Distribución</div>
+                  <div class="ad-donut-box">
+                    <canvas id="ad-donut"></canvas>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="ad-section">
+              <div class="section-label"><span class="kicker-dot"></span>Horas trabajadas · <span id="ad-hours-period-label">esta semana</span></div>
+              <p class="ad-hint">No incluye breaks ni cortes de luz. Calculado a partir de los eventos Entrada / Salida / Break / Corte Luz registrados.</p>
+              <div class="ad-bars-box">
+                <canvas id="ad-hours-bars"></canvas>
+              </div>
+            </section>
+
+            <section class="ad-section">
+              <div class="section-label"><span class="kicker-dot"></span>Cortes de luz · <span id="ad-power-period-label">esta semana</span></div>
+              <div class="ad-list" id="ad-power-list"></div>
+            </section>
+
+            <section class="ad-section">
+              <div class="section-label"><span class="kicker-dot"></span>Ausencias reportadas · últimos 30 días</div>
+              <div class="ad-list" id="ad-absence-list"></div>
+            </section>
+
+          </div>
+        </section>
+
+        <!-- SECCIÓN SPOTLIGHT -->
       <section class="admin-section" id="tab-spotlight">
         <h2>🌟 Hero Spotlight</h2>
-        <label>URL de imagen panorámica <input id="sp-image"></label>
-        <label>Mensaje <textarea id="sp-message" rows="3"></textarea></label>
+
+        <sl-input id="sp-image" label="URL de imagen panorámica" placeholder="https://…" clearable></sl-input>
+        <sl-textarea id="sp-message" label="Mensaje" rows="3" resize="vertical" help-text="Texto del banner del Hero Spotlight."></sl-textarea>
+
         <h3>Honorees (hasta 3)</h3>
         <div id="sp-honorees-list"></div>
-        <button class="btn-primary" id="sp-add-honoree"><i data-lucide="plus"></i> Agregar honoree</button>
-        <br><br>
-        <button class="btn-primary" id="sp-save">Guardar Spotlight</button>
-        <span class="save-status" id="sp-status"></span>
+
+        <div class="sp-actions">
+          <sl-button variant="default" id="sp-add-honoree" outline>
+            <i data-lucide="plus" slot="prefix" style="width:14px;height:14px;"></i>
+            Agregar honoree
+          </sl-button>
+          <sl-button variant="primary" id="sp-save">
+            <i data-lucide="save" slot="prefix" style="width:14px;height:14px;"></i>
+            Guardar Spotlight
+          </sl-button>
+          <span class="save-status" id="sp-status"></span>
+        </div>
       </section>
 
       <!-- SECCIÓN MENSAJES -->
@@ -75,8 +248,14 @@
             <p class="admin-note" style="margin:4px 0 0;">Últimos 30 días · Datos agregados y anónimos para revisión interna</p>
           </div>
           <div class="metrics-actions">
-            <button class="btn-ghost-dark" id="mt-refresh"><i data-lucide="refresh-cw"></i><span>Actualizar</span></button>
-            <button class="btn-ghost-dark" id="mt-cleanup"><i data-lucide="trash-2"></i><span>Limpiar eventos &gt;90 días</span></button>
+            <sl-button id="mt-refresh" size="medium">
+              <i data-lucide="refresh-cw" slot="prefix" style="width:14px;height:14px;"></i>
+              Actualizar
+            </sl-button>
+            <sl-button id="mt-cleanup" size="medium" variant="warning" outline>
+              <i data-lucide="trash-2" slot="prefix" style="width:14px;height:14px;"></i>
+              Limpiar eventos &gt;90 días
+            </sl-button>
           </div>
         </div>
 
@@ -138,7 +317,10 @@
             <h2 style="margin:0;">🛡️ Gestión de roles</h2>
             <p class="admin-note" style="margin:4px 0 0;">Controla quién tiene acceso al Hero Hub y qué puede ver según su rol.</p>
           </div>
-          <button class="btn-primary" id="ra-add-btn"><i data-lucide="user-plus"></i><span>Agregar usuario</span></button>
+          <sl-button variant="primary" id="ra-add-btn" size="medium">
+            <i data-lucide="user-plus" slot="prefix" style="width:14px;height:14px;"></i>
+            Agregar usuario
+          </sl-button>
         </div>
 
         <!-- Cards de estadísticas -->
@@ -176,22 +358,8 @@
           <div class="ra-filter-chip" data-role="agente">Agentes</div>
         </div>
 
-        <!-- Tabla de usuarios -->
-        <div class="ra-table-wrap">
-          <table class="ra-table">
-            <thead>
-              <tr>
-                <th>Usuario</th>
-                <th>Rol</th>
-                <th>Última actualización</th>
-                <th style="text-align:center;">Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="ra-table-body">
-              <tr><td colspan="4" class="empty">Cargando usuarios...</td></tr>
-            </tbody>
-          </table>
-        </div>
+        <!-- Tabla de usuarios (Tabulator) -->
+        <div id="ra-table"></div>
 
         <!-- Status bar flotante -->
         <div class="ra-status" id="ra-status"></div>
@@ -207,8 +375,18 @@
             <p class="admin-note" style="margin:4px 0 0;">Historial de cambios en roles, contactos, carriers del equipo y acciones sensibles. Los eventos con más de 1 año se pueden eliminar.</p>
           </div>
           <div class="al-actions">
-            <button class="btn-ghost-dark" id="al-refresh"><i data-lucide="refresh-cw"></i><span>Actualizar</span></button>
-            <button class="btn-ghost-dark" id="al-cleanup"><i data-lucide="trash-2"></i><span>Limpiar &gt;1 año</span></button>
+            <sl-button id="al-refresh" size="medium">
+              <i data-lucide="refresh-cw" slot="prefix" style="width:14px;height:14px;"></i>
+              Actualizar
+            </sl-button>
+            <sl-button id="al-export" size="medium" variant="success" outline>
+              <i data-lucide="download" slot="prefix" style="width:14px;height:14px;"></i>
+              Exportar CSV
+            </sl-button>
+            <sl-button id="al-cleanup" size="medium" variant="warning" outline>
+              <i data-lucide="trash-2" slot="prefix" style="width:14px;height:14px;"></i>
+              Limpiar &gt;1 año
+            </sl-button>
           </div>
         </div>
 
@@ -259,33 +437,68 @@
           <div class="al-filter-chip" data-action="auth.denied.page">Accesos denegados</div>
         </div>
 
-        <!-- Lista de eventos -->
-        <div class="al-list" id="al-list">
-          <div class="al-empty loading">Cargando eventos...</div>
-        </div>
+        <!-- Tabla de eventos (Tabulator) -->
+        <div id="al-table"></div>
       </section>
 
-    </main>
+      </main>
+
+    </div><!-- /.admin-shell -->
 
     <footer class="hero-footer">
-      <span>HERO HUB · ADMIN v4.4</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+      <span>HERO HUB · ADMIN v4.5</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
     </footer>
   </div>
 
   <script>
     window.refreshIcons = () => { if (window.lucide) lucide.createIcons(); };
+
+    const TAB_TITLES = {
+      asistencia: 'Dashboard de Asistencia',
+      spotlight: 'Spotlight',
+      messages: 'Mensajes',
+      metrics: 'Métricas',
+      roles: 'Roles',
+      log: 'Log de auditoría'
+    };
+
     document.addEventListener("DOMContentLoaded", () => {
       window.refreshIcons();
-      document.querySelectorAll('.admin-tab').forEach(b => {
+
+      const sidebar = document.getElementById('admin-sidebar');
+      const backdrop = document.getElementById('admin-sidebar-backdrop');
+      const toggle = document.getElementById('admin-sidebar-toggle');
+      const breadcrumb = document.getElementById('admin-breadcrumb-current');
+
+      const closeSidebar = () => {
+        sidebar.classList.remove('open');
+        backdrop.classList.remove('visible');
+      };
+      const openSidebar = () => {
+        sidebar.classList.add('open');
+        backdrop.classList.add('visible');
+      };
+
+      if (toggle) toggle.addEventListener('click', () => {
+        sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+      });
+      if (backdrop) backdrop.addEventListener('click', closeSidebar);
+
+      document.querySelectorAll('.admin-sidebar-link[data-tab]').forEach(b => {
         b.addEventListener('click', () => {
-          document.querySelectorAll('.admin-tab').forEach(x => x.classList.remove('active'));
+          const tab = b.dataset.tab;
+          document.querySelectorAll('.admin-sidebar-link[data-tab]').forEach(x => x.classList.remove('active'));
           b.classList.add('active');
-          ['spotlight','messages','metrics','roles','log'].forEach(t => {
-            document.getElementById('tab-' + t).style.display = (t === b.dataset.tab) ? 'block' : 'none';
+          ['asistencia','spotlight','messages','metrics','roles','log'].forEach(t => {
+            const sec = document.getElementById('tab-' + t);
+            if (sec) sec.style.display = (t === tab) ? 'block' : 'none';
           });
-          if (b.dataset.tab === 'metrics' && window.loadMetrics) window.loadMetrics();
-          if (b.dataset.tab === 'roles' && window.loadRolesPanel) window.loadRolesPanel();
-          if (b.dataset.tab === 'log' && window.loadAuditPanel) window.loadAuditPanel();
+          if (breadcrumb && TAB_TITLES[tab]) breadcrumb.textContent = TAB_TITLES[tab];
+          if (tab === 'asistencia' && window.loadAsistenciaDashboard) window.loadAsistenciaDashboard();
+          if (tab === 'metrics' && window.loadMetrics) window.loadMetrics();
+          if (tab === 'roles' && window.loadRolesPanel) window.loadRolesPanel();
+          if (tab === 'log' && window.loadAuditPanel) window.loadAuditPanel();
+          if (window.innerWidth <= 900) closeSidebar();
         });
       });
     });

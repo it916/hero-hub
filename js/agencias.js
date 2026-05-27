@@ -22,8 +22,21 @@ import { logEvent, ACTIONS } from "./audit-log.js";
 
 const ALLOWED_DOMAIN = "heroinsuranceusa.com";
 
-// Tipos de planes (lista cerrada)
+// ═══════════════════════════════════════════
+// FUENTE DE DATOS
+// ═══════════════════════════════════════════
+// Cuando la URL está vacía → usa Firestore (modo actual, admin edita en el Hub).
+// Cuando está seteada      → usa el Apps Script del Sheet (read-only, depto edita en Sheet).
+// El switch es automático: poblar la URL y recargar la página.
+const AGENCIAS_SHEET_URL = "https://script.google.com/macros/s/AKfycbxpqSMCLDOiasI40IG1bdpe4RhJHYpHujYLQDSwv815aMn3EuCFgGFrkc-fNE4-7NAysw/exec";
+
+// Tipos de planes (lista cerrada). Si agregas un plan nuevo:
+//   1. Añadirlo aquí
+//   2. Añadir columna "% NOMBRE" al Sheet (header exacto)
+//   3. Agregarlo al mapeo en loadFromSheet()
 const PLAN_TYPES = ["MEDICARE", "ACA", "SUPLEMENTARIOS", "VIDA"];
+
+const USE_SHEET = !!AGENCIAS_SHEET_URL;
 
 // Profundidad máxima de jerarquía (HERO = 0, hijos = 1, 2, 3, 4)
 const MAX_DEPTH = 4;
@@ -62,7 +75,8 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   const ctx = await window.getPageContext();
-  canEdit = isAdminRole(ctx.userRole);
+  // En modo Sheet la edición vive en el Sheet → admin pierde botones de editar en el Hub
+  canEdit = isAdminRole(ctx.userRole) && !USE_SHEET;
 
   document.getElementById("user-avatar").src = user.photoURL || "";
   document.getElementById("loading").style.display = "none";
@@ -72,10 +86,39 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById("ag-btn-new").style.display = "inline-flex";
   }
 
+  // En modo Sheet: mostrar el sync-bar (label + botón refresh) sobre el listado
+  if (USE_SHEET) {
+    const syncBar = document.getElementById("ag-sync-bar");
+    const refreshBtn = document.getElementById("ag-btn-refresh");
+    if (syncBar) syncBar.style.display = "flex";
+    if (refreshBtn) {
+      refreshBtn.addEventListener("click", async () => {
+        refreshBtn.disabled = true;
+        refreshBtn.classList.add("is-loading");
+        try {
+          await loadData();
+          updateLastUpdateLabel();
+        } finally {
+          refreshBtn.disabled = false;
+          refreshBtn.classList.remove("is-loading");
+          if (window.refreshIcons) window.refreshIcons();
+        }
+      });
+    }
+  }
+
   await loadData();
+  if (USE_SHEET) updateLastUpdateLabel();
   wireHandlers();
   if (window.refreshIcons) window.refreshIcons();
 });
+
+function updateLastUpdateLabel() {
+  const el = document.getElementById("ag-last-update");
+  if (!el) return;
+  const now = new Date();
+  el.textContent = "Última sincronización: " + now.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+}
 
 document.getElementById("btn-logout").addEventListener("click", () =>
   signOut(auth).then(() => location.href = "index.html")
@@ -84,15 +127,10 @@ document.getElementById("btn-logout").addEventListener("click", () =>
 // ══ Cargar datos desde Firestore ══
 async function loadData() {
   try {
-    const snap = await getDoc(doc(db, "shared", "agencias"));
-    if (snap.exists()) {
-      const data = snap.data();
-      DATA = {
-        hero: Array.isArray(data.hero) ? data.hero : [],
-        friends: Array.isArray(data.friends) ? data.friends : [],
-        pending: Array.isArray(data.pending) ? data.pending : [],
-        updatedAt: data.updatedAt || null
-      };
+    if (USE_SHEET) {
+      await loadFromSheet();
+    } else {
+      await loadFromFirestore();
     }
     migrateLegacyHierarchy();
     renderStats();
@@ -103,6 +141,113 @@ async function loadData() {
       `<p class="empty">Error: ${escapeHtml(e.message)}</p>`;
   }
 }
+
+async function loadFromFirestore() {
+  const snap = await getDoc(doc(db, "shared", "agencias"));
+  if (snap.exists()) {
+    const data = snap.data();
+    DATA = {
+      hero: Array.isArray(data.hero) ? data.hero : [],
+      friends: Array.isArray(data.friends) ? data.friends : [],
+      pending: Array.isArray(data.pending) ? data.pending : [],
+      updatedAt: data.updatedAt || null
+    };
+  }
+}
+
+// Lee la data desde el Sheet vía Apps Script.
+// El Sheet tiene una fila por agencia con estos headers (en este orden):
+//   ID | Nombre | Grupo | Tipo | ID padre | AIC | Brokers | % MEDICARE | % ACA | % SUPLEMENTARIOS | % VIDA | Notas
+// AIC y Brokers se separan por coma. Las columnas de % son números o vacío.
+async function loadFromSheet() {
+  const resp = await fetch(AGENCIAS_SHEET_URL, { method: "GET", redirect: "follow" });
+  if (!resp.ok) throw new Error("HTTP " + resp.status);
+  const json = await resp.json();
+  if (!json.ok) throw new Error(json.error || "Respuesta inválida del Apps Script");
+
+  // Convertir lista plana → estructura {hero, friends, pending}
+  const grouped = { hero: [], friends: [], pending: [] };
+  (json.data || []).forEach(row => {
+    const grp = (row.group || "").toLowerCase();
+    if (!grouped[grp]) return; // ignora filas con grupo inválido
+    grouped[grp].push({
+      id: row.id || generateId(),
+      name: row.name || "",
+      kind: row.kind || "normal",
+      parentId: row.parentId || null,
+      aic: Array.isArray(row.aic) ? row.aic : splitList(row.aic),
+      brokers: Array.isArray(row.brokers) ? row.brokers : splitList(row.brokers),
+      planes: row.planes || [],          // se infiere de qué % tienen valor
+      commissions: row.commissions || {},
+      notas: row.notas || ""
+    });
+  });
+
+  DATA = {
+    hero: grouped.hero,
+    friends: grouped.friends,
+    pending: grouped.pending,
+    updatedAt: json.updatedAt || new Date().toISOString()
+  };
+}
+
+function splitList(s) {
+  if (!s) return [];
+  return String(s).split(/[,\n]/).map(x => x.trim()).filter(Boolean);
+}
+
+// Renderiza un chip de plan con el % de comisión si está disponible.
+// Si commissions[plan] está vacío/null, solo muestra el nombre del plan.
+function planChipHtml(plan, commissions) {
+  const pct = commissions && commissions[plan];
+  const pctText = (pct != null && pct !== "") ? ` <strong>${pct}%</strong>` : "";
+  return `<span class="ag-plan-chip-mini ag-plan-${plan.toLowerCase()}">${plan}${pctText}</span>`;
+}
+
+// Filtro de planes: la agencia debe tener EXACTAMENTE los planes seleccionados
+// (mismo set, ni uno más, ni uno menos). Decisión de UX: si seleccionas MEDICARE,
+// quieres ver solo agencias que venden MEDICARE y nada más.
+function planesMatchExactly(agencyPlanes, selectedPlanes) {
+  const a = agencyPlanes || [];
+  if (a.length !== selectedPlanes.length) return false;
+  return selectedPlanes.every(p => a.includes(p));
+}
+
+// ═══════════════════════════════════════════
+// HELPER DE MIGRACIÓN (one-time)
+// ═══════════════════════════════════════════
+// Llamar desde la consola del navegador siendo admin:
+//   window.exportAgenciasForSheet()
+// Imprime los datos actuales en formato TSV pegable directamente al Sheet.
+window.exportAgenciasForSheet = function() {
+  const headers = [
+    "ID", "Nombre", "Grupo", "Tipo", "ID padre", "AIC", "Brokers",
+    "% MEDICARE", "% ACA", "% SUPLEMENTARIOS", "% VIDA", "Notas"
+  ];
+  const rows = [headers.join("\t")];
+  ["hero", "friends", "pending"].forEach(group => {
+    (DATA[group] || []).forEach(ag => {
+      rows.push([
+        ag.id || "",
+        ag.name || "",
+        group,
+        ag.kind || "normal",
+        ag.parentId || "",
+        (ag.aic || []).join(", "),
+        (ag.brokers || []).join(", "),
+        "", // % MEDICARE — pendiente
+        "", // % ACA
+        "", // % SUPLEMENTARIOS
+        "", // % VIDA
+        ""  // Notas
+      ].map(c => String(c).replace(/\t/g, " ").replace(/\n/g, " ")).join("\t"));
+    });
+  });
+  const tsv = rows.join("\n");
+  console.log(tsv);
+  console.log(`✓ ${rows.length - 1} agencias exportadas. Selecciona TODO el output de arriba y pega en A1 del Sheet "Agencias".`);
+  return tsv;
+};
 
 // ══ Migración: convertir sub_goldpro (legacy) a parentId ══
 // Cualquier agencia con kind === "sub_goldpro" y sin parentId se asigna
@@ -229,11 +374,9 @@ function getFilteredAgencies() {
     const ancestorsToInclude = new Set();
 
     DATA[g].forEach(ag => {
-      // Filtro por planes (AND)
+      // Filtro por planes (exacto: la agencia debe vender EXACTAMENTE los planes seleccionados)
       if (filter.planes.length > 0) {
-        const agPlanes = ag.planes || [];
-        const hasAll = filter.planes.every(p => agPlanes.includes(p));
-        if (!hasAll) return;
+        if (!planesMatchExactly(ag.planes, filter.planes)) return;
       }
 
       // Sin búsqueda: incluir todo
@@ -272,10 +415,9 @@ function getFilteredAgencies() {
       if (matchedInGroup.has(id)) return;
       const ag = DATA[g].find(a => a.id === id);
       if (!ag) return;
-      // Si el ancestro fue filtrado por planes, no lo agregamos
+      // Si el ancestro fue filtrado por planes (exacto), no lo agregamos
       if (filter.planes.length > 0) {
-        const agPlanes = ag.planes || [];
-        if (!filter.planes.every(p => agPlanes.includes(p))) return;
+        if (!planesMatchExactly(ag.planes, filter.planes)) return;
       }
       matchedInGroup.set(id, {
         ...ag, _group: g, _matchedBrokers: [], _matchedAic: [], _isAncestorOnly: true
@@ -424,10 +566,10 @@ function buildTreeNode(ag, autoExpand, overrideLabel, group, filteredIds) {
   if (ag.kind === "unclear") tags += `<span class="ag-tree-tag tag-warn">Por aclarar</span>`;
   if (totalBrokers > 0) tags += `<span class="ag-tree-tag tag-count">${totalBrokers} brokers</span>`;
 
-  // Chips de planes
+  // Chips de planes (con % de comisión si está en el Sheet)
   const planesChips = (ag.planes || [])
     .filter(p => PLAN_TYPES.includes(p))
-    .map(p => `<span class="ag-plan-chip-mini ag-plan-${p.toLowerCase()}">${p}</span>`)
+    .map(p => planChipHtml(p, ag.commissions))
     .join("");
   const planesBlock = planesChips
     ? `<div class="ag-tree-planes">${planesChips}</div>`
@@ -659,8 +801,7 @@ function filterAgenciesForOrg(agencies) {
 
   agencies.forEach(ag => {
     if (filter.planes.length > 0) {
-      const agPlanes = ag.planes || [];
-      if (!filter.planes.every(p => agPlanes.includes(p))) return;
+      if (!planesMatchExactly(ag.planes, filter.planes)) return;
     }
     if (terms.length > 0) {
       const nameMatch = matchesAllTerms(ag.name || "", terms);
@@ -694,10 +835,10 @@ function buildOrgNode(ag, group, filteredIds) {
   else if (ag.kind === "on_hold") stateTag = `<span class="ag-org-tag tag-hold">On hold</span>`;
   else if (ag.kind === "unclear") stateTag = `<span class="ag-org-tag tag-warn">Por aclarar</span>`;
 
-  // Chips de planes
+  // Chips de planes (con % de comisión si está en el Sheet)
   const planesChips = (ag.planes || [])
     .filter(p => PLAN_TYPES.includes(p))
-    .map(p => `<span class="ag-plan-chip-mini ag-plan-${p.toLowerCase()}">${p}</span>`)
+    .map(p => planChipHtml(p, ag.commissions))
     .join("");
 
   // Hijos vía parentId (filtrados también)
@@ -767,10 +908,10 @@ function openBrokersPopover(agencyId, group, anchorEl) {
 
   const planesHtml = planes.length > 0
     ? `<div class="ag-popover-section">
-         <div class="ag-popover-label">Planes</div>
+         <div class="ag-popover-label">Planes${agency.commissions && Object.keys(agency.commissions).length ? ' · % comisión' : ''}</div>
          <div class="ag-popover-planes">
            ${planes.filter(p => PLAN_TYPES.includes(p)).map(p =>
-             `<span class="ag-plan-chip-mini ag-plan-${p.toLowerCase()}">${p}</span>`
+             planChipHtml(p, agency.commissions)
            ).join("")}
          </div>
        </div>`

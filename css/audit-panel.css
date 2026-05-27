@@ -300,3 +300,193 @@
     word-break: break-all;
   }
 }
+
+/* ═══════════════════════════════════════════
+   TABULATOR — Tema Hero Light para el Log
+   ═══════════════════════════════════════════ */
+#al-table {
+  background: #fff;
+  border: 1px solid var(--border, #e8e8e8);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+/* Overrides del tema modern de Tabulator */
+.tabulator {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  font-family: var(--display, "Inter"), system-ui, sans-serif;
+  font-size: 13px;
+}
+
+.tabulator .tabulator-header {
+  background: linear-gradient(180deg, #ecfeff 0%, #cffafe 100%);
+  border-bottom: 1.5px solid var(--cyan, #06a3b6);
+  color: #062a33;
+}
+.tabulator .tabulator-header .tabulator-col {
+  background: transparent;
+  border-right: 1px solid rgba(6, 163, 182, .12);
+}
+.tabulator .tabulator-header .tabulator-col .tabulator-col-content {
+  padding: 12px 14px;
+}
+.tabulator .tabulator-header .tabulator-col .tabulator-col-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #057b8c;
+}
+.tabulator .tabulator-header .tabulator-col.tabulator-sortable:hover {
+  background: rgba(6, 163, 182, .08);
+}
+.tabulator .tabulator-header .tabulator-col[aria-sort="ascending"] .tabulator-col-title,
+.tabulator .tabulator-header .tabulator-col[aria-sort="descending"] .tabulator-col-title {
+  color: var(--cyan, #06a3b6);
+}
+
+.tabulator .tabulator-row {
+  background: #fff;
+  border-bottom: 1px solid #f1f5f9;
+  min-height: 52px;
+  transition: background .12s ease;
+}
+.tabulator .tabulator-row.tabulator-row-even {
+  background: #fafcfd;
+}
+.tabulator .tabulator-row:hover {
+  background: rgba(6, 163, 182, .06) !important;
+}
+.tabulator .tabulator-row .tabulator-cell {
+  padding: 12px 14px;
+  vertical-align: middle;
+  font-size: 13px;
+  color: #062a33;
+  border-right: 1px solid #f1f5f9;
+}
+
+/* Footer / pagination */
+.tabulator .tabulator-footer {
+  background: #f8fafc;
+  border-top: 1px solid var(--border, #e8e8e8);
+  padding: 8px 14px;
+}
+.tabulator .tabulator-paginator {
+  font-size: 12px; font-weight: 600;
+  color: var(--muted, #64748b);
+  display: flex; align-items: center; gap: 10px;
+}
+.tabulator .tabulator-page {
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid var(--border, #e8e8e8);
+  color: var(--muted, #64748b);
+  font-family: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .15s;
+}
+.tabulator .tabulator-page:hover:not(:disabled) {
+  background: rgba(6, 163, 182, .1);
+  color: var(--cyan, #06a3b6);
+  border-color: var(--cyan, #06a3b6);
+}
+.tabulator .tabulator-page.active {
+  background: var(--cyan, #06a3b6);
+  color: #fff;
+  border-color: var(--cyan, #06a3b6);
+}
+.tabulator .tabulator-page-size {
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border, #e8e8e8);
+  background: #fff;
+  font-family: inherit;
+  font-weight: 600;
+}
+
+.tabulator-placeholder {
+  color: var(--muted, #94a3b8);
+  font-size: 14px;
+  font-style: italic;
+  padding: 60px 20px !important;
+}
+
+.tabulator-alert {
+  background: rgba(6, 163, 182, .08);
+  color: var(--cyan, #06a3b6);
+  font-weight: 600;
+}
+
+/* ═══ Celdas customizadas ═══ */
+.al-cell-action {
+  display: flex; align-items: center; gap: 10px;
+}
+.al-cell-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.al-cell-icon i { width: 16px; height: 16px; }
+.al-cell-label {
+  font-weight: 700;
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.al-cell-time {
+  font-family: var(--mono, "JetBrains Mono", monospace);
+  font-size: 11.5px;
+  color: var(--muted, #64748b);
+}
+
+/* Tags y key-value pairs en columna Detalles */
+.al-tag {
+  display: inline-block;
+  padding: 2px 8px; border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 11px; font-weight: 700;
+  border: 1px solid #e2e8f0;
+}
+.al-tag-cyan {
+  background: rgba(6, 163, 182, .12);
+  color: #057b8c;
+  border-color: rgba(6, 163, 182, .3);
+}
+.al-kv {
+  display: inline-block;
+  margin-right: 10px;
+  font-size: 12px;
+  color: #475569;
+}
+.al-kv em {
+  font-style: normal;
+  color: var(--muted, #94a3b8);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  font-weight: 800;
+  margin-right: 4px;
+}
+.al-cell-action + * code,
+.tabulator-cell code {
+  font-family: var(--mono, "JetBrains Mono", monospace);
+  font-size: 11.5px;
+  background: rgba(6, 42, 51, .06);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+@media (max-width: 700px) {
+  .tabulator .tabulator-row .tabulator-cell { padding: 10px 8px; }
+  .al-cell-label { font-size: 12px; }
+  .al-cell-icon { width: 26px; height: 26px; }
+}

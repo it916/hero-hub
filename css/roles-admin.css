@@ -297,6 +297,112 @@
   border-color: #06a3b6;
 }
 
+/* ═══════════════════════════════════════════
+   TABULATOR — Mount + ajustes de celda
+   El tema general (header cyan, paginación, etc.) lo
+   define audit-panel.css (afecta a .tabulator global).
+   ═══════════════════════════════════════════ */
+#ra-table {
+  background: #fff;
+  border: 1px solid var(--border, #e8e8e8);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+/* Asegurar que las celdas con flex-content respiren */
+#ra-table .tabulator-cell { padding: 10px 14px; }
+
+#ra-table .ra-user-cell {
+  display: flex; align-items: center; gap: 12px;
+  min-width: 0;
+}
+#ra-table .ra-avatar,
+#ra-table .ra-avatar-initials { flex-shrink: 0; }
+#ra-table .ra-user-info { min-width: 0; flex: 1; }
+#ra-table .ra-user-name,
+#ra-table .ra-user-email {
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+#ra-table .ra-updated {
+  display: flex; flex-direction: column; gap: 2px;
+  line-height: 1.2;
+}
+#ra-table .ra-updated-date {
+  font-family: var(--mono, "JetBrains Mono", monospace);
+  font-size: 12px;
+  color: var(--text, #1a1a1a);
+  font-weight: 600;
+}
+#ra-table .ra-updated-by {
+  font-size: 10.5px;
+  color: var(--muted, #94a3b8);
+}
+#ra-table .ra-no-date {
+  color: var(--muted, #94a3b8);
+  font-style: italic;
+}
+
+#ra-table .ra-act-btn.ra-del {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted, #64748b);
+  font-size: 14px; font-weight: 700;
+  cursor: pointer;
+  transition: all .15s;
+}
+#ra-table .ra-act-btn.ra-del:hover {
+  background: #fee2e2; color: #b91c1c;
+  border-color: #fecaca;
+}
+
+#ra-table .ra-protected {
+  font-size: 18px; opacity: .7;
+}
+
+/* ═══════════════════════════════════════════
+   Modal sl-dialog "Agregar usuario"
+   ═══════════════════════════════════════════ */
+.ra-add-dialog::part(panel) {
+  border-radius: 16px;
+  max-width: 480px;
+}
+.ra-add-dialog::part(header) {
+  background: linear-gradient(135deg, #06a3b6, #057b8c);
+  color: #fff;
+}
+.ra-add-dialog::part(title) {
+  font-family: var(--display, "Bricolage Grotesque", "Inter"), sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: 0.3px;
+}
+.ra-add-dialog::part(close-button) {
+  color: rgba(255,255,255,.85);
+}
+.ra-add-dialog::part(close-button):hover {
+  color: #fff;
+}
+
+.ra-add-dialog .ra-add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.ra-add-dialog .ra-add-form sl-input,
+.ra-add-dialog .ra-add-form sl-select {
+  display: block;
+}
+.ra-add-dialog .ra-suggestions-note {
+  margin: -6px 0 0;
+}
+.ra-add-dialog .ra-role-hint {
+  margin: 0;
+}
+
 .ra-role-select:focus {
   outline: none;
   border-color: #06a3b6;

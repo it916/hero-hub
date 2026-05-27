@@ -19,6 +19,15 @@
 <!-- Efecto eléctrico (Canvas procedural) para el clic de "Activar Misión" -->
 <script defer src="js/electricity.js"></script>
 <script defer src="js/topbar-dropdown.js"></script>
+
+<!-- Flatpickr · date picker para el modal de Ausencia -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+
+<!-- Shoelace · component library (modal Ausencia y futuros componentes) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css">
+<script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/shoelace-autoloader.js"></script>
 </head>
 <body>
 
@@ -147,26 +156,14 @@
             <p class="hero-cover-sub" id="hero-sub">—</p>
           </div>
 
-          <!-- Panel de acciones: Entrada / Salida + Oficina Virtual -->
+          <!-- Panel de acciones: Oficina Virtual -->
           <div class="hero-cover-actions">
             <div class="hero-action-title">Acceso:</div>
-            <!-- Entrada / Salida — oculto temporalmente. Activar más adelante quitando style="display:none" -->
-            <div class="hero-action-row" style="display:none">
-              <button class="hero-action-btn entry" id="btnEntrada" type="button">
-                <i data-lucide="log-in"></i>
-                <span>Entrada</span>
-              </button>
-              <button class="hero-action-btn exit" id="btnSalida" type="button">
-                <i data-lucide="log-out"></i>
-                <span>Salida</span>
-              </button>
-            </div>
             <a class="hero-action-btn gather" href="https://app.v2.gather.town/app/hero-insurance-usa-2e9e375c-6dcb-40c4-b607-d0791d5dfb78" target="_blank" rel="noopener">
               <i data-lucide="building"></i>
               <span>Entrar a Oficina Virtual</span>
               <i data-lucide="arrow-right" class="hero-action-arrow"></i>
             </a>
-            <div class="hero-action-status" id="attendanceStatus"></div>
           </div>
         </div>
 
@@ -176,6 +173,73 @@
           <div class="hmeta-chip"><i data-lucide="map-pin"></i><span>Miami, FL</span></div>
           <div class="hmeta-chip weather-chip"><span id="meta-weather-icon">⛅</span><span id="meta-weather">—</span></div>
         </div>
+      </div>
+    </section>
+
+    <div class="connector"></div>
+
+    <!-- ══ MI ASISTENCIA — Registro diario de jornada, break, corte de luz y ausencias ══ -->
+    <section class="section fade-in" id="sec-asistencia">
+      <div class="section-label"><span class="kicker-dot"></span>Mi asistencia</div>
+      <div class="attendance-panel">
+
+        <div class="att-group att-g-jornada">
+          <div class="att-group-title"><i data-lucide="clock"></i><span>Jornada</span></div>
+          <div class="att-group-buttons">
+            <button class="att-btn att-entrada" data-att-type="Entrada" type="button">
+              <i data-lucide="log-in"></i><span>Entrada</span>
+            </button>
+            <button class="att-btn att-salida" data-att-type="Salida" type="button">
+              <i data-lucide="log-out"></i><span>Salida</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="att-group att-g-break">
+          <div class="att-group-title"><i data-lucide="coffee"></i><span>Break</span></div>
+          <div class="att-group-buttons">
+            <button class="att-btn att-break-start" data-att-type="Inicio Break" type="button">
+              <i data-lucide="pause"></i><span>Iniciar break</span>
+            </button>
+            <button class="att-btn att-break-end" data-att-type="Fin Break" type="button">
+              <i data-lucide="play"></i><span>Volver del break</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="att-group att-g-luz">
+          <div class="att-group-title"><i data-lucide="zap-off"></i><span>Corte de luz</span></div>
+          <div class="att-group-buttons">
+            <button class="att-btn att-luz-off" data-att-type="Corte Luz Inicio" type="button">
+              <i data-lucide="zap-off"></i><span>Se fue la luz</span>
+            </button>
+            <button class="att-btn att-luz-on" data-att-type="Corte Luz Fin" type="button">
+              <i data-lucide="zap"></i><span>Volvió la luz</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="att-group att-g-ausencia">
+          <div class="att-group-title"><i data-lucide="calendar-x"></i><span>Ausencia</span></div>
+          <div class="att-group-buttons">
+            <button class="att-btn att-ausencia" id="btnAusencia" type="button">
+              <i data-lucide="file-text"></i><span>Reportar ausencia</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="att-status-bar">
+          <div class="att-status-row">
+            <span class="att-status-label">Estado:</span>
+            <span class="att-status-value" id="attStatusValue">— sin registro hoy —</span>
+          </div>
+          <div class="att-status-row att-status-last">
+            <span class="att-status-label">Último registro:</span>
+            <span class="att-status-value" id="attLastValue">—</span>
+          </div>
+          <div class="att-feedback" id="attendanceStatus"></div>
+        </div>
+
       </div>
     </section>
 
@@ -591,7 +655,7 @@
     }
 
     // ── Activar Misión: animación cinemática (GSAP + confetti + Web Audio) + redirect ──
-    // Sonido sintetizado en vivo: power-up sweep + impacto + ring de resonancia
+    // Sonido sintetizado en vivo: zap eléctrico tipo Tesla — chispa + buzz + arco + sizzle
     function playMissionSound() {
       try {
         const AC = window.AudioContext || window.webkitAudioContext;
@@ -599,69 +663,114 @@
         const ctx = new AC();
         const now = ctx.currentTime;
         const master = ctx.createGain();
-        master.gain.value = 0.7;
+        master.gain.value = 0.75;
         master.connect(ctx.destination);
 
-        // ── Power-up sweep (sawtooth filtrado: charge-up heroico) ──
-        const sweep = ctx.createOscillator();
-        sweep.type = "sawtooth";
-        sweep.frequency.setValueAtTime(110, now);
-        sweep.frequency.exponentialRampToValueAtTime(1900, now + 0.7);
+        // ── Zap inicial: cuadrada con saltos de frecuencia escalonados (chispa) ──
+        const zap = ctx.createOscillator();
+        zap.type = "square";
+        const zapSteps = [180, 420, 290, 720, 540, 1100, 880, 1600, 1300, 2200];
+        zapSteps.forEach((f, i) => {
+          zap.frequency.setValueAtTime(f, now + i * 0.055);
+        });
 
-        const sweepFilter = ctx.createBiquadFilter();
-        sweepFilter.type = "lowpass";
-        sweepFilter.frequency.setValueAtTime(350, now);
-        sweepFilter.frequency.exponentialRampToValueAtTime(9000, now + 0.7);
-        sweepFilter.Q.value = 6;
+        const zapFilter = ctx.createBiquadFilter();
+        zapFilter.type = "highpass";
+        zapFilter.frequency.value = 400;
+        zapFilter.Q.value = 4;
 
-        const sweepGain = ctx.createGain();
-        sweepGain.gain.setValueAtTime(0, now);
-        sweepGain.gain.linearRampToValueAtTime(0.22, now + 0.08);
-        sweepGain.gain.linearRampToValueAtTime(0.28, now + 0.55);
-        sweepGain.gain.linearRampToValueAtTime(0.001, now + 0.8);
+        const zapGain = ctx.createGain();
+        zapGain.gain.setValueAtTime(0, now);
+        zapGain.gain.linearRampToValueAtTime(0.18, now + 0.01);
+        zapGain.gain.linearRampToValueAtTime(0.22, now + 0.55);
+        zapGain.gain.linearRampToValueAtTime(0.001, now + 0.62);
 
-        sweep.connect(sweepFilter); sweepFilter.connect(sweepGain); sweepGain.connect(master);
-        sweep.start(now); sweep.stop(now + 0.85);
+        zap.connect(zapFilter); zapFilter.connect(zapGain); zapGain.connect(master);
+        zap.start(now); zap.stop(now + 0.65);
 
-        // ── Impacto al momento del burst (boom + noise burst) en t=0.6 ──
+        // ── Buzz eléctrico (60 Hz mains hum modulado) durante el charge ──
+        const buzz = ctx.createOscillator();
+        buzz.type = "sawtooth";
+        buzz.frequency.value = 60;
+        const buzzGain = ctx.createGain();
+        buzzGain.gain.setValueAtTime(0, now);
+        buzzGain.gain.linearRampToValueAtTime(0.12, now + 0.05);
+        buzzGain.gain.linearRampToValueAtTime(0.18, now + 0.55);
+        buzzGain.gain.linearRampToValueAtTime(0.001, now + 0.62);
+        // LFO de modulación rápida para "crackle"
+        const buzzLFO = ctx.createOscillator();
+        buzzLFO.type = "square";
+        buzzLFO.frequency.value = 38;
+        const buzzLFOGain = ctx.createGain();
+        buzzLFOGain.gain.value = 0.08;
+        buzzLFO.connect(buzzLFOGain); buzzLFOGain.connect(buzzGain.gain);
+        buzz.connect(buzzGain); buzzGain.connect(master);
+        buzz.start(now); buzz.stop(now + 0.65);
+        buzzLFO.start(now); buzzLFO.stop(now + 0.65);
+
+        // ── Crackle: ruido pasabanda con shimmer (chisporroteo continuo) ──
+        const crackleBuf = ctx.createBuffer(1, ctx.sampleRate * 0.6, ctx.sampleRate);
+        const crackleData = crackleBuf.getChannelData(0);
+        for (let i = 0; i < crackleData.length; i++) {
+          // Ráfagas aleatorias intensas (chispitas)
+          crackleData[i] = (Math.random() < 0.04 ? (Math.random() * 2 - 1) : (Math.random() * 2 - 1) * 0.3);
+        }
+        const crackle = ctx.createBufferSource(); crackle.buffer = crackleBuf;
+        const crackleFilter = ctx.createBiquadFilter();
+        crackleFilter.type = "bandpass"; crackleFilter.frequency.value = 3500; crackleFilter.Q.value = 2.2;
+        const crackleGain = ctx.createGain();
+        crackleGain.gain.setValueAtTime(0.0, now);
+        crackleGain.gain.linearRampToValueAtTime(0.14, now + 0.05);
+        crackleGain.gain.linearRampToValueAtTime(0.2, now + 0.55);
+        crackleGain.gain.linearRampToValueAtTime(0.001, now + 0.62);
+        crackle.connect(crackleFilter); crackleFilter.connect(crackleGain); crackleGain.connect(master);
+        crackle.start(now);
+
+        // ── Arco eléctrico al impacto (t=0.6): ruido alto-pasado + zap final ──
         const impact = now + 0.6;
 
-        const boom = ctx.createOscillator();
-        boom.type = "sine";
-        boom.frequency.setValueAtTime(120, impact);
-        boom.frequency.exponentialRampToValueAtTime(32, impact + 0.4);
-        const boomGain = ctx.createGain();
-        boomGain.gain.setValueAtTime(0, impact);
-        boomGain.gain.linearRampToValueAtTime(0.55, impact + 0.015);
-        boomGain.gain.exponentialRampToValueAtTime(0.001, impact + 0.55);
-        boom.connect(boomGain); boomGain.connect(master);
-        boom.start(impact); boom.stop(impact + 0.6);
-
-        // Ráfaga de ruido blanco para el "impacto"
-        const noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 0.35, ctx.sampleRate);
-        const noiseData = noiseBuf.getChannelData(0);
-        for (let i = 0; i < noiseData.length; i++) {
-          noiseData[i] = (Math.random() * 2 - 1) * (1 - i / noiseData.length);
+        const arcBuf = ctx.createBuffer(1, ctx.sampleRate * 0.4, ctx.sampleRate);
+        const arcData = arcBuf.getChannelData(0);
+        for (let i = 0; i < arcData.length; i++) {
+          arcData[i] = (Math.random() * 2 - 1) * (1 - i / arcData.length);
         }
-        const noise = ctx.createBufferSource(); noise.buffer = noiseBuf;
-        const noiseFilter = ctx.createBiquadFilter();
-        noiseFilter.type = "bandpass"; noiseFilter.frequency.value = 900; noiseFilter.Q.value = 1.4;
-        const noiseGain = ctx.createGain();
-        noiseGain.gain.setValueAtTime(0.3, impact);
-        noiseGain.gain.exponentialRampToValueAtTime(0.001, impact + 0.35);
-        noise.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(master);
-        noise.start(impact);
+        const arc = ctx.createBufferSource(); arc.buffer = arcBuf;
+        const arcFilter = ctx.createBiquadFilter();
+        arcFilter.type = "highpass"; arcFilter.frequency.value = 2200; arcFilter.Q.value = 1.2;
+        const arcGain = ctx.createGain();
+        arcGain.gain.setValueAtTime(0.45, impact);
+        arcGain.gain.exponentialRampToValueAtTime(0.001, impact + 0.4);
+        arc.connect(arcFilter); arcFilter.connect(arcGain); arcGain.connect(master);
+        arc.start(impact);
 
-        // ── Ring de resonancia (cola brillante) ──
-        const ring = ctx.createOscillator();
-        ring.type = "sine";
-        ring.frequency.setValueAtTime(523, impact); // C5
-        const ringGain = ctx.createGain();
-        ringGain.gain.setValueAtTime(0, impact);
-        ringGain.gain.linearRampToValueAtTime(0.18, impact + 0.05);
-        ringGain.gain.exponentialRampToValueAtTime(0.001, impact + 1.0);
-        ring.connect(ringGain); ringGain.connect(master);
-        ring.start(impact); ring.stop(impact + 1.05);
+        // ── Zap final descendente: pitch caótico (Tesla discharge) ──
+        const discharge = ctx.createOscillator();
+        discharge.type = "sawtooth";
+        discharge.frequency.setValueAtTime(2400, impact);
+        discharge.frequency.exponentialRampToValueAtTime(180, impact + 0.35);
+        const dischargeFilter = ctx.createBiquadFilter();
+        dischargeFilter.type = "bandpass";
+        dischargeFilter.frequency.value = 1800;
+        dischargeFilter.Q.value = 8;
+        const dischargeGain = ctx.createGain();
+        dischargeGain.gain.setValueAtTime(0.35, impact);
+        dischargeGain.gain.exponentialRampToValueAtTime(0.001, impact + 0.4);
+        discharge.connect(dischargeFilter); dischargeFilter.connect(dischargeGain); dischargeGain.connect(master);
+        discharge.start(impact); discharge.stop(impact + 0.45);
+
+        // ── Sizzle tail: armónicos altos con shimmer (cola metálica) ──
+        const sizzle = ctx.createOscillator();
+        sizzle.type = "square";
+        sizzle.frequency.setValueAtTime(2093, impact); // C7
+        sizzle.frequency.linearRampToValueAtTime(1568, impact + 0.8); // G6
+        const sizzleFilter = ctx.createBiquadFilter();
+        sizzleFilter.type = "highpass"; sizzleFilter.frequency.value = 1500;
+        const sizzleGain = ctx.createGain();
+        sizzleGain.gain.setValueAtTime(0, impact);
+        sizzleGain.gain.linearRampToValueAtTime(0.12, impact + 0.04);
+        sizzleGain.gain.exponentialRampToValueAtTime(0.001, impact + 0.9);
+        sizzle.connect(sizzleFilter); sizzleFilter.connect(sizzleGain); sizzleGain.connect(master);
+        sizzle.start(impact); sizzle.stop(impact + 0.95);
 
         // Cierre del contexto cuando ya nada suena
         setTimeout(() => { try { ctx.close(); } catch (_) {} }, 2500);
@@ -678,9 +787,6 @@
         e.preventDefault();
         obWelcome.dataset.activating = "1";
         const destination = obWelcome.getAttribute("href") || "onboarding.html";
-
-        // Disparar sonido inmediatamente (gesto del usuario satisface la policy de autoplay)
-        playMissionSound();
 
         // Calcular posición del CTA en fracciones del viewport (para burst + confetti)
         const cta = obWelcome.querySelector(".ob-w-cta");

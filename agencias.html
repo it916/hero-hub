@@ -75,9 +75,11 @@
       <div class="page-kicker">• Hero Insurance USA •</div>
       <h1 class="page-title">Organigrama de Agencias</h1>
       <p class="page-sub">Estructura completa: agencias, agentes a cargo y brokers</p>
-      <button id="ag-btn-new" class="btn-primary ag-btn-new" style="display:none;">
-        <i data-lucide="plus"></i><span>Nueva agencia</span>
-      </button>
+      <div class="ag-header-actions">
+        <button id="ag-btn-new" class="ag-btn-new" style="display:none;">
+          <i data-lucide="plus"></i><span>Nueva agencia</span>
+        </button>
+      </div>
     </section>
 
     <!-- Stats cards -->
@@ -155,6 +157,14 @@
       <button class="ag-plan-clear" id="ag-plan-clear" style="display:none;">
         <i data-lucide="x"></i><span>Limpiar</span>
       </button>
+
+      <!-- Sync bar (solo modo Sheet): empujado a la derecha vía margin-left:auto -->
+      <div id="ag-sync-bar" class="ag-sync-bar" style="display:none;">
+        <span id="ag-last-update" class="ag-last-update">—</span>
+        <button id="ag-btn-refresh" class="ag-btn-sync" title="Re-leer datos del Sheet">
+          <i data-lucide="refresh-cw"></i><span>Actualizar</span>
+        </button>
+      </div>
     </section>
 
     <!-- Vista LISTA (jerarquía colapsable) -->

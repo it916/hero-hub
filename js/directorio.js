@@ -280,68 +280,91 @@ function buildCardHTML(c) {
 function openContactModal(idx) {
   const editing = idx !== null && idx >= 0;
   const c = editing ? contacts[idx] : { name:'', company:'', dept:'', phones:[''], email:'', notes:'', products:[], state:'' };
+  const esc = (s) => (s == null ? "" : String(s)).replace(/"/g, "&quot;").replace(/&/g, "&amp;");
 
-  const modal = document.createElement('div');
-  modal.className = 'modal-overlay';
-  modal.innerHTML = `<div class="modal modal-wide">
-    <h3>${editing ? 'Editar contacto' : 'Nuevo contacto'}</h3>
-    <div class="modal-grid-2">
-      <label>Nombre <input id="c-name" value="${(c.name||'').replace(/"/g,'&quot;')}" maxlength="60" placeholder="Ej. María García"></label>
-      <label>Empresa * <input id="c-company" value="${(c.company||'').replace(/"/g,'&quot;')}" maxlength="40" placeholder="Ej. HUMANA"></label>
-    </div>
-    <div class="modal-grid-2">
-      <label>Departamento
-        <select id="c-dept">
-          <option value="">— Sin departamento —</option>
-          ${Object.keys(DEPT_COLORS).map(d => `<option value="${d}"${c.dept===d?' selected':''}>${d}</option>`).join('')}
-        </select>
-      </label>
-      <label>Email <input id="c-email" type="email" value="${(c.email||'').replace(/"/g,'&quot;')}" placeholder="correo@empresa.com"></label>
-    </div>
-    <label>Teléfonos (uno por línea) <textarea id="c-phones" rows="2" placeholder="(305) 000-0000">${(c.phones||[]).join('\n')}</textarea></label>
-
-    <label>Productos
-      <div class="dir-modal-products">
-        ${PRODUCT_TYPES.map(p => {
-          const checked = (c.products||[]).includes(p) ? 'checked' : '';
-          return `<label class="dir-modal-product-check">
-            <input type="checkbox" name="c-product" value="${p}" ${checked}>
-            <span class="dir-product-mini dir-product-${p.toLowerCase()}">${p}</span>
-          </label>`;
-        }).join('')}
+  const dialog = document.createElement("sl-dialog");
+  dialog.label = editing ? `✎ Editar contacto · ${c.company || c.name}` : "✦ Nuevo contacto";
+  dialog.className = "hh-dialog contact-dialog";
+  dialog.innerHTML = `
+    <div class="hh-form contact-form">
+      <div class="modal-grid-2">
+        <sl-input id="c-name" label="Nombre"
+          value="${esc(c.name)}" maxlength="60" placeholder="Ej. María García" clearable></sl-input>
+        <sl-input id="c-company" label="Empresa *"
+          value="${esc(c.company)}" maxlength="40" placeholder="Ej. HUMANA" required clearable></sl-input>
       </div>
-    </label>
 
-    <label>Estado
-      <select id="c-state">
-        <option value="">— Sin estado asignado —</option>
-        ${US_STATES.map(s => `<option value="${s.code}"${c.state===s.code?' selected':''}>${s.name} (${s.code})</option>`).join('')}
-      </select>
-    </label>
+      <div class="modal-grid-2">
+        <sl-select id="c-dept" label="Departamento" hoist clearable>
+          <sl-option value="">— Sin departamento —</sl-option>
+          ${Object.keys(DEPT_COLORS).map(d => `<sl-option value="${d}">${d}</sl-option>`).join('')}
+        </sl-select>
+        <sl-input id="c-email" label="Email" type="email"
+          value="${esc(c.email)}" placeholder="correo@empresa.com" clearable></sl-input>
+      </div>
 
-    <label>Notas <input id="c-notes" value="${(c.notes||'').replace(/"/g,'&quot;')}" maxlength="120" placeholder="Ej. Contactar para entrenamientos"></label>
-    <div class="modal-buttons">
-      <button class="btn-ghost-dark" id="c-cancel">Cancelar</button>
-      <button class="btn-primary" id="c-save">${editing ? 'Guardar' : 'Agregar'}</button>
+      <sl-textarea id="c-phones" label="Teléfonos (uno por línea)"
+        rows="2" resize="vertical" placeholder="(305) 000-0000"></sl-textarea>
+
+      <div class="hh-field">
+        <label class="hh-field-label">Productos</label>
+        <div class="dir-modal-products">
+          ${PRODUCT_TYPES.map(p => {
+            const checked = (c.products||[]).includes(p) ? 'checked' : '';
+            return `<label class="dir-modal-product-check">
+              <input type="checkbox" name="c-product" value="${p}" ${checked}>
+              <span class="dir-product-mini dir-product-${p.toLowerCase()}">${p}</span>
+            </label>`;
+          }).join('')}
+        </div>
+      </div>
+
+      <sl-select id="c-state" label="Estado" hoist clearable>
+        <sl-option value="">— Sin estado asignado —</sl-option>
+        ${US_STATES.map(s => `<sl-option value="${s.code}">${s.name} (${s.code})</sl-option>`).join('')}
+      </sl-select>
+
+      <sl-input id="c-notes" label="Notas"
+        value="${esc(c.notes)}" maxlength="120" placeholder="Ej. Contactar para entrenamientos" clearable></sl-input>
     </div>
-  </div>`;
-  document.body.appendChild(modal);
 
-  modal.querySelector("#c-cancel").onclick = () => modal.remove();
-  modal.querySelector("#c-save").onclick = async () => {
-    const company = modal.querySelector("#c-company").value.trim();
-    if (!company) { alert("Empresa es obligatoria"); return; }
-    const products = Array.from(modal.querySelectorAll('input[name="c-product"]:checked')).map(i => i.value);
+    <sl-button slot="footer" id="c-cancel" variant="default">Cancelar</sl-button>
+    <sl-button slot="footer" id="c-save" variant="primary">
+      <i data-lucide="${editing ? 'check' : 'plus'}" slot="prefix" style="width:14px;height:14px;"></i>
+      ${editing ? 'Guardar' : 'Agregar'}
+    </sl-button>
+  `;
+  document.body.appendChild(dialog);
+  if (window.refreshIcons) window.refreshIcons();
+
+  // Valores que no van bien como atributo
+  dialog.querySelector("#c-phones").value = (c.phones || []).join("\n");
+  customElements.whenDefined("sl-select").then(() => {
+    dialog.querySelector("#c-dept").value = c.dept || "";
+    dialog.querySelector("#c-state").value = c.state || "";
+  });
+
+  dialog.addEventListener("sl-after-hide", () => dialog.remove());
+  dialog.querySelector("#c-cancel").addEventListener("click", () => dialog.hide());
+
+  dialog.querySelector("#c-save").addEventListener("click", async () => {
+    const company = (dialog.querySelector("#c-company").value || "").trim();
+    if (!company) {
+      alert("Empresa es obligatoria");
+      dialog.querySelector("#c-company").focus();
+      return;
+    }
+    const products = Array.from(dialog.querySelectorAll('input[name="c-product"]:checked')).map(i => i.value);
     const nuevo = {
       id: editing ? c.id : crypto.randomUUID(),
-      name: modal.querySelector("#c-name").value.trim(),
+      name: (dialog.querySelector("#c-name").value || "").trim(),
       company,
-      dept: modal.querySelector("#c-dept").value,
-      email: modal.querySelector("#c-email").value.trim(),
-      phones: modal.querySelector("#c-phones").value.split('\n').map(x=>x.trim()).filter(x=>x),
+      dept: dialog.querySelector("#c-dept").value || "",
+      email: (dialog.querySelector("#c-email").value || "").trim(),
+      phones: (dialog.querySelector("#c-phones").value || "").split("\n").map(x => x.trim()).filter(Boolean),
       products,
-      state: modal.querySelector("#c-state").value,
-      notes: modal.querySelector("#c-notes").value.trim(),
+      state: dialog.querySelector("#c-state").value || "",
+      notes: (dialog.querySelector("#c-notes").value || "").trim(),
       updatedBy: auth.currentUser.email,
       updatedAt: new Date().toISOString()
     };
@@ -351,18 +374,17 @@ function openContactModal(idx) {
 
     try {
       await setDoc(doc(db, "shared", "directorio"), { contacts });
-
-      // Log de auditoría
       logEvent(
         editing ? ACTIONS.CONTACT_EDIT : ACTIONS.CONTACT_ADD,
         nuevo.name || nuevo.company,
         { company: nuevo.company || "—", dept: nuevo.dept || "—", state: nuevo.state || "—", products: products.join(", ") || "—" }
       );
-
-      modal.remove();
+      dialog.hide();
       renderDirectory();
     } catch (e) {
       alert("Error: " + e.message);
     }
-  };
+  });
+
+  dialog.show();
 }

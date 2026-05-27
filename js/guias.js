@@ -123,34 +123,46 @@ function renderGuias() {
 function openGuiaModal(idx) {
   const editing = idx !== null && idx >= 0;
   const g = editing ? guias[idx] : { emoji:'📘', tag:'', title:'', url:'' };
+  const esc = (s) => (s == null ? "" : String(s)).replace(/"/g, "&quot;").replace(/&/g, "&amp;");
 
-  const modal = document.createElement('div');
-  modal.className = 'modal-overlay';
-  modal.innerHTML = `<div class="modal modal-wide">
-    <h3>${editing ? 'Editar guía' : 'Nueva guía'}</h3>
-    <div class="modal-grid-2">
-      <label>Emoji <input id="g-emoji" value="${(g.emoji||'').replace(/"/g,'&quot;')}" maxlength="4" placeholder="📘"></label>
-      <label>Categoría / Tag <input id="g-tag" value="${(g.tag||'').replace(/"/g,'&quot;')}" maxlength="30" placeholder="Ej. Aetna, Oscar, Contratos..."></label>
+  const dialog = document.createElement("sl-dialog");
+  dialog.label = editing ? `✎ Editar guía · ${g.title || ''}` : "✦ Nueva guía";
+  dialog.className = "hh-dialog guia-edit-dialog";
+  dialog.innerHTML = `
+    <div class="hh-form">
+      <div class="modal-grid-2">
+        <sl-input id="g-emoji" label="Emoji"
+          value="${esc(g.emoji)}" maxlength="4" placeholder="📘"></sl-input>
+        <sl-input id="g-tag" label="Categoría / Tag"
+          value="${esc(g.tag)}" maxlength="30" placeholder="Ej. Aetna, Oscar, Contratos…" clearable></sl-input>
+      </div>
+      <sl-input id="g-title" label="Título *"
+        value="${esc(g.title)}" maxlength="120" placeholder="Ej. Crear cuenta en…" required clearable></sl-input>
+      <sl-input id="g-url" label="URL de la guía (Scribe, Loom, Drive…) *" type="url"
+        value="${esc(g.url)}" placeholder="https://scribehow.com/viewer/…" required clearable></sl-input>
     </div>
-    <label>Título * <input id="g-title" value="${(g.title||'').replace(/"/g,'&quot;')}" maxlength="120" placeholder="Ej. Crear cuenta en..."></label>
-    <label>URL de la guía (Scribe, Loom, Drive...) * <input id="g-url" type="url" value="${(g.url||'').replace(/"/g,'&quot;')}" placeholder="https://scribehow.com/viewer/..."></label>
-    <div class="modal-buttons">
-      <button class="btn-ghost-dark" id="g-cancel">Cancelar</button>
-      <button class="btn-primary" id="g-save">${editing ? 'Guardar' : 'Agregar'}</button>
-    </div>
-  </div>`;
-  document.body.appendChild(modal);
 
-  modal.querySelector("#g-cancel").onclick = () => modal.remove();
-  modal.querySelector("#g-save").onclick = async () => {
-    const title = modal.querySelector("#g-title").value.trim();
-    const url = modal.querySelector("#g-url").value.trim();
-    if (!title) { alert("El título es obligatorio"); return; }
-    if (!url) { alert("La URL es obligatoria"); return; }
+    <sl-button slot="footer" id="g-cancel" variant="default">Cancelar</sl-button>
+    <sl-button slot="footer" id="g-save" variant="primary">
+      <i data-lucide="${editing ? 'check' : 'plus'}" slot="prefix" style="width:14px;height:14px;"></i>
+      ${editing ? 'Guardar' : 'Agregar'}
+    </sl-button>
+  `;
+  document.body.appendChild(dialog);
+  if (window.refreshIcons) window.refreshIcons();
+
+  dialog.addEventListener("sl-after-hide", () => dialog.remove());
+  dialog.querySelector("#g-cancel").addEventListener("click", () => dialog.hide());
+
+  dialog.querySelector("#g-save").addEventListener("click", async () => {
+    const title = (dialog.querySelector("#g-title").value || "").trim();
+    const url = (dialog.querySelector("#g-url").value || "").trim();
+    if (!title) { alert("El título es obligatorio"); dialog.querySelector("#g-title").focus(); return; }
+    if (!url) { alert("La URL es obligatoria"); dialog.querySelector("#g-url").focus(); return; }
 
     const nueva = {
-      emoji: modal.querySelector("#g-emoji").value.trim() || '📘',
-      tag: modal.querySelector("#g-tag").value.trim(),
+      emoji: (dialog.querySelector("#g-emoji").value || "").trim() || '📘',
+      tag: (dialog.querySelector("#g-tag").value || "").trim(),
       title,
       url,
       updatedBy: auth.currentUser.email,
@@ -162,8 +174,10 @@ function openGuiaModal(idx) {
 
     try {
       await setDoc(doc(db, "shared", "guias"), { items: guias });
-      modal.remove();
+      dialog.hide();
       renderGuias();
     } catch (e) { alert("Error: " + e.message); }
-  };
+  });
+
+  dialog.show();
 }

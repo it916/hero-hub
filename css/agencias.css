@@ -582,11 +582,18 @@
   position: relative;
 }
 
-.ag-btn-new {
+/* Contenedor de acciones en el header (refresh + label + nueva agencia) */
+.ag-header-actions {
   position: absolute;
   top: 50%;
   right: 0;
   transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ag-btn-new {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -608,8 +615,80 @@
 
 .ag-btn-new:hover {
   background: var(--ag-hero);
-  transform: translateY(-50%) translateY(-2px);
+  transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(6,163,182,.40);
+}
+
+.ag-btn-new:disabled,
+.ag-btn-new.is-loading {
+  opacity: .7;
+  cursor: wait;
+  transform: none;
+}
+
+/* Icono refresh-cw gira mientras está cargando */
+.ag-btn-new.is-loading i[data-lucide="refresh-cw"],
+.ag-btn-new.is-loading svg {
+  animation: spinRing .8s linear infinite;
+}
+
+/* Pill con la última hora de sincronización */
+.ag-last-update {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(6,163,182,.08);
+  border: 1px solid rgba(6,163,182,.20);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ag-hero-dark);
+  white-space: nowrap;
+}
+
+/* Sync bar: vive DENTRO de .ag-plan-filter-row.
+   margin-left:auto lo empuja al extremo derecho de esa fila, dejando los chips
+   de planes a la izquierda y los controles de sync a la derecha. */
+.ag-sync-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+/* Botón de sincronizar (más compacto que ag-btn-new) */
+.ag-btn-sync {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  border-radius: 8px;
+  font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: 12px;
+  background: var(--ag-hero-dark);
+  color: #fff;
+  border: 0;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(6,163,182,.26);
+  transition: all .2s ease;
+}
+.ag-btn-sync i { width: 14px; height: 14px; }
+.ag-btn-sync:hover {
+  background: var(--ag-hero);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 14px rgba(6,163,182,.36);
+}
+.ag-btn-sync:disabled,
+.ag-btn-sync.is-loading {
+  opacity: .7;
+  cursor: wait;
+  transform: none;
+}
+.ag-btn-sync.is-loading svg {
+  animation: spinRing .8s linear infinite;
 }
 
 @media (max-width: 720px) {

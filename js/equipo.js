@@ -31,6 +31,10 @@ const getFlagEmoji = (c) => c ? (FLAGS_EMOJI[c.toLowerCase().trim()] || '') : ''
 
 const MONTHS = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
 
+// Personas que NO deben aparecer en la vista del equipo. Filtra al cargar; no toca Firestore.
+const EXCLUDED_NAMES = ['Luis Ernesto Gutiérrez'];
+const normName = s => (s || '').toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+
 // ═══ GENERADOR DE BIOS HEROICAS GENÉRICAS ═══
 function generateHeroicBio(person) {
   const role = (person.role || '').toLowerCase();
@@ -146,7 +150,8 @@ async function loadTeam() {
   try {
     const snap = await getDoc(doc(db, "shared", "team"));
     if (snap.exists() && Array.isArray(snap.data().members)) {
-      members = snap.data().members;
+      const excluded = new Set(EXCLUDED_NAMES.map(normName));
+      members = snap.data().members.filter(m => !excluded.has(normName(m.name)));
     } else {
       members = [];
       document.getElementById("team-grid").innerHTML = '<p class="empty">Aún no se ha cargado el equipo.</p>';
@@ -321,63 +326,88 @@ function openBioEditModal(idx) {
   const bio = p.bio || {};
   const generic = generateHeroicBio(p);
 
-  const modal = document.createElement('div');
-  modal.className = 'modal-overlay';
-  modal.innerHTML = `<div class="modal modal-wide">
-    <h3>Editar ficha heroica · ${p.name}</h3>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Los campos vacíos mostrarán el texto genérico automático.</p>
+  const esc = (s) => (s == null ? "" : String(s)).replace(/"/g, "&quot;").replace(/&/g, "&amp;");
 
-    <label>🛡️ Identidad secreta (rol)
-      <input id="bio-identidad" value="${(bio.identidad || '').replace(/"/g,'&quot;')}" placeholder="${generic.identidad}">
-    </label>
-    <label>📍 Origen (dónde nació)
-      <input id="bio-origen" value="${(bio.origen || '').replace(/"/g,'&quot;')}" placeholder="${generic.origen}">
-    </label>
-    <label>⚡ Superpoder
-      <textarea id="bio-superpoder" rows="2" placeholder="${generic.superpoder}">${bio.superpoder || ''}</textarea>
-    </label>
-    <label>📅 Se unió al equipo
-      <input id="bio-union" value="${(bio.union || '').replace(/"/g,'&quot;')}" placeholder="Ej: Marzo 2024">
-    </label>
-    <label>✦ Frase icónica
-      <textarea id="bio-frase" rows="2" placeholder="${generic.frase}">${bio.frase || ''}</textarea>
-    </label>
+  const dialog = document.createElement("sl-dialog");
+  dialog.label = `✦ Editar ficha · ${p.name}`;
+  dialog.className = "bio-edit-dialog";
+  dialog.innerHTML = `
+    <div class="bio-form">
+      <p class="bio-note">Los campos vacíos mostrarán el texto genérico automático.</p>
 
-    <div class="modal-buttons">
-      <button class="btn-ghost-dark" id="bio-cancel">Cancelar</button>
-      <button class="btn-ghost-dark" id="bio-clear">🔄 Usar genéricos</button>
-      <button class="btn-primary" id="bio-save">Guardar ficha</button>
+      <sl-input id="bio-identidad" label="🛡️ Identidad secreta (rol)"
+        value="${esc(bio.identidad || '')}"
+        placeholder="${esc(generic.identidad)}"
+        clearable></sl-input>
+
+      <sl-input id="bio-origen" label="📍 Origen (dónde nació)"
+        value="${esc(bio.origen || '')}"
+        placeholder="${esc(generic.origen)}"
+        clearable></sl-input>
+
+      <sl-textarea id="bio-superpoder" label="⚡ Superpoder"
+        rows="2" resize="vertical"
+        placeholder="${esc(generic.superpoder)}"></sl-textarea>
+
+      <sl-input id="bio-union" label="📅 Se unió al equipo"
+        value="${esc(bio.union || '')}"
+        placeholder="Ej: Marzo 2024"
+        clearable></sl-input>
+
+      <sl-textarea id="bio-frase" label="✦ Frase icónica"
+        rows="2" resize="vertical"
+        placeholder="${esc(generic.frase)}"></sl-textarea>
     </div>
-  </div>`;
-  document.body.appendChild(modal);
 
-  modal.querySelector("#bio-cancel").onclick = () => modal.remove();
-  modal.querySelector("#bio-clear").onclick = async () => {
+    <sl-button slot="footer" id="bio-cancel" variant="default">Cancelar</sl-button>
+    <sl-button slot="footer" id="bio-clear" variant="warning" outline>
+      <i data-lucide="refresh-cw" slot="prefix" style="width:14px;height:14px;"></i>
+      Usar genéricos
+    </sl-button>
+    <sl-button slot="footer" id="bio-save" variant="primary">
+      <i data-lucide="save" slot="prefix" style="width:14px;height:14px;"></i>
+      Guardar ficha
+    </sl-button>
+  `;
+  document.body.appendChild(dialog);
+  if (window.refreshIcons) window.refreshIcons();
+
+  // Los textareas no aceptan value como atributo bien; los seteamos por property
+  dialog.querySelector("#bio-superpoder").value = bio.superpoder || "";
+  dialog.querySelector("#bio-frase").value = bio.frase || "";
+
+  dialog.addEventListener("sl-after-hide", () => dialog.remove());
+
+  dialog.querySelector("#bio-cancel").addEventListener("click", () => dialog.hide());
+
+  dialog.querySelector("#bio-clear").addEventListener("click", async () => {
     if (!confirm("¿Limpiar todos los campos? Se mostrarán los textos genéricos automáticos.")) return;
     members[idx].bio = null;
     try {
       await setDoc(doc(db, "shared", "team"), { members });
-      modal.remove();
-      openProfile(idx); // Recargar perfil
+      dialog.hide();
+      openProfile(idx);
     } catch (e) { alert("Error: " + e.message); }
-  };
-  modal.querySelector("#bio-save").onclick = async () => {
+  });
+
+  dialog.querySelector("#bio-save").addEventListener("click", async () => {
     const nuevo = {
-      identidad: modal.querySelector("#bio-identidad").value.trim(),
-      origen: modal.querySelector("#bio-origen").value.trim(),
-      superpoder: modal.querySelector("#bio-superpoder").value.trim(),
-      union: modal.querySelector("#bio-union").value.trim(),
-      frase: modal.querySelector("#bio-frase").value.trim(),
+      identidad: (dialog.querySelector("#bio-identidad").value || "").trim(),
+      origen: (dialog.querySelector("#bio-origen").value || "").trim(),
+      superpoder: (dialog.querySelector("#bio-superpoder").value || "").trim(),
+      union: (dialog.querySelector("#bio-union").value || "").trim(),
+      frase: (dialog.querySelector("#bio-frase").value || "").trim(),
     };
-    // Si todos están vacíos, guardamos null
     const allEmpty = Object.values(nuevo).every(v => !v);
     members[idx].bio = allEmpty ? null : nuevo;
     try {
       await setDoc(doc(db, "shared", "team"), { members });
-      modal.remove();
-      openProfile(idx); // Recargar perfil
+      dialog.hide();
+      openProfile(idx);
     } catch (e) { alert("Error: " + e.message); }
-  };
+  });
+
+  dialog.show();
 }
 
 // ═══ MODAL: Editar datos generales (admin) ═══
@@ -386,70 +416,109 @@ function openMemberModal(idx) {
   const m = editing ? members[idx] : { name:'', role:'', email:[''], phone:[''], country:'Venezuela', photo:'', birthdate:'' };
   const [bm, bd] = (m.birthdate || '').split('-');
 
-  const modal = document.createElement('div');
-  modal.className = 'modal-overlay';
-  modal.innerHTML = `<div class="modal modal-wide">
-    <h3>${editing ? 'Editar miembro' : 'Nuevo miembro'}</h3>
-    <label>Nombre completo <input id="m-name" value="${(m.name||'').replace(/"/g,'&quot;')}" maxlength="60"></label>
-    <label>Rol / Cargo <input id="m-role" value="${(m.role||'').replace(/"/g,'&quot;')}" maxlength="60"></label>
-    <label>URL de foto <input id="m-photo" type="url" value="${(m.photo||'').replace(/"/g,'&quot;')}" placeholder="https://..."></label>
-    <label>País
-      <select id="m-country">
-        <option value="Venezuela"${m.country==='Venezuela'?' selected':''}>🇻🇪 Venezuela</option>
-        <option value="Cuba"${m.country==='Cuba'?' selected':''}>🇨🇺 Cuba</option>
-        <option value="Colombia"${m.country==='Colombia'?' selected':''}>🇨🇴 Colombia</option>
-        <option value="Chile"${m.country==='Chile'?' selected':''}>🇨🇱 Chile</option>
-        <option value="Estados Unidos"${m.country==='Estados Unidos'?' selected':''}>🇺🇸 Estados Unidos</option>
-      </select>
-    </label>
-    <label>🎂 Cumpleaños
-      <div style="display:flex;gap:8px;margin-top:8px;">
-        <select id="m-bmonth" style="flex:1;">
-          <option value="">—</option>
-          ${MONTHS.map((x,i) => `<option value="${String(i+1).padStart(2,'0')}"${bm===String(i+1).padStart(2,'0')?' selected':''}>${x}</option>`).join('')}
-        </select>
-        <select id="m-bday" style="flex:1;">
-          <option value="">—</option>
-          ${Array.from({length:31},(_,i)=>i+1).map(d => `<option value="${String(d).padStart(2,'0')}"${bd===String(d).padStart(2,'0')?' selected':''}>${d}</option>`).join('')}
-        </select>
-      </div>
-    </label>
-    <label>Emails (uno por línea) <textarea id="m-emails" rows="2">${(m.email||[]).join('\n')}</textarea></label>
-    <label>Teléfonos (uno por línea) <textarea id="m-phones" rows="2">${(m.phone||[]).join('\n')}</textarea></label>
-    <div class="modal-buttons">
-      <button class="btn-ghost-dark" id="m-cancel">Cancelar</button>
-      <button class="btn-primary" id="m-save">${editing ? 'Guardar cambios' : 'Agregar'}</button>
-    </div>
-  </div>`;
-  document.body.appendChild(modal);
+  const esc = (s) => (s == null ? "" : String(s)).replace(/"/g, "&quot;").replace(/&/g, "&amp;");
 
-  modal.querySelector("#m-cancel").onclick = () => modal.remove();
-  modal.querySelector("#m-save").onclick = async () => {
-    const bmo = modal.querySelector("#m-bmonth").value;
-    const bdy = modal.querySelector("#m-bday").value;
+  const dialog = document.createElement("sl-dialog");
+  dialog.label = editing ? `✎ Editar miembro · ${m.name}` : "✦ Nuevo miembro";
+  dialog.className = "member-edit-dialog";
+  dialog.innerHTML = `
+    <div class="member-form">
+      <sl-input id="m-name" label="Nombre completo"
+        value="${esc(m.name || '')}" maxlength="60" required clearable></sl-input>
+
+      <sl-input id="m-role" label="Rol / Cargo"
+        value="${esc(m.role || '')}" maxlength="60" clearable></sl-input>
+
+      <sl-input id="m-photo" label="URL de foto" type="url"
+        value="${esc(m.photo || '')}" placeholder="https://..." clearable></sl-input>
+
+      <sl-select id="m-country" label="País" hoist>
+        <sl-option value="Venezuela">🇻🇪 Venezuela</sl-option>
+        <sl-option value="Cuba">🇨🇺 Cuba</sl-option>
+        <sl-option value="Colombia">🇨🇴 Colombia</sl-option>
+        <sl-option value="Chile">🇨🇱 Chile</sl-option>
+        <sl-option value="Estados Unidos">🇺🇸 Estados Unidos</sl-option>
+      </sl-select>
+
+      <div class="member-bday">
+        <label class="member-bday-label">🎂 Cumpleaños</label>
+        <div class="member-bday-row">
+          <sl-select id="m-bmonth" placeholder="Mes" hoist>
+            <sl-option value="">—</sl-option>
+            ${MONTHS.map((x, i) => `<sl-option value="${String(i+1).padStart(2,'0')}">${x}</sl-option>`).join('')}
+          </sl-select>
+          <sl-select id="m-bday" placeholder="Día" hoist>
+            <sl-option value="">—</sl-option>
+            ${Array.from({length:31}, (_, i) => i+1).map(d => `<sl-option value="${String(d).padStart(2,'0')}">${d}</sl-option>`).join('')}
+          </sl-select>
+        </div>
+      </div>
+
+      <sl-textarea id="m-emails" label="Emails (uno por línea)"
+        rows="2" resize="vertical"
+        help-text="Separa múltiples emails con saltos de línea."></sl-textarea>
+
+      <sl-textarea id="m-phones" label="Teléfonos (uno por línea)"
+        rows="2" resize="vertical"></sl-textarea>
+    </div>
+
+    <sl-button slot="footer" id="m-cancel" variant="default">Cancelar</sl-button>
+    <sl-button slot="footer" id="m-save" variant="primary">
+      <i data-lucide="${editing ? 'check' : 'plus'}" slot="prefix" style="width:14px;height:14px;"></i>
+      ${editing ? 'Guardar cambios' : 'Agregar'}
+    </sl-button>
+  `;
+  document.body.appendChild(dialog);
+  if (window.refreshIcons) window.refreshIcons();
+
+  // Setear valores que no van bien como atributo (textareas, selects iniciales)
+  dialog.querySelector("#m-emails").value = (m.email || []).join("\n");
+  dialog.querySelector("#m-phones").value = (m.phone || []).join("\n");
+
+  // sl-select: setear value por property tras el upgrade
+  customElements.whenDefined("sl-select").then(() => {
+    const sel = (id, v) => { const el = dialog.querySelector(id); if (el) el.value = v || ""; };
+    sel("#m-country", m.country || "Venezuela");
+    sel("#m-bmonth", bm || "");
+    sel("#m-bday", bd || "");
+  });
+
+  dialog.addEventListener("sl-after-hide", () => dialog.remove());
+
+  dialog.querySelector("#m-cancel").addEventListener("click", () => dialog.hide());
+
+  dialog.querySelector("#m-save").addEventListener("click", async () => {
+    const bmo = dialog.querySelector("#m-bmonth").value || "";
+    const bdy = dialog.querySelector("#m-bday").value || "";
     const birthdate = (bmo && bdy) ? `${bmo}-${bdy}` : null;
 
     const nuevo = {
-      name: modal.querySelector("#m-name").value.trim(),
-      role: modal.querySelector("#m-role").value.trim(),
-      photo: modal.querySelector("#m-photo").value.trim(),
-      country: modal.querySelector("#m-country").value,
-      email: modal.querySelector("#m-emails").value.split('\n').map(x=>x.trim()).filter(x=>x),
-      phone: modal.querySelector("#m-phones").value.split('\n').map(x=>x.trim()).filter(x=>x),
+      name: (dialog.querySelector("#m-name").value || "").trim(),
+      role: (dialog.querySelector("#m-role").value || "").trim(),
+      photo: (dialog.querySelector("#m-photo").value || "").trim(),
+      country: dialog.querySelector("#m-country").value || "Venezuela",
+      email: (dialog.querySelector("#m-emails").value || "").split("\n").map(x => x.trim()).filter(Boolean),
+      phone: (dialog.querySelector("#m-phones").value || "").split("\n").map(x => x.trim()).filter(Boolean),
       birthdate,
-      bio: editing ? (members[idx].bio || null) : null
+      bio: editing ? (members[idx].bio || null) : null,
     };
-    if (!nuevo.name) { alert("Nombre requerido"); return; }
+    if (!nuevo.name) {
+      alert("Nombre requerido");
+      dialog.querySelector("#m-name").focus();
+      return;
+    }
 
     if (editing) members[idx] = nuevo;
     else members.push(nuevo);
 
     try {
       await setDoc(doc(db, "shared", "team"), { members });
-      modal.remove();
+      dialog.hide();
       renderGrid();
     } catch (e) { alert("Error guardando: " + e.message); }
-  };
+  });
+
+  dialog.show();
 }
 
 async function deleteMember(idx) {

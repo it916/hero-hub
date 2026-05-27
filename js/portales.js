@@ -347,66 +347,88 @@ function openCarrierModal(scope, idx) {
   const editing = idx !== null && idx >= 0;
   const list = scope === 'team' ? teamData[currentAccount] : personalData;
   const p = editing ? list[idx] : { nombre:'', user:'', pass:'', url:'', notas:'' };
+  const scopeTag = scope === 'team' ? `Cuenta ${currentAccount.toUpperCase()}` : 'Personal';
+  const esc = (s) => (s == null ? "" : String(s)).replace(/"/g, "&quot;").replace(/&/g, "&amp;");
 
-  const modal = document.createElement('div');
-  modal.className = 'modal-overlay';
-  modal.innerHTML = `<div class="modal modal-wide">
-    <h3>${editing ? 'Editar portal' : 'Nuevo portal'} · ${scope === 'team' ? 'Cuenta '+currentAccount.toUpperCase() : 'Personal'}</h3>
-    <label>Nombre del portal * <input id="cr-nombre" value="${(p.nombre||'').replace(/"/g,'&quot;')}" maxlength="50" placeholder="Ej. AETNA"></label>
-    <div class="modal-grid-2">
-      <label>Usuario <input id="cr-user" value="${(p.user||'').replace(/"/g,'&quot;')}" maxlength="80" placeholder="usuario o email"></label>
-      <label>Contraseña <input id="cr-pass" type="text" value="${(p.pass||'').replace(/"/g,'&quot;')}" maxlength="80" placeholder="contraseña"></label>
-    </div>
-    <label>URL del portal <input id="cr-url" type="url" value="${(p.url||'').replace(/"/g,'&quot;')}" placeholder="https://..."></label>
-    <label>Notas / PIN / Writing ID <textarea id="cr-notas" rows="2" maxlength="300" placeholder="Cualquier información adicional...">${p.notas||''}</textarea></label>
-    <div class="modal-buttons">
-      <button class="btn-ghost-dark" id="cr-cancel">Cancelar</button>
-      <button class="btn-primary" id="cr-save">${editing ? 'Guardar' : 'Agregar'}</button>
-    </div>
-  </div>`;
-  document.body.appendChild(modal);
+  const dialog = document.createElement("sl-dialog");
+  dialog.label = `${editing ? '✎ Editar' : '✦ Nuevo'} portal · ${scopeTag}`;
+  dialog.className = "hh-dialog carrier-edit-dialog";
+  dialog.innerHTML = `
+    <div class="hh-form">
+      <sl-input id="cr-nombre" label="Nombre del portal *"
+        value="${esc(p.nombre)}" maxlength="50" placeholder="Ej. AETNA" required clearable></sl-input>
 
-  modal.querySelector('#cr-cancel').onclick = () => closeModal(modal);
-  modal.querySelector('#cr-save').onclick = async () => {
-    const nombre = modal.querySelector('#cr-nombre').value.trim();
-    if (!nombre) { alert("El nombre del portal es obligatorio"); return; }
+      <div class="modal-grid-2">
+        <sl-input id="cr-user" label="Usuario"
+          value="${esc(p.user)}" maxlength="80" placeholder="usuario o email" clearable></sl-input>
+        <sl-input id="cr-pass" label="Contraseña" type="text"
+          value="${esc(p.pass)}" maxlength="80" placeholder="contraseña" password-toggle clearable></sl-input>
+      </div>
+
+      <sl-input id="cr-url" label="URL del portal" type="url"
+        value="${esc(p.url)}" placeholder="https://..." clearable></sl-input>
+
+      <sl-textarea id="cr-notas" label="Notas / PIN / Writing ID"
+        rows="2" maxlength="300" resize="vertical"
+        placeholder="Cualquier información adicional..."></sl-textarea>
+    </div>
+
+    <sl-button slot="footer" id="cr-cancel" variant="default">Cancelar</sl-button>
+    <sl-button slot="footer" id="cr-save" variant="primary">
+      <i data-lucide="${editing ? 'check' : 'plus'}" slot="prefix" style="width:14px;height:14px;"></i>
+      ${editing ? 'Guardar' : 'Agregar'}
+    </sl-button>
+  `;
+  document.body.appendChild(dialog);
+  if (window.refreshIcons) window.refreshIcons();
+
+  dialog.querySelector("#cr-notas").value = p.notas || "";
+
+  dialog.addEventListener("sl-after-hide", () => dialog.remove());
+  dialog.querySelector('#cr-cancel').addEventListener("click", () => dialog.hide());
+
+  dialog.querySelector('#cr-save').addEventListener("click", async () => {
+    const nombre = (dialog.querySelector('#cr-nombre').value || "").trim();
+    if (!nombre) {
+      alert("El nombre del portal es obligatorio");
+      dialog.querySelector('#cr-nombre').focus();
+      return;
+    }
     const nuevo = {
       nombre,
-      user: modal.querySelector('#cr-user').value.trim(),
-      pass: modal.querySelector('#cr-pass').value,
-      url: modal.querySelector('#cr-url').value.trim(),
-      notas: modal.querySelector('#cr-notas').value.trim(),
+      user: (dialog.querySelector('#cr-user').value || "").trim(),
+      pass: dialog.querySelector('#cr-pass').value || "",
+      url: (dialog.querySelector('#cr-url').value || "").trim(),
+      notas: (dialog.querySelector('#cr-notas').value || "").trim(),
     };
 
     try {
       if (scope === 'team') {
         if (editing) teamData[currentAccount][idx] = nuevo;
         else teamData[currentAccount].push(nuevo);
-        // Ordenar alfabéticamente
-        teamData[currentAccount].sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
+        teamData[currentAccount].sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
         await setDoc(doc(db, "shared", "carriers-team"), teamData);
-
-        // Log de auditoría (solo carriers del equipo, no los personales)
         logEvent(
           editing ? ACTIONS.CARRIER_TEAM_EDIT : ACTIONS.CARRIER_TEAM_ADD,
           nuevo.nombre,
           { account: currentAccount }
         );
-
-        closeModal(modal);
+        dialog.hide();
         renderTeam();
       } else {
         if (editing) personalData[idx] = nuevo;
         else personalData.push(nuevo);
-        personalData.sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
+        personalData.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
         await updateDoc(doc(db, "users", auth.currentUser.email), { carriers: personalData });
-        closeModal(modal);
+        dialog.hide();
         renderPersonal();
       }
     } catch (e) {
       alert("Error guardando: " + e.message);
     }
-  };
+  });
+
+  dialog.show();
 }
 
 async function deleteCarrier(scope, idx) {
