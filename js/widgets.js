@@ -71,7 +71,34 @@ export async function renderWidgets(userData) {
   renderBirthday();
   renderMessageWidget();
   attachSettingsHandler();
+  setupOnboardingBanner();
   if (window.refreshIcons) window.refreshIcons();
+}
+
+// ═══ BANNER ONBOARDING ═══
+// Se muestra solo si el usuario nunca ha activado la misión (campo
+// onboardingActivated en su documento de Firestore). Al primer click,
+// guarda el flag fire-and-forget para que no vuelva a aparecer.
+function setupOnboardingBanner() {
+  const obw = document.getElementById("ob-welcome");
+  if (!obw) return;
+
+  if (currentUserData.onboardingActivated) {
+    // Esconder también el conector inmediatamente anterior para que no queden
+    // dos líneas separadoras pegadas (la de Mi Asistencia + la de Hub Cards).
+    const prevConnector = obw.previousElementSibling;
+    if (prevConnector && prevConnector.classList.contains("connector")) {
+      prevConnector.style.display = "none";
+    }
+    obw.style.display = "none";
+    return;
+  }
+
+  obw.addEventListener("click", () => {
+    currentUserData.onboardingActivated = true;
+    saveUserField({ onboardingActivated: true })
+      .catch(e => console.warn("No se pudo marcar onboarding activado:", e));
+  }, { once: true });
 }
 
 // ═══ ARSENAL ═══
