@@ -48,10 +48,19 @@ function showLogin() {
   if (window.refreshIcons) window.refreshIcons();
 }
 
+// Devuelve la foto más fresca de Google: prioriza la del provider —que
+// Firebase refresca en cada login— sobre el perfil top-level, que puede
+// quedar cacheado con una URL vieja desde el primer inicio de sesión.
+function getGooglePhotoURL(user) {
+  const g = user?.providerData?.find(p => p.providerId === "google.com");
+  return (g && g.photoURL) || user?.photoURL || "";
+}
+
 async function showDashboard() {
   document.getElementById("login-screen").style.display = "none";
   document.getElementById("dashboard").style.display = "block";
-  document.getElementById("user-avatar").src = currentUser.photoURL;
+  try { await currentUser.reload(); } catch (e) { /* sin refrescar: usamos lo cacheado */ }
+  document.getElementById("user-avatar").src = getGooglePhotoURL(auth.currentUser || currentUser);
 
   // Filtrar el topbar según el rol del usuario
   // (oculta links a páginas no permitidas y maneja el botón admin)
