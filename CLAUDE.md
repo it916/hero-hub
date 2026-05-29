@@ -9,10 +9,10 @@ Es un proyecto **interno, no público** — solo accesible para empleados con cu
 ## Stack técnico
 
 - **Frontend**: HTML + CSS + JavaScript planos. Sin framework, sin paso de build, sin bundler.
-- **Hosting**: Google Sites (los archivos se suben directamente al sitio).
+- **Hosting**: GitHub — el sitio se sirve desde el repositorio; **push a `main` = deploy**.
 - **Backend / datos**: Firebase Firestore.
 - **Autenticación**: Google Auth, restringida al dominio `@heroinsuranceusa.com`.
-- **Librerías externas vía CDN**: Lucide (íconos), SortableJS, Google Fonts.
+- **Librerías externas vía CDN**: Lucide (íconos), SortableJS, GSAP (animaciones), Shoelace (componentes UI), Tabulator (tablas), Flatpickr (date pickers, locale ES), Chart.js (gráficos), Google Fonts.
 
 ## Branding oficial — "Hero Light"
 
@@ -23,7 +23,11 @@ Es un proyecto **interno, no público** — solo accesible para empleados con cu
 | Color primario | `#06a3b6` (cyan Hero) |
 | Color de fondo | `#f0f4f8` |
 | Tarjetas / superficies | Blanco (`#ffffff`) |
-| Tipografía | Trebuchet MS |
+| Tipografía — títulos | Bricolage Grotesque |
+| Tipografía — texto / UI | Inter |
+| Tipografía — datos / monoespaciado | JetBrains Mono |
+
+> Trebuchet MS persiste como fallback y sigue siendo la fuente de texto en CSS heredado (ej. `agencias.css`). Para módulos nuevos usar el stack de arriba, definido en `css/styles.css` vía las variables `--sans` (Inter) y `--display` (Bricolage Grotesque).
 
 Todo módulo nuevo debe respetar esta paleta para mantener consistencia visual con el resto del Hub.
 
