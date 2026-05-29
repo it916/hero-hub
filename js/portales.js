@@ -5,6 +5,7 @@ import { doc, getDoc, setDoc, updateDoc }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { isAdmin as isAdminRole } from "./roles.js";
 import { logEvent, ACTIONS } from "./audit-log.js";
+import { getFreshGooglePhotoURL } from "./user-photo.js";
 
 const ALLOWED_DOMAIN = "heroinsuranceusa.com";
 // ADMIN_EMAILS eliminado: usamos el sistema de roles
@@ -35,7 +36,7 @@ onAuthStateChanged(auth, async (user) => {
   isAdmin = isAdminRole(ctx.userRole);
   const isAgente = ctx.userRole && ctx.userRole.role === "agente";
 
-  document.getElementById("user-avatar").src = user.photoURL;
+  document.getElementById("user-avatar").src = await getFreshGooglePhotoURL(user);
   if (isAdmin) {
     document.getElementById("btn-add-team").style.display = "inline-flex";
     document.getElementById("team-admin-note").style.display = "inline";

@@ -19,6 +19,7 @@ import { doc, getDoc, updateDoc, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { isAdmin as isAdminRole } from "./roles.js";
 import { logEvent, ACTIONS } from "./audit-log.js";
+import { getFreshGooglePhotoURL } from "./user-photo.js";
 
 const ALLOWED_DOMAIN = "heroinsuranceusa.com";
 
@@ -78,7 +79,7 @@ onAuthStateChanged(auth, async (user) => {
   // En modo Sheet la edición vive en el Sheet → admin pierde botones de editar en el Hub
   canEdit = isAdminRole(ctx.userRole) && !USE_SHEET;
 
-  document.getElementById("user-avatar").src = user.photoURL || "";
+  document.getElementById("user-avatar").src = await getFreshGooglePhotoURL(user);
   document.getElementById("loading").style.display = "none";
   document.getElementById("dashboard").style.display = "block";
 

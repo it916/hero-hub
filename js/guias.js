@@ -4,6 +4,7 @@ import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
 import { doc, getDoc, setDoc }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { isAdmin as isAdminRole } from "./roles.js";
+import { getFreshGooglePhotoURL } from "./user-photo.js";
 
 const ALLOWED_DOMAIN = "heroinsuranceusa.com";
 // ADMIN_EMAILS eliminado: usamos el sistema de roles
@@ -28,7 +29,7 @@ onAuthStateChanged(auth, async (user) => {
   await window.getPageContext();
   // btn-admin ya fue manejado por page-guard.js (filterTopbarByRole)
 
-  document.getElementById("user-avatar").src = user.photoURL;
+  document.getElementById("user-avatar").src = await getFreshGooglePhotoURL(user);
   document.getElementById("loading").style.display = "none";
   document.getElementById("dashboard").style.display = "block";
 
