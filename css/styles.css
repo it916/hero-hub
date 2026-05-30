@@ -6622,7 +6622,39 @@ body.mission-activating .ob-w-spark {
 [data-theme="dark"] .hc-halftone {
   background-image: radial-gradient(circle, rgba(255,255,255,.10) 1.4px, transparent 1.4px);
 }
-[data-theme="dark"] .hc-cta { background: #f1f5f9; color: #0f172a; border-color: #f1f5f9; }
+/* CTA: en lugar del blanco invertido, lo dejamos translúcido sobre dark
+   con texto y borde en el color acento de cada card. Los hovers ya
+   definidos (background sólido del color) siguen funcionando y aquí
+   forzamos texto blanco en hover para mantener contraste. */
+[data-theme="dark"] .hc-cta {
+  background: rgba(255,255,255,.04);
+  color: var(--text);
+  border-color: var(--border-2);
+}
+[data-theme="dark"] .hc-team .hc-cta      { color: #5eead4; border-color: rgba(6,163,182,.50); }
+[data-theme="dark"] .hc-directory .hc-cta { color: #fcd34d; border-color: rgba(245,158,11,.50); }
+[data-theme="dark"] .hc-guides .hc-cta    { color: #c4b5fd; border-color: rgba(139,92,246,.50); }
+[data-theme="dark"] .hc-portales .hc-cta  { color: #67e8f9; border-color: rgba(14,116,144,.55); }
+[data-theme="dark"] .hc-trainings .hc-cta { color: #6ee7b7; border-color: rgba(16,185,129,.50); }
+[data-theme="dark"] .hc-team:hover .hc-cta,
+[data-theme="dark"] .hc-directory:hover .hc-cta,
+[data-theme="dark"] .hc-guides:hover .hc-cta,
+[data-theme="dark"] .hc-portales:hover .hc-cta,
+[data-theme="dark"] .hc-trainings:hover .hc-cta { color: #fff; }
+
+/* Pills (hc-tag, hc-feature): el texto en light era ámbar/violeta oscuro,
+   ilegibles sobre card oscuro. Subimos a tonos claros del mismo matiz. */
+[data-theme="dark"] .hc-tag {
+  background: rgba(245,158,11,.16);
+  color: #fcd34d;
+  border-color: rgba(245,158,11,.40);
+}
+[data-theme="dark"] .hc-feature {
+  background: rgba(139,92,246,.14);
+  color: #c4b5fd;
+  border-color: rgba(139,92,246,.40);
+}
+
 [data-theme="dark"] .hc-av { box-shadow: 0 0 0 2px #475569, 0 2px 4px rgba(0,0,0,.30); }
 
 /* ── Responsive ── */
