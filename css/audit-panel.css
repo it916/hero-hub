@@ -305,7 +305,7 @@
    TABULATOR — Tema Hero Light para el Log
    ═══════════════════════════════════════════ */
 #al-table {
-  background: #fff;
+  background: var(--card, #fff);
   border: 1px solid var(--border, #e8e8e8);
   border-radius: 16px;
   overflow: hidden;
@@ -489,4 +489,82 @@
   .tabulator .tabulator-row .tabulator-cell { padding: 10px 8px; }
   .al-cell-label { font-size: 12px; }
   .al-cell-icon { width: 26px; height: 26px; }
+}
+
+/* ═══════════════════════════════════════════
+   DARK MODE — Tabulator del log y de la tabla de roles
+   Cubre #al-table y #ra-table porque comparten los
+   overrides globales de .tabulator definidos arriba.
+   ═══════════════════════════════════════════ */
+body[data-theme="dark"] #al-table,
+body[data-theme="dark"] #ra-table {
+  border-color: var(--border);
+}
+body[data-theme="dark"] .tabulator .tabulator-header {
+  background: linear-gradient(180deg, #0a2a33 0%, #062028 100%);
+  border-bottom-color: var(--cyan);
+  color: var(--text);
+}
+body[data-theme="dark"] .tabulator .tabulator-header .tabulator-col {
+  border-right-color: rgba(6, 163, 182, .18);
+}
+body[data-theme="dark"] .tabulator .tabulator-header .tabulator-col .tabulator-col-title {
+  color: #3dbccc;
+}
+body[data-theme="dark"] .tabulator .tabulator-header .tabulator-col.tabulator-sortable:hover {
+  background: rgba(6, 163, 182, .14);
+}
+body[data-theme="dark"] .tabulator .tabulator-row {
+  background: var(--card);
+  border-bottom-color: var(--border);
+}
+body[data-theme="dark"] .tabulator .tabulator-row.tabulator-row-even {
+  background: var(--paper-2);
+}
+body[data-theme="dark"] .tabulator .tabulator-row:hover {
+  background: rgba(6, 163, 182, .12) !important;
+}
+body[data-theme="dark"] .tabulator .tabulator-row .tabulator-cell {
+  color: var(--text);
+  border-right-color: var(--border);
+}
+body[data-theme="dark"] .tabulator .tabulator-footer {
+  background: var(--paper);
+  border-top-color: var(--border);
+}
+body[data-theme="dark"] .tabulator .tabulator-paginator {
+  color: var(--muted);
+}
+body[data-theme="dark"] .tabulator .tabulator-page {
+  background: var(--card);
+  border-color: var(--border);
+  color: var(--muted);
+}
+body[data-theme="dark"] .tabulator .tabulator-page:hover:not(:disabled) {
+  background: rgba(6, 163, 182, .16);
+  color: var(--cyan);
+}
+body[data-theme="dark"] .tabulator .tabulator-page-size {
+  background: var(--card);
+  border-color: var(--border);
+  color: var(--text);
+}
+body[data-theme="dark"] .al-tag {
+  background: rgba(255, 255, 255, .06);
+  color: var(--text-2);
+  border-color: var(--border);
+}
+body[data-theme="dark"] .al-tag-cyan {
+  color: #3dbccc;
+}
+body[data-theme="dark"] .al-kv {
+  color: var(--text-2);
+}
+body[data-theme="dark"] .al-kv em {
+  color: var(--muted);
+}
+body[data-theme="dark"] .al-cell-action + * code,
+body[data-theme="dark"] .tabulator-cell code {
+  background: rgba(255, 255, 255, .08);
+  color: var(--text);
 }

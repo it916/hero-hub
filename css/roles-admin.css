@@ -303,7 +303,7 @@
    define audit-panel.css (afecta a .tabulator global).
    ═══════════════════════════════════════════ */
 #ra-table {
-  background: #fff;
+  background: var(--card, #fff);
   border: 1px solid var(--border, #e8e8e8);
   border-radius: 16px;
   overflow: hidden;
@@ -554,4 +554,29 @@
   .ra-updated-by {
     display: none;
   }
+}
+
+/* ═══════════════════════════════════════════
+   DARK MODE — overrides puntuales
+   (el resto del archivo ya usa var(--card), var(--border)
+   etc., por lo que la sobreescritura de variables en
+   styles.css lo cubre automáticamente)
+   ═══════════════════════════════════════════ */
+body[data-theme="dark"] .ra-act-btn:hover,
+body[data-theme="dark"] #ra-table .ra-act-btn.ra-del:hover {
+  background: rgba(244, 63, 94, .15);
+  border-color: rgba(244, 63, 94, .45);
+  color: #f87171;
+}
+body[data-theme="dark"] .ra-role-select {
+  color-scheme: dark;
+}
+body[data-theme="dark"] .ra-suggestions-note {
+  background: rgba(6, 163, 182, .10);
+  color: var(--text-2);
+  border-left-color: var(--cyan);
+}
+body[data-theme="dark"] .ra-role-hint {
+  background: var(--paper-2);
+  color: var(--text-2);
 }

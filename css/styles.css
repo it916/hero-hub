@@ -96,7 +96,7 @@ body[data-theme="dark"] .hero-topbar { background:rgba(15,42,51,.92); }
 .tool-item { position:relative; text-decoration:none; color:var(--text); border-radius:18px; border:1px solid var(--border); background:var(--paper); padding:14px 8px 12px; display:flex; flex-direction:column; align-items:center; gap:8px; min-height:108px; transition:all .18s; }
 .tool-item:hover { transform:translateY(-6px); background:var(--card); border-color:var(--cyan); box-shadow:0 12px 28px rgba(6,163,182,.18); }
 .tool-item .open-mark { position:absolute; top:8px; right:8px; width:18px; height:18px; border-radius:999px; background:var(--card); border:1px solid var(--border); display:grid; place-items:center; font-size:11px; color:var(--muted); }
-.icon-tile { width:52px; height:52px; border-radius:14px; display:grid; place-items:center; background:#fff; border:1px solid var(--border); box-shadow:var(--shadow-sm); }
+.icon-tile { width:52px; height:52px; border-radius:14px; display:grid; place-items:center; background:var(--card); border:1px solid var(--border); box-shadow:var(--shadow-sm); }
 .icon-tile img { width:30px; height:30px; object-fit:contain; }
 .tool-name { font-size:12px; font-weight:700; text-align:center; color:var(--text); }
 .tool-add-card { display:flex; flex-direction:column; align-items:center; gap:8px; padding:14px 8px; border:2px dashed var(--border-2); border-radius:18px; background:transparent; cursor:pointer; color:var(--cyan); font-family:inherit; min-height:108px; justify-content:center; }
@@ -2166,6 +2166,48 @@ a.ob-mission-btn:hover {
   --sl-font-sans: "Inter", system-ui, -apple-system, sans-serif;
 }
 
+/* Shoelace en dark mode: invertimos la escala neutral y mapeamos
+   superficies/inputs a nuestras variables para que sl-dialog, sl-input,
+   sl-select, sl-menu, sl-card, sl-button, etc. respeten el tema. */
+body[data-theme="dark"] {
+  /* Escala neutral invertida (0 = oscuro, 1000 = claro) */
+  --sl-color-neutral-0:    #06151a;
+  --sl-color-neutral-50:   #0a2026;
+  --sl-color-neutral-100:  #0f2a33;
+  --sl-color-neutral-200:  #16363f;
+  --sl-color-neutral-300:  #1f4651;
+  --sl-color-neutral-400:  #2d5965;
+  --sl-color-neutral-500:  #4b7a85;
+  --sl-color-neutral-600:  #6a93a0;
+  --sl-color-neutral-700:  #93b3bd;
+  --sl-color-neutral-800:  #b8d4d8;
+  --sl-color-neutral-900:  #d8e8eb;
+  --sl-color-neutral-950:  #e8f4f6;
+  --sl-color-neutral-1000: #ffffff;
+
+  /* Superficies y overlays (sl-dialog, sl-card, sl-menu, sl-tooltip) */
+  --sl-panel-background-color: var(--card);
+  --sl-panel-border-color: var(--border);
+  --sl-tooltip-background-color: #021419;
+  --sl-overlay-background-color: rgba(0, 0, 0, .65);
+
+  /* Inputs (sl-input, sl-select, sl-textarea) */
+  --sl-input-background-color: var(--card);
+  --sl-input-background-color-hover: var(--paper-2);
+  --sl-input-background-color-focus: var(--card);
+  --sl-input-background-color-disabled: var(--paper);
+  --sl-input-border-color: var(--border);
+  --sl-input-border-color-hover: var(--border-2);
+  --sl-input-border-color-focus: var(--cyan);
+  --sl-input-color: var(--text);
+  --sl-input-color-hover: var(--text);
+  --sl-input-color-focus: var(--text);
+  --sl-input-placeholder-color: var(--muted);
+  --sl-input-label-color: var(--text-2);
+  --sl-input-help-text-color: var(--muted);
+  --sl-input-required-content-color: var(--cyan);
+}
+
 /* Espaciado entre componentes Shoelace en las secciones admin */
 .admin-section sl-input,
 .admin-section sl-textarea,
@@ -2193,9 +2235,14 @@ a.ob-mission-btn:hover {
 /* Header del admin (reemplaza el .hero-topbar en esta página) */
 .admin-shell-header {
   position:sticky; top:0; z-index:20;
-  background:#fff;
+  background:var(--card);
   border-bottom:1px solid var(--border);
   box-shadow:0 2px 12px rgba(6,42,51,.04);
+}
+body[data-theme="dark"] .admin-shell-header {
+  background:rgba(15,42,51,.92);
+  backdrop-filter:blur(20px);
+  box-shadow:0 2px 12px rgba(0,0,0,.35);
 }
 .admin-shell-header-inner {
   display:flex; align-items:center; gap:16px;
@@ -2248,7 +2295,7 @@ a.ob-mission-btn:hover {
 
 /* Sidebar */
 .admin-sidebar {
-  background:#fff;
+  background:var(--card);
   border-right:1px solid var(--border);
   padding:24px 14px;
   position:sticky; top:67px;
@@ -3044,7 +3091,7 @@ a.ob-mission-btn:hover {
   gap:14px;
 }
 .ad-counter {
-  background:#fff;
+  background:var(--card);
   border:1px solid var(--border);
   border-radius:16px;
   padding:18px 20px;
@@ -3083,7 +3130,7 @@ a.ob-mission-btn:hover {
   gap:18px;
 }
 .ad-team-list-wrap, .ad-donut-wrap {
-  background:#fff;
+  background:var(--card);
   border:1px solid var(--border);
   border-radius:16px;
   padding:18px;
@@ -3124,7 +3171,7 @@ a.ob-mission-btn:hover {
   font-size:12px; color:var(--muted); margin:0 4px 12px;
 }
 .ad-bars-box {
-  background:#fff; border:1px solid var(--border); border-radius:16px;
+  background:var(--card); border:1px solid var(--border); border-radius:16px;
   padding:18px; box-shadow:var(--shadow);
   position:relative; min-height:300px;
   /* La altura efectiva se ajusta abajo según la cantidad de barras */
@@ -3138,7 +3185,7 @@ a.ob-mission-btn:hover {
 .ad-power-item, .ad-absence-item {
   display:grid; align-items:center; gap:12px;
   padding:12px 14px;
-  background:#fff;
+  background:var(--card);
   border:1px solid var(--border); border-radius:12px;
   box-shadow:var(--shadow);
 }
@@ -3207,7 +3254,7 @@ a.ob-mission-btn:hover {
 }
 
 .att-group {
-  background:#fff;
+  background:var(--card);
   border:1px solid var(--border);
   border-radius:16px;
   padding:16px 16px 14px;
@@ -3322,7 +3369,7 @@ a.ob-mission-btn:hover {
 /* Barra de estado al pie del panel */
 .att-status-bar {
   grid-column:1 / -1;
-  background:#fff;
+  background:var(--card);
   border:1px solid var(--border);
   border-radius:14px;
   padding:14px 18px;
