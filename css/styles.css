@@ -3366,6 +3366,46 @@ body[data-theme="dark"] .admin-shell-header {
   box-shadow:0 6px 16px rgba(71,85,105,.35);
 }
 
+/* ══ Dark mode: variantes neutras del panel de asistencia ══
+   Las variantes en gradiente (entrada/salida) ya van bien sobre dark;
+   estas son las "pastel sobre claro" que hay que reentintar. */
+body[data-theme="dark"] .att-btn {
+  background:rgba(255,255,255,.04);
+  color:var(--text);
+}
+body[data-theme="dark"] .att-break-start,
+body[data-theme="dark"] .att-break-end {
+  background:rgba(6,163,182,.14);
+  border-color:rgba(6,163,182,.40);
+  color:#67e8f9;
+}
+body[data-theme="dark"] .att-break-start:hover,
+body[data-theme="dark"] .att-break-end:hover {
+  background:var(--cyan); color:#fff;
+}
+body[data-theme="dark"] .att-luz-off {
+  background:rgba(245,158,11,.14);
+  border-color:rgba(245,158,11,.40);
+  color:#fcd34d;
+}
+body[data-theme="dark"] .att-luz-on {
+  background:rgba(250,204,21,.14);
+  border-color:rgba(250,204,21,.40);
+  color:#fde68a;
+}
+body[data-theme="dark"] .att-luz-on:hover {
+  background:#facc15; color:#1a1a1a;
+}
+body[data-theme="dark"] .att-ausencia {
+  background:rgba(148,163,184,.12);
+  border-color:rgba(148,163,184,.35);
+  color:#cbd5e1;
+}
+body[data-theme="dark"] .att-ausencia:hover {
+  background:#94a3b8; color:#0a1a1f;
+  border-color:#94a3b8;
+}
+
 /* Barra de estado al pie del panel */
 .att-status-bar {
   grid-column:1 / -1;
@@ -3805,6 +3845,33 @@ body[data-theme="dark"] .admin-shell-header {
 .m-training{ --mc-color:#a855f7; --mc-color-2:#7c3aed; --mc-shadow:rgba(168,85,247,.35); }
 .m-onboard { --mc-color:#3b82f6; --mc-color-2:#2563eb; }
 .m-gather { --mc-color:#f43f5e; --mc-color-2:#e11d48; }
+
+/* ══ Dark mode: cambiar la capa blanca translúcida del fondo por una
+   oscura, y ajustar bordes y flecha para que el color de la misión
+   resalte sobre superficie oscura en vez de quedar tapado por blanco. */
+body[data-theme="dark"] .mission-card {
+  background:
+    linear-gradient(135deg,
+      rgba(15,42,51,.88) 0%,
+      rgba(15,42,51,.55) 100%),
+    linear-gradient(135deg,
+      var(--mc-color, var(--cyan)) 0%,
+      transparent 60%);
+  border-color:rgba(255,255,255,.08);
+  border-bottom-color:var(--mc-color, var(--cyan));
+  box-shadow:
+    0 4px 14px rgba(0,0,0,.40),
+    inset 0 1px 0 rgba(255,255,255,.06);
+}
+body[data-theme="dark"] .mission-card:hover {
+  box-shadow:
+    0 18px 38px rgba(0,0,0,.55),
+    inset 0 1px 0 rgba(255,255,255,.08);
+}
+body[data-theme="dark"] .mc-arrow {
+  background:rgba(255,255,255,.06);
+  border-color:rgba(255,255,255,.14);
+}
 
 /* ══════════════════════════════════════════
    CUMPLEAÑOS GIGANTE
