@@ -2404,6 +2404,22 @@ body[data-theme="dark"] .admin-shell-header {
   .admin-shell-brand-sub { display:none; }
 }
 
+/* ═══ DARK MODE — admin: textos que estaban hardcodeados en navy
+   y se perdían sobre las superficies oscuras del tema. ═══ */
+body[data-theme="dark"] .admin-shell-brand-name { color:var(--text); }
+body[data-theme="dark"] .admin-sidebar-link     { color:var(--text); }
+body[data-theme="dark"] .admin-sidebar-link:hover { color:var(--cyan); }
+body[data-theme="dark"] .ad-counter-value       { color:var(--text); }
+body[data-theme="dark"] .ad-team-name           { color:var(--text); }
+body[data-theme="dark"] .ad-team-row            { background:var(--paper-2); }
+body[data-theme="dark"] .ad-power-name,
+body[data-theme="dark"] .ad-absence-name        { color:var(--text); }
+body[data-theme="dark"] .ad-absence-reason      { color:var(--text-2); }
+body[data-theme="dark"] .ad-power-item.ongoing  {
+  background:rgba(245,158,11,.14);
+  border-color:rgba(245,158,11,.40);
+}
+
 /* ═══════════════════════════════════════════
    AGREGAR AL FINAL DE css/styles.css
    Panel Admin de Métricas

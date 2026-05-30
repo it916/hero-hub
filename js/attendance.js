@@ -230,7 +230,9 @@ function openAbsenceModal(triggerBtn) {
     await recordAttendance("Ausencia", triggerBtn, { absenceDate, reason });
   });
 
-  dialog.show();
+  // Shoelace lazy-registra el custom element en el primer uso; sin esto
+  // el primer click no abre el modal (hay que clickear dos veces).
+  customElements.whenDefined("sl-dialog").then(() => dialog.show());
 }
 
 // ── Init ───────────────────────────────────────────────────────────

@@ -408,7 +408,9 @@ function openBioEditModal(idx) {
     } catch (e) { alert("Error: " + e.message); }
   });
 
-  dialog.show();
+  // Shoelace lazy-registra el custom element en el primer uso; sin esto
+  // el primer click no abre el modal (hay que clickear dos veces).
+  customElements.whenDefined("sl-dialog").then(() => dialog.show());
 }
 
 // ═══ MODAL: Editar datos generales (admin) ═══
@@ -519,7 +521,9 @@ function openMemberModal(idx) {
     } catch (e) { alert("Error guardando: " + e.message); }
   });
 
-  dialog.show();
+  // Shoelace lazy-registra el custom element en el primer uso; sin esto
+  // el primer click no abre el modal (hay que clickear dos veces).
+  customElements.whenDefined("sl-dialog").then(() => dialog.show());
 }
 
 async function deleteMember(idx) {
