@@ -432,7 +432,11 @@ function openCarrierModal(scope, idx) {
     }
   });
 
-  dialog.show();
+  // El autoloader de Shoelace registra <sl-dialog> de forma lazy la
+  // primera vez que aparece en el DOM. Si llamamos show() antes de que
+  // el custom element esté definido, falla en silencio y hay que clickear
+  // dos veces. whenDefined espera al registro y dispara el show enseguida.
+  customElements.whenDefined("sl-dialog").then(() => dialog.show());
 }
 
 async function deleteCarrier(scope, idx) {

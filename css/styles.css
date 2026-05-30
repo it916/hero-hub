@@ -3516,11 +3516,19 @@ body[data-theme="dark"] .att-ausencia:hover {
   display:flex; flex-direction:column; gap:14px;
 }
 
-/* Modal de portales: un poco más amplio y con más respiración entre campos */
-.carrier-edit-dialog::part(panel) { max-width:580px; }
-.carrier-edit-dialog::part(body)  { padding-top:20px; padding-bottom:10px; }
+/* Modal de portales: un poco más amplio y con más respiración entre campos.
+   - --width controla el ancho REAL del panel sl-dialog (max-width solo lo
+     limita). max-width:calc(100vw - 32px) evita desbordar en pantallas chicas.
+   - overflow-x:hidden en el body + min-width:0 en los sl-input evitan que
+     el min-content de los inputs dentro del grid 1fr 1fr empuje un scroll
+     horizontal dentro del modal. */
+.carrier-edit-dialog              { --width:580px; }
+.carrier-edit-dialog::part(panel) { max-width:calc(100vw - 32px); }
+.carrier-edit-dialog::part(body)  { padding-top:20px; padding-bottom:10px; overflow-x:hidden; }
 .carrier-edit-dialog .hh-form     { gap:18px; }
 .carrier-edit-dialog .modal-grid-2 { gap:16px; margin-bottom:0; }
+.carrier-edit-dialog sl-input,
+.carrier-edit-dialog sl-textarea  { min-width:0; max-width:100%; }
 .hh-field { display:flex; flex-direction:column; gap:6px; }
 .hh-field-label {
   font-size:11px; font-weight:700;
