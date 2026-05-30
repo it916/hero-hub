@@ -10,7 +10,7 @@ import { getFreshGooglePhotoURL } from "./user-photo.js";
 const ALLOWED_DOMAIN = "heroinsuranceusa.com";
 // ADMIN_EMAILS eliminado: usamos el sistema de roles
 
-let teamData = { jesus: [], anny: [] };
+let teamData = { jesus: [], anny: [], hero: [] };
 let personalData = [];
 let isAdmin = false;
 let currentAccount = 'jesus';
@@ -37,10 +37,9 @@ onAuthStateChanged(auth, async (user) => {
   const isAgente = ctx.userRole && ctx.userRole.role === "agente";
 
   document.getElementById("user-avatar").src = await getFreshGooglePhotoURL(user);
-  if (isAdmin) {
-    document.getElementById("btn-add-team").style.display = "inline-flex";
-    document.getElementById("team-admin-note").style.display = "inline";
-  }
+  // El botón "Agregar" del equipo se muestra siempre: cualquier usuario
+  // puede agregar o editar portales del team; solo el borrado queda
+  // restringido a admin (ver buildCardHTML).
   // btn-admin ya fue manejado por page-guard.js
 
   // Para agentes: ocultar la pestaña "Cuentas del Equipo" y mostrar solo "Mis Carriers"
@@ -81,6 +80,7 @@ async function loadTeam() {
     if (snap.exists()) {
       teamData.jesus = snap.data().jesus || [];
       teamData.anny = snap.data().anny || [];
+      teamData.hero = snap.data().hero || [];
     }
     renderTeam();
   } catch (e) {
@@ -197,12 +197,15 @@ function renderPersonal() {
 }
 
 function buildCardHTML(p, scope, idx) {
-  const canEdit = scope === 'personal' || isAdmin;
+  // personal: el dueño puede todo. team: cualquiera puede editar; solo admin borra.
+  const canEdit = true;
+  const canDelete = scope === 'personal' || isAdmin;
+  const showActions = canEdit || canDelete;
   return `
     <div class="carrier-card" data-scope="${scope}" data-idx="${idx}">
-      ${canEdit ? `<div class="carrier-card-actions">
-        <button class="carrier-act edit" title="Editar">✎</button>
-        <button class="carrier-act del" title="Eliminar">×</button>
+      ${showActions ? `<div class="carrier-card-actions">
+        ${canEdit ? `<button class="carrier-act edit" title="Editar">✎</button>` : ''}
+        ${canDelete ? `<button class="carrier-act del" title="Eliminar">×</button>` : ''}
       </div>` : ''}
       <div class="carrier-icon">${getInitials(p.nombre)}</div>
       <div class="carrier-info">
