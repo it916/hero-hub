@@ -4217,12 +4217,13 @@ body[data-theme="dark"] .bdc-date {
   box-shadow:0 4px 14px rgba(0,0,0,.40);
 }
 body[data-theme="dark"] .bdc-cd-box {
-  background:rgba(255,255,255,.06);
-  border-color:rgba(6,163,182,.40);
-  color:#5eead4;
+  background:#fff;
+  border-color:rgba(6,163,182,.50);
+  color:#066b78;
+  box-shadow:0 2px 8px rgba(0,0,0,.30);
 }
-body[data-theme="dark"] .bdc-cd-num  { color:#5eead4; }
-body[data-theme="dark"] .bdc-cd-label{ color:#3dbccc; }
+body[data-theme="dark"] .bdc-cd-num  { color:#066b78; }
+body[data-theme="dark"] .bdc-cd-label{ color:#06a3b6; }
 
 /* CTA inferior */
 .bdc-cta {
