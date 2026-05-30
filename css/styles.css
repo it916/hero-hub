@@ -4149,26 +4149,39 @@ body[data-theme="dark"] .mc-arrow {
   animation:bdc-drop-in .6s ease forwards .76s;
 }
 
+/* FECHA — caja protagónica con animación pulsante (intercambiada con el countdown) */
 .bdc-date {
   display:inline-flex;
   align-items:center;
-  gap:8px;
-  background:rgba(255,255,255,.75);
-  border:1px solid rgba(253,164,175,.45);
+  justify-content:center;
+  gap:12px;
+  background:linear-gradient(160deg, #ffffff 0%, #e6f7fa 100%);
+  border:2px solid rgba(6,163,182,.35);
+  border-radius:18px;
+  min-width:240px;
+  padding:18px 28px;
+  margin:6px auto 8px;
   color:#066b78;
-  font-size:13px;
-  font-weight:600;
-  padding:6px 14px;
-  border-radius:999px;
-  margin:6px 0 8px;
+  font-size:28px;
+  font-weight:800;
+  letter-spacing:-.3px;
+  line-height:1.1;
+  text-shadow:0 2px 4px rgba(6,107,120,.15);
   opacity:0;
-  animation:bdc-drop-in .6s ease forwards .82s;
-  backdrop-filter:blur(6px);
-  -webkit-backdrop-filter:blur(6px);
+  animation:bdc-drop-in .6s ease forwards .82s,
+            bdc-date-pulse 3.2s ease-in-out infinite .82s;
+  box-shadow:
+    0 14px 34px rgba(6,163,182,.30),
+    0 0 0 6px rgba(6,163,182,.10),
+    inset 0 1px 0 rgba(255,255,255,.9);
 }
-.bdc-cake { font-size:14px; }
+.bdc-cake { font-size:26px; }
+@keyframes bdc-date-pulse {
+  0%, 100% { box-shadow:0 14px 34px rgba(6,163,182,.30), 0 0 0 6px rgba(6,163,182,.10), inset 0 1px 0 rgba(255,255,255,.9); }
+  50%      { box-shadow:0 18px 42px rgba(6,163,182,.40), 0 0 0 10px rgba(6,163,182,.14), inset 0 1px 0 rgba(255,255,255,.9); }
+}
 
-/* Countdown — solo días restantes (caja única, alta presencia) */
+/* Días restantes — pill chico subordinado (intercambiado con la fecha) */
 .bdc-countdown {
   display:flex;
   justify-content:center;
@@ -4177,39 +4190,46 @@ body[data-theme="dark"] .mc-arrow {
   margin:6px 0 4px;
 }
 .bdc-cd-box {
-  position:relative;
-  background:linear-gradient(160deg, #ffffff 0%, #e6f7fa 100%);
-  border:2px solid rgba(6,163,182,.35);
-  border-radius:18px;
-  min-width:160px;
-  padding:18px 32px 14px;
-  box-shadow:
-    0 14px 34px rgba(6,163,182,.30),
-    0 0 0 6px rgba(6,163,182,.10),
-    inset 0 1px 0 rgba(255,255,255,.9);
-  animation:bdc-cd-pulse 3.2s ease-in-out infinite;
-}
-@keyframes bdc-cd-pulse {
-  0%, 100% { box-shadow:0 14px 34px rgba(6,163,182,.30), 0 0 0 6px rgba(6,163,182,.10), inset 0 1px 0 rgba(255,255,255,.9); }
-  50%      { box-shadow:0 18px 42px rgba(6,163,182,.40), 0 0 0 10px rgba(6,163,182,.14), inset 0 1px 0 rgba(255,255,255,.9); }
+  display:inline-flex;
+  align-items:baseline;
+  gap:6px;
+  background:rgba(255,255,255,.75);
+  border:1px solid rgba(6,163,182,.35);
+  color:#066b78;
+  padding:6px 14px;
+  border-radius:999px;
+  backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
 }
 .bdc-cd-num {
-  font-size:72px;
-  font-weight:900;
+  font-size:14px;
+  font-weight:800;
   color:#066b78;
   line-height:1;
-  letter-spacing:-2px;
   font-variant-numeric:tabular-nums;
-  text-shadow:0 2px 4px rgba(6,107,120,.15);
 }
 .bdc-cd-label {
-  font-size:12px;
-  font-weight:800;
+  font-size:11px;
+  font-weight:700;
   text-transform:uppercase;
-  letter-spacing:3px;
+  letter-spacing:1.5px;
   color:#06a3b6;
-  margin-top:6px;
 }
+
+/* Dark mode: la caja grande de fecha y la pill de días */
+body[data-theme="dark"] .bdc-date {
+  background:linear-gradient(160deg, var(--card) 0%, var(--paper-2) 100%);
+  border-color:rgba(6,163,182,.45);
+  color:#5eead4;
+  text-shadow:0 2px 4px rgba(0,0,0,.5);
+}
+body[data-theme="dark"] .bdc-cd-box {
+  background:rgba(255,255,255,.06);
+  border-color:rgba(6,163,182,.40);
+  color:#5eead4;
+}
+body[data-theme="dark"] .bdc-cd-num  { color:#5eead4; }
+body[data-theme="dark"] .bdc-cd-label{ color:#3dbccc; }
 
 /* CTA inferior */
 .bdc-cta {
@@ -4262,8 +4282,8 @@ body[data-theme="dark"] .mc-arrow {
 @media (max-width:460px) {
   .bday-mega.bday-card,
   .bday-mega.hero-card { max-width:100%; }
-  .bdc-cd-box { width:56px; }
-  .bdc-cd-num { font-size:22px; }
+  .bdc-date { min-width:0; font-size:22px; padding:14px 20px; gap:10px; }
+  .bdc-cake { font-size:22px; }
   .bdc-content { padding:88px 18px 22px; }
   .hc-content { padding:74px 18px 22px; }
   .hc-photo-item { width:84px; height:84px; }
