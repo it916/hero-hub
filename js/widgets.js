@@ -64,7 +64,11 @@ export async function renderWidgets(userData) {
   currentUserData = userData || {};
   isAdmin = auth.currentUser && ADMIN_EMAILS.includes(auth.currentUser.email);
   await loadSharedData();
-  document.body.dataset.theme = currentUserData.theme || "light";
+  const theme = currentUserData.theme || "light";
+  document.body.dataset.theme = theme;
+  // Cachear el tema en localStorage para que las subpáginas lo apliquen
+  // al instante (vía el script inline en <body>) sin esperar a Firestore.
+  try { localStorage.setItem("hero-theme", theme); } catch (e) {}
 
   renderArsenal();
   renderSpotlight();
@@ -522,6 +526,7 @@ function openSettingsModal() {
     b.addEventListener("click", async () => {
       currentUserData.theme = b.dataset.theme;
       document.body.dataset.theme = b.dataset.theme;
+      try { localStorage.setItem("hero-theme", b.dataset.theme); } catch (e) {}
       dialog.querySelectorAll(".theme-btn").forEach(x => x.classList.remove("active"));
       b.classList.add("active");
       await saveUserField({ theme: b.dataset.theme });

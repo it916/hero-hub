@@ -31,6 +31,15 @@ Es un proyecto **interno, no público** — solo accesible para empleados con cu
 
 Todo módulo nuevo debe respetar esta paleta para mantener consistencia visual con el resto del Hub.
 
+## Modo oscuro
+
+El Hub soporta **modo oscuro** además de Hero Light. Activación: toggle "Día / Noche" en el modal de Configuración (`widgets.js → openSettingsModal`). La selección se guarda por usuario en Firestore (`users/{email}.theme`) y se cachea en `localStorage["hero-theme"]` para pre-aplicarse antes de la auth (evita el flash de tema incorrecto).
+
+- **Selector CSS:** `body[data-theme="dark"]` (y `[data-theme="dark"]` para scope reducido).
+- **Dónde viven las reglas:** `css/styles.css` (general) y `css/agencias.css` (vista de agencias).
+- **Regla para UI nueva:** todo módulo o componente debe contemplar ambos temas. Evitar fondos/colores hardcodeados (`#fff`, `white`, `#000`) — usar variables CSS o duplicar la regla bajo el selector dark.
+- **Componentes Shoelace:** preferir setear variables `--sl-color-*` / `--sl-panel-background-color` bajo el selector dark en vez de sobreescribir selectores internos.
+
 ## Estructura del proyecto
 
 ```
