@@ -80,23 +80,13 @@ export async function renderWidgets(userData) {
 }
 
 // ═══ BANNER ONBOARDING ═══
-// Se muestra solo si el usuario nunca ha activado la misión (campo
-// onboardingActivated en su documento de Firestore). Al primer click,
-// guarda el flag fire-and-forget para que no vuelva a aparecer.
+// Se muestra siempre (excepto para roles sin acceso a onboarding, que oculta
+// auth.js). Al primer click guarda el flag `onboardingActivated` en Firestore
+// fire-and-forget — ya no se usa para ocultar, pero queda como tracking de
+// quién entró al onboarding al menos una vez.
 function setupOnboardingBanner() {
   const obw = document.getElementById("ob-welcome");
   if (!obw) return;
-
-  if (currentUserData.onboardingActivated) {
-    // Esconder también el conector inmediatamente anterior para que no queden
-    // dos líneas separadoras pegadas (la de Mi Asistencia + la de Hub Cards).
-    const prevConnector = obw.previousElementSibling;
-    if (prevConnector && prevConnector.classList.contains("connector")) {
-      prevConnector.style.display = "none";
-    }
-    obw.style.display = "none";
-    return;
-  }
 
   obw.addEventListener("click", () => {
     currentUserData.onboardingActivated = true;
