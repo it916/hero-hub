@@ -6720,39 +6720,44 @@ body.mission-activating .ob-w-spark {
    ═══════════════════════════════════════════
    El agente solo ve un subconjunto del dashboard:
    - Banner superior (sin botón Gather)
-   - Tarjetas hub: Equipo + Portales + Entrenamientos (3 cards)
+   - Tarjetas hub: Equipo + Entrenamientos (2 cards)
    - Arsenal del Héroe (accesos directos)
-   Todo lo demás se oculta (incluida la sección "Acceso rápido a misiones"). */
+   Portales sigue accesible vía topbar, pero no como tarjeta del cuartel.
+   Todo lo demás se oculta (asistencia, onboarding, misiones, celebraciones, mensajes). */
 
 /* Tarjetas exclusivas del agente: ocultas por defecto, visibles solo para "agente" */
 .hc-portales,
 .hc-trainings { display: none; }
-body.role-agente .hc-portales,
 body.role-agente .hc-trainings { display: block; }
 
 /* Ocultos para el agente */
 body.role-agente .hero-cover-actions,
+body.role-agente #sec-asistencia,
+body.role-agente #ob-welcome,
+body.role-agente .hub-card.hc-portales,
 body.role-agente .hub-card.hc-directory,
 body.role-agente .hub-card.hc-guides,
 body.role-agente #sec-misiones,
 body.role-agente #sec-celebraciones,
 body.role-agente #sec-mensajes,
+body.role-agente .connector:has(+ #sec-asistencia),
+body.role-agente .connector:has(+ #ob-welcome),
 body.role-agente .connector:has(+ #sec-misiones),
 body.role-agente .connector:has(+ #sec-celebraciones),
 body.role-agente .connector:has(+ #sec-mensajes) {
   display: none !important;
 }
 
-/* Hub-cards del agente: SIEMPRE 3 columnas (Equipo + Portales + Entrenamientos)
-   en una sola fila. Solo colapsa a 1 columna en móvil. */
+/* Hub-cards del agente: 2 columnas (Equipo + Entrenamientos) en una sola fila.
+   Solo colapsa a 1 columna en móvil. */
 body.role-agente .hub-cards {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
 /* Override del media query general (.hub-cards a 980px usa 2 cols con hc-guides
-   span 2) — para el agente mantenemos 3 cols hasta más abajo */
+   span 2) — para el agente mantenemos 2 cols hasta más abajo */
 @media (max-width: 980px) {
-  body.role-agente .hub-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  body.role-agente .hub-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   body.role-agente .hc-content { padding: 22px 16px 18px; min-height: auto; }
 }
 @media (max-width: 640px) {
