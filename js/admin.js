@@ -37,6 +37,7 @@ onAuthStateChanged(auth, async (user) => {
   if (window.refreshIcons) window.refreshIcons();
   loadSpotlight();
   loadMessages();
+  initAsistenciaDashboard();
 
   // Exponer email del admin actual para roles-admin.js
   window._currentAdminEmail = user.email;

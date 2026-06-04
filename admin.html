@@ -68,7 +68,7 @@
 
           <div class="admin-sidebar-group">
             <div class="admin-sidebar-kicker">Resumen</div>
-            <button type="button" class="admin-sidebar-link" data-tab="asistencia">
+            <button type="button" class="admin-sidebar-link active" data-tab="asistencia">
               <i data-lucide="line-chart"></i>
               <span>Dashboard Asistencia</span>
             </button>
@@ -76,7 +76,7 @@
 
           <div class="admin-sidebar-group">
             <div class="admin-sidebar-kicker">Contenido</div>
-            <button type="button" class="admin-sidebar-link active" data-tab="spotlight">
+            <button type="button" class="admin-sidebar-link" data-tab="spotlight">
               <i data-lucide="star"></i>
               <span>Spotlight</span>
             </button>
@@ -117,14 +117,14 @@
             <i data-lucide="home"></i>
             <span>Admin</span>
             <i data-lucide="chevron-right" class="admin-breadcrumb-sep"></i>
-            <span class="admin-breadcrumb-current" id="admin-breadcrumb-current">Spotlight</span>
+            <span class="admin-breadcrumb-current" id="admin-breadcrumb-current">Dashboard de Asistencia</span>
           </div>
         </div>
 
         <!-- ══════════════════════════════════════════════ -->
         <!-- SECCIÓN DASHBOARD DE ASISTENCIA                -->
         <!-- ══════════════════════════════════════════════ -->
-        <section class="admin-section" id="tab-asistencia" style="display:none;">
+        <section class="admin-section" id="tab-asistencia">
           <div class="ad-toolbar">
             <div>
               <h2 style="margin:0;">📈 Dashboard de Asistencia</h2>
@@ -212,7 +212,7 @@
         </section>
 
         <!-- SECCIÓN SPOTLIGHT -->
-      <section class="admin-section" id="tab-spotlight">
+      <section class="admin-section" id="tab-spotlight" style="display:none;">
         <h2>🌟 Hero Spotlight</h2>
 
         <sl-input id="sp-image" label="URL de imagen panorámica" placeholder="https://…" clearable></sl-input>
