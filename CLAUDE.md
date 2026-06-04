@@ -82,3 +82,45 @@ hero-hub/
 - Leer libremente para investigar y responder dudas.
 - Respetar el branding Hero Light en cualquier propuesta de UI.
 - Mantener el idioma español en la comunicación y en el código visible al usuario.
+
+## Flujo de trabajo Git para proyectos web (GitHub Pages)
+
+> **CONTEXTO IMPORTANTE:** En GitHub Pages, cada push a la rama `main` publica los cambios EN VIVO de inmediato. **Push = desplegar a producción.** Todo el flujo debe respetar esto.
+
+### Commits (frecuentes)
+
+- Hacer commit por cada unidad de cambio que tenga sentido por sí sola (un módulo, un bug arreglado, un ajuste de estilo). **Un commit = un cambio con propósito claro.**
+- Commitear seguido, aunque sea trabajo incompleto, porque cada commit es un punto de retorno seguro.
+- Usar siempre mensajes descriptivos con prefijo: `feat:`, `fix:`, `style:`, `refactor:`, `docs:`.
+
+### Push (con cuidado, porque publica en vivo)
+
+- Hacer commits locales las veces que haga falta mientras trabajo.
+- Hacer push SOLO cuando lo que tengo funciona y fue probado, aunque sea un avance pequeño pero estable.
+- Antes de push de un cambio grande, recordarme probarlo localmente en el navegador (abrir `index.html` o usar Live Server) para no romper el sitio en producción.
+
+### Ramas y versiones
+
+- **Cambios pequeños y seguros:** trabajar directo en `main`.
+- **Cambios grandes o arriesgados** (rediseños, refactors): crear una rama aparte, trabajar y commitear ahí, y fusionar a `main` solo cuando esté probado.
+
+  ```bash
+  git checkout -b nombre-feature
+  # (commits)
+  git checkout main
+  git merge nombre-feature
+  git push
+  ```
+
+- Marcar versiones estables con **tags** en los hitos importantes:
+
+  ```bash
+  git tag -a v1.0 -m "descripcion"
+  git push origin v1.0
+  ```
+
+- **Esquema de versionado simple:** `v1.0` = primera versión usable; segundo número (`v1.1`, `v1.2`) para mejoras; primer número (`v2.0`) para cambios grandes.
+
+### Recordatorio activo
+
+Cuando trabajemos en cualquiera de mis proyectos web, recuérdame estas reglas si estoy a punto de saltármelas (por ejemplo, si voy a hacer push de algo sin probar, o a commitear muchos cambios mezclados a la vez).
