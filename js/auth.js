@@ -311,6 +311,16 @@ function showDailyPopup(msg, idx) {
   if (window.refreshIcons) window.refreshIcons();
 }
 
+function firstNameFromEmail(email) {
+  if (!email) return "?";
+  const lower = email.toLowerCase();
+  const member = teamMembers.find(m =>
+    Array.isArray(m.email) && m.email.some(e => (e || "").toLowerCase() === lower)
+  );
+  if (member?.name) return member.name.trim().split(/\s+/)[0];
+  return email.split("@")[0].split(".")[0];
+}
+
 function renderReactions(msg) {
   const reactions = msg.reactions || {};
   const summaryEl = document.getElementById("dp-reactions-summary");
@@ -325,7 +335,7 @@ function renderReactions(msg) {
   summaryEl.innerHTML = Object.keys(byEmoji).length
     ? Object.entries(byEmoji).map(([emoji, emails]) => {
         const isMine = emails.includes(currentUser.email);
-        const names = emails.map(e => e.split("@")[0].split(".")[0]).slice(0,3);
+        const names = emails.map(firstNameFromEmail).slice(0,3);
         const extra = emails.length > 3 ? ` +${emails.length-3}` : "";
         return `<div class="dp-react-chip ${isMine ? 'mine':''}">
           <span class="react-emoji">${emoji}</span>
