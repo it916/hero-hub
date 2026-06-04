@@ -1,128 +1,130 @@
-# Hero Hub — Sub-Fase 2c (Log de Auditoría)
+# Hero Hub
 
-Agrega un sistema de auditoría completo al Hero Hub. Registra automáticamente las acciones importantes (cambios de roles, ediciones de carriers del equipo, cambios en el directorio, eliminación de mensajes, actualizaciones del spotlight) y te permite consultarlas desde un nuevo tab "Log" en el panel de admin.
+**Cuartel general digital de Hero Insurance USA.** Dashboard interno con directorio, agencias, organigramas, accesos a carriers, guías, políticas, onboarding, asistencia y herramientas de administración. Acceso restringido a empleados con cuenta `@heroinsuranceusa.com`.
+
+> Versión actual: **v2.1** · Solo uso interno.
 
 ---
 
-## Qué registra el sistema
+## Stack
 
-El log captura estos eventos automáticamente:
+- **Frontend:** HTML + CSS + JS planos. Sin framework, sin bundler, sin paso de build.
+- **Backend / datos:** Firebase Firestore.
+- **Auth:** Google Sign-In, restringida al dominio corporativo.
+- **Hosting:** GitHub Pages — `push a main = deploy`.
+- **Librerías vía CDN:** Lucide, SortableJS, GSAP, Shoelace, Tabulator, Flatpickr (locale ES), Chart.js, Google Fonts.
 
-| Tipo | Cuándo se registra |
+---
+
+## Páginas
+
+| Archivo | Qué hace |
 |---|---|
-| **Usuario agregado** | Admin crea un usuario en el panel de roles |
-| **Rol cambiado** | Admin cambia el rol de un usuario existente |
-| **Usuario eliminado** | Admin elimina un usuario del sistema |
-| **Carrier del equipo agregado/editado/eliminado** | Cambios en credenciales de Jesús o Anny |
-| **Contacto agregado/editado/eliminado** | Cambios en el Directorio |
-| **Mensaje eliminado** | Admin borra un mensaje de la Playlist |
-| **Spotlight actualizado** | Admin cambia el Hero Spotlight |
-
-> **Importante:** NO se registran cambios en los carriers **personales** de cada usuario (esos son privados) ni las visitas/logins (para eso está el tab "Métricas").
-
----
-
-## Dónde se guarda
-
-En Firestore, colección nueva llamada `audit-log`. Cada documento es un evento con estos campos:
-
-- `timestamp` — cuándo pasó
-- `actor` — email del que lo hizo
-- `actorName` — nombre del actor
-- `action` — tipo de evento (ej. `role.update`)
-- `target` — email/nombre del afectado
-- `details` — datos extra del cambio (ej. `{from: "agente", to: "interno"}`)
-
-Retención: **1 año**. Hay un botón "Limpiar >1 año" en el panel para eliminar eventos antiguos manualmente cuando quieras.
+| `index.html` | Login + dashboard (cuartel general, banner, asistencia, misiones) |
+| `admin.html` | Panel admin con sidebar y tabs (Roles, Métricas, Asistencia, Log, Carriers del equipo, Spotlight, Playlist) |
+| `agencias.html` | Vista de agencias + organigrama, alimentada desde Google Sheet |
+| `directorio.html` | Directorio de contactos del equipo |
+| `equipo.html` | Página individual de cada miembro |
+| `portales.html` | Accesos a carriers (tab Hero compartido + personales) |
+| `guias.html` | Guías internas |
+| `politicas.html` | Políticas |
+| `onboarding.html` | Onboarding de empleados nuevos + glosario |
 
 ---
 
-## Archivos a subir
+## Branding — "Hero Light"
 
-### Nuevos (agregar):
-- `js/audit-log.js`
-- `js/audit-panel.js`
-- `css/audit-panel.css`
+| Token | Valor |
+|---|---|
+| Primario | `#06a3b6` (cyan Hero) |
+| Fondo | `#f0f4f8` |
+| Superficies | `#ffffff` |
+| Display | Bricolage Grotesque |
+| Texto / UI | Inter |
+| Datos / mono | JetBrains Mono |
 
-### Reemplazar (sustituyen los que ya tienes):
-- `admin.html`
-- `js/admin.js`
-- `js/roles-admin.js`
-- `js/carriers.js`
-- `js/directorio.js`
-- `css/roles-admin.css` (columna de fecha compactada para que ya no se superponga)
+Variables CSS en `css/styles.css`: `--sans` (Inter), `--display` (Bricolage Grotesque).
 
----
+### Modo oscuro
 
-## Qué cambió en la columna "Última actualización" del panel de roles
-
-Tal como pediste, la dejé pero más compacta:
-- Formato de fecha cambió de "20 abr, 2026" a "20/04/26" (más corto)
-- Ancho de columna reducido de 150px a 110px
-- El "por [usuario]" tiene ancho máximo para que no empuje contenido
-
-Con esto la columna respeta su espacio y no se sobrepone con la columna de rol.
+Toggle "Día / Noche" en el modal de Configuración. Selección persistida por usuario en Firestore (`users/{email}.theme`) y cacheada en `localStorage["hero-theme"]` para pre-aplicar el tema antes de la auth (evita el flash). Reglas bajo `body[data-theme="dark"]` en `css/styles.css` y `css/agencias.css`. Todo módulo nuevo debe contemplar ambos temas.
 
 ---
 
-## Instrucciones de despliegue
+## Roles
 
-**1. Sube los 9 archivos al repo** (nuevos y reemplazados). Respeta las carpetas `js/` y `css/`.
+Roles definidos en Firestore (`users/{email}.role`): `admin`, `interno`, `office`, `agente`, `it`.
 
-**2. Hard refresh** (`Ctrl+Shift+R`) para asegurar que los archivos nuevos carguen.
-
-**3. Entra al admin → tab "Log".** La primera vez estará vacío porque el log se genera hacia adelante, no retroactivamente.
-
-**4. Genera eventos de prueba:** ve al tab Roles y haz un cambio pequeño (ej. cambia un rol y regrésalo a lo que estaba). Vuelve al tab Log y deberías ver tu evento registrado.
+- El rol se aplica como clase en `<body>` (ej. `body.role-agente`) desde `js/auth.js`, y las páginas/secciones se ocultan vía CSS o guards (`js/page-guard.js`).
+- El rol **agente** tiene acceso restringido: solo Inicio (sin asistencia, onboarding ni portales), Equipo y Agencias.
+- Cambios de rol se loguean en `audit-log` y requieren confirmación.
 
 ---
 
-## Qué te permite hacer el panel Log
+## Módulos clave
 
-**Ver eventos cronológicamente** (más recientes arriba), con:
-- Ícono de color según el tipo de evento (verde para crear, cyan para editar, rojo para eliminar, amarillo para alertas de seguridad)
-- Acción realizada
-- Sobre quién se hizo
-- Detalles del cambio (ej. "Cambio: agente → interno")
-- Quién lo hizo y cuándo
+### Sistema de auditoría
+`js/audit-log.js` expone `logEvent(ACTIONS.X, target, details)`. Cada evento se guarda en la colección `audit-log` con `timestamp`, `actor`, `actorName`, `action`, `target`, `details`. Se loguean: cambios de rol, alta/baja de usuarios, edición de carriers del equipo, cambios en directorio, eliminación de mensajes, actualización del spotlight y accesos denegados. **No** se loguean carriers personales ni logins (eso está en Métricas). Retención sugerida: 1 año (botón "Limpiar >1 año" en el panel Log).
 
-**Filtros disponibles:**
-- Por tipo de acción (chips: Todos / Usuarios creados / Cambios de rol / Etc.)
-- Por rango de fechas (7/30/90/365 días o Todo)
-- Búsqueda libre por texto (busca en actor, target, acción y detalles)
+### Asistencia
+Sección "Mi Asistencia" en el dashboard con 7 acciones (entrada, salida a almuerzo, regreso, etc.) → Google Apps Script → Google Sheet. El **dashboard de asistencia** vive como tab dentro de `admin.html` y consume el mismo Sheet vía `doGet`.
 
-**Estadísticas rápidas arriba:**
-- Total de eventos en el rango seleccionado
-- Usuarios únicos que generaron eventos
-- Acción más frecuente
+### Agencias
+Datos cargados desde Google Sheet (flag `AGENCIAS_SHEET_URL`). Comisiones por plan se muestran como chips. Filtro de búsqueda con match EXACTO.
+
+### Admin shell
+`admin.html` usa layout **sidebar + main** con lazy-load por tab. Para agregar un tab nuevo: registrar entrada en el sidebar + módulo JS dedicado que se inicializa al activarse.
 
 ---
 
-## Commit sugerido
+## Estructura
 
 ```
-feat: add audit log for sensitive actions
+hero-hub/
+├── *.html                 ← páginas (ver tabla arriba)
+├── css/
+│   ├── styles.css         ← base + dark mode general
+│   ├── agencias.css       ← vista de agencias + dark
+│   ├── roles-admin.css    ← panel de roles
+│   ├── audit-panel.css    ← panel de log
+│   ├── directorio-filters.css
+│   └── widgets.css        ← modales y widgets compartidos
+├── js/
+│   ├── firebase-config.js auth.js page-guard.js
+│   ├── app.js widgets.js topbar-dropdown.js
+│   ├── admin.js roles-admin.js audit-log.js audit-panel.js
+│   ├── attendance.js asistencia-dashboard.js
+│   ├── agencias.js directorio.js equipo.js portales.js
+│   ├── guias.js politicas.js onboarding.js
+│   ├── birthday-card.js next-meeting.js user-photo.js
+│   ├── electricity.js tracker.js roles.js
+├── images/ icons/
+├── CLAUDE.md README.md
 ```
 
 ---
 
-## Qué viene después
+## Convenciones
 
-Con esto queda cerrada toda la Fase 2 (roles + panel admin + auditoría). La próxima fase puede ser:
-
-**Fase 3 — Integrar IT Console al Hub**
-Crear una página `it-console.html` dentro del Hub con el dashboard de administración IT, accesible solo para rol `admin`.
-
-**Fase 4 — Crear módulo RRHH**
-Absorbiendo las funciones actuales del Office Manager (asistencia, permisos) más funciones nuevas.
-
-**Fase 5 — Módulo Finanzas**
-Reportes Medicare integrados.
+- **Idioma de UI:** español.
+- **Fechas:** `MM/DD/YYYY` (US).
+- **Commits:** en español, estilo `feat(modulo): …` / `fix(modulo): …` / `chore(...): …`.
+- **Sin dependencias nuevas** sin discutirlo antes.
+- **Banderas:** usar SVG de `flagicons.lipis.dev` (los emoji se renderizan como texto en Windows).
 
 ---
 
-## Notas técnicas
+## Despliegue
 
-- El sistema es **"fire and forget"**: si falla el logging por algún motivo, NO bloquea la acción original del usuario. Solo queda un warning en consola del navegador.
-- Los eventos se guardan con `Timestamp.now()` del servidor, no del cliente, así que siempre tienen hora correcta.
-- La función `logEvent()` está exportada en `audit-log.js` — si más adelante quieres loguear algo desde otro módulo, solo importas `{ logEvent, ACTIONS }` y llamas `logEvent(ACTIONS.XXX, target, details)`.
+Hosting en GitHub Pages. **Push a `main` = deploy.** No hay paso de build. Para forzar refresco tras un cambio, hard refresh (`Ctrl+Shift+R`).
+
+---
+
+## Equipo
+
+| Persona | Rol |
+|---|---|
+| Fernando Romero | IT Manager — autor y mantenedor |
+| Jesús Gutiérrez | CEO |
+| Anny Medina | COO |
+| Aurys Rodríguez | CFO |
