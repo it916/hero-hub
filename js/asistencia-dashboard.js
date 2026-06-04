@@ -154,12 +154,26 @@ function computeCurrentStateByPerson(events, today) {
       case "Ausencia":         state = "ausencia"; break;
       default:                 state = "sin-registro";
     }
+
+    // Timestamps clave del día: primera Entrada, único Break, última Salida
+    let entradaTime = null, breakStart = null, breakEnd = null, salidaTime = null;
+    for (const ev of evs) {
+      if (ev.tipo === "Entrada" && !entradaTime) entradaTime = ev._date;
+      if (ev.tipo === "Inicio Break" && !breakStart) breakStart = ev._date;
+      if (ev.tipo === "Fin Break" && !breakEnd) breakEnd = ev._date;
+      if (ev.tipo === "Salida") salidaTime = ev._date;
+    }
+
     result.push({
       email,
       name: last.nombre || email,
       state,
       lastEvent: last.tipo,
       lastTime: last._date,
+      entradaTime,
+      breakStart,
+      breakEnd,
+      salidaTime,
     });
   }
   return result.sort((a, b) => a.name.localeCompare(b.name));
@@ -333,14 +347,26 @@ function renderTeamList(states) {
   }
   list.innerHTML = states.map(s => {
     const meta = STATUS_META[s.state] || STATUS_META["sin-registro"];
+    const breakEndStr = s.breakStart && !s.breakEnd && s.state === "break"
+      ? "(en curso)"
+      : fmtTime(s.breakEnd);
     return `
       <div class="ad-team-row" data-state="${s.state}">
-        <div class="ad-team-name">${escapeHtml(s.name)}</div>
-        <div class="ad-team-status">
-          <span class="ad-status-pill" style="background:${meta.color}1a; color:${meta.color}; border-color:${meta.color}44;">
-            <i data-lucide="${meta.icon}"></i> ${meta.label}
-          </span>
-          <span class="ad-team-time">desde ${fmtTime(s.lastTime)}</span>
+        <div class="ad-team-top">
+          <div class="ad-team-name">${escapeHtml(s.name)}</div>
+          <div class="ad-team-status">
+            <span class="ad-status-pill" style="background:${meta.color}1a; color:${meta.color}; border-color:${meta.color}44;">
+              <i data-lucide="${meta.icon}"></i> ${meta.label}
+            </span>
+            <span class="ad-team-time">desde ${fmtTime(s.lastTime)}</span>
+          </div>
+        </div>
+        <div class="ad-team-detail">
+          <span><span class="ad-d-lbl">Entrada</span> ${fmtTime(s.entradaTime)}</span>
+          <span class="ad-d-sep">·</span>
+          <span><span class="ad-d-lbl">Break</span> ${fmtTime(s.breakStart)} → ${breakEndStr}</span>
+          <span class="ad-d-sep">·</span>
+          <span><span class="ad-d-lbl">Salida</span> ${fmtTime(s.salidaTime)}</span>
         </div>
       </div>`;
   }).join("");
