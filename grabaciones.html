@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="icons/favicon-hero.png">
+<link rel="apple-touch-icon" href="icons/favicon-hero.png">
+<meta name="theme-color" content="#06a3b6">
+<title>Grabaciones — Hero Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<script defer src="https://unpkg.com/lucide@0.474.0"></script>
+<script defer src="js/topbar-dropdown.js"></script>
+
+<style>
+  .grab-actions {
+    display:flex;
+    justify-content:center;
+    gap:12px;
+    margin:0 0 26px;
+    flex-wrap:wrap;
+  }
+  .grab-open-drive {
+    display:inline-flex; align-items:center; gap:10px;
+    padding:12px 22px;
+    border-radius:14px;
+    background:linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color:#fff;
+    font-family:var(--sans);
+    font-weight:700;
+    font-size:14px;
+    text-decoration:none;
+    box-shadow:0 8px 22px rgba(16,185,129,.30);
+    transition:transform .18s ease, box-shadow .18s ease, filter .18s ease;
+  }
+  .grab-open-drive:hover {
+    transform:translateY(-2px);
+    box-shadow:0 12px 28px rgba(16,185,129,.40);
+    filter:brightness(1.05);
+  }
+  .grab-open-drive i { width:18px; height:18px; }
+
+  .grab-grid {
+    max-width:1200px;
+    margin:0 auto;
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));
+    gap:22px;
+  }
+
+  .grab-card {
+    background:#fff;
+    border:1px solid var(--border, #e2e8f0);
+    border-radius:18px;
+    overflow:hidden;
+    text-decoration:none;
+    color:inherit;
+    display:flex;
+    flex-direction:column;
+    transition:transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+    box-shadow:0 4px 14px rgba(15,23,42,.05);
+  }
+  .grab-card:hover {
+    transform:translateY(-4px);
+    border-color:#06a3b6;
+    box-shadow:0 16px 36px rgba(6,163,182,.20);
+  }
+  [data-theme="dark"] .grab-card {
+    background:#0f1a2a;
+    border-color:rgba(255,255,255,.08);
+    box-shadow:0 4px 14px rgba(0,0,0,.35);
+  }
+  [data-theme="dark"] .grab-card:hover {
+    border-color:#06a3b6;
+    box-shadow:0 16px 36px rgba(0,0,0,.55);
+  }
+
+  .grab-thumb {
+    position:relative;
+    aspect-ratio:16/9;
+    background:linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+    overflow:hidden;
+  }
+  [data-theme="dark"] .grab-thumb {
+    background:linear-gradient(135deg, #1a2438 0%, #0a1422 100%);
+  }
+  .grab-thumb img {
+    width:100%; height:100%;
+    object-fit:cover;
+    display:block;
+    transition:transform .4s ease;
+  }
+  .grab-card:hover .grab-thumb img { transform:scale(1.05); }
+
+  .grab-thumb-placeholder {
+    width:100%; height:100%;
+    display:grid; place-items:center;
+    color:rgba(15,23,42,.35);
+  }
+  [data-theme="dark"] .grab-thumb-placeholder { color:rgba(255,255,255,.3); }
+  .grab-thumb-placeholder i { width:48px; height:48px; }
+
+  .grab-thumb-overlay {
+    position:absolute; inset:0;
+    background:linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,.55) 100%);
+    display:flex; align-items:center; justify-content:center;
+    opacity:0;
+    transition:opacity .25s ease;
+  }
+  .grab-card:hover .grab-thumb-overlay { opacity:1; }
+  .grab-play {
+    width:60px; height:60px;
+    border-radius:50%;
+    background:rgba(6,163,182,.95);
+    display:grid; place-items:center;
+    color:#fff;
+    box-shadow:0 10px 26px rgba(0,0,0,.4);
+    transform:scale(.85);
+    transition:transform .25s ease;
+  }
+  .grab-card:hover .grab-play { transform:scale(1); }
+  .grab-play i { width:28px; height:28px; margin-left:3px; }
+
+  .grab-duration {
+    position:absolute;
+    bottom:10px; right:10px;
+    background:rgba(0,0,0,.78);
+    color:#fff;
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    font-weight:700;
+    padding:4px 9px;
+    border-radius:6px;
+    letter-spacing:.02em;
+  }
+
+  .grab-body {
+    padding:18px 20px 20px;
+    display:flex; flex-direction:column; gap:12px;
+    flex:1;
+  }
+  .grab-title {
+    font-family:var(--display, 'Bricolage Grotesque', sans-serif);
+    font-weight:700;
+    font-size:19px;
+    line-height:1.25;
+    letter-spacing:-.01em;
+    margin:0;
+    color:var(--text, #0f172a);
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+  [data-theme="dark"] .grab-title { color:#f0f4f8; }
+
+  .grab-meta {
+    display:flex; align-items:center; gap:10px;
+    font-size:12.5px;
+    color:var(--muted, #64748b);
+    font-family:var(--sans, 'Inter', sans-serif);
+    font-weight:500;
+    margin-top:auto;
+  }
+  .grab-meta-item { display:inline-flex; align-items:center; gap:6px; }
+  .grab-meta-item i { width:13px; height:13px; }
+
+  .grab-status {
+    max-width:1200px;
+    margin:0 auto;
+    text-align:center;
+    padding:60px 20px;
+    font-family:var(--sans);
+    color:var(--muted);
+  }
+  .grab-status.error { color:#b91c1c; }
+  [data-theme="dark"] .grab-status.error { color:#fca5a5; }
+  .grab-status .spinner {
+    width:32px; height:32px;
+    border:3px solid var(--border, #e2e8f0);
+    border-top-color:#06a3b6;
+    border-radius:50%;
+    margin:0 auto 16px;
+    animation:grab-spin .8s linear infinite;
+  }
+  @keyframes grab-spin { to { transform:rotate(360deg); } }
+
+  .grab-footnote {
+    max-width:1200px;
+    margin:24px auto 0;
+    text-align:center;
+    font-size:12px;
+    color:var(--muted);
+    font-family:var(--sans);
+  }
+  .grab-footnote i {
+    width:14px; height:14px;
+    vertical-align:-2px;
+    margin-right:4px;
+  }
+</style>
+</head>
+<body>
+<script>try{var t=localStorage.getItem("hero-theme");if(t)document.body.dataset.theme=t;}catch(e){}</script>
+
+<noscript>
+  <div style="position:fixed;inset:0;background:#062a33;color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font-family:system-ui,sans-serif;z-index:99999;">
+    <div>
+      <h1 style="margin:0 0 12px;">Hero Hub requiere JavaScript</h1>
+      <p style="margin:0;opacity:.85;">Activa JavaScript en tu navegador para acceder al Hero Hub.</p>
+    </div>
+  </div>
+</noscript>
+
+<div id="loading" class="login-container"><div class="login-card"><p>Verificando acceso...</p></div></div>
+
+<div id="dashboard" style="display:none;">
+
+  <header class="hero-topbar">
+    <div class="topbar-inner">
+      <div class="brand-block">
+        <a href="index.html" class="brand-link">
+          <div class="logo-mark"><img src="icons/favicon-hero.png" alt="Hero"></div>
+          <div>
+            <div class="brand-name">HERO HUB</div>
+            <div class="brand-sub">Hero Insurance USA</div>
+          </div>
+        </a>
+      </div>
+      <nav class="topbar-nav" id="topbar-nav">
+        <a href="index.html" class="nav-link"><i data-lucide="home"></i><span>Inicio</span></a>
+        <a href="equipo.html" class="nav-link"><i data-lucide="users"></i><span>Equipo</span></a>
+
+        <div class="nav-group">
+          <button class="nav-group-toggle" type="button" aria-expanded="false" aria-haspopup="true">
+            <i data-lucide="briefcase"></i><span>Operaciones</span>
+            <i data-lucide="chevron-down" class="nav-group-arrow"></i>
+          </button>
+          <div class="nav-dropdown" role="menu">
+            <a href="portales.html" class="nav-link" role="menuitem"><i data-lucide="shield"></i><span>Portales</span></a>
+            <a href="agencias.html" class="nav-link" role="menuitem"><i data-lucide="network"></i><span>Agencias</span></a>
+            <a href="directorio.html" class="nav-link" role="menuitem"><i data-lucide="book-user"></i><span>Directorio</span></a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-group-toggle" type="button" aria-expanded="false" aria-haspopup="true">
+            <i data-lucide="library"></i><span>Recursos</span>
+            <i data-lucide="chevron-down" class="nav-group-arrow"></i>
+          </button>
+          <div class="nav-dropdown" role="menu">
+            <a href="guias.html" class="nav-link" role="menuitem"><i data-lucide="book-open"></i><span>Guías</span></a>
+            <a href="politicas.html" class="nav-link" role="menuitem"><i data-lucide="scroll-text"></i><span>Políticas</span></a>
+            <a href="onboarding.html" class="nav-link" role="menuitem"><i data-lucide="rocket"></i><span>Onboarding</span></a>
+            <a href="reuniones.html" class="nav-link" role="menuitem"><i data-lucide="presentation"></i><span>Reuniones</span></a>
+          </div>
+        </div>
+      </nav>
+      <div class="topbar-actions">
+        <img id="user-avatar" src="" alt="" class="avatar">
+        <a id="btn-admin" href="admin.html" class="icon-btn" style="display:none;" title="Admin"><i data-lucide="shield-check"></i></a>
+        <button id="btn-logout" class="icon-btn" title="Salir"><i data-lucide="log-out"></i></button>
+        <button id="btn-menu" class="icon-btn menu-toggle" title="Menú"><i data-lucide="menu"></i></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+
+    <section class="page-header">
+      <div class="page-kicker">• Hero Insurance USA •</div>
+      <h1 class="page-title">Grabaciones de entrenamiento</h1>
+      <p class="page-sub">Repaso de capacitaciones, talleres y sesiones grabadas del equipo</p>
+    </section>
+
+    <div class="grab-actions">
+      <a class="grab-open-drive" href="https://drive.google.com/drive/folders/1ogwdRzgcr_q1nkS7Omj56dJ3F1ikeken" target="_blank" rel="noopener">
+        <i data-lucide="folder-open"></i>
+        <span>Abrir folder completo en Drive</span>
+      </a>
+    </div>
+
+    <div id="grab-grid" class="grab-grid">
+      <div class="grab-status" id="grab-loading">
+        <div class="spinner"></div>
+        Cargando grabaciones...
+      </div>
+    </div>
+
+    <p class="grab-footnote">
+      <i data-lucide="info"></i>
+      Las grabaciones se sincronizan automáticamente con el folder de Drive.
+    </p>
+
+  </main>
+
+  <footer class="hero-footer">
+    <span>HERO HUB · v2.1</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+  </footer>
+</div>
+
+<script>
+  window.refreshIcons = () => { if (window.lucide) lucide.createIcons(); };
+  document.addEventListener("DOMContentLoaded", () => {
+    window.refreshIcons();
+    const menuBtn = document.getElementById("btn-menu");
+    const nav = document.getElementById("topbar-nav");
+    if (menuBtn && nav) menuBtn.addEventListener("click", () => nav.classList.toggle("open"));
+  });
+</script>
+<script type="module" src="js/firebase-config.js"></script>
+<script type="module" src="js/page-guard.js"></script>
+<script type="module" src="js/tracker.js"></script>
+
+<script type="module">
+  // ─── Drive API: lista automática del folder de grabaciones ───
+  const FOLDER_ID = "1ogwdRzgcr_q1nkS7Omj56dJ3F1ikeken";
+  const API_KEY   = "AIzaSyAIUjx_ZnST_MoifJfS5H7y44Xgg-YtW8s";
+
+  async function fetchRecordings() {
+    const params = new URLSearchParams({
+      q: `'${FOLDER_ID}' in parents and trashed = false`,
+      fields: "files(id,name,mimeType,modifiedTime,thumbnailLink,webViewLink,videoMediaMetadata)",
+      orderBy: "modifiedTime desc",
+      pageSize: "100",
+      key: API_KEY,
+    });
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files?${params}`);
+    if (!res.ok) throw new Error(`Drive API ${res.status}`);
+    const data = await res.json();
+    return data.files || [];
+  }
+
+  function cleanTitle(name) {
+    return (name || "Sin título").replace(/\.[^.]+$/, "").trim();
+  }
+
+  function formatDate(iso) {
+    if (!iso) return "";
+    const d = new Date(iso);
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${mm}/${dd}/${d.getFullYear()}`;
+  }
+
+  function formatDuration(ms) {
+    if (!ms) return "";
+    const sec = Math.floor(Number(ms) / 1000);
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  }
+
+  function upscaleThumb(url) {
+    if (!url) return "";
+    return url.replace(/=s\d+(?:-[a-z0-9]+)?$/i, "=s600");
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => (
+      { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]
+    ));
+  }
+
+  function renderCard(file) {
+    const title    = cleanTitle(file.name);
+    const date     = formatDate(file.modifiedTime);
+    const duration = formatDuration(file.videoMediaMetadata?.durationMillis);
+    const thumb    = upscaleThumb(file.thumbnailLink);
+    const link     = file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`;
+
+    return `
+      <a class="grab-card" href="${escapeHtml(link)}" target="_blank" rel="noopener">
+        <div class="grab-thumb">
+          ${thumb
+            ? `<img src="${escapeHtml(thumb)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
+            : `<div class="grab-thumb-placeholder"><i data-lucide="video"></i></div>`}
+          ${duration ? `<span class="grab-duration">${duration}</span>` : ""}
+          <div class="grab-thumb-overlay">
+            <div class="grab-play"><i data-lucide="play"></i></div>
+          </div>
+        </div>
+        <div class="grab-body">
+          <h3 class="grab-title">${escapeHtml(title)}</h3>
+          <div class="grab-meta">
+            <span class="grab-meta-item"><i data-lucide="calendar"></i>${date}</span>
+          </div>
+        </div>
+      </a>
+    `;
+  }
+
+  async function renderGrid() {
+    const grid = document.getElementById("grab-grid");
+    try {
+      const files = await fetchRecordings();
+      const videos = files.filter(f => f.mimeType && f.mimeType.startsWith("video/"));
+
+      if (!videos.length) {
+        grid.innerHTML = `
+          <div class="grab-status">
+            <i data-lucide="folder-x" style="width:32px;height:32px;display:block;margin:0 auto 12px;opacity:.5;"></i>
+            No hay grabaciones disponibles todavía.
+          </div>`;
+        window.refreshIcons();
+        return;
+      }
+
+      grid.innerHTML = videos.map(renderCard).join("");
+      window.refreshIcons();
+    } catch (err) {
+      console.error("[grabaciones] error cargando Drive:", err);
+      grid.innerHTML = `
+        <div class="grab-status error">
+          <i data-lucide="alert-triangle" style="width:32px;height:32px;display:block;margin:0 auto 12px;"></i>
+          No se pudieron cargar las grabaciones.<br>
+          Abre el folder en Drive con el botón de arriba.
+        </div>`;
+      window.refreshIcons();
+    }
+  }
+
+  // ─── Bootstrap: esperar auth y luego renderizar ───
+  (async () => {
+    const ctx = await window.getPageContext();
+    if (!ctx || !ctx.user) return;
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("dashboard").style.display = "block";
+
+    // Avatar del topbar
+    const av = document.getElementById("user-avatar");
+    if (av && ctx.user.photoURL) av.src = ctx.user.photoURL;
+
+    // Botón admin visible solo para admin
+    if (ctx.userRole && ctx.userRole.definition && ctx.userRole.definition.isAdmin) {
+      const btnAdmin = document.getElementById("btn-admin");
+      if (btnAdmin) btnAdmin.style.display = "inline-flex";
+    }
+
+    // Logout
+    const btnLogout = document.getElementById("btn-logout");
+    if (btnLogout) {
+      const { auth } = await import("./js/firebase-config.js");
+      const { signOut } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js");
+      btnLogout.addEventListener("click", async () => {
+        await signOut(auth);
+        location.href = "index.html";
+      });
+    }
+
+    window.refreshIcons();
+
+    // Cargar el grid de grabaciones
+    renderGrid();
+  })();
+</script>
+</body>
+</html>
