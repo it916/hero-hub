@@ -6365,6 +6365,19 @@ body.mission-activating .ob-w-spark {
   isolation: isolate;
 }
 
+/* Cuando una hub-card es un <button> (ej. card de Entrenamientos que abre modal),
+   resetear los estilos por defecto del botón nativo. */
+button.hub-card {
+  -webkit-appearance: none;
+  appearance: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+}
+
 .hub-card:hover {
   transform: translateY(-6px) rotate(-.4deg);
   box-shadow: 0 20px 40px rgba(0,0,0,.12),
@@ -6414,6 +6427,18 @@ body.mission-activating .ob-w-spark {
 .hc-trainings .hc-stripe {
   background: linear-gradient(90deg, #10b981 0%, #059669 100%);
   box-shadow: 0 4px 14px rgba(16,185,129,.30);
+}
+.hc-database .hc-stripe {
+  background: linear-gradient(90deg, #06a3b6 0%, #066b78 100%);
+  box-shadow: 0 4px 14px rgba(6,163,182,.30);
+}
+.hc-alta .hc-stripe {
+  background: linear-gradient(90deg, #a855f7 0%, #7c3aed 100%);
+  box-shadow: 0 4px 14px rgba(168,85,247,.30);
+}
+.hc-reuniones .hc-stripe {
+  background: linear-gradient(90deg, #6366f1 0%, #4338ca 100%);
+  box-shadow: 0 4px 14px rgba(99,102,241,.30);
 }
 
 .hub-card:hover .hc-stripe {
@@ -6468,6 +6493,9 @@ body.mission-activating .ob-w-spark {
 .hc-guides .hc-icon i { color: #7c3aed; }
 .hc-portales .hc-icon i { color: #0e7490; }
 .hc-trainings .hc-icon i { color: #059669; }
+.hc-database .hc-icon i { color: #066b78; }
+.hc-alta .hc-icon i { color: #7c3aed; }
+.hc-reuniones .hc-icon i { color: #4338ca; }
 
 /* Burst (estrellita esquina del ícono) */
 .hc-burst {
@@ -6512,6 +6540,9 @@ body.mission-activating .ob-w-spark {
 .hc-guides .hc-label { color: #7c3aed; }
 .hc-portales .hc-label { color: #0e7490; }
 .hc-trainings .hc-label { color: #059669; }
+.hc-database .hc-label { color: #066b78; }
+.hc-alta .hc-label { color: #7c3aed; }
+.hc-reuniones .hc-label { color: #4338ca; }
 
 .hc-title {
   font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif;
@@ -6667,6 +6698,9 @@ body.mission-activating .ob-w-spark {
 .hc-guides:hover .hc-cta { background: #7c3aed; border-color: #7c3aed; }
 .hc-portales:hover .hc-cta { background: #0e7490; border-color: #0e7490; }
 .hc-trainings:hover .hc-cta { background: #059669; border-color: #059669; }
+.hc-database:hover .hc-cta { background: #066b78; border-color: #066b78; }
+.hc-alta:hover .hc-cta { background: #7c3aed; border-color: #7c3aed; }
+.hc-reuniones:hover .hc-cta { background: #4f46e5; border-color: #4f46e5; }
 
 /* ── Dark mode ── */
 [data-theme="dark"] .hub-card {
@@ -6694,11 +6728,17 @@ body.mission-activating .ob-w-spark {
 [data-theme="dark"] .hc-guides .hc-cta    { color: #c4b5fd; border-color: rgba(139,92,246,.50); }
 [data-theme="dark"] .hc-portales .hc-cta  { color: #67e8f9; border-color: rgba(14,116,144,.55); }
 [data-theme="dark"] .hc-trainings .hc-cta { color: #6ee7b7; border-color: rgba(16,185,129,.50); }
+[data-theme="dark"] .hc-database .hc-cta  { color: #67e8f9; border-color: rgba(6,163,182,.55); }
+[data-theme="dark"] .hc-alta .hc-cta      { color: #c4b5fd; border-color: rgba(168,85,247,.50); }
+[data-theme="dark"] .hc-reuniones .hc-cta { color: #a5b4fc; border-color: rgba(79,70,229,.55); }
 [data-theme="dark"] .hc-team:hover .hc-cta,
 [data-theme="dark"] .hc-directory:hover .hc-cta,
 [data-theme="dark"] .hc-guides:hover .hc-cta,
 [data-theme="dark"] .hc-portales:hover .hc-cta,
-[data-theme="dark"] .hc-trainings:hover .hc-cta { color: #fff; }
+[data-theme="dark"] .hc-trainings:hover .hc-cta,
+[data-theme="dark"] .hc-database:hover .hc-cta,
+[data-theme="dark"] .hc-alta:hover .hc-cta,
+[data-theme="dark"] .hc-reuniones:hover .hc-cta { color: #fff; }
 
 /* Pills (hc-tag, hc-feature): el texto en light era ámbar/violeta oscuro,
    ilegibles sobre card oscuro. Subimos a tonos claros del mismo matiz. */
@@ -6739,10 +6779,9 @@ body.mission-activating .ob-w-spark {
    Portales sigue accesible vía topbar, pero no como tarjeta del cuartel.
    Todo lo demás se oculta (asistencia, onboarding, misiones, celebraciones, mensajes). */
 
-/* Tarjetas exclusivas del agente: ocultas por defecto, visibles solo para "agente" */
-.hc-portales,
-.hc-trainings { display: none; }
-body.role-agente .hc-trainings { display: block; }
+/* Tarjeta de Portales: oculta por defecto en el dashboard (solo accesible vía topbar para roles no-agente).
+   La card de Entrenamientos es visible para todos los roles. */
+.hc-portales { display: none; }
 
 /* Ocultos para el agente */
 body.role-agente .hero-cover-actions,
@@ -6751,6 +6790,9 @@ body.role-agente #ob-welcome,
 body.role-agente .hub-card.hc-portales,
 body.role-agente .hub-card.hc-directory,
 body.role-agente .hub-card.hc-guides,
+body.role-agente .hub-card.hc-database,
+body.role-agente .hub-card.hc-alta,
+body.role-agente .hub-card.hc-reuniones,
 body.role-agente #sec-misiones,
 body.role-agente #sec-celebraciones,
 body.role-agente #sec-mensajes,
@@ -6820,4 +6862,141 @@ body.role-agente .hub-cards {
     bottom:16px; right:16px;
   }
   .fab-support-label { display:none; }
+}
+
+/* ══════════════════════════════════════════
+   MODAL ENTRENAMIENTOS · Calendario vs Grabaciones
+   ══════════════════════════════════════════ */
+.trainings-modal-overlay {
+  position:fixed; inset:0;
+  background:rgba(6,42,51,.75);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  z-index:10000;
+  display:flex; align-items:center; justify-content:center;
+  padding:24px;
+  opacity:0;
+  transition:opacity .2s ease;
+}
+.trainings-modal-overlay.is-open { opacity:1; }
+
+.trainings-modal {
+  position:relative;
+  max-width:560px;
+  width:100%;
+  background:linear-gradient(135deg, #fff 0%, #f0f4f8 100%);
+  border-radius:24px;
+  padding:40px 36px 36px;
+  box-shadow:0 30px 80px rgba(0,0,0,.4);
+  transform:scale(.92) translateY(12px);
+  opacity:0;
+  transition:transform .25s cubic-bezier(.18,.89,.32,1.28), opacity .2s ease;
+}
+.trainings-modal-overlay.is-open .trainings-modal {
+  transform:scale(1) translateY(0);
+  opacity:1;
+}
+[data-theme="dark"] .trainings-modal {
+  background:linear-gradient(135deg, #1a2536 0%, #0f1a2a 100%);
+}
+
+.tm-close {
+  position:absolute; top:14px; right:14px;
+  width:36px; height:36px;
+  border:none; background:transparent; cursor:pointer;
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--muted);
+  transition:background .2s ease, color .2s ease;
+}
+.tm-close:hover { background:rgba(6,42,51,.08); color:var(--text); }
+[data-theme="dark"] .tm-close:hover { background:rgba(255,255,255,.08); color:#fff; }
+.tm-close i { width:18px; height:18px; }
+
+.tm-kicker {
+  font-family:var(--sans);
+  font-size:11px; font-weight:800;
+  letter-spacing:3px;
+  color:#059669;
+  text-align:center;
+  margin-bottom:6px;
+}
+[data-theme="dark"] .tm-kicker { color:#6ee7b7; }
+
+.tm-title {
+  font-family:var(--display);
+  font-size:26px; font-weight:700;
+  color:var(--text);
+  text-align:center;
+  margin-bottom:28px;
+  line-height:1.2;
+}
+
+.tm-options {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+}
+
+.tm-option {
+  display:flex; flex-direction:column; align-items:center;
+  gap:10px;
+  padding:24px 18px;
+  border-radius:18px;
+  background:#fff;
+  border:1.5px solid rgba(16,185,129,.18);
+  text-decoration:none;
+  color:var(--text);
+  text-align:center;
+  cursor:pointer;
+  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+}
+.tm-option:hover {
+  transform:translateY(-3px);
+  border-color:#10b981;
+  box-shadow:0 12px 28px rgba(16,185,129,.20);
+  background:linear-gradient(180deg, #fff 0%, #ecfdf5 100%);
+}
+[data-theme="dark"] .tm-option {
+  background:rgba(255,255,255,.04);
+  border-color:rgba(16,185,129,.30);
+  color:#e6ecf2;
+}
+[data-theme="dark"] .tm-option:hover {
+  border-color:#10b981;
+  background:rgba(16,185,129,.10);
+  box-shadow:0 12px 28px rgba(0,0,0,.4);
+}
+
+.tm-option-icon {
+  width:56px; height:56px;
+  border-radius:14px;
+  display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color:#fff;
+  box-shadow:0 6px 16px rgba(16,185,129,.30);
+}
+.tm-option-icon i { width:28px; height:28px; }
+
+.tm-option-title {
+  font-family:var(--display);
+  font-size:18px; font-weight:700;
+  color:var(--text);
+}
+[data-theme="dark"] .tm-option-title { color:#fff; }
+
+.tm-option-desc {
+  font-family:var(--sans);
+  font-size:12.5px;
+  color:var(--muted);
+  line-height:1.45;
+}
+
+@media (max-width:520px) {
+  .trainings-modal { padding:32px 22px 26px; }
+  .tm-title { font-size:22px; margin-bottom:22px; }
+  .tm-options { grid-template-columns:1fr; gap:12px; }
+  .tm-option { flex-direction:row; align-items:center; text-align:left; padding:16px 16px; }
+  .tm-option-icon { width:48px; height:48px; flex-shrink:0; }
+  .tm-option-icon i { width:24px; height:24px; }
 }

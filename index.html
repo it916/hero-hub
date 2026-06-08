@@ -93,6 +93,7 @@
             <a href="guias.html" class="nav-link" role="menuitem"><i data-lucide="book-open"></i><span>Guías</span></a>
             <a href="politicas.html" class="nav-link" role="menuitem"><i data-lucide="scroll-text"></i><span>Políticas</span></a>
             <a href="onboarding.html" class="nav-link" role="menuitem"><i data-lucide="rocket"></i><span>Onboarding</span></a>
+            <a href="reuniones.html" class="nav-link" role="menuitem"><i data-lucide="presentation"></i><span>Reuniones</span></a>
           </div>
         </div>
       </nav>
@@ -341,7 +342,7 @@
         </a>
 
         <!-- CARD: ENTRENAMIENTOS (oculta por defecto, visible solo para rol "agente") -->
-        <a href="http://heroinsuranceusa.com/trainings" target="_blank" rel="noopener" class="hub-card hc-trainings">
+        <button type="button" class="hub-card hc-trainings" id="hc-trainings-btn">
           <div class="hc-halftone"></div>
           <div class="hc-stripe"></div>
           <div class="hc-content">
@@ -350,111 +351,86 @@
               <div class="hc-burst">✦</div>
             </div>
             <div class="hc-label">ENTRENAMIENTOS</div>
-            <div class="hc-title">Calendario de capacitaciones</div>
-            <div class="hc-desc">Agenda de entrenamientos, talleres y certificaciones del equipo. No te pierdas el siguiente.</div>
+            <div class="hc-title">Calendario y grabaciones</div>
+            <div class="hc-desc">Agenda de capacitaciones y todas las sesiones grabadas del equipo. Elige qué quieres ver.</div>
             <div class="hc-feature">
               <i data-lucide="calendar-days"></i>
-              <span>Agenda mensual</span>
+              <span>Calendario y grabaciones</span>
             </div>
             <div class="hc-cta">
-              <span>Ver calendario</span>
+              <span>Abrir</span>
               <i data-lucide="arrow-right"></i>
             </div>
           </div>
-        </a>
+        </button>
 
-        <!-- CARD 2: DIRECTORIO -->
-        <a href="directorio.html" class="hub-card hc-directory">
+        <!-- CARD: BASE DE DATOS DE AGENTES -->
+        <a href="https://docs.google.com/spreadsheets/d/1100HED8B6MxpDrOxnFoxitsRzZPRerwN6TkAJvXVu2I/edit?gid=969364169#gid=969364169" target="_blank" rel="noopener" class="hub-card hc-database">
           <div class="hc-halftone"></div>
           <div class="hc-stripe"></div>
           <div class="hc-content">
             <div class="hc-icon-wrap">
-              <div class="hc-icon"><i data-lucide="book-user"></i></div>
-              <div class="hc-burst">⚡</div>
-            </div>
-            <div class="hc-label">DIRECTORIO</div>
-            <div class="hc-title">Contactos clave</div>
-            <div class="hc-desc">Portales, carriers y contactos directos por departamento. Filtra y encuentra al instante.</div>
-            <div class="hc-tags">
-              <span class="hc-tag">Broker Support</span>
-              <span class="hc-tag">Finance</span>
-              <span class="hc-tag">Sales</span>
-              <span class="hc-tag">+5</span>
-            </div>
-            <div class="hc-cta">
-              <span>Abrir directorio</span>
-              <i data-lucide="arrow-right"></i>
-            </div>
-          </div>
-        </a>
-
-        <!-- CARD 3: GUÍAS -->
-        <a href="guias.html" class="hub-card hc-guides">
-          <div class="hc-halftone"></div>
-          <div class="hc-stripe"></div>
-          <div class="hc-content">
-            <div class="hc-icon-wrap">
-              <div class="hc-icon"><i data-lucide="book-open"></i></div>
+              <div class="hc-icon"><i data-lucide="database"></i></div>
               <div class="hc-burst">✦</div>
             </div>
-            <div class="hc-label">GUÍAS</div>
-            <div class="hc-title">Procedimientos paso a paso</div>
-            <div class="hc-desc">Tutoriales visuales (Scribe) para los procesos del equipo. Resuelve dudas en 2 minutos.</div>
+            <div class="hc-label">BASE DE DATOS</div>
+            <div class="hc-title">Registro de agentes</div>
+            <div class="hc-desc">Hoja viva con el registro completo del equipo: contactos, agencias, productos y estado.</div>
             <div class="hc-feature">
-              <i data-lucide="play-circle"></i>
-              <span>Tutoriales visuales</span>
+              <i data-lucide="sheet"></i>
+              <span>Sheet vivo</span>
             </div>
             <div class="hc-cta">
-              <span>Ver guías</span>
+              <span>Abrir sheet</span>
               <i data-lucide="arrow-right"></i>
             </div>
           </div>
         </a>
 
-      </div>
-    </section>
-
-    <div class="connector"></div>
-
-    <!-- ══ MISIONES COMPACTAS ══ -->
-    <section class="section fade-in" id="sec-misiones">
-      <div class="section-label"><span class="kicker-dot"></span>Acceso rápido a misiones</div>
-      <div class="missions-rack">
-
-        <a class="mission-card m-db" href="https://docs.google.com/spreadsheets/d/1100HED8B6MxpDrOxnFoxitsRzZPRerwN6TkAJvXVu2I/edit?gid=969364169#gid=969364169" target="_blank" rel="noopener">
-          <i class="mc-bg-icon" data-lucide="database"></i>
-          <div class="mc-seal"></div>
-          <div class="mc-icon"><i data-lucide="database"></i></div>
-          <div class="mc-body">
-            <div class="mc-title">Base de Datos de Agente</div>
-            <div class="mc-desc">Registro completo del equipo</div>
+        <!-- CARD 5: ALTA / BAJA DE CORREOS -->
+        <a href="https://it916.github.io/alta-agentes/" target="_blank" rel="noopener" class="hub-card hc-alta">
+          <div class="hc-halftone"></div>
+          <div class="hc-stripe"></div>
+          <div class="hc-content">
+            <div class="hc-icon-wrap">
+              <div class="hc-icon"><i data-lucide="user-plus"></i></div>
+              <div class="hc-burst">✦</div>
+            </div>
+            <div class="hc-label">ALTA / BAJA</div>
+            <div class="hc-title">Solicitud de correos</div>
+            <div class="hc-desc">Activa o desactiva el correo corporativo de un héroe. Formulario rápido para IT.</div>
+            <div class="hc-feature">
+              <i data-lucide="mail-plus"></i>
+              <span>Trámite ágil</span>
+            </div>
+            <div class="hc-cta">
+              <span>Solicitar</span>
+              <i data-lucide="arrow-right"></i>
+            </div>
           </div>
-          <div class="mc-arrow"><i data-lucide="arrow-right"></i></div>
-          <div class="mc-fill"></div>
         </a>
 
-        <a class="mission-card m-alta" href="https://it916.github.io/alta-agentes/" target="_blank" rel="noopener">
-          <i class="mc-bg-icon" data-lucide="mail-plus"></i>
-          <div class="mc-seal"></div>
-          <div class="mc-icon"><i data-lucide="user-plus"></i></div>
-          <div class="mc-body">
-            <div class="mc-title">Solicitud de Alta/Baja de Correos</div>
-            <div class="mc-desc">Activa o desactiva un héroe</div>
+        <!-- CARD 6: REUNIONES DIARIAS -->
+        <a href="reuniones.html" class="hub-card hc-reuniones">
+          <div class="hc-halftone"></div>
+          <div class="hc-stripe"></div>
+          <div class="hc-content">
+            <div class="hc-icon-wrap">
+              <div class="hc-icon"><i data-lucide="presentation"></i></div>
+              <div class="hc-burst">◆</div>
+            </div>
+            <div class="hc-label">REUNIONES</div>
+            <div class="hc-title">Daily meetings al día</div>
+            <div class="hc-desc">Resúmenes automáticos de cada reunión diaria del equipo, sincronizados con Fathom.</div>
+            <div class="hc-feature">
+              <i data-lucide="bot"></i>
+              <span>Resumen IA en español</span>
+            </div>
+            <div class="hc-cta">
+              <span>Ver reuniones</span>
+              <i data-lucide="arrow-right"></i>
+            </div>
           </div>
-          <div class="mc-arrow"><i data-lucide="arrow-right"></i></div>
-          <div class="mc-fill"></div>
-        </a>
-
-        <a class="mission-card m-training" href="http://heroinsuranceusa.com/trainings" target="_blank" rel="noopener">
-          <i class="mc-bg-icon" data-lucide="graduation-cap"></i>
-          <div class="mc-seal"></div>
-          <div class="mc-icon"><i data-lucide="graduation-cap"></i></div>
-          <div class="mc-body">
-            <div class="mc-title">Calendario de Entrenamientos</div>
-            <div class="mc-desc">Calendario de capacitaciones</div>
-          </div>
-          <div class="mc-arrow"><i data-lucide="arrow-right"></i></div>
-          <div class="mc-fill"></div>
         </a>
 
       </div>
@@ -619,15 +595,36 @@
 
       <div class="dp-reactions-label">¿Cómo te hace sentir este mensaje?</div>
       <div class="dp-reactions" id="dp-reactions">
-        <button class="dp-react-btn" data-emoji="👍">👍</button>
+        <button class="dp-react-btn" data-emoji="😎">😎</button>
         <button class="dp-react-btn" data-emoji="❤️">❤️</button>
         <button class="dp-react-btn" data-emoji="🔥">🔥</button>
-        <button class="dp-react-btn" data-emoji="⭐">⭐</button>
+        <button class="dp-react-btn" data-emoji="🤣">🤣</button>
         <button class="dp-react-btn" data-emoji="💪">💪</button>
         <button class="dp-react-btn" data-emoji="✨">✨</button>
       </div>
 
       <div class="dp-reactions-summary" id="dp-reactions-summary"></div>
+    </div>
+  </div>
+
+  <!-- ══ MODAL ENTRENAMIENTOS: Calendario / Grabaciones ══ -->
+  <div id="trainings-modal" class="trainings-modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="trainings-modal-title">
+    <div class="trainings-modal">
+      <button class="tm-close" id="tm-close" aria-label="Cerrar"><i data-lucide="x"></i></button>
+      <div class="tm-kicker">ENTRENAMIENTOS</div>
+      <div class="tm-title" id="trainings-modal-title">¿Qué quieres ver?</div>
+      <div class="tm-options">
+        <a href="http://heroinsuranceusa.com/trainings" target="_blank" rel="noopener" class="tm-option" id="tm-calendar">
+          <div class="tm-option-icon"><i data-lucide="calendar-days"></i></div>
+          <div class="tm-option-title">Calendario</div>
+          <div class="tm-option-desc">Agenda mensual de capacitaciones y talleres.</div>
+        </a>
+        <a href="grabaciones.html" class="tm-option" id="tm-recordings">
+          <div class="tm-option-icon"><i data-lucide="video"></i></div>
+          <div class="tm-option-title">Grabaciones</div>
+          <div class="tm-option-desc">Sesiones pasadas guardadas en Drive.</div>
+        </a>
+      </div>
     </div>
   </div>
 
@@ -1018,6 +1015,36 @@
   onAuthStateChanged(auth, (user) => {
     if (user) loadTeamStack();
   });
+</script>
+
+<script>
+  // ══ Modal Entrenamientos: Calendario vs Grabaciones ══
+  (function () {
+    const btn = document.getElementById("hc-trainings-btn");
+    const modal = document.getElementById("trainings-modal");
+    const closeBtn = document.getElementById("tm-close");
+    if (!btn || !modal || !closeBtn) return;
+
+    const openModal = () => {
+      modal.style.display = "flex";
+      requestAnimationFrame(() => modal.classList.add("is-open"));
+      document.body.style.overflow = "hidden";
+    };
+    const closeModal = () => {
+      modal.classList.remove("is-open");
+      setTimeout(() => { modal.style.display = "none"; }, 180);
+      document.body.style.overflow = "";
+    };
+
+    btn.addEventListener("click", openModal);
+    closeBtn.addEventListener("click", closeModal);
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) closeModal();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && modal.classList.contains("is-open")) closeModal();
+    });
+  })();
 </script>
 </body>
 </html>
