@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="icons/favicon-hero.png">
+<link rel="apple-touch-icon" href="icons/favicon-hero.png">
+<meta name="theme-color" content="#06a3b6">
+<title>Reuniones diarias — Hero Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<script defer src="https://unpkg.com/lucide@0.474.0"></script>
+<script defer src="js/topbar-dropdown.js"></script>
+
+<style>
+  /* ═══ View toggle (Lista / Calendario) ═══ */
+  .reu-view-toggle {
+    max-width:1200px;
+    margin:0 auto 28px;
+    display:flex;
+    justify-content:center;
+  }
+  .reu-view-toggle-inner {
+    display:inline-flex;
+    background:#fff;
+    border:1px solid var(--border, #e2e8f0);
+    border-radius:12px;
+    padding:4px;
+    gap:4px;
+    box-shadow:0 2px 8px rgba(15,23,42,.04);
+  }
+  [data-theme="dark"] .reu-view-toggle-inner {
+    background:#0f1a2a;
+    border-color:rgba(255,255,255,.08);
+  }
+  .reu-view-btn {
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    padding:9px 18px;
+    border:none;
+    background:transparent;
+    border-radius:8px;
+    font-family:var(--sans, 'Inter', sans-serif);
+    font-weight:600;
+    font-size:13px;
+    color:var(--muted, #64748b);
+    cursor:pointer;
+    transition:all .18s ease;
+  }
+  .reu-view-btn:hover {
+    color:var(--text, #0f172a);
+    background:rgba(6,163,182,.06);
+  }
+  [data-theme="dark"] .reu-view-btn:hover {
+    color:#f0f4f8;
+    background:rgba(6,163,182,.10);
+  }
+  .reu-view-btn.active {
+    background:#06a3b6;
+    color:#fff;
+    box-shadow:0 4px 12px rgba(6,163,182,.25);
+  }
+  .reu-view-btn.active:hover {
+    background:#0891b2;
+    color:#fff;
+  }
+  .reu-view-btn i { width:14px; height:14px; }
+
+  /* View visibility based on body[data-reu-view] */
+  body[data-reu-view="list"]     #reu-cal-view  { display:none; }
+  body[data-reu-view="calendar"] #reu-list-view { display:none; }
+
+  /* ═══ Month sections (vista Lista) ═══ */
+  .reu-month-section {
+    max-width:1200px;
+    margin:0 auto 40px;
+  }
+  .reu-month-header {
+    display:flex;
+    align-items:baseline;
+    gap:14px;
+    margin-bottom:18px;
+    padding-bottom:12px;
+    border-bottom:1px solid var(--border, #e2e8f0);
+  }
+  [data-theme="dark"] .reu-month-header { border-color:rgba(255,255,255,.08); }
+  .reu-month-name {
+    font-family:var(--display, 'Bricolage Grotesque', sans-serif);
+    font-weight:700;
+    font-size:22px;
+    letter-spacing:-.01em;
+    color:var(--text, #0f172a);
+    text-transform:capitalize;
+  }
+  [data-theme="dark"] .reu-month-name { color:#f0f4f8; }
+  .reu-month-count {
+    font-family:var(--sans);
+    font-size:11px;
+    font-weight:700;
+    color:var(--muted, #64748b);
+    text-transform:uppercase;
+    letter-spacing:.08em;
+  }
+
+  /* ═══ Grid de cards (compartido por list view) ═══ */
+  .reu-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));
+    gap:22px;
+  }
+
+  .reu-card {
+    position:relative;
+    background:#fff;
+    border:1px solid var(--border, #e2e8f0);
+    border-radius:18px;
+    padding:22px 24px 20px;
+    text-decoration:none;
+    color:inherit;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    transition:transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+    box-shadow:0 4px 14px rgba(15,23,42,.05);
+    overflow:hidden;
+  }
+  .reu-card::before {
+    content:"";
+    position:absolute;
+    left:0; top:0; bottom:0;
+    width:4px;
+    background:linear-gradient(180deg, #06a3b6 0%, #0891b2 100%);
+    transition:width .22s ease;
+  }
+  .reu-card:hover {
+    transform:translateY(-4px);
+    border-color:#06a3b6;
+    box-shadow:0 16px 36px rgba(6,163,182,.18);
+  }
+  .reu-card:hover::before { width:6px; }
+  [data-theme="dark"] .reu-card {
+    background:#0f1a2a;
+    border-color:rgba(255,255,255,.08);
+    box-shadow:0 4px 14px rgba(0,0,0,.35);
+  }
+  [data-theme="dark"] .reu-card:hover {
+    border-color:#06a3b6;
+    box-shadow:0 16px 36px rgba(0,0,0,.55);
+  }
+
+  .reu-card-kicker {
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    font-family:var(--sans, 'Inter', sans-serif);
+    font-size:11px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:#06a3b6;
+  }
+  .reu-card-kicker i { width:13px; height:13px; }
+
+  .reu-card-title {
+    font-family:var(--display, 'Bricolage Grotesque', sans-serif);
+    font-weight:700;
+    font-size:19px;
+    line-height:1.3;
+    letter-spacing:-.01em;
+    margin:0;
+    color:var(--text, #0f172a);
+    display:-webkit-box;
+    -webkit-line-clamp:3;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+  [data-theme="dark"] .reu-card-title { color:#f0f4f8; }
+
+  .reu-card-takeaway {
+    font-family:var(--sans, 'Inter', sans-serif);
+    font-size:13.5px;
+    line-height:1.55;
+    color:var(--muted, #64748b);
+    margin:0;
+    padding:12px 14px;
+    background:rgba(6,163,182,.06);
+    border-radius:10px;
+    display:-webkit-box;
+    -webkit-line-clamp:3;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+  [data-theme="dark"] .reu-card-takeaway {
+    background:rgba(6,163,182,.10);
+    color:rgba(240,244,248,.75);
+  }
+  .reu-card-takeaway strong {
+    color:var(--text, #0f172a);
+    font-weight:700;
+  }
+  [data-theme="dark"] .reu-card-takeaway strong { color:#f0f4f8; }
+
+  .reu-card-footer {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-top:auto;
+    padding-top:6px;
+  }
+  .reu-card-date {
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    font-weight:600;
+    color:var(--muted, #64748b);
+    letter-spacing:.02em;
+  }
+  .reu-card-date i { width:13px; height:13px; }
+
+  .reu-card-cta {
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    font-family:var(--sans, 'Inter', sans-serif);
+    font-size:12.5px;
+    font-weight:700;
+    color:#06a3b6;
+    transition:gap .2s ease;
+  }
+  .reu-card:hover .reu-card-cta { gap:9px; }
+  .reu-card-cta i { width:14px; height:14px; }
+
+  /* ═══ Calendar view ═══ */
+  .reu-cal-container {
+    max-width:760px;
+    margin:0 auto;
+    background:#fff;
+    border:1px solid var(--border, #e2e8f0);
+    border-radius:18px;
+    padding:28px;
+    box-shadow:0 4px 14px rgba(15,23,42,.05);
+  }
+  [data-theme="dark"] .reu-cal-container {
+    background:#0f1a2a;
+    border-color:rgba(255,255,255,.08);
+    box-shadow:0 4px 14px rgba(0,0,0,.35);
+  }
+
+  .reu-cal-nav {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:20px;
+    margin-bottom:24px;
+  }
+  .reu-cal-nav-btn {
+    width:36px; height:36px;
+    border-radius:10px;
+    border:1px solid var(--border, #e2e8f0);
+    background:#fff;
+    display:grid; place-items:center;
+    cursor:pointer;
+    transition:all .18s ease;
+    color:var(--text, #0f172a);
+  }
+  .reu-cal-nav-btn:hover {
+    background:#06a3b6;
+    color:#fff;
+    border-color:#06a3b6;
+  }
+  [data-theme="dark"] .reu-cal-nav-btn {
+    background:#1a2438;
+    border-color:rgba(255,255,255,.08);
+    color:#f0f4f8;
+  }
+  .reu-cal-nav-btn i { width:16px; height:16px; }
+
+  .reu-cal-title {
+    font-family:var(--display, 'Bricolage Grotesque', sans-serif);
+    font-weight:700;
+    font-size:22px;
+    letter-spacing:-.01em;
+    color:var(--text, #0f172a);
+    min-width:180px;
+    text-align:center;
+    text-transform:capitalize;
+  }
+  [data-theme="dark"] .reu-cal-title { color:#f0f4f8; }
+
+  .reu-cal-weekdays {
+    display:grid;
+    grid-template-columns:repeat(7, 1fr);
+    gap:4px;
+    margin-bottom:8px;
+  }
+  .reu-cal-wd {
+    text-align:center;
+    font-family:var(--sans);
+    font-size:11px;
+    font-weight:700;
+    color:var(--muted, #64748b);
+    text-transform:uppercase;
+    letter-spacing:.1em;
+    padding:8px 0;
+  }
+
+  .reu-cal-grid {
+    display:grid;
+    grid-template-columns:repeat(7, 1fr);
+    gap:4px;
+  }
+  .reu-cal-cell {
+    aspect-ratio:1;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    border-radius:10px;
+    background:transparent;
+    transition:background .18s ease;
+  }
+  .reu-cal-empty { background:transparent; }
+
+  .reu-cal-day {
+    font-family:'JetBrains Mono', monospace;
+    font-size:14px;
+    font-weight:500;
+    color:var(--text, #0f172a);
+  }
+  [data-theme="dark"] .reu-cal-day { color:rgba(240,244,248,.65); }
+
+  .reu-cal-cell.is-today {
+    background:rgba(6,163,182,.08);
+  }
+  .reu-cal-cell.is-today .reu-cal-day {
+    color:#06a3b6;
+    font-weight:700;
+  }
+
+  .reu-cal-cell.has-meeting {
+    cursor:pointer;
+  }
+  .reu-cal-cell.has-meeting:hover {
+    background:rgba(99,102,241,.12);
+  }
+  .reu-cal-cell.has-meeting .reu-cal-day {
+    color:#4338ca;
+    font-weight:700;
+  }
+  [data-theme="dark"] .reu-cal-cell.has-meeting .reu-cal-day {
+    color:#a5b4fc;
+  }
+
+  .reu-cal-dot {
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    background:#6366f1;
+    margin-top:3px;
+  }
+  .reu-cal-count {
+    position:absolute;
+    top:4px; right:4px;
+    background:#4338ca;
+    color:#fff;
+    font-family:'JetBrains Mono', monospace;
+    font-size:9px;
+    font-weight:700;
+    padding:1px 5px;
+    border-radius:8px;
+    line-height:1.4;
+  }
+
+  .reu-cal-legend {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    margin-top:20px;
+    padding-top:16px;
+    border-top:1px solid var(--border, #e2e8f0);
+    font-family:var(--sans);
+    font-size:12px;
+    color:var(--muted, #64748b);
+  }
+  [data-theme="dark"] .reu-cal-legend { border-color:rgba(255,255,255,.08); }
+  .reu-cal-dot--legend { display:inline-block; margin-top:0; }
+
+  /* ═══ Modal ═══ */
+  .reu-modal-overlay {
+    position:fixed;
+    inset:0;
+    background:rgba(15,23,42,.65);
+    backdrop-filter:blur(4px);
+    z-index:9999;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .reu-modal-overlay.open {
+    display:flex;
+    animation:reu-fade-in .2s ease;
+  }
+  @keyframes reu-fade-in { from { opacity:0; } to { opacity:1; } }
+
+  .reu-modal {
+    background:#fff;
+    border-radius:20px;
+    max-width:620px;
+    width:100%;
+    max-height:85vh;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+    box-shadow:0 30px 80px rgba(0,0,0,.4);
+    animation:reu-slide-up .25s ease;
+  }
+  @keyframes reu-slide-up {
+    from { transform:translateY(20px); opacity:0; }
+    to   { transform:translateY(0); opacity:1; }
+  }
+  [data-theme="dark"] .reu-modal { background:#0f1a2a; }
+
+  .reu-modal-close {
+    position:absolute;
+    top:14px; right:14px;
+    width:34px; height:34px;
+    border-radius:50%;
+    border:none;
+    background:rgba(15,23,42,.06);
+    color:var(--text, #0f172a);
+    font-size:22px;
+    line-height:1;
+    cursor:pointer;
+    display:grid;
+    place-items:center;
+    z-index:2;
+    transition:background .18s ease;
+  }
+  .reu-modal-close:hover { background:rgba(15,23,42,.12); }
+  [data-theme="dark"] .reu-modal-close {
+    background:rgba(255,255,255,.08);
+    color:#f0f4f8;
+  }
+  [data-theme="dark"] .reu-modal-close:hover { background:rgba(255,255,255,.15); }
+
+  .reu-modal-body {
+    padding:32px 32px 30px;
+    overflow-y:auto;
+  }
+  .reu-modal-kicker {
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-family:var(--sans);
+    font-size:11px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:#06a3b6;
+    margin-bottom:10px;
+  }
+  .reu-modal-kicker i { width:13px; height:13px; }
+  .reu-modal-title {
+    font-family:var(--display, 'Bricolage Grotesque', sans-serif);
+    font-weight:700;
+    font-size:24px;
+    line-height:1.25;
+    letter-spacing:-.01em;
+    margin:0 0 16px;
+    color:var(--text, #0f172a);
+  }
+  [data-theme="dark"] .reu-modal-title { color:#f0f4f8; }
+  .reu-modal-meta {
+    display:flex;
+    flex-wrap:wrap;
+    gap:14px;
+    font-family:var(--sans);
+    font-size:13px;
+    color:var(--muted, #64748b);
+    margin-bottom:20px;
+  }
+  .reu-modal-meta span {
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+  .reu-modal-meta i { width:14px; height:14px; }
+  .reu-modal-takeaway {
+    background:rgba(6,163,182,.08);
+    padding:16px 18px;
+    border-radius:12px;
+    font-family:var(--sans);
+    font-size:14px;
+    line-height:1.55;
+    color:var(--muted, #64748b);
+    margin-bottom:24px;
+  }
+  [data-theme="dark"] .reu-modal-takeaway {
+    background:rgba(6,163,182,.10);
+    color:rgba(240,244,248,.75);
+  }
+  .reu-modal-takeaway strong {
+    color:var(--text, #0f172a);
+    font-weight:700;
+  }
+  [data-theme="dark"] .reu-modal-takeaway strong { color:#f0f4f8; }
+  .reu-modal-cta {
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:12px 20px;
+    background:linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+    color:#fff;
+    text-decoration:none;
+    border-radius:12px;
+    font-family:var(--sans);
+    font-weight:700;
+    font-size:14px;
+    box-shadow:0 8px 22px rgba(79,70,229,.25);
+    transition:transform .18s ease, box-shadow .18s ease;
+  }
+  .reu-modal-cta:hover {
+    transform:translateY(-2px);
+    box-shadow:0 12px 28px rgba(79,70,229,.35);
+  }
+  .reu-modal-cta i { width:16px; height:16px; }
+
+  /* ═══ Status (loading / empty / error) ═══ */
+  .reu-status {
+    max-width:1200px;
+    margin:0 auto;
+    text-align:center;
+    padding:60px 20px;
+    font-family:var(--sans);
+    color:var(--muted, #64748b);
+  }
+  .reu-status.error { color:#b91c1c; }
+  [data-theme="dark"] .reu-status.error { color:#fca5a5; }
+  .reu-status .spinner {
+    width:32px; height:32px;
+    border:3px solid var(--border, #e2e8f0);
+    border-top-color:#06a3b6;
+    border-radius:50%;
+    margin:0 auto 16px;
+    animation:reu-spin .8s linear infinite;
+  }
+  @keyframes reu-spin { to { transform:rotate(360deg); } }
+
+  .reu-footnote {
+    max-width:1200px;
+    margin:32px auto 0;
+    text-align:center;
+    font-size:12px;
+    color:var(--muted, #64748b);
+    font-family:var(--sans);
+  }
+  .reu-footnote i {
+    width:14px; height:14px;
+    vertical-align:-2px;
+    margin-right:4px;
+  }
+</style>
+</head>
+<body>
+<script>try{var t=localStorage.getItem("hero-theme");if(t)document.body.dataset.theme=t;}catch(e){}</script>
+
+<noscript>
+  <div style="position:fixed;inset:0;background:#062a33;color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font-family:system-ui,sans-serif;z-index:99999;">
+    <div>
+      <h1 style="margin:0 0 12px;">Hero Hub requiere JavaScript</h1>
+      <p style="margin:0;opacity:.85;">Activa JavaScript en tu navegador para acceder al Hero Hub.</p>
+    </div>
+  </div>
+</noscript>
+
+<div id="loading" class="login-container"><div class="login-card"><p>Verificando acceso...</p></div></div>
+
+<div id="dashboard" style="display:none;">
+
+  <header class="hero-topbar">
+    <div class="topbar-inner">
+      <div class="brand-block">
+        <a href="index.html" class="brand-link">
+          <div class="logo-mark"><img src="icons/favicon-hero.png" alt="Hero"></div>
+          <div>
+            <div class="brand-name">HERO HUB</div>
+            <div class="brand-sub">Hero Insurance USA</div>
+          </div>
+        </a>
+      </div>
+      <nav class="topbar-nav" id="topbar-nav">
+        <a href="index.html" class="nav-link"><i data-lucide="home"></i><span>Inicio</span></a>
+        <a href="equipo.html" class="nav-link"><i data-lucide="users"></i><span>Equipo</span></a>
+
+        <div class="nav-group">
+          <button class="nav-group-toggle" type="button" aria-expanded="false" aria-haspopup="true">
+            <i data-lucide="briefcase"></i><span>Operaciones</span>
+            <i data-lucide="chevron-down" class="nav-group-arrow"></i>
+          </button>
+          <div class="nav-dropdown" role="menu">
+            <a href="portales.html" class="nav-link" role="menuitem"><i data-lucide="shield"></i><span>Portales</span></a>
+            <a href="agencias.html" class="nav-link" role="menuitem"><i data-lucide="network"></i><span>Agencias</span></a>
+            <a href="directorio.html" class="nav-link" role="menuitem"><i data-lucide="book-user"></i><span>Directorio</span></a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-group-toggle" type="button" aria-expanded="false" aria-haspopup="true">
+            <i data-lucide="library"></i><span>Recursos</span>
+            <i data-lucide="chevron-down" class="nav-group-arrow"></i>
+          </button>
+          <div class="nav-dropdown" role="menu">
+            <a href="guias.html" class="nav-link" role="menuitem"><i data-lucide="book-open"></i><span>Guías</span></a>
+            <a href="politicas.html" class="nav-link" role="menuitem"><i data-lucide="scroll-text"></i><span>Políticas</span></a>
+            <a href="onboarding.html" class="nav-link" role="menuitem"><i data-lucide="rocket"></i><span>Onboarding</span></a>
+            <a href="reuniones.html" class="nav-link active" role="menuitem"><i data-lucide="presentation"></i><span>Reuniones</span></a>
+          </div>
+        </div>
+      </nav>
+      <div class="topbar-actions">
+        <img id="user-avatar" src="" alt="" class="avatar">
+        <a id="btn-admin" href="admin.html" class="icon-btn" style="display:none;" title="Admin"><i data-lucide="shield-check"></i></a>
+        <button id="btn-logout" class="icon-btn" title="Salir"><i data-lucide="log-out"></i></button>
+        <button id="btn-menu" class="icon-btn menu-toggle" title="Menú"><i data-lucide="menu"></i></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+
+    <section class="page-header">
+      <div class="page-kicker">• Hero Insurance USA •</div>
+      <h1 class="page-title">Reuniones diarias</h1>
+      <p class="page-sub">Resúmenes automáticos de los Daily Team Meetings · grabados con Fathom</p>
+    </section>
+
+    <!-- Toggle de vistas -->
+    <div class="reu-view-toggle">
+      <div class="reu-view-toggle-inner">
+        <button class="reu-view-btn" data-view="list" type="button">
+          <i data-lucide="list"></i><span>Lista</span>
+        </button>
+        <button class="reu-view-btn" data-view="calendar" type="button">
+          <i data-lucide="calendar-days"></i><span>Calendario</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Status compartido (loading / error / empty) -->
+    <div id="reu-status" class="reu-status">
+      <div class="spinner"></div>
+      Cargando reuniones...
+    </div>
+
+    <!-- Vista Lista (cards agrupadas por mes) -->
+    <div id="reu-list-view"></div>
+
+    <!-- Vista Calendario (grid mensual) -->
+    <div id="reu-cal-view"></div>
+
+    <p class="reu-footnote">
+      <i data-lucide="info"></i>
+      Sincronizado automáticamente con Fathom · se actualiza al terminar cada reunión
+    </p>
+
+  </main>
+
+  <footer class="hero-footer">
+    <span>HERO HUB · v2.1</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+  </footer>
+</div>
+
+<!-- Modal de detalle de reunión -->
+<div id="reu-modal" class="reu-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="reu-modal-title">
+  <div class="reu-modal">
+    <button class="reu-modal-close" type="button" id="reu-modal-close" aria-label="Cerrar">×</button>
+    <div class="reu-modal-body" id="reu-modal-body"></div>
+  </div>
+</div>
+
+<script>
+  window.refreshIcons = () => { if (window.lucide) lucide.createIcons(); };
+  document.addEventListener("DOMContentLoaded", () => {
+    window.refreshIcons();
+    const menuBtn = document.getElementById("btn-menu");
+    const nav = document.getElementById("topbar-nav");
+    if (menuBtn && nav) menuBtn.addEventListener("click", () => nav.classList.toggle("open"));
+  });
+</script>
+<script type="module" src="js/firebase-config.js"></script>
+<script type="module" src="js/page-guard.js"></script>
+<script type="module" src="js/tracker.js"></script>
+
+<script type="module">
+  // ═══════════════════════════════════════════
+  // Reuniones — Fathom sync · Lista + Calendario
+  // ═══════════════════════════════════════════
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzMqMYc9frPR04mXnJR99MA2rV43pbo0YwD723JH7Z6m2fl85Vl4n89352uNjP5fxNW6w/exec";
+  const LIMIT = 200;
+
+  const MONTH_NAMES_ES = [
+    "Enero","Febrero","Marzo","Abril","Mayo","Junio",
+    "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"
+  ];
+  const WEEKDAY_LETTERS = ["L","M","M","J","V","S","D"];
+
+  // ─── Estado ───
+  let allMeetings   = [];
+  let currentView   = localStorage.getItem("reu-view") || "list";
+  let calendarMonth = new Date();  // mes que se muestra en el calendario
+
+  // ─── Fetch ───
+  async function fetchMeetings() {
+    const res = await fetch(`${WEB_APP_URL}?limit=${LIMIT}`, { redirect: "follow" });
+    if (!res.ok) throw new Error(`Apps Script ${res.status}`);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || "respuesta inválida");
+    return data.items || [];
+  }
+
+  // ─── Helpers ───
+  function formatDate(iso) {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${mm}/${dd}/${d.getFullYear()}`;
+  }
+  function formatDuration(sec) {
+    const n = Number(sec);
+    if (!n || isNaN(n)) return "";
+    const h = Math.floor(n / 3600);
+    const m = Math.floor((n % 3600) / 60);
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => (
+      { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]
+    ));
+  }
+  function stripMdLinks(s) {
+    return String(s || "").replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
+  }
+  function stripMd(s) {
+    return stripMdLinks(s).replace(/\*\*([^*]+)\*\*/g, "$1").trim();
+  }
+  function mdToSafeHtml(s) {
+    let t = stripMdLinks(s);
+    t = escapeHtml(t);
+    t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    return t.trim();
+  }
+  function meetingDateKey(m) {
+    const d = new Date(m.recorded_at);
+    if (isNaN(d.getTime())) return null;
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  }
+
+  // ─── Card renderer (compartido) ───
+  function renderCard(m) {
+    const url      = m.url || "";
+    const title    = m.title || "Daily Team Meeting";
+    const purpose  = stripMd(m.purpose);
+    const takeaway = mdToSafeHtml(m.takeaway);
+    const date     = formatDate(m.recorded_at);
+    const duration = formatDuration(m.duration_sec);
+
+    return `
+      <a class="reu-card" href="${escapeHtml(url)}" target="_blank" rel="noopener">
+        <div class="reu-card-kicker">
+          <i data-lucide="video"></i>
+          ${escapeHtml(title)}
+        </div>
+        <h3 class="reu-card-title">${escapeHtml(purpose) || "(Sin Meeting Purpose)"}</h3>
+        ${takeaway ? `<p class="reu-card-takeaway">${takeaway}</p>` : ""}
+        <div class="reu-card-footer">
+          <span class="reu-card-date">
+            <i data-lucide="calendar"></i>
+            ${date}${duration ? ` · ${duration}` : ""}
+          </span>
+          <span class="reu-card-cta">
+            Ver en Fathom
+            <i data-lucide="arrow-up-right"></i>
+          </span>
+        </div>
+      </a>
+    `;
+  }
+
+  // ─── Vista LISTA (agrupada por mes) ───
+  function groupByMonth(meetings) {
+    const groups = new Map();
+    for (const m of meetings) {
+      const d = new Date(m.recorded_at);
+      if (isNaN(d.getTime())) continue;
+      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+      if (!groups.has(key)) {
+        groups.set(key, {
+          label: `${MONTH_NAMES_ES[d.getMonth()]} ${d.getFullYear()}`,
+          meetings: [],
+        });
+      }
+      groups.get(key).meetings.push(m);
+    }
+    // Más reciente primero
+    return Array.from(groups.entries())
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([_, v]) => v);
+  }
+
+  function renderListView(meetings) {
+    const view = document.getElementById("reu-list-view");
+    if (!meetings.length) {
+      view.innerHTML = `
+        <div class="reu-status">
+          <i data-lucide="calendar-x" style="width:32px;height:32px;display:block;margin:0 auto 12px;opacity:.5;"></i>
+          No hay reuniones sincronizadas todav&iacute;a.
+        </div>`;
+      window.refreshIcons();
+      return;
+    }
+    const groups = groupByMonth(meetings);
+    view.innerHTML = groups.map(g => `
+      <section class="reu-month-section">
+        <header class="reu-month-header">
+          <span class="reu-month-name">${escapeHtml(g.label)}</span>
+          <span class="reu-month-count">${g.meetings.length} ${g.meetings.length === 1 ? "reunión" : "reuniones"}</span>
+        </header>
+        <div class="reu-grid">
+          ${g.meetings.map(renderCard).join("")}
+        </div>
+      </section>
+    `).join("");
+    window.refreshIcons();
+  }
+
+  // ─── Vista CALENDARIO ───
+  function renderCalendarView(meetings, displayDate) {
+    const view  = document.getElementById("reu-cal-view");
+    const year  = displayDate.getFullYear();
+    const month = displayDate.getMonth();
+
+    // Map: "YYYY-MM-DD" → array de reuniones de ese día
+    const dayMap = new Map();
+    for (const m of meetings) {
+      const d = new Date(m.recorded_at);
+      if (isNaN(d.getTime())) continue;
+      if (d.getFullYear() !== year || d.getMonth() !== month) continue;
+      const key = meetingDateKey(m);
+      if (!dayMap.has(key)) dayMap.set(key, []);
+      dayMap.get(key).push(m);
+    }
+
+    const firstDay    = new Date(year, month, 1);
+    const lastDay     = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    // Monday-first offset: getDay() devuelve 0=Dom..6=Sáb → mapeamos a 0=Lun..6=Dom
+    const startOffset = (firstDay.getDay() + 6) % 7;
+
+    const today    = new Date();
+    const todayKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
+
+    const cells = [];
+    for (let i = 0; i < startOffset; i++) {
+      cells.push(`<div class="reu-cal-cell reu-cal-empty"></div>`);
+    }
+    for (let day = 1; day <= daysInMonth; day++) {
+      const key      = `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+      const dayMtgs  = dayMap.get(key) || [];
+      const hasMtgs  = dayMtgs.length > 0;
+      const isToday  = key === todayKey;
+      const classes  = ["reu-cal-cell"];
+      if (hasMtgs)  classes.push("has-meeting");
+      if (isToday)  classes.push("is-today");
+      const dataAttr = hasMtgs ? `data-recording-id="${escapeHtml(String(dayMtgs[0].recording_id))}"` : "";
+      const countBadge = dayMtgs.length > 1 ? `<span class="reu-cal-count">${dayMtgs.length}</span>` : "";
+      cells.push(`
+        <div class="${classes.join(" ")}" ${dataAttr}>
+          ${countBadge}
+          <span class="reu-cal-day">${day}</span>
+          ${hasMtgs ? `<span class="reu-cal-dot"></span>` : ""}
+        </div>
+      `);
+    }
+
+    const monthLabel = `${MONTH_NAMES_ES[month]} ${year}`;
+
+    view.innerHTML = `
+      <div class="reu-cal-container">
+        <div class="reu-cal-nav">
+          <button class="reu-cal-nav-btn" id="reu-cal-prev" type="button" aria-label="Mes anterior">
+            <i data-lucide="chevron-left"></i>
+          </button>
+          <div class="reu-cal-title">${monthLabel}</div>
+          <button class="reu-cal-nav-btn" id="reu-cal-next" type="button" aria-label="Mes siguiente">
+            <i data-lucide="chevron-right"></i>
+          </button>
+        </div>
+        <div class="reu-cal-weekdays">
+          ${WEEKDAY_LETTERS.map(l => `<div class="reu-cal-wd">${l}</div>`).join("")}
+        </div>
+        <div class="reu-cal-grid">${cells.join("")}</div>
+        <div class="reu-cal-legend">
+          <span class="reu-cal-dot reu-cal-dot--legend"></span>
+          Día con reunión · click para ver detalles
+        </div>
+      </div>
+    `;
+
+    document.getElementById("reu-cal-prev").addEventListener("click", () => {
+      calendarMonth = new Date(year, month - 1, 1);
+      renderCalendarView(allMeetings, calendarMonth);
+    });
+    document.getElementById("reu-cal-next").addEventListener("click", () => {
+      calendarMonth = new Date(year, month + 1, 1);
+      renderCalendarView(allMeetings, calendarMonth);
+    });
+
+    view.querySelectorAll(".reu-cal-cell.has-meeting").forEach(cell => {
+      cell.addEventListener("click", () => {
+        const recId = cell.dataset.recordingId;
+        const m = allMeetings.find(x => String(x.recording_id) === recId);
+        if (m) openModal(m);
+      });
+    });
+
+    window.refreshIcons();
+  }
+
+  // ─── Modal ───
+  function openModal(m) {
+    const overlay = document.getElementById("reu-modal");
+    const body    = document.getElementById("reu-modal-body");
+    const title   = m.title || "Daily Team Meeting";
+    const purpose = stripMd(m.purpose) || "(Sin Meeting Purpose)";
+    const takeaway= mdToSafeHtml(m.takeaway);
+    const date    = formatDate(m.recorded_at);
+    const duration= formatDuration(m.duration_sec);
+    const url     = m.url || "";
+
+    body.innerHTML = `
+      <div class="reu-modal-kicker">
+        <i data-lucide="video"></i>
+        ${escapeHtml(title)}
+      </div>
+      <h2 class="reu-modal-title" id="reu-modal-title">${escapeHtml(purpose)}</h2>
+      <div class="reu-modal-meta">
+        <span><i data-lucide="calendar"></i> ${date}</span>
+        ${duration ? `<span><i data-lucide="clock"></i> ${duration}</span>` : ""}
+      </div>
+      ${takeaway ? `<div class="reu-modal-takeaway">${takeaway}</div>` : ""}
+      <a class="reu-modal-cta" href="${escapeHtml(url)}" target="_blank" rel="noopener">
+        Ver en Fathom
+        <i data-lucide="arrow-up-right"></i>
+      </a>
+    `;
+    overlay.classList.add("open");
+    document.body.style.overflow = "hidden";
+    window.refreshIcons();
+  }
+
+  function closeModal() {
+    document.getElementById("reu-modal").classList.remove("open");
+    document.body.style.overflow = "";
+  }
+
+  // ─── Switch de vista ───
+  function setView(view) {
+    currentView = view;
+    document.body.dataset.reuView = view;
+    localStorage.setItem("reu-view", view);
+    document.querySelectorAll(".reu-view-btn").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.view === view);
+    });
+    if (view === "calendar") {
+      renderCalendarView(allMeetings, calendarMonth);
+    }
+  }
+
+  // ─── Bootstrap ───
+  (async () => {
+    const ctx = await window.getPageContext();
+    if (!ctx || !ctx.user) return;
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("dashboard").style.display = "block";
+
+    const av = document.getElementById("user-avatar");
+    if (av && ctx.user.photoURL) av.src = ctx.user.photoURL;
+
+    if (ctx.userRole && ctx.userRole.definition && ctx.userRole.definition.isAdmin) {
+      const btnAdmin = document.getElementById("btn-admin");
+      if (btnAdmin) btnAdmin.style.display = "inline-flex";
+    }
+
+    const btnLogout = document.getElementById("btn-logout");
+    if (btnLogout) {
+      const { auth } = await import("./js/firebase-config.js");
+      const { signOut } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js");
+      btnLogout.addEventListener("click", async () => {
+        await signOut(auth);
+        location.href = "index.html";
+      });
+    }
+
+    // Toggle de vista
+    document.querySelectorAll(".reu-view-btn").forEach(btn => {
+      btn.addEventListener("click", () => setView(btn.dataset.view));
+    });
+
+    // Cerrar modal
+    document.getElementById("reu-modal-close").addEventListener("click", closeModal);
+    document.getElementById("reu-modal").addEventListener("click", e => {
+      if (e.target.id === "reu-modal") closeModal();
+    });
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") closeModal();
+    });
+
+    window.refreshIcons();
+
+    // Cargar meetings y renderizar
+    try {
+      allMeetings = await fetchMeetings();
+
+      // Default calendarMonth: mes de la reunión más reciente
+      if (allMeetings.length) {
+        const newest = new Date(allMeetings[0].recorded_at);
+        if (!isNaN(newest.getTime())) {
+          calendarMonth = new Date(newest.getFullYear(), newest.getMonth(), 1);
+        }
+      }
+
+      document.getElementById("reu-status").style.display = "none";
+      renderListView(allMeetings);
+      setView(currentView);
+
+    } catch (err) {
+      console.error("[reuniones] error cargando:", err);
+      const status = document.getElementById("reu-status");
+      status.classList.add("error");
+      status.innerHTML = `
+        <i data-lucide="alert-triangle" style="width:32px;height:32px;display:block;margin:0 auto 12px;"></i>
+        No se pudieron cargar las reuniones.<br>
+        Revisa la consola para más detalles.
+      `;
+      window.refreshIcons();
+    }
+  })();
+</script>
+</body>
+</html>
