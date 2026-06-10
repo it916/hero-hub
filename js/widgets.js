@@ -75,24 +75,7 @@ export async function renderWidgets(userData) {
   renderBirthday();
   renderMessageWidget();
   attachSettingsHandler();
-  setupOnboardingBanner();
   if (window.refreshIcons) window.refreshIcons();
-}
-
-// ═══ BANNER ONBOARDING ═══
-// Se muestra siempre (excepto para roles sin acceso a onboarding, que oculta
-// auth.js). Al primer click guarda el flag `onboardingActivated` en Firestore
-// fire-and-forget — ya no se usa para ocultar, pero queda como tracking de
-// quién entró al onboarding al menos una vez.
-function setupOnboardingBanner() {
-  const obw = document.getElementById("ob-welcome");
-  if (!obw) return;
-
-  obw.addEventListener("click", () => {
-    currentUserData.onboardingActivated = true;
-    saveUserField({ onboardingActivated: true })
-      .catch(e => console.warn("No se pudo marcar onboarding activado:", e));
-  }, { once: true });
 }
 
 // ═══ ARSENAL ═══

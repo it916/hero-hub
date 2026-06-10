@@ -62,19 +62,6 @@ async function showDashboard() {
   // (ej. tarjeta de Portales solo para "agente", celebraciones ocultas para "agente", etc.)
   document.body.classList.add(`role-${currentUserRole.role}`);
 
-  // Ocultar el banner de Onboarding si el rol no tiene acceso a esa página
-  // (evita que el usuario haga clic y termine redirigido por page-guard.js).
-  if (!canAccessPage("onboarding", currentUserRole)) {
-    const obBanner = document.getElementById("ob-welcome");
-    if (obBanner) {
-      obBanner.style.display = "none";
-      const prevConnector = obBanner.previousElementSibling;
-      if (prevConnector && prevConnector.classList.contains("connector")) {
-        prevConnector.style.display = "none";
-      }
-    }
-  }
-
   // Cargar datos del usuario desde Firestore
   let userData = {};
   try {

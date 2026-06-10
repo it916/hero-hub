@@ -75,6 +75,9 @@ body[data-theme="dark"] .hero-topbar { background:rgba(15,42,51,.92); }
 .page { max-width:1320px; margin:0 auto; padding:24px; position:relative; z-index:1; }
 .section-label { display:flex; align-items:center; gap:10px; font-size:11px; font-weight:800; color:var(--cyan); letter-spacing:2.5px; text-transform:uppercase; padding:0 4px; margin-bottom:14px; }
 .section-label::after { content:""; flex:1; height:1px; background:linear-gradient(to right,var(--cyan),transparent); max-width:300px; }
+.subsection-label { display:flex; align-items:center; gap:8px; font-family:var(--display); font-size:14px; font-weight:700; color:var(--text); letter-spacing:.2px; padding:0 4px; margin:6px 0 12px; }
+.subsection-label::before { content:""; width:4px; height:14px; border-radius:2px; background:var(--cyan); box-shadow:0 0 8px rgba(6,163,182,.4); }
+.hub-cards + .subsection-label { margin-top:28px; }
 .kicker-dot { width:8px; height:8px; border-radius:50%; background:var(--cyan); box-shadow:0 0 0 4px rgba(6,163,182,.18); animation:pulseDot 2s infinite; }
 .connector { width:2px; height:36px; margin:8px auto; position:relative; background:linear-gradient(to bottom,transparent,var(--cyan)); }
 .connector::after { content:""; position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:10px; height:10px; border-radius:50%; background:var(--cyan); box-shadow:0 0 0 4px rgba(6,163,182,.2),0 0 16px rgba(6,163,182,.5); }
@@ -2998,6 +3001,88 @@ body[data-theme="dark"] .ad-power-item.ongoing  {
   60% { opacity:0; }
 }
 
+/* ── Fila inferior del banner: meta (izquierda) + CTA Oficina Virtual (derecha) ── */
+.hero-cover-bottom {
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:18px;
+  flex-wrap:wrap;
+  margin-top:auto;
+}
+.hero-cover-bottom .hero-cover-meta { margin-top:0; flex:1 1 auto; min-width:0; }
+
+/* ── CTA dominante: Oficina Virtual (alineado a la derecha) ── */
+.hero-cover-cta {
+  display:flex;
+  justify-content:flex-end;
+  flex-shrink:0;
+  position:relative;
+  z-index:2;
+}
+.hero-cta-btn {
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  gap:14px;
+  padding:18px 38px;
+  border-radius:20px;
+  font-family:var(--display);
+  font-size:18px;
+  font-weight:700;
+  letter-spacing:.3px;
+  color:#fff;
+  text-decoration:none;
+  background:linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  border:1px solid rgba(255,255,255,.22);
+  box-shadow:
+    0 14px 36px rgba(139,92,246,.50),
+    0 6px 14px rgba(109,40,217,.35),
+    inset 0 1px 0 rgba(255,255,255,.30);
+  transition:transform .22s ease, box-shadow .22s ease, background .22s ease;
+  overflow:hidden;
+  isolation:isolate;
+}
+.hero-cta-btn::before {
+  content:"";
+  position:absolute;
+  inset:-2px;
+  border-radius:22px;
+  padding:2px;
+  background:linear-gradient(135deg, rgba(255,255,255,.55), rgba(255,255,255,0) 45%, rgba(255,255,255,.25));
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+          mask-composite:exclude;
+  pointer-events:none;
+  opacity:.85;
+}
+.hero-cta-glow {
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.35), transparent 55%);
+  pointer-events:none;
+  z-index:-1;
+  animation:hero-cta-pulse 3.4s ease-in-out infinite;
+}
+@keyframes hero-cta-pulse {
+  0%, 100% { opacity:.55; transform:scale(1); }
+  50%      { opacity:.95; transform:scale(1.04); }
+}
+.hero-cta-icon { width:22px; height:22px; flex-shrink:0; }
+.hero-cta-label { white-space:nowrap; }
+.hero-cta-arrow { width:18px; height:18px; flex-shrink:0; transition:transform .22s ease; }
+.hero-cta-btn:hover {
+  transform:translateY(-3px);
+  background:linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+  box-shadow:
+    0 20px 48px rgba(139,92,246,.65),
+    0 8px 18px rgba(109,40,217,.45),
+    inset 0 1px 0 rgba(255,255,255,.35);
+}
+.hero-cta-btn:hover .hero-cta-arrow { transform:translateX(5px); }
+.hero-cta-btn:active { transform:translateY(-1px); }
+
 @media (max-width:700px) {
   .hero-cover { padding:22px 20px; }
   .hero-cover-title { font-size:clamp(28px, 8vw, 38px); }
@@ -3005,6 +3090,10 @@ body[data-theme="dark"] .ad-power-item.ongoing  {
   .hero-avatar-zone { width:90px; height:90px; }
   .hero-av-photo { width:90px; height:90px; }
   .hero-cover-actions { margin-left:0; width:100%; max-width:none; min-width:0; }
+  .hero-cover-bottom { flex-direction:column; align-items:stretch; gap:14px; }
+  .hero-cover-cta { justify-content:center; }
+  .hero-cta-btn { padding:15px 24px; font-size:15.5px; gap:10px; width:100%; justify-content:center; }
+  .hero-cta-btn .hero-cta-label { white-space:normal; }
 }
 
 /* CTA grande en admin.html que linkea al dashboard de asistencia */
@@ -6784,9 +6873,8 @@ button.hub-card {
 .hc-portales { display: none; }
 
 /* Ocultos para el agente */
-body.role-agente .hero-cover-actions,
+body.role-agente .hero-cover-cta,
 body.role-agente #sec-asistencia,
-body.role-agente #ob-welcome,
 body.role-agente .hub-card.hc-portales,
 body.role-agente .hub-card.hc-directory,
 body.role-agente .hub-card.hc-guides,
@@ -6797,7 +6885,6 @@ body.role-agente #sec-misiones,
 body.role-agente #sec-celebraciones,
 body.role-agente #sec-mensajes,
 body.role-agente .connector:has(+ #sec-asistencia),
-body.role-agente .connector:has(+ #ob-welcome),
 body.role-agente .connector:has(+ #sec-misiones),
 body.role-agente .connector:has(+ #sec-celebraciones),
 body.role-agente .connector:has(+ #sec-mensajes) {
