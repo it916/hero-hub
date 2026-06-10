@@ -19,6 +19,11 @@ import { auth } from "./firebase-config.js";
 
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxgZulYURxNjprHfvXuj82HHveHtNueg1J6SYkRPzqh8AjYSduzN9RkK-n5-1zO1N3F/exec";
 const STORAGE_KEY = "hh-attendance-last";
+const TICK_MS = 30_000;
+
+// Título original de la pestaña — lo restauramos cuando el estado no necesita nudge.
+const ORIGINAL_TITLE = document.title;
+let tickerInterval = null;
 
 // Mapa tipo → cómo se describe el estado vivo que provoca esa marcación
 const STATUS_FOR_TYPE = {
@@ -47,6 +52,34 @@ function formatTime(d) {
 
 function formatDateLong(d) {
   return d.toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" });
+}
+
+// "hace 23 min" / "hace 5h 23min" / "hace 2h" — texto del status bar.
+function formatElapsed(start, now) {
+  const diffMs = now - start;
+  if (diffMs < 60_000) return "hace menos de 1 min";
+  const mins = Math.floor(diffMs / 60_000);
+  if (mins < 60) return `hace ${mins} min`;
+  const hrs = Math.floor(mins / 60);
+  const rem = mins % 60;
+  return rem ? `hace ${hrs}h ${rem}min` : `hace ${hrs}h`;
+}
+
+// "23 min" / "5h 23m" / "2h" — versión compacta para el title de la pestaña.
+function formatElapsedShort(start, now) {
+  const mins = Math.max(0, Math.floor((now - start) / 60_000));
+  if (mins < 60) return `${mins} min`;
+  const hrs = Math.floor(mins / 60);
+  const rem = mins % 60;
+  return rem ? `${hrs}h ${rem}m` : `${hrs}h`;
+}
+
+function startStatusTicker() {
+  if (tickerInterval) return;
+  tickerInterval = setInterval(refreshStatusFromStorage, TICK_MS);
+}
+function stopStatusTicker() {
+  if (tickerInterval) { clearInterval(tickerInterval); tickerInterval = null; }
 }
 
 // ── localStorage: último evento ────────────────────────────────────
@@ -81,25 +114,48 @@ function refreshStatusFromStorage() {
   if (!last) {
     elState.textContent = "— sin registro hoy —";
     elLast.textContent = "—";
+    document.title = ORIGINAL_TITLE;
+    stopStatusTicker();
     return;
   }
 
   const d = new Date(last.timestamp);
+  const now = new Date();
   const meta = STATUS_FOR_TYPE[last.type] || { verb: last.type };
-  const today = isSameLocalDay(last.timestamp, new Date().toISOString());
+  const today = isSameLocalDay(last.timestamp, now.toISOString());
 
   // Estado vivo: si la última acción es de hoy, refleja el estado actual.
   // Si es de otro día, mostramos "— sin registro hoy —" y dejamos "último" como referencia.
   if (today) {
     if (meta.state === "fuera") {
       elState.textContent = `${meta.verb} a las ${formatTime(d)}`;
+      document.title = ORIGINAL_TITLE;
+      stopStatusTicker();
     } else if (meta.state === "ausencia") {
       elState.textContent = `Ausencia reportada`;
+      document.title = ORIGINAL_TITLE;
+      stopStatusTicker();
     } else {
-      elState.textContent = `${meta.verb} desde ${formatTime(d)}`;
+      // Estados activos (trabajando, break, sin-luz): mostramos elapsed
+      // en el status bar para que el tiempo transcurrido sea visible.
+      elState.textContent = `${meta.verb} desde ${formatTime(d)} · ${formatElapsed(d, now)}`;
+
+      // Tab title: solo en estados cortos que se olvidan (break / sin-luz).
+      // Trabajando NO modifica el title — el nudge para Salida vive en el status bar.
+      if (meta.state === "break") {
+        document.title = `⏰ En break (${formatElapsedShort(d, now)}) — Hero Hub`;
+      } else if (meta.state === "sin-luz") {
+        document.title = `⚡ Sin luz (${formatElapsedShort(d, now)}) — Hero Hub`;
+      } else {
+        document.title = ORIGINAL_TITLE;
+      }
+
+      startStatusTicker();
     }
   } else {
     elState.textContent = "— sin registro hoy —";
+    document.title = ORIGINAL_TITLE;
+    stopStatusTicker();
   }
 
   elLast.textContent = `${last.type} · ${formatDateLong(d)} · ${formatTime(d)}`;
