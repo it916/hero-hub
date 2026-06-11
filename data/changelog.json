@@ -1,0 +1,140 @@
+[
+  {
+    "id": "2026-06-11-changelog-sistema",
+    "version": "v2.2",
+    "date": "2026-06-11",
+    "category": "feat",
+    "scope": "changelog",
+    "title": "Nueva página de Changelog + banner de novedades",
+    "items": [
+      "Página dedicada con el historial de cambios y mejoras del Hub",
+      "Filtros por categoría: Nuevo, Arreglos, Mejoras, Diseño, Mantenimiento",
+      "Banner cyan en el dashboard que avisa cuando hay novedades sin leer",
+      "El banner se apaga al hacer clic (lleva al changelog) o con la ×",
+      "Estado por usuario sincronizado en Firestore: lo ves una sola vez sin importar el dispositivo"
+    ]
+  },
+  {
+    "id": "2026-06-10-asistencia-elapsed",
+    "version": "v2.2",
+    "date": "2026-06-10",
+    "category": "feat",
+    "scope": "asistencia",
+    "title": "Contador en vivo y recordatorio en el tab",
+    "items": [
+      "Contador en tiempo real desde tu hora de entrada del día",
+      "El título del tab del navegador se vuelve dinámico para recordarte cuando hay un break activo"
+    ]
+  },
+  {
+    "id": "2026-06-10-dashboard-reorg",
+    "version": "v2.2",
+    "date": "2026-06-10",
+    "category": "refactor",
+    "scope": "dashboard",
+    "title": "Nueva estructura del dashboard principal",
+    "items": [
+      "Onboarding sale del cuartel general para no saturar la vista",
+      "Cuartel general y Arsenal del Héroe unificados en una sola sección",
+      "Botón \"Entrar a Oficina Virtual\" destacado en el banner de bienvenida"
+    ]
+  },
+  {
+    "id": "2026-06-08-grabaciones-grid",
+    "version": "v2.1",
+    "date": "2026-06-08",
+    "category": "feat",
+    "scope": "grabaciones",
+    "title": "Grilla de grabaciones con miniaturas",
+    "items": [
+      "Página de grabaciones rediseñada con vista tipo grilla",
+      "Miniaturas en vivo desde la carpeta de Drive del equipo"
+    ]
+  },
+  {
+    "id": "2026-06-08-reuniones-page",
+    "version": "v2.1",
+    "date": "2026-06-08",
+    "category": "feat",
+    "scope": "reuniones",
+    "title": "Nueva página de Reuniones",
+    "items": [
+      "Resúmenes automáticos de las reuniones diarias del equipo",
+      "Dos vistas disponibles: Lista cronológica y Calendario",
+      "Disponible desde el menú Recursos y desde el cuartel general"
+    ]
+  },
+  {
+    "id": "2026-06-08-fathom-sync",
+    "version": "v2.1",
+    "date": "2026-06-08",
+    "category": "feat",
+    "scope": "integraciones",
+    "title": "Sincronización con Fathom + traducción al español",
+    "items": [
+      "Apps Script que importa cada reunión grabada en Fathom",
+      "Traducción automática de los resúmenes al español"
+    ]
+  },
+  {
+    "id": "2026-06-04-asistencia-horas",
+    "version": "v2.0",
+    "date": "2026-06-04",
+    "category": "feat",
+    "scope": "asistencia",
+    "title": "Horas de entrada, break y salida por persona",
+    "items": [
+      "El Dashboard de Asistencia ahora muestra los horarios exactos de cada héroe",
+      "Visible para administradores en el tab de asistencia del panel admin"
+    ]
+  },
+  {
+    "id": "2026-06-04-admin-default-asistencia",
+    "version": "v2.0",
+    "date": "2026-06-04",
+    "category": "feat",
+    "scope": "admin",
+    "title": "Admin abre por defecto en Asistencia",
+    "items": [
+      "El panel de administración carga directo en el Dashboard de Asistencia",
+      "La data se auto-carga apenas se confirma el usuario"
+    ]
+  },
+  {
+    "id": "2026-06-03-role-agente",
+    "version": "v2.0",
+    "date": "2026-06-03",
+    "category": "feat",
+    "scope": "roles",
+    "title": "Vista simplificada para el rol Agente",
+    "items": [
+      "Se ocultan secciones internas (asistencia, onboarding, portales del cuartel) para el rol \"agente\"",
+      "El agente solo ve lo relevante para su día a día"
+    ]
+  },
+  {
+    "id": "2026-05-30-portales-hero",
+    "version": "v2.0",
+    "date": "2026-05-30",
+    "category": "feat",
+    "scope": "portales",
+    "title": "Tab Hero y edición compartida en Portales",
+    "items": [
+      "Nuevo tab \"Hero\" para portales internos del equipo",
+      "Los portales se pueden editar de forma compartida",
+      "Modal de edición más cómodo y accesible"
+    ]
+  },
+  {
+    "id": "2026-05-30-cumple-unificado",
+    "version": "v2.0",
+    "date": "2026-05-30",
+    "category": "fix",
+    "scope": "cumple",
+    "title": "Diseño unificado del banner de cumpleaños",
+    "items": [
+      "La fecha y el contador de días se ven igual en light y dark mode",
+      "La píldora de días destaca correctamente sobre el fondo oscuro"
+    ]
+  }
+]

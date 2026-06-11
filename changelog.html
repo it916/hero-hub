@@ -3,20 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Historial de cambios y mejoras del Hero Hub.">
 <link rel="icon" type="image/png" href="icons/favicon-hero.png">
 <link rel="apple-touch-icon" href="icons/favicon-hero.png">
 <meta name="theme-color" content="#06a3b6">
-<title>Directorio — Hero Hub</title>
+<title>Changelog — Hero Hub</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
 <script defer src="https://unpkg.com/lucide@0.474.0"></script>
 <script defer src="js/topbar-dropdown.js"></script>
-
-<!-- Shoelace · component library -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css">
-<script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/shoelace-autoloader.js"></script>
 </head>
 <body>
 <script>try{var t=localStorage.getItem("hero-theme");if(t)document.body.dataset.theme=t;}catch(e){}</script>
@@ -57,7 +54,7 @@
           <div class="nav-dropdown" role="menu">
             <a href="portales.html" class="nav-link" role="menuitem"><i data-lucide="shield"></i><span>Portales</span></a>
             <a href="agencias.html" class="nav-link" role="menuitem"><i data-lucide="network"></i><span>Agencias</span></a>
-            <a href="directorio.html" class="nav-link active" role="menuitem"><i data-lucide="book-user"></i><span>Directorio</span></a>
+            <a href="directorio.html" class="nav-link" role="menuitem"><i data-lucide="book-user"></i><span>Directorio</span></a>
           </div>
         </div>
 
@@ -74,7 +71,7 @@
           </div>
         </div>
 
-        <a href="changelog.html" class="nav-link"><i data-lucide="sparkles"></i><span>Changelog</span></a>
+        <a href="changelog.html" class="nav-link active"><i data-lucide="sparkles"></i><span>Changelog</span></a>
       </nav>
       <div class="topbar-actions">
         <img id="user-avatar" src="" alt="" class="avatar">
@@ -89,61 +86,39 @@
 
     <section class="page-header">
       <div class="page-kicker">• Hero Insurance USA •</div>
-      <h1 class="page-title">Directorio de Contactos</h1>
-      <p class="page-sub">Portales, Carriers y contactos directos del equipo</p>
+      <h1 class="page-title">Changelog</h1>
+      <p class="page-sub">Historial de cambios y mejoras del Hero Hub</p>
     </section>
 
-    <section class="dir-toolbar">
-      <div class="search-wrap">
-        <i data-lucide="search" class="search-icon"></i>
-        <input type="text" id="dir-search" placeholder="Buscar por nombre, empresa, departamento, email o teléfono...">
+    <section class="changelog-toolbar">
+      <div class="changelog-filters" id="changelog-filters">
+        <button class="changelog-filter is-active" data-cat="all" type="button">
+          <i data-lucide="list"></i><span>Todos</span>
+        </button>
+        <button class="changelog-filter" data-cat="feat" type="button">
+          <i data-lucide="sparkles"></i><span>Nuevo</span>
+        </button>
+        <button class="changelog-filter" data-cat="fix" type="button">
+          <i data-lucide="wrench"></i><span>Arreglos</span>
+        </button>
+        <button class="changelog-filter" data-cat="refactor" type="button">
+          <i data-lucide="refresh-cw"></i><span>Mejoras</span>
+        </button>
+        <button class="changelog-filter" data-cat="style" type="button">
+          <i data-lucide="palette"></i><span>Diseño</span>
+        </button>
+        <button class="changelog-filter" data-cat="chore" type="button">
+          <i data-lucide="hammer"></i><span>Mantenimiento</span>
+        </button>
       </div>
-      <div class="dir-stats">
-        <div class="stat-pill"><strong id="stat-contacts">0</strong> contactos</div>
-        <div class="stat-pill"><strong id="stat-companies">0</strong> empresas</div>
+      <div class="changelog-stats">
+        <div class="stat-pill"><strong id="stat-entries">0</strong> entradas</div>
       </div>
-      <button id="btn-add-contact" class="btn-primary btn-add-contact"><i data-lucide="plus"></i><span>Agregar contacto</span></button>
     </section>
 
-    <section class="filter-row" id="filter-row">
-      <div class="filter-chip active" data-dept="all">Todos</div>
-      <div class="filter-chip" data-dept="Broker Support">Broker Support</div>
-      <div class="filter-chip" data-dept="Broker Manager">Broker Manager</div>
-      <div class="filter-chip" data-dept="Finance">Finance</div>
-      <div class="filter-chip" data-dept="Contract">Contract</div>
-      <div class="filter-chip" data-dept="Sales">Sales</div>
-      <div class="filter-chip" data-dept="Marketing">Marketing</div>
-      <div class="filter-chip" data-dept="Events">Events</div>
-      <div class="filter-chip" data-dept="Technical Support">Technical Support</div>
+    <section class="changelog-list" id="changelog-list">
+      <div class="changelog-loading">Cargando historial…</div>
     </section>
-
-    <section class="filter-row dir-product-filter-row" id="product-filter-row">
-      <span class="dir-filter-label">Productos:</span>
-      <div class="filter-chip dir-product-chip" data-product="ACA">
-        <span class="dir-product-dot dot-aca"></span>ACA
-      </div>
-      <div class="filter-chip dir-product-chip" data-product="MEDICARE">
-        <span class="dir-product-dot dot-medicare"></span>MEDICARE
-      </div>
-      <div class="filter-chip dir-product-chip" data-product="LIFE">
-        <span class="dir-product-dot dot-life"></span>LIFE
-      </div>
-      <div class="filter-chip dir-product-chip" data-product="SUPLEMENTARIOS">
-        <span class="dir-product-dot dot-supp"></span>SUPLEMENTARIOS
-      </div>
-      <button class="dir-product-clear" id="product-clear" style="display:none;">
-        <i data-lucide="x"></i><span>Limpiar</span>
-      </button>
-    </section>
-
-    <section class="filter-row dir-state-filter-row">
-      <span class="dir-filter-label">Estado:</span>
-      <select id="dir-state-filter" class="dir-state-select">
-        <option value="all">Todos los estados</option>
-      </select>
-    </section>
-
-    <section id="dir-body" class="dir-body"><p class="loading">Cargando directorio...</p></section>
 
   </main>
 
@@ -163,7 +138,7 @@
 </script>
 <script type="module" src="js/firebase-config.js"></script>
 <script type="module" src="js/page-guard.js"></script>
-<script type="module" src="js/directorio.js"></script>
+<script type="module" src="js/changelog.js"></script>
 <script type="module" src="js/tracker.js"></script>
 </body>
 </html>

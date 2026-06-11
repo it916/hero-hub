@@ -21,19 +21,19 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-
 export const ROLES = {
   admin: {
     label: "Administrador",
-    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones", "admin"],
+    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones", "changelog", "admin"],
     isAdmin: true
   },
   interno: {
     label: "Equipo interno",
-    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones"],
+    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones", "changelog"],
     isAdmin: false
   },
   agente: {
     label: "Agente",
-    // Acceso restringido: solo Inicio, Equipo, Portales y Grabaciones de entrenamiento.
+    // Acceso restringido: solo Inicio, Equipo, Portales, Grabaciones y Changelog.
     // En portales.js sigue habiendo lógica que muestra al agente solo su sección personal.
-    pages: ["index", "equipo", "portales", "grabaciones"],
+    pages: ["index", "equipo", "portales", "grabaciones", "changelog"],
     isAdmin: false
   }
 };
