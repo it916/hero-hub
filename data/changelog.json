@@ -1,5 +1,18 @@
 [
   {
+    "id": "2026-06-11-metricas-fix",
+    "version": "v2.2",
+    "date": "2026-06-11",
+    "category": "fix",
+    "scope": "admin",
+    "title": "Métricas: chart de actividad diaria + tracking de páginas nuevas",
+    "items": [
+      "Las barras del gráfico \"Actividad diaria\" ahora reflejan el conteo real (antes salían todas planas por un mismatch UTC vs local)",
+      "Tracker actualizado para registrar visitas a Grabaciones, Reuniones y Changelog (antes esas 3 páginas no figuraban en métricas)",
+      "Pequeño ajuste visual: los días sin actividad ya no muestran una barrita falsa"
+    ]
+  },
+  {
     "id": "2026-06-11-skip-loading",
     "version": "v2.2",
     "date": "2026-06-11",

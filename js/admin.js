@@ -201,17 +201,16 @@ function renderMetrics(events) {
     document.getElementById("mt-topday-count").textContent = topDays[0][1] + " visitas";
   }
 
-  // Gráfico actividad diaria (últimos 30 días)
+  // Gráfico actividad diaria (últimos 30 días, en fecha local del usuario)
   const dailyCounts = {};
   for (let i = 29; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    const key = d.toISOString().split('T')[0];
-    dailyCounts[key] = 0;
+    dailyCounts[ymdLocal(d)] = 0;
   }
   events.forEach(e => {
     if (!e.timestamp) return;
-    const key = e.timestamp.toDate().toISOString().split('T')[0];
+    const key = ymdLocal(e.timestamp.toDate());
     if (key in dailyCounts) dailyCounts[key]++;
   });
   renderChart(dailyCounts);
@@ -257,6 +256,14 @@ function renderMetrics(events) {
     : `<p class="empty">Sin eventos todavía. Las visitas empezarán a registrarse cuando el equipo use el Hub.</p>`;
 }
 
+// YYYY-MM-DD en la zona horaria local (NO usar toISOString — devuelve UTC)
+function ymdLocal(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 function renderChart(dailyCounts) {
   const entries = Object.entries(dailyCounts);
   const maxVal = Math.max(...entries.map(([,v]) => v), 1);
@@ -267,8 +274,9 @@ function renderChart(dailyCounts) {
       const d = new Date(date + 'T12:00');
       const label = d.getDate();
       const isFirstOfMonth = label === 1 || entries[0][0] === date;
+      const barClass = count > 0 ? "mt-chart-bar has-value" : "mt-chart-bar";
       return `<div class="mt-chart-col" title="${date}: ${count} visitas">
-        <div class="mt-chart-bar" style="height:${h}%"></div>
+        <div class="${barClass}" style="height:${h}%"></div>
         <div class="mt-chart-lbl">${isFirstOfMonth ? d.toLocaleDateString('es',{month:'short'}) : ''}</div>
       </div>`;
     }).join('')}
