@@ -7401,6 +7401,14 @@ body[data-theme="dark"] .changelog-banner {
 body[data-theme="dark"] .cat-style .changelog-cat-pill { color: var(--gold-2); }
 body[data-theme="dark"] .changelog-entry::before { background: var(--card); }
 
+/* ═══ SKIP LOADING ═══
+   Si el rol del usuario quedó cacheado en localStorage por una visita
+   previa, evitamos el flash de "Verificando acceso" mostrando el dashboard
+   inmediatamente. page-guard.js sigue validando en background. */
+body.skip-loading #loading { display: none !important; }
+body.skip-loading #dashboard,
+body.skip-loading #admin-panel { display: block !important; }
+
 @media (max-width: 640px) {
   .changelog-toolbar { gap: 10px; }
   .changelog-filter { padding: 7px 12px; font-size: 12px; }

@@ -1,5 +1,19 @@
 [
   {
+    "id": "2026-06-11-skip-loading",
+    "version": "v2.2",
+    "date": "2026-06-11",
+    "category": "refactor",
+    "scope": "performance",
+    "title": "Navegación entre páginas más rápida",
+    "items": [
+      "Eliminado el flash de \"Verificando acceso\" al cambiar de página",
+      "Tu rol se cachea localmente tras la primera visita en el dispositivo",
+      "page-guard sigue validando en background — la seguridad no cambia",
+      "Al cerrar sesión se limpia el cache automáticamente"
+    ]
+  },
+  {
     "id": "2026-06-11-changelog-sistema",
     "version": "v2.2",
     "date": "2026-06-11",

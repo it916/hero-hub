@@ -19,7 +19,7 @@
 
 import { auth } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { loadUserRole, canAccessPage, filterTopbarByRole, getCurrentPage, isAdmin as isAdminRole } from "./roles.js";
+import { loadUserRole, canAccessPage, filterTopbarByRole, getCurrentPage, isAdmin as isAdminRole, clearRoleCache } from "./roles.js";
 import { logEvent, ACTIONS } from "./audit-log.js";
 
 // Exponemos el contexto en window para que otros scripts lo puedan usar
@@ -36,14 +36,16 @@ window.HeroHubContext.readyPromise = new Promise((resolve) => {
 });
 
 onAuthStateChanged(auth, async (user) => {
-  // 1. Sin usuario → redirigir a index para hacer login
+  // 1. Sin usuario → limpiar rol cacheado y redirigir a index para hacer login
   if (!user) {
+    clearRoleCache();
     location.href = "index.html";
     return;
   }
 
   // 2. Dominio incorrecto → cerrar sesión y volver a index
   if (!user.email.endsWith("@heroinsuranceusa.com")) {
+    clearRoleCache();
     location.href = "index.html";
     return;
   }
@@ -77,6 +79,11 @@ onAuthStateChanged(auth, async (user) => {
   window.HeroHubContext.user = user;
   window.HeroHubContext.userRole = userRole;
   window.HeroHubContext.isReady = true;
+
+  // 5b. Persistir el rol para que la próxima navegación entre páginas
+  //     muestre el dashboard sin el flash de "Verificando acceso".
+  //     El CSS body.skip-loading lo aplica en el siguiente page load.
+  try { localStorage.setItem("hero-user-role", userRole.role); } catch (_) {}
 
   // 6. Filtrar el topbar (oculta links a páginas no permitidas)
   filterTopbarByRole(userRole);

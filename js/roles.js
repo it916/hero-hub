@@ -319,4 +319,5 @@ export function filterTopbarByRole(userRole) {
 export function clearRoleCache() {
   cachedRole = null;
   cachedEmail = null;
+  try { localStorage.removeItem("hero-user-role"); } catch (_) {}
 }
