@@ -1,5 +1,22 @@
 [
   {
+    "id": "2026-06-12-asistencia-detalle-persona",
+    "version": "v2.2",
+    "date": "2026-06-12",
+    "category": "feat",
+    "scope": "admin",
+    "title": "Estadísticas detalladas por persona en el Dashboard de Asistencia",
+    "items": [
+      "Click sobre cualquier persona en \"Estado por persona\" abre un popup grande con su perfil",
+      "Selector de periodo: mes actual, mes pasado, últimos 30 días, últimos 90 días o todo el historial",
+      "KPIs: horas trabajadas, días activos, promedio por día, breaks, cortes de luz, ausencias, hora promedio de entrada",
+      "Gráfico de línea: horas trabajadas día a día",
+      "Donut: distribución de tiempo (trabajado vs break vs sin luz)",
+      "Barras: horas trabajadas por día de la semana",
+      "Tabla detallada con entrada, salida, horas, breaks, cortes y ausencias por cada día del periodo"
+    ]
+  },
+  {
     "id": "2026-06-11-metricas-fix",
     "version": "v2.2",
     "date": "2026-06-11",

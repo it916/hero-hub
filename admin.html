@@ -450,6 +450,72 @@
     <footer class="hero-footer">
       <span>HERO HUB · ADMIN v2.2</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
     </footer>
+
+    <!-- ══ MODAL: Estadísticas detalladas por persona ══ -->
+    <div id="ad-person-modal" class="ad-pm-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="ad-pm-name">
+      <div class="ad-pm" role="document">
+        <button class="ad-pm-close" id="ad-pm-close" type="button" aria-label="Cerrar"><i data-lucide="x"></i></button>
+
+        <header class="ad-pm-header">
+          <div class="ad-pm-avatar" id="ad-pm-avatar">—</div>
+          <div class="ad-pm-header-info">
+            <div class="ad-pm-name" id="ad-pm-name">—</div>
+            <div class="ad-pm-email" id="ad-pm-email">—</div>
+            <div class="ad-pm-now" id="ad-pm-now"></div>
+          </div>
+        </header>
+
+        <div class="ad-pm-toolbar">
+          <label class="ad-pm-period-lbl" for="ad-pm-period">Periodo:</label>
+          <select class="ad-pm-select" id="ad-pm-period">
+            <option value="month">Mes actual</option>
+            <option value="prevMonth">Mes pasado</option>
+            <option value="last30">Últimos 30 días</option>
+            <option value="last90">Últimos 90 días</option>
+            <option value="all">Todo el historial</option>
+          </select>
+          <div class="ad-pm-period-label" id="ad-pm-period-label">—</div>
+        </div>
+
+        <div class="ad-pm-kpis" id="ad-pm-kpis"></div>
+
+        <div class="ad-pm-charts">
+          <div class="ad-pm-chart-card">
+            <div class="ad-pm-chart-title">Horas trabajadas por día</div>
+            <div class="ad-pm-chart-canvas-wrap"><canvas id="ad-pm-chart-line"></canvas></div>
+          </div>
+          <div class="ad-pm-chart-card">
+            <div class="ad-pm-chart-title">Distribución de tiempo</div>
+            <div class="ad-pm-chart-canvas-wrap"><canvas id="ad-pm-chart-donut"></canvas></div>
+          </div>
+          <div class="ad-pm-chart-card ad-pm-chart-card-wide">
+            <div class="ad-pm-chart-title">Horas por día de semana</div>
+            <div class="ad-pm-chart-canvas-wrap"><canvas id="ad-pm-chart-bars"></canvas></div>
+          </div>
+        </div>
+
+        <div class="ad-pm-detail">
+          <div class="ad-pm-detail-title">Detalle por día</div>
+          <div class="ad-pm-table-wrap">
+            <table class="ad-pm-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Entrada</th>
+                  <th>Salida</th>
+                  <th>Trabajado</th>
+                  <th>Breaks</th>
+                  <th>Cortes</th>
+                  <th>Ausencia</th>
+                </tr>
+              </thead>
+              <tbody id="ad-pm-detail-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
   </div>
 
   <script>
