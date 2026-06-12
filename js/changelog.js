@@ -53,20 +53,29 @@ document.getElementById("btn-logout")?.addEventListener("click", () =>
   signOut(auth).then(() => location.href = "index.html")
 );
 
+// Decide si una entrada del changelog es visible para el rol dado.
+// audience: "all" (o ausente) → todos | "team" → admin + interno | "admin" → solo admin
+function entryVisibleFor(entry, role) {
+  const audience = entry.audience || "all";
+  if (audience === "all") return true;
+  if (audience === "admin") return role === "admin";
+  if (audience === "team") return role === "admin" || role === "interno";
+  return true;
+}
+
 async function loadChangelog() {
-  // Saber si el usuario es admin para filtrar entradas con audience: "admin"
-  let userIsAdmin = false;
+  // Obtener el rol exacto para filtrar (admin / interno / agente)
+  let role = null;
   try {
     const ctx = await window.getPageContext();
-    userIsAdmin = !!(ctx?.userRole?.definition?.isAdmin);
+    role = ctx?.userRole?.role || null;
   } catch (_) {}
 
   try {
     const res = await fetch("data/changelog.json", { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const raw = await res.json();
-    // Filtrar entradas admin-only si el usuario no tiene rol admin
-    allEntries = raw.filter(e => e.audience !== "admin" || userIsAdmin);
+    allEntries = raw.filter(e => entryVisibleFor(e, role));
   } catch (e) {
     console.error("No se pudo cargar changelog.json:", e);
     const listEl = document.getElementById("changelog-list");

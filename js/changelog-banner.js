@@ -16,13 +16,26 @@ onAuthStateChanged(auth, (user) => {
   setTimeout(() => checkChangelogBanner(user), 1500);
 });
 
+// Decide si una entrada del changelog es visible para el rol dado.
+// audience: "all" (o ausente) → todos | "team" → admin + interno | "admin" → solo admin
+function entryVisibleFor(entry, role) {
+  const audience = entry.audience || "all";
+  if (audience === "all") return true;
+  if (audience === "admin") return role === "admin";
+  if (audience === "team") return role === "admin" || role === "interno";
+  return true;
+}
+
 async function checkChangelogBanner(user) {
   let latestId = null;
 
-  // Saber si el usuario es admin (auth.js persiste el rol en localStorage)
-  let userIsAdmin = false;
+  // Rol del usuario desde el cache que persiste auth.js. Si todavía no está
+  // (primera carga del browser tras este deploy), asumimos "agente" — el más
+  // restrictivo — para no filtrar de menos. La próxima visita ya estará poblado.
+  let role = "agente";
   try {
-    userIsAdmin = localStorage.getItem("hero-user-role") === "admin";
+    const stored = localStorage.getItem("hero-user-role");
+    if (stored) role = stored;
   } catch (_) {}
 
   // 1. Obtener el id más reciente del changelog VISIBLE para este usuario
@@ -32,8 +45,7 @@ async function checkChangelogBanner(user) {
     const all = await res.json();
     if (!Array.isArray(all) || !all.length) return;
 
-    // Filtrar entradas admin-only si no es admin, luego tomar la más reciente
-    const entries = all.filter(e => e.audience !== "admin" || userIsAdmin);
+    const entries = all.filter(e => entryVisibleFor(e, role));
     if (!entries.length) return;
 
     entries.sort((a, b) => (a.date < b.date ? 1 : -1));

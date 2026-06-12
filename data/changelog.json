@@ -66,6 +66,7 @@
     "date": "2026-06-10",
     "category": "feat",
     "scope": "asistencia",
+    "audience": "team",
     "title": "Contador en vivo y recordatorio en el tab",
     "items": [
       "Contador en tiempo real desde tu hora de entrada del día",
@@ -78,6 +79,7 @@
     "date": "2026-06-10",
     "category": "refactor",
     "scope": "dashboard",
+    "audience": "team",
     "title": "Nueva estructura del dashboard principal",
     "items": [
       "Onboarding sale del cuartel general para no saturar la vista",
@@ -103,6 +105,7 @@
     "date": "2026-06-08",
     "category": "feat",
     "scope": "reuniones",
+    "audience": "team",
     "title": "Nueva página de Reuniones",
     "items": [
       "Resúmenes automáticos de las reuniones diarias del equipo",
@@ -116,6 +119,7 @@
     "date": "2026-06-08",
     "category": "feat",
     "scope": "integraciones",
+    "audience": "team",
     "title": "Sincronización con Fathom + traducción al español",
     "items": [
       "Apps Script que importa cada reunión grabada en Fathom",
@@ -166,6 +170,7 @@
     "date": "2026-05-30",
     "category": "feat",
     "scope": "portales",
+    "audience": "team",
     "title": "Tab Hero y edición compartida en Portales",
     "items": [
       "Nuevo tab \"Hero\" para portales internos del equipo",
@@ -179,6 +184,7 @@
     "date": "2026-05-30",
     "category": "fix",
     "scope": "cumple",
+    "audience": "team",
     "title": "Diseño unificado del banner de cumpleaños",
     "items": [
       "La fecha y el contador de días se ven igual en light y dark mode",
