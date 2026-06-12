@@ -5,6 +5,7 @@
     "date": "2026-06-12",
     "category": "feat",
     "scope": "admin",
+    "audience": "admin",
     "title": "Estadísticas detalladas por persona en el Dashboard de Asistencia",
     "items": [
       "Click sobre cualquier persona en \"Estado por persona\" abre un popup grande con su perfil",
@@ -22,6 +23,7 @@
     "date": "2026-06-11",
     "category": "fix",
     "scope": "admin",
+    "audience": "admin",
     "title": "Métricas: chart de actividad diaria + tracking de páginas nuevas",
     "items": [
       "Las barras del gráfico \"Actividad diaria\" ahora reflejan el conteo real (antes salían todas planas por un mismatch UTC vs local)",
@@ -126,6 +128,7 @@
     "date": "2026-06-04",
     "category": "feat",
     "scope": "asistencia",
+    "audience": "admin",
     "title": "Horas de entrada, break y salida por persona",
     "items": [
       "El Dashboard de Asistencia ahora muestra los horarios exactos de cada héroe",
@@ -138,6 +141,7 @@
     "date": "2026-06-04",
     "category": "feat",
     "scope": "admin",
+    "audience": "admin",
     "title": "Admin abre por defecto en Asistencia",
     "items": [
       "El panel de administración carga directo en el Dashboard de Asistencia",

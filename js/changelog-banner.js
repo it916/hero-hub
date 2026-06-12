@@ -19,12 +19,22 @@ onAuthStateChanged(auth, (user) => {
 async function checkChangelogBanner(user) {
   let latestId = null;
 
-  // 1. Obtener el id más reciente del changelog
+  // Saber si el usuario es admin (auth.js persiste el rol en localStorage)
+  let userIsAdmin = false;
+  try {
+    userIsAdmin = localStorage.getItem("hero-user-role") === "admin";
+  } catch (_) {}
+
+  // 1. Obtener el id más reciente del changelog VISIBLE para este usuario
   try {
     const res = await fetch("data/changelog.json", { cache: "no-store" });
     if (!res.ok) return;
-    const entries = await res.json();
-    if (!Array.isArray(entries) || !entries.length) return;
+    const all = await res.json();
+    if (!Array.isArray(all) || !all.length) return;
+
+    // Filtrar entradas admin-only si no es admin, luego tomar la más reciente
+    const entries = all.filter(e => e.audience !== "admin" || userIsAdmin);
+    if (!entries.length) return;
 
     entries.sort((a, b) => (a.date < b.date ? 1 : -1));
     latestId = entries[0].id;

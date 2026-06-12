@@ -54,10 +54,19 @@ document.getElementById("btn-logout")?.addEventListener("click", () =>
 );
 
 async function loadChangelog() {
+  // Saber si el usuario es admin para filtrar entradas con audience: "admin"
+  let userIsAdmin = false;
+  try {
+    const ctx = await window.getPageContext();
+    userIsAdmin = !!(ctx?.userRole?.definition?.isAdmin);
+  } catch (_) {}
+
   try {
     const res = await fetch("data/changelog.json", { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    allEntries = await res.json();
+    const raw = await res.json();
+    // Filtrar entradas admin-only si el usuario no tiene rol admin
+    allEntries = raw.filter(e => e.audience !== "admin" || userIsAdmin);
   } catch (e) {
     console.error("No se pudo cargar changelog.json:", e);
     const listEl = document.getElementById("changelog-list");

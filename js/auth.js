@@ -17,8 +17,9 @@ let teamMembers = [];
 
 // ══ AUTH ══
 onAuthStateChanged(auth, async (user) => {
-  if (!user) { showLogin(); return; }
+  if (!user) { clearRoleCache(); showLogin(); return; }
   if (!user.email.endsWith("@" + ALLOWED_DOMAIN)) {
+    clearRoleCache();
     await signOut(auth);
     alert("Acceso restringido a cuentas @heroinsuranceusa.com");
     showLogin();
@@ -61,6 +62,10 @@ async function showDashboard() {
   // Marcar el body con el rol para que el CSS pueda mostrar/ocultar widgets
   // (ej. tarjeta de Portales solo para "agente", celebraciones ocultas para "agente", etc.)
   document.body.classList.add(`role-${currentUserRole.role}`);
+
+  // Persistir el rol para que el banner de changelog y el skip-loading
+  // de las otras páginas puedan decidir sincrónicamente al cargar.
+  try { localStorage.setItem("hero-user-role", currentUserRole.role); } catch (_) {}
 
   // Cargar datos del usuario desde Firestore
   let userData = {};
