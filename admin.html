@@ -133,8 +133,8 @@
             </div>
             <div class="ad-toolbar-actions">
               <select id="ad-period" class="ad-select">
-                <option value="today">Hoy</option>
-                <option value="week" selected>Esta semana</option>
+                <option value="today" selected>Hoy</option>
+                <option value="week">Esta semana</option>
                 <option value="month">Este mes</option>
               </select>
               <sl-button id="ad-refresh" variant="primary" size="medium">
@@ -192,7 +192,7 @@
             </section>
 
             <section class="ad-section">
-              <div class="section-label"><span class="kicker-dot"></span>Horas trabajadas · <span id="ad-hours-period-label">esta semana</span></div>
+              <div class="section-label"><span class="kicker-dot"></span>Horas trabajadas · <span id="ad-hours-period-label">hoy</span></div>
               <p class="ad-hint">No incluye breaks ni cortes de luz. Calculado a partir de los eventos Entrada / Salida / Break / Corte Luz registrados.</p>
               <div class="ad-bars-box">
                 <canvas id="ad-hours-bars"></canvas>
@@ -200,7 +200,7 @@
             </section>
 
             <section class="ad-section">
-              <div class="section-label"><span class="kicker-dot"></span>Cortes de luz · <span id="ad-power-period-label">esta semana</span></div>
+              <div class="section-label"><span class="kicker-dot"></span>Cortes de luz · <span id="ad-power-period-label">hoy</span></div>
               <div class="ad-list" id="ad-power-list"></div>
             </section>
 
