@@ -473,7 +473,16 @@
             <option value="last30">Últimos 30 días</option>
             <option value="last90">Últimos 90 días</option>
             <option value="all">Todo el historial</option>
+            <option value="custom">Rango personalizado…</option>
           </select>
+          <div class="ad-pm-custom-range" id="ad-pm-custom-range" hidden>
+            <label class="ad-pm-date-lbl">Desde
+              <input type="text" id="ad-pm-from" class="ad-pm-date" placeholder="MM/DD/YYYY" autocomplete="off">
+            </label>
+            <label class="ad-pm-date-lbl">Hasta
+              <input type="text" id="ad-pm-to" class="ad-pm-date" placeholder="MM/DD/YYYY" autocomplete="off">
+            </label>
+          </div>
           <div class="ad-pm-period-label" id="ad-pm-period-label">—</div>
         </div>
 

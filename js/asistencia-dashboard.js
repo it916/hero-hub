@@ -481,6 +481,7 @@ function renderAbsenceList(absences) {
 let currentPersonEmail = null;
 let currentPersonName = null;
 let modalEscapeHandler = null;
+let fpFrom = null, fpTo = null;
 
 function ymdLocal(d) {
   const y = d.getFullYear();
@@ -533,12 +534,63 @@ function computePeriod(periodVal) {
     rangeStart.setDate(rangeStart.getDate() - 90);
     rangeStart.setHours(0, 0, 0, 0);
     label = "Últimos 90 días";
+  } else if (periodVal === "custom") {
+    // Leer las fechas de los inputs (flatpickr maneja MM/DD/YYYY)
+    const fromVal = document.getElementById("ad-pm-from")?.value;
+    const toVal = document.getElementById("ad-pm-to")?.value;
+    rangeStart = parseMMDDYYYY(fromVal);
+    rangeEnd = parseMMDDYYYY(toVal);
+    if (!rangeStart) {
+      rangeStart = new Date(now);
+      rangeStart.setDate(rangeStart.getDate() - 30);
+    }
+    if (!rangeEnd) rangeEnd = new Date(now);
+    rangeStart.setHours(0, 0, 0, 0);
+    rangeEnd.setHours(23, 59, 59, 999);
+    const fmt = d => d.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
+    label = `${fmt(rangeStart)} – ${fmt(rangeEnd)}`;
   } else {
     rangeStart = new Date(2000, 0, 1);
     label = "Todo el historial";
   }
-  if (label) label = label.charAt(0).toUpperCase() + label.slice(1);
+  if (label && periodVal !== "custom") label = label.charAt(0).toUpperCase() + label.slice(1);
   return { rangeStart, rangeEnd, label };
+}
+
+// Inicializa los date pickers la primera vez que se elige "custom".
+// Defaults: últimos 30 días. Se restringen entre sí para evitar from > to.
+function ensureCustomPickers() {
+  if (fpFrom && fpTo) return;
+  const fromEl = document.getElementById("ad-pm-from");
+  const toEl = document.getElementById("ad-pm-to");
+  if (!fromEl || !toEl || typeof flatpickr === "undefined") return;
+
+  const today = new Date();
+  const monthAgo = new Date();
+  monthAgo.setDate(monthAgo.getDate() - 30);
+
+  fpFrom = flatpickr(fromEl, {
+    locale: "es",
+    dateFormat: "m/d/Y",
+    defaultDate: monthAgo,
+    maxDate: today,
+    onChange: ([d]) => {
+      if (d && fpTo) fpTo.set("minDate", d);
+      renderPersonModal();
+    }
+  });
+
+  fpTo = flatpickr(toEl, {
+    locale: "es",
+    dateFormat: "m/d/Y",
+    defaultDate: today,
+    maxDate: today,
+    minDate: monthAgo,
+    onChange: ([d]) => {
+      if (d && fpFrom) fpFrom.set("maxDate", d);
+      renderPersonModal();
+    }
+  });
 }
 
 // Stats por persona en un rango. Agrupa por día y calcula entrada/salida/horas/
@@ -671,7 +723,16 @@ function wirePersonModal() {
   overlay.addEventListener("click", (e) => {
     if (e.target === overlay) closePersonModal();
   });
-  if (periodSel) periodSel.addEventListener("change", renderPersonModal);
+
+  if (periodSel) {
+    periodSel.addEventListener("change", () => {
+      const wrap = document.getElementById("ad-pm-custom-range");
+      const isCustom = periodSel.value === "custom";
+      if (wrap) wrap.hidden = !isCustom;
+      if (isCustom) ensureCustomPickers();
+      renderPersonModal();
+    });
+  }
 }
 
 function openPersonModal(email, name) {
@@ -698,6 +759,12 @@ function openPersonModal(email, name) {
     nowEl.style.background = "";
     nowEl.style.color = "";
   }
+
+  // Reset del periodo al abrir cada vez (no recordamos selección entre personas)
+  const periodSel = document.getElementById("ad-pm-period");
+  if (periodSel) periodSel.value = "month";
+  const customWrap = document.getElementById("ad-pm-custom-range");
+  if (customWrap) customWrap.hidden = true;
 
   overlay.style.display = "flex";
   requestAnimationFrame(() => overlay.classList.add("is-open"));

@@ -1,5 +1,20 @@
 [
   {
+    "id": "2026-06-12-asistencia-rango-custom",
+    "version": "v2.2",
+    "date": "2026-06-12",
+    "category": "feat",
+    "scope": "admin",
+    "audience": "admin",
+    "title": "Rango personalizado en estadísticas por persona",
+    "items": [
+      "Nueva opción \"Rango personalizado\" en el selector de periodo del popup de detalle",
+      "Date pickers con calendario en español para elegir desde y hasta",
+      "KPIs, gráficos y tabla se actualizan automáticamente al cambiar las fechas",
+      "Las fechas se restringen entre sí para evitar rangos inválidos"
+    ]
+  },
+  {
     "id": "2026-06-12-asistencia-detalle-persona",
     "version": "v2.2",
     "date": "2026-06-12",
