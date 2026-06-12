@@ -331,12 +331,9 @@ function renderReactions(msg) {
       }).join("")
     : `<span style="color:var(--muted);font-size:11.5px;">Sé el primero en reaccionar</span>`;
 
+  // Botones siempre vírgenes: cada vez que el popup aparece, el usuario
+  // puede reaccionar de nuevo aunque ya haya reaccionado antes a este mensaje.
   document.querySelectorAll(".dp-react-btn").forEach(btn => btn.classList.remove("selected"));
-  const myReaction = reactions[currentUser.email];
-  if (myReaction) {
-    const myBtn = document.querySelector(`.dp-react-btn[data-emoji="${myReaction}"]`);
-    if (myBtn) myBtn.classList.add("selected");
-  }
 }
 
 async function reactToMessage(emoji, idx) {
@@ -348,11 +345,9 @@ async function reactToMessage(emoji, idx) {
 
     if (!items[idx].reactions) items[idx].reactions = {};
 
-    if (items[idx].reactions[currentUser.email] === emoji) {
-      delete items[idx].reactions[currentUser.email];
-    } else {
-      items[idx].reactions[currentUser.email] = emoji;
-    }
+    // Siempre setea (no toggle). El usuario reemplaza libremente su reacción
+    // cada vez que ve el mensaje, sin riesgo de borrarla por doble clic.
+    items[idx].reactions[currentUser.email] = emoji;
 
     await updateDoc(doc(db, "shared", "messages"), { items });
     renderReactions(items[idx]);
