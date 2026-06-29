@@ -1,0 +1,734 @@
+/* ═══════════════════════════════════════════
+   Hero Hub · Módulo de Finanzas
+   Estilos compartidos por las secciones de finanzas.html.
+   Usa variables de styles.css y respeta modo oscuro.
+   ═══════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────
+   Aviso (callout amarillo de chargebacks)
+   ───────────────────────────────────────────── */
+.fc-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #fff8e1;
+  border: 1px solid #ffd970;
+  border-left: 4px solid #e8a317;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 18px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #5a4517;
+}
+.fc-notice i[data-lucide] {
+  width: 18px; height: 18px;
+  color: #e8a317;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.fc-notice strong { color: #4a3712; }
+.fc-notice em { font-style: italic; }
+
+body[data-theme="dark"] .fc-notice {
+  background: rgba(232, 163, 23, 0.10);
+  border-color: rgba(232, 163, 23, 0.45);
+  border-left-color: #e8a317;
+  color: #f3d889;
+}
+body[data-theme="dark"] .fc-notice strong { color: #fff0bf; }
+
+/* ─────────────────────────────────────────────
+   Toolbar (búsqueda + contador total)
+   ───────────────────────────────────────────── */
+.fc-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.fc-toolbar .search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 240px;
+  max-width: 460px;
+}
+.fc-toolbar .search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px; height: 16px;
+  color: var(--muted, #777);
+  pointer-events: none;
+}
+.fc-toolbar input[type="text"] {
+  width: 100%;
+  padding: 10px 12px 10px 38px;
+  border: 1px solid var(--border, #e8e8e8);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  background: var(--card, #fff);
+  color: var(--text, #1a1a1a);
+}
+.fc-toolbar input[type="text"]:focus {
+  outline: none;
+  border-color: #06a3b6;
+  box-shadow: 0 0 0 3px rgba(6, 163, 182, 0.15);
+}
+.fc-total {
+  font-size: 13px;
+  color: var(--muted, #777);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+/* ─────────────────────────────────────────────
+   Filtros por tipo de origen (chips)
+   ───────────────────────────────────────────── */
+.fc-filter-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.fc-filter-chip {
+  padding: 6px 14px;
+  border: 1px solid var(--border, #e8e8e8);
+  border-radius: 999px;
+  background: var(--card, #fff);
+  color: var(--text, #1a1a1a);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.fc-filter-chip:hover {
+  border-color: #06a3b6;
+  color: #06a3b6;
+}
+.fc-filter-chip.active {
+  background: #06a3b6;
+  border-color: #06a3b6;
+  color: #fff;
+}
+
+/* ─────────────────────────────────────────────
+   Celdas custom de la tabla
+   ───────────────────────────────────────────── */
+.fc-tasa-cell {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.fc-origen-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.fc-origen-HERO    { background: rgba(6,163,182,.12);  color: #048395; }
+.fc-origen-FRIENDS { background: rgba(34,160,107,.12); color: #1e8456; }
+.fc-origen-AGENTES { background: rgba(232,163,23,.15); color: #946614; }
+
+body[data-theme="dark"] .fc-origen-HERO    { background: rgba(6,163,182,.22);  color: #5fd0e0; }
+body[data-theme="dark"] .fc-origen-FRIENDS { background: rgba(34,160,107,.20); color: #6dd9a0; }
+body[data-theme="dark"] .fc-origen-AGENTES { background: rgba(232,163,23,.22); color: #f3c969; }
+
+.fc-empty { color: var(--muted, #999); }
+.fc-link {
+  color: var(--cyan, #06a3b6);
+  text-decoration: none;
+  font-weight: 500;
+}
+.fc-link:hover { text-decoration: underline; }
+body[data-theme="dark"] .fc-link { color: #3dbccc; }
+
+.fc-notes-cell {
+  font-size: 12.5px;
+  color: var(--muted, #666);
+  line-height: 1.35;
+  max-height: 36px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fc-actions {
+  display: inline-flex;
+  gap: 4px;
+}
+.fc-act-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  width: 28px; height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--muted, #777);
+  transition: all 0.15s ease;
+  font-size: 14px;
+}
+.fc-act-btn:hover { background: var(--card-hover, #f3f7fa); color: var(--text, #1a1a1a); border-color: var(--border, #e8e8e8); }
+.fc-act-btn.fc-del:hover { color: #c0392b; border-color: rgba(192, 57, 43, 0.3); }
+
+/* ─────────────────────────────────────────────
+   Status toast flotante
+   ───────────────────────────────────────────── */
+.fc-status {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #1a1a1a;
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 9999;
+}
+.fc-status.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ─────────────────────────────────────────────
+   Modal (sl-dialog) — formulario Nueva/Editar
+   ───────────────────────────────────────────── */
+.fc-form {
+  display: grid;
+  gap: 14px;
+}
+.fc-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 600px) {
+  .fc-form-row { grid-template-columns: 1fr; }
+}
+.fc-form sl-input,
+.fc-form sl-select,
+.fc-form sl-textarea { width: 100%; }
+.fc-form-hint {
+  font-size: 12px;
+  color: var(--muted, #777);
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+/* ─────────────────────────────────────────────
+   Lista de Ingresos — filtros + summary bar
+   ───────────────────────────────────────────── */
+.fi-filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 14px;
+  align-items: center;
+}
+.fi-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.fi-filter-group label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  color: var(--muted, #64748b);
+}
+.fi-filter-select {
+  height: 34px;
+  padding: 0 30px 0 10px;
+  border: 1px solid var(--border, #d4d4d8);
+  border-radius: 6px;
+  background: var(--card, #fff);
+  color: var(--text, #1a1a1a);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+.fi-filter-select:hover { border-color: #06a3b6; }
+.fi-filter-select:focus { outline: none; border-color: #06a3b6; box-shadow: 0 0 0 3px rgba(6,163,182,.15); }
+body[data-theme="dark"] .fi-filter-select {
+  background-color: var(--card);
+  border-color: var(--border);
+  color: var(--text);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23a0afba' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+}
+body[data-theme="dark"] .fi-filter-select option {
+  background: var(--card);
+  color: var(--text);
+}
+
+.fi-summary-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  padding: 12px 18px;
+  margin-bottom: 14px;
+  background: linear-gradient(135deg, rgba(6,163,182,.06), rgba(6,163,182,.02));
+  border: 1px solid rgba(6,163,182,.18);
+  border-radius: 10px;
+  font-size: 13px;
+}
+body[data-theme="dark"] .fi-summary-bar {
+  background: linear-gradient(135deg, rgba(6,163,182,.12), rgba(6,163,182,.04));
+  border-color: rgba(6,163,182,.32);
+}
+.fi-sum-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.fi-sum-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--muted, #64748b);
+}
+.fi-sum-value {
+  font-family: var(--mono, "JetBrains Mono", monospace);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text, #1a1a1a);
+}
+.fi-sum-value.fi-sum-ganancia { color: var(--cyan, #06a3b6); }
+.fi-sum-value.fi-sum-ganancia.negative { color: #c0392b; }
+body[data-theme="dark"] .fi-sum-value { color: var(--text); }
+body[data-theme="dark"] .fi-sum-value.fi-sum-ganancia { color: #3dbccc; }
+
+/* Celdas custom de la tabla de Ingresos */
+.fi-cell-money {
+  font-family: var(--mono, "JetBrains Mono", monospace);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.fi-cell-ganancia { color: var(--cyan, #06a3b6); }
+.fi-cell-ganancia.negative { color: #c0392b; }
+body[data-theme="dark"] .fi-cell-ganancia { color: #3dbccc; }
+.fi-cat-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.fi-cat-COMISSION { background: rgba(34,160,107,.12); color: #1e8456; }
+.fi-cat-OVERRIDES { background: rgba(232,163,23,.15); color: #946614; }
+.fi-cat-HERO      { background: rgba(6,163,182,.12); color: #048395; }
+body[data-theme="dark"] .fi-cat-COMISSION { background: rgba(34,160,107,.20); color: #6dd9a0; }
+body[data-theme="dark"] .fi-cat-OVERRIDES { background: rgba(232,163,23,.22); color: #f3c969; }
+body[data-theme="dark"] .fi-cat-HERO      { background: rgba(6,163,182,.22); color: #5fd0e0; }
+
+#fi-table .tabulator-row { cursor: pointer; }
+#fi-table .fc-actions { cursor: default; }
+
+/* ─────────────────────────────────────────────
+   Modal Nuevo Ingreso — payouts dinámicos + resumen
+   ───────────────────────────────────────────── */
+.fi-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted, #777);
+  margin: 8px 0 -4px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border, #e8e8e8);
+}
+body[data-theme="dark"] .fi-section-title { color: var(--text-2); border-bottom-color: var(--border); }
+
+.fi-row-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 700px) {
+  .fi-row-3 { grid-template-columns: 1fr; }
+}
+
+.fi-payouts-empty {
+  font-size: 13px;
+  color: var(--muted, #777);
+  font-style: italic;
+  padding: 12px 0;
+}
+
+.fi-payouts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fi-payout-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.4fr) minmax(140px, 1.6fr) 110px 32px;
+  gap: 10px;
+  align-items: end;
+  padding: 12px;
+  background: var(--paper, #f0f4f8);
+  border: 1px solid var(--border, #e8e8e8);
+  border-radius: 10px;
+}
+body[data-theme="dark"] .fi-payout-row {
+  background: var(--paper-2);
+  border-color: var(--border);
+}
+@media (max-width: 700px) {
+  .fi-payout-row {
+    grid-template-columns: 1fr 32px;
+    grid-template-areas:
+      "broker remove"
+      "reporte reporte"
+      "saldo saldo";
+  }
+  .fi-payout-row .fi-pf-broker  { grid-area: broker; }
+  .fi-payout-row .fi-pf-reporte { grid-area: reporte; }
+  .fi-payout-row .fi-pf-saldo   { grid-area: saldo; }
+  .fi-payout-row .fi-pf-remove  { grid-area: remove; align-self: start; margin-top: 22px; }
+}
+
+.fi-pf-remove {
+  background: transparent;
+  border: 1px solid var(--border, #e8e8e8);
+  border-radius: 6px;
+  width: 32px; height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--muted, #777);
+  font-size: 14px;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+.fi-pf-remove:hover {
+  background: rgba(192, 57, 43, 0.08);
+  color: #c0392b;
+  border-color: rgba(192, 57, 43, 0.3);
+}
+
+.fi-add-payout-btn {
+  align-self: flex-start;
+  margin-top: 4px;
+  background: transparent;
+  border: 1px dashed var(--border, #cbd5e1);
+  color: var(--cyan, #06a3b6);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+.fi-add-payout-btn:hover {
+  border-color: var(--cyan, #06a3b6);
+  background: rgba(6, 163, 182, 0.06);
+}
+
+.fi-summary {
+  background: linear-gradient(135deg, rgba(6,163,182,.08), rgba(6,163,182,.02));
+  border: 1px solid rgba(6,163,182,.18);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+body[data-theme="dark"] .fi-summary {
+  background: linear-gradient(135deg, rgba(6,163,182,.14), rgba(6,163,182,.04));
+  border-color: rgba(6,163,182,.32);
+}
+.fi-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.fi-summary-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--muted, #777);
+}
+.fi-summary-value {
+  font-family: var(--mono, "JetBrains Mono", monospace);
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text, #1a1a1a);
+}
+.fi-summary-value.fi-ganancia {
+  color: var(--cyan, #06a3b6);
+}
+.fi-summary-value.fi-ganancia.negative {
+  color: #c0392b;
+}
+body[data-theme="dark"] .fi-summary-value { color: var(--text); }
+body[data-theme="dark"] .fi-summary-value.fi-ganancia { color: #3dbccc; }
+
+.fi-mes-pill {
+  display: inline-block;
+  background: rgba(6,163,182,.10);
+  color: var(--cyan, #06a3b6);
+  font-family: var(--mono, "JetBrains Mono", monospace);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+body[data-theme="dark"] .fi-mes-pill {
+  background: rgba(6,163,182,.22);
+  color: #5fd0e0;
+}
+
+/* sl-dialog ancho para Nuevo Ingreso */
+sl-dialog.fi-modal::part(panel) {
+  width: 720px;
+  max-width: 95vw;
+}
+
+/* Select nativo (usado en el modal en vez de sl-select para evitar
+   choques con sl-dialog). Estilo aproximado al de Shoelace. */
+.fc-native-field {
+  display: flex;
+  flex-direction: column;
+}
+.fc-native-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text, #1a1a1a);
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+.fc-native-select {
+  width: 100%;
+  height: 40px;
+  padding: 0 32px 0 12px;
+  border: 1px solid var(--border, #d4d4d8);
+  border-radius: 4px;
+  background: var(--card, #fff);
+  color: var(--text, #1a1a1a);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+.fc-native-select:hover {
+  border-color: #06a3b6;
+}
+.fc-native-select:focus {
+  outline: none;
+  border-color: #06a3b6;
+  box-shadow: 0 0 0 3px rgba(6, 163, 182, 0.15);
+}
+body[data-theme="dark"] .fc-native-label {
+  color: var(--text);
+}
+body[data-theme="dark"] .fc-native-select {
+  background-color: var(--card);
+  border-color: var(--border);
+  color: var(--text);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a0afba' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+}
+body[data-theme="dark"] .fc-native-select option {
+  background: var(--card);
+  color: var(--text);
+}
+
+/* Input nativo type="date" — sin chevron, con color-scheme para que el
+   picker del SO respete el tema oscuro. */
+.fc-native-date {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--border, #d4d4d8);
+  border-radius: 4px;
+  background: var(--card, #fff);
+  color: var(--text, #1a1a1a);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.fc-native-date:hover { border-color: #06a3b6; }
+.fc-native-date:focus {
+  outline: none;
+  border-color: #06a3b6;
+  box-shadow: 0 0 0 3px rgba(6, 163, 182, 0.15);
+}
+body[data-theme="dark"] .fc-native-date {
+  background: var(--card);
+  border-color: var(--border);
+  color: var(--text);
+  color-scheme: dark;
+}
+
+/* Opción "+ Agregar nuevo..." dentro de selects */
+option.fi-add-new-option {
+  font-style: italic;
+  color: var(--cyan, #06a3b6);
+  font-weight: 600;
+}
+
+/* Formulario inline para agregar valor nuevo a un dropdown */
+.fi-add-inline {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  align-items: stretch;
+}
+.fi-add-inline-input {
+  flex: 1;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--cyan, #06a3b6);
+  border-radius: 4px;
+  background: var(--card, #fff);
+  color: var(--text, #1a1a1a);
+  font-family: inherit;
+  font-size: 14px;
+  text-transform: uppercase;
+}
+.fi-add-inline-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(6, 163, 182, 0.15);
+}
+.fi-add-inline-save {
+  background: var(--cyan, #06a3b6);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0 14px;
+  font-weight: 600;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.fi-add-inline-save:hover:not(:disabled) { background: var(--cyan-2, #0891a3); }
+.fi-add-inline-save:disabled { opacity: 0.6; cursor: not-allowed; }
+.fi-add-inline-cancel {
+  background: transparent;
+  border: 1px solid var(--border, #e8e8e8);
+  border-radius: 4px;
+  width: 36px;
+  color: var(--muted, #777);
+  cursor: pointer;
+  font-size: 14px;
+}
+.fi-add-inline-cancel:hover {
+  color: var(--text, #1a1a1a);
+  border-color: var(--muted, #777);
+}
+body[data-theme="dark"] .fi-add-inline-input {
+  background: var(--card);
+  color: var(--text);
+}
+body[data-theme="dark"] .fi-add-inline-cancel {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text-2);
+}
+
+/* ─────────────────────────────────────────────
+   Tabulator — contenedor
+   Las reglas globales (.tabulator, dark mode incluido) viven
+   en audit-panel.css, que también se carga en finanzas.html.
+   Acá refuerzo el dark mode scoped a #fc-table porque el tema
+   modern de Tabulator puede llegar a ganar la cascada.
+   ───────────────────────────────────────────── */
+#fc-table {
+  background: var(--card, #fff);
+  border: 1px solid var(--border, #e8e8e8);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+body[data-theme="dark"] #fc-table {
+  border-color: var(--border);
+}
+
+/* Dark mode — solo celdas custom específicas de Finanzas.
+   Los overrides globales de .tabulator (header, rows, cells, paginación)
+   viven en audit-panel.css y se aplican a #fc-table automáticamente. */
+body[data-theme="dark"] #fc-table .fc-tasa-cell {
+  color: var(--text);
+}
+body[data-theme="dark"] #fc-table .fc-notes-cell {
+  color: var(--text-2);
+}
+body[data-theme="dark"] #fc-table .fc-empty {
+  color: var(--muted);
+}
+body[data-theme="dark"] #fc-table .fc-act-btn {
+  color: var(--text-2);
+}
+body[data-theme="dark"] #fc-table .fc-act-btn:hover {
+  background: rgba(255,255,255,0.06);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+/* ─────────────────────────────────────────────
+   Botón de tema (Día/Noche) en el header
+   ───────────────────────────────────────────── */
+.fc-theme-toggle {
+  width: 36px; height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--paper, #f0f4f8);
+  border: 1px solid var(--border, #e8e8e8);
+  color: var(--text, #1a1a1a);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+.fc-theme-toggle:hover {
+  border-color: var(--cyan, #06a3b6);
+  color: var(--cyan, #06a3b6);
+}
+.fc-theme-toggle i[data-lucide],
+.fc-theme-toggle svg { width: 18px; height: 18px; }
+body[data-theme="dark"] .fc-theme-toggle {
+  background: var(--card);
+  border-color: var(--border);
+  color: var(--text);
+}
+body[data-theme="dark"] .fc-theme-toggle:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}

@@ -1,5 +1,23 @@
 [
   {
+    "id": "2026-06-29-finanzas-modulo",
+    "version": "v2.3",
+    "date": "2026-06-29",
+    "category": "feat",
+    "scope": "finanzas",
+    "audience": "admin",
+    "title": "Nuevo módulo de Finanzas",
+    "items": [
+      "Tabla de Comisiones: CRUD de tasas por carrier, origen y agente",
+      "Brokers: registro de receptores de payouts (nombre, email, teléfono)",
+      "Modal de captura de ingresos con payouts dinámicos y cálculo automático de ganancia",
+      "Descripción de depósito como dropdown con 18 carriers preseed + opción de agregar nuevos",
+      "Lista de ingresos: filtros por periodo, tipo, categoría y broker + summary con totales en vivo",
+      "Toggle Día/Noche disponible en el header de Finanzas",
+      "Mejoras de dark mode en todas las tablas Tabulator del Hub (Roles y Log incluidos)"
+    ]
+  },
+  {
     "id": "2026-06-12-asistencia-rango-custom",
     "version": "v2.2",
     "date": "2026-06-12",

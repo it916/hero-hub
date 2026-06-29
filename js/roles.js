@@ -21,12 +21,18 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-
 export const ROLES = {
   admin: {
     label: "Administrador",
-    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones", "changelog", "admin"],
+    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones", "changelog", "admin", "finanzas"],
     isAdmin: true
   },
   interno: {
     label: "Equipo interno",
     pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones", "changelog"],
+    isAdmin: false
+  },
+  finanzas: {
+    label: "Finanzas",
+    // Misma visibilidad que "interno" + la página de Finanzas. Sin acceso a admin/grabaciones/onboarding.
+    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "reuniones", "changelog", "finanzas"],
     isAdmin: false
   },
   agente: {

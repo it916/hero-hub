@@ -59,7 +59,22 @@ export const ACTIONS = {
   // Agencias (Fase 2a)
   AGENCY_ADD: "agency.add",
   AGENCY_EDIT: "agency.edit",
-  AGENCY_DELETE: "agency.delete"
+  AGENCY_DELETE: "agency.delete",
+
+  // Finanzas — Tabla de Comisiones
+  FINANZAS_COMISION_ADD: "finanzas.comision.add",
+  FINANZAS_COMISION_EDIT: "finanzas.comision.edit",
+  FINANZAS_COMISION_DELETE: "finanzas.comision.delete",
+
+  // Finanzas — Brokers
+  FINANZAS_BROKER_ADD: "finanzas.broker.add",
+  FINANZAS_BROKER_EDIT: "finanzas.broker.edit",
+  FINANZAS_BROKER_DELETE: "finanzas.broker.delete",
+
+  // Finanzas — Ingresos
+  FINANZAS_INGRESO_ADD: "finanzas.ingreso.add",
+  FINANZAS_INGRESO_EDIT: "finanzas.ingreso.edit",
+  FINANZAS_INGRESO_DELETE: "finanzas.ingreso.delete"
 };
 
 // Etiquetas amigables para mostrar en la UI
@@ -79,7 +94,16 @@ export const ACTION_LABELS = {
   "spotlight.update": { label: "Spotlight actualizado", icon: "star", color: "#e8a317" },
   "agency.add": { label: "Agencia agregada", icon: "plus-circle", color: "#22a06b" },
   "agency.edit": { label: "Agencia editada", icon: "edit-3", color: "#06a3b6" },
-  "agency.delete": { label: "Agencia eliminada", icon: "trash-2", color: "#c0392b" }
+  "agency.delete": { label: "Agencia eliminada", icon: "trash-2", color: "#c0392b" },
+  "finanzas.comision.add": { label: "Comisión agregada", icon: "percent", color: "#22a06b" },
+  "finanzas.comision.edit": { label: "Comisión editada", icon: "edit-3", color: "#06a3b6" },
+  "finanzas.comision.delete": { label: "Comisión eliminada", icon: "trash-2", color: "#c0392b" },
+  "finanzas.broker.add": { label: "Broker agregado", icon: "user-plus", color: "#22a06b" },
+  "finanzas.broker.edit": { label: "Broker editado", icon: "edit-3", color: "#06a3b6" },
+  "finanzas.broker.delete": { label: "Broker eliminado", icon: "user-x", color: "#c0392b" },
+  "finanzas.ingreso.add": { label: "Ingreso registrado", icon: "arrow-down-circle", color: "#22a06b" },
+  "finanzas.ingreso.edit": { label: "Ingreso editado", icon: "edit-3", color: "#06a3b6" },
+  "finanzas.ingreso.delete": { label: "Ingreso eliminado", icon: "trash-2", color: "#c0392b" }
 };
 
 

@@ -6908,6 +6908,20 @@ body.role-agente .hub-cards {
 }
 
 
+/* ═══════════════════════════════════════════
+   VISIBILIDAD — Tarjeta de Finanzas
+   ═══════════════════════════════════════════
+   Solo visible para roles "admin" y "finanzas".
+   El resto del Hub no la ve. */
+.hub-card.hc-finanzas {
+  display: none;
+}
+body.role-admin .hub-card.hc-finanzas,
+body.role-finanzas .hub-card.hc-finanzas {
+  display: flex;
+}
+
+
 /* ══════════════════════════════════════════════════════════
    FAB — Botón flotante de Soporte IT
    Siempre visible en la esquina inferior derecha.

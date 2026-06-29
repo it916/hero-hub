@@ -492,62 +492,89 @@
 }
 
 /* ═══════════════════════════════════════════
-   DARK MODE — Tabulator del log y de la tabla de roles
-   Cubre #al-table y #ra-table porque comparten los
-   overrides globales de .tabulator definidos arriba.
+   DARK MODE — Tabulator (global)
+   Cubre cualquier .tabulator del Hub: #al-table, #ra-table, #fc-table
+   y los que vendrán. Usa !important porque el tema modern de Tabulator
+   se carga por CDN DESPUÉS de nuestros CSS y termina ganando algunas
+   reglas (especialmente backgrounds en tableholder/table/row).
    ═══════════════════════════════════════════ */
 body[data-theme="dark"] #al-table,
-body[data-theme="dark"] #ra-table {
+body[data-theme="dark"] #ra-table,
+body[data-theme="dark"] #fc-table {
   border-color: var(--border);
+}
+body[data-theme="dark"] .tabulator,
+body[data-theme="dark"] .tabulator-tableholder,
+body[data-theme="dark"] .tabulator-table {
+  background: transparent !important;
+  color: var(--text) !important;
 }
 body[data-theme="dark"] .tabulator .tabulator-header {
-  background: linear-gradient(180deg, #0a2a33 0%, #062028 100%);
-  border-bottom-color: var(--cyan);
-  color: var(--text);
+  background: linear-gradient(180deg, #0a2a33 0%, #062028 100%) !important;
+  border-bottom-color: var(--cyan) !important;
+  color: var(--text) !important;
 }
 body[data-theme="dark"] .tabulator .tabulator-header .tabulator-col {
-  border-right-color: rgba(6, 163, 182, .18);
+  background: transparent !important;
+  border-right-color: rgba(6, 163, 182, .18) !important;
 }
 body[data-theme="dark"] .tabulator .tabulator-header .tabulator-col .tabulator-col-title {
-  color: #3dbccc;
+  color: #3dbccc !important;
 }
 body[data-theme="dark"] .tabulator .tabulator-header .tabulator-col.tabulator-sortable:hover {
-  background: rgba(6, 163, 182, .14);
+  background: rgba(6, 163, 182, .14) !important;
 }
 body[data-theme="dark"] .tabulator .tabulator-row {
-  background: var(--card);
-  border-bottom-color: var(--border);
+  background: var(--card) !important;
+  border-bottom-color: var(--border) !important;
 }
 body[data-theme="dark"] .tabulator .tabulator-row.tabulator-row-even {
-  background: var(--paper-2);
+  background: var(--paper-2) !important;
 }
 body[data-theme="dark"] .tabulator .tabulator-row:hover {
-  background: rgba(6, 163, 182, .12) !important;
+  background: rgba(6, 163, 182, .14) !important;
 }
 body[data-theme="dark"] .tabulator .tabulator-row .tabulator-cell {
-  color: var(--text);
-  border-right-color: var(--border);
+  color: var(--text) !important;
+  background: transparent !important;
+  border-right-color: var(--border) !important;
+}
+body[data-theme="dark"] .tabulator .tabulator-row .tabulator-cell strong {
+  color: var(--text) !important;
 }
 body[data-theme="dark"] .tabulator .tabulator-footer {
-  background: var(--paper);
-  border-top-color: var(--border);
+  background: var(--paper) !important;
+  border-top-color: var(--border) !important;
+  color: var(--text-2) !important;
 }
-body[data-theme="dark"] .tabulator .tabulator-paginator {
-  color: var(--muted);
+body[data-theme="dark"] .tabulator .tabulator-paginator,
+body[data-theme="dark"] .tabulator .tabulator-paginator label,
+body[data-theme="dark"] .tabulator .tabulator-paginator span {
+  color: var(--text-2) !important;
 }
 body[data-theme="dark"] .tabulator .tabulator-page {
-  background: var(--card);
-  border-color: var(--border);
-  color: var(--muted);
+  background: var(--card) !important;
+  border-color: var(--border) !important;
+  color: var(--text-2) !important;
 }
 body[data-theme="dark"] .tabulator .tabulator-page:hover:not(:disabled) {
-  background: rgba(6, 163, 182, .16);
-  color: var(--cyan);
+  background: rgba(6, 163, 182, .16) !important;
+  color: var(--cyan) !important;
+  border-color: var(--cyan) !important;
+}
+body[data-theme="dark"] .tabulator .tabulator-page.active {
+  background: var(--cyan) !important;
+  color: #fff !important;
+  border-color: var(--cyan) !important;
 }
 body[data-theme="dark"] .tabulator .tabulator-page-size {
-  background: var(--card);
-  border-color: var(--border);
-  color: var(--text);
+  background: var(--card) !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+}
+body[data-theme="dark"] .tabulator-placeholder {
+  color: var(--muted) !important;
+  background: transparent !important;
 }
 body[data-theme="dark"] .al-tag {
   background: rgba(255, 255, 255, .06);

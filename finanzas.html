@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="icons/favicon-hero.png">
+<link rel="apple-touch-icon" href="icons/favicon-hero.png">
+<meta name="theme-color" content="#06a3b6">
+<title>Finanzas — Hero Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/audit-panel.css">
+<link rel="stylesheet" href="css/finanzas.css">
+
+<!-- Shoelace · component library -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css">
+<script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/shoelace-autoloader.js"></script>
+
+<!-- Tabulator · data tables -->
+<link rel="stylesheet" href="https://unpkg.com/tabulator-tables@6.3.0/dist/css/tabulator_modern.min.css">
+<script src="https://unpkg.com/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
+
+<!-- Flatpickr · date pickers -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+
+<!-- Chart.js · gráficos -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+<script>try{var t=localStorage.getItem("hero-theme");if(t)document.body.dataset.theme=t;}catch(e){}</script>
+<script>try{var r=localStorage.getItem("hero-user-role");if(r){document.body.classList.add("skip-loading","role-"+r);}}catch(e){}</script>
+
+<noscript>
+  <div style="position:fixed;inset:0;background:#062a33;color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font-family:system-ui,sans-serif;z-index:99999;">
+    <div>
+      <h1 style="margin:0 0 12px;">Hero Hub requiere JavaScript</h1>
+      <p style="margin:0;opacity:.85;">Activa JavaScript en tu navegador para acceder al Hero Hub.</p>
+    </div>
+  </div>
+</noscript>
+
+<div id="loading" class="login-container"><div class="login-card"><p>Verificando acceso...</p></div></div>
+
+<div id="finanzas-panel" style="display:none;">
+
+  <!-- ══ HEADER ══ -->
+  <header class="admin-shell-header">
+    <div class="admin-shell-header-inner">
+      <button class="admin-sidebar-toggle" id="admin-sidebar-toggle" type="button" aria-label="Menú">
+        <i data-lucide="menu"></i>
+      </button>
+      <a href="index.html" class="admin-shell-brand">
+        <div class="admin-shell-logo"><img src="icons/favicon-hero.png" alt="Hero"></div>
+        <div>
+          <div class="admin-shell-brand-name">HERO HUB · FINANZAS</div>
+          <div class="admin-shell-brand-sub">Gestión de ingresos y reconciliación</div>
+        </div>
+      </a>
+      <div class="admin-shell-header-actions">
+        <button type="button" id="fc-theme-toggle" class="fc-theme-toggle" title="Cambiar tema" aria-label="Cambiar tema">
+          <i data-lucide="moon"></i>
+        </button>
+        <sl-button href="index.html" variant="default" size="small">
+          <i data-lucide="arrow-left" slot="prefix" style="width:14px;height:14px;"></i>
+          Volver al Hub
+        </sl-button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ══ SHELL: Sidebar + Main ══ -->
+  <div class="admin-shell">
+
+    <!-- Sidebar -->
+    <aside class="admin-sidebar" id="admin-sidebar">
+      <nav class="admin-sidebar-nav">
+
+        <div class="admin-sidebar-group">
+          <div class="admin-sidebar-kicker">Resumen</div>
+          <button type="button" class="admin-sidebar-link active" data-tab="dashboard">
+            <i data-lucide="line-chart"></i>
+            <span>Dashboard</span>
+          </button>
+        </div>
+
+        <div class="admin-sidebar-group">
+          <div class="admin-sidebar-kicker">Registro</div>
+          <button type="button" class="admin-sidebar-link" data-tab="ingresos">
+            <i data-lucide="arrow-down-circle"></i>
+            <span>Ingresos</span>
+          </button>
+        </div>
+
+        <div class="admin-sidebar-group">
+          <div class="admin-sidebar-kicker">Configuración</div>
+          <button type="button" class="admin-sidebar-link" data-tab="comisiones">
+            <i data-lucide="percent"></i>
+            <span>Tabla de Comisiones</span>
+          </button>
+          <button type="button" class="admin-sidebar-link" data-tab="brokers">
+            <i data-lucide="users-round"></i>
+            <span>Brokers</span>
+          </button>
+        </div>
+
+        <div class="admin-sidebar-group">
+          <div class="admin-sidebar-kicker">Reportes</div>
+          <button type="button" class="admin-sidebar-link" data-tab="comparativas">
+            <i data-lucide="bar-chart-3"></i>
+            <span>Comparativas</span>
+          </button>
+          <button type="button" class="admin-sidebar-link" data-tab="exportar">
+            <i data-lucide="download"></i>
+            <span>Exportar</span>
+          </button>
+        </div>
+
+      </nav>
+    </aside>
+
+    <!-- Backdrop para sidebar en mobile -->
+    <div class="admin-sidebar-backdrop" id="admin-sidebar-backdrop"></div>
+
+    <!-- Main -->
+    <main class="admin-shell-main">
+
+      <!-- Breadcrumb -->
+      <div class="admin-section-header">
+        <div class="admin-breadcrumb">
+          <i data-lucide="landmark"></i>
+          <span>Finanzas</span>
+          <i data-lucide="chevron-right" class="admin-breadcrumb-sep"></i>
+          <span class="admin-breadcrumb-current" id="finanzas-breadcrumb-current">Dashboard</span>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════ -->
+      <!-- SECCIÓN DASHBOARD                              -->
+      <!-- ══════════════════════════════════════════════ -->
+      <section class="admin-section" id="tab-dashboard">
+        <div class="ad-toolbar">
+          <div>
+            <h2 style="margin:0;">💰 Dashboard de Finanzas</h2>
+            <p class="admin-note" style="margin:4px 0 0;">Resumen de ingresos, payouts a brokers y ganancia neta de Hero.</p>
+          </div>
+          <div class="ad-toolbar-actions">
+            <select id="fin-period" class="ad-select">
+              <option value="month" selected>Este mes</option>
+              <option value="prevMonth">Mes pasado</option>
+              <option value="ytd">Año actual</option>
+            </select>
+            <sl-button id="fin-refresh" variant="primary" size="medium">
+              <i data-lucide="refresh-cw" slot="prefix" style="width:14px;height:14px;"></i>
+              Actualizar
+            </sl-button>
+          </div>
+        </div>
+
+        <div class="ad-loading" style="padding:48px;text-align:center;color:var(--muted);">
+          <i data-lucide="hammer" style="width:32px;height:32px;color:var(--accent);"></i>
+          <p style="margin:12px 0 4px;font-weight:600;">Dashboard en construcción</p>
+          <p style="font-size:13px;margin:0;">Los KPIs (Monto bruto · Pagado · Ganancia) y gráficos aparecerán aquí.</p>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════ -->
+      <!-- SECCIÓN INGRESOS                               -->
+      <!-- ══════════════════════════════════════════════ -->
+      <section class="admin-section" id="tab-ingresos" style="display:none;">
+        <div class="ad-toolbar">
+          <div>
+            <h2 style="margin:0;">📥 Ingresos</h2>
+            <p class="admin-note" style="margin:4px 0 0;">Cada depósito del carrier con su distribución de payouts y la ganancia neta de Hero.</p>
+          </div>
+          <div class="ad-toolbar-actions">
+            <sl-button variant="primary" size="medium" id="fi-add-btn">
+              <i data-lucide="plus" slot="prefix" style="width:14px;height:14px;"></i>
+              Nuevo ingreso
+            </sl-button>
+          </div>
+        </div>
+
+        <div class="fc-toolbar">
+          <div class="search-wrap">
+            <i data-lucide="search" class="search-icon"></i>
+            <input type="text" id="fi-search" placeholder="Buscar descripción, transacción o notas...">
+          </div>
+        </div>
+
+        <div class="fi-filters-row">
+          <div class="fi-filter-group">
+            <label for="fi-filter-periodo">Periodo</label>
+            <select id="fi-filter-periodo" class="fi-filter-select">
+              <option value="all">Todo</option>
+              <option value="this-month">Este mes</option>
+              <option value="last-month">Mes pasado</option>
+              <option value="this-year">Año actual</option>
+              <option value="last-year">Año anterior</option>
+            </select>
+          </div>
+          <div class="fi-filter-group">
+            <label for="fi-filter-tipo">Tipo</label>
+            <select id="fi-filter-tipo" class="fi-filter-select">
+              <option value="all">Todos</option>
+              <option value="LIFE">LIFE</option>
+              <option value="SUPP">SUPP</option>
+              <option value="ACA">ACA</option>
+              <option value="MEDICARE">MEDICARE</option>
+              <option value="OTROS">OTROS</option>
+            </select>
+          </div>
+          <div class="fi-filter-group">
+            <label for="fi-filter-categoria">Categoría</label>
+            <select id="fi-filter-categoria" class="fi-filter-select">
+              <option value="all">Todas</option>
+              <option value="COMISSION">COMISSION</option>
+              <option value="OVERRIDES">OVERRIDES</option>
+              <option value="HERO">HERO</option>
+            </select>
+          </div>
+          <div class="fi-filter-group">
+            <label for="fi-filter-broker">Broker</label>
+            <select id="fi-filter-broker" class="fi-filter-select">
+              <option value="all">Todos</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="fi-summary-bar" id="fi-summary-bar">
+          <div class="fi-sum-item"><span class="fi-sum-label">Total</span> <span class="fi-sum-value" id="fi-sum-total">0</span></div>
+          <div class="fi-sum-item"><span class="fi-sum-label">Bruto</span> <span class="fi-sum-value" id="fi-sum-bruto">$0.00</span></div>
+          <div class="fi-sum-item"><span class="fi-sum-label">Pagado</span> <span class="fi-sum-value" id="fi-sum-pagado">$0.00</span></div>
+          <div class="fi-sum-item"><span class="fi-sum-label">Ganancia</span> <span class="fi-sum-value fi-sum-ganancia" id="fi-sum-ganancia">$0.00</span></div>
+        </div>
+
+        <div id="fi-table"></div>
+
+        <div class="fc-status" id="fi-status"></div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════ -->
+      <!-- SECCIÓN TABLA DE COMISIONES                    -->
+      <!-- ══════════════════════════════════════════════ -->
+      <section class="admin-section" id="tab-comisiones" style="display:none;">
+        <div class="ad-toolbar">
+          <div>
+            <h2 style="margin:0;">📊 Tabla de Comisiones</h2>
+            <p class="admin-note" style="margin:4px 0 0;">Tasas por carrier, origen y agente — la referencia maestra (hoja LIFE del Excel).</p>
+          </div>
+          <div class="ad-toolbar-actions">
+            <sl-button variant="primary" size="medium" id="fc-add-btn">
+              <i data-lucide="plus" slot="prefix" style="width:14px;height:14px;"></i>
+              Nueva fila
+            </sl-button>
+          </div>
+        </div>
+
+        <div class="fc-notice">
+          <i data-lucide="alert-triangle"></i>
+          <div>
+            <strong>Recordatorio:</strong>
+            Cuando un carrier devuelve chargebacks, ajusta la tasa o agrega una fila nueva con notas — <em>no borres el histórico</em>.
+          </div>
+        </div>
+
+        <div class="fc-toolbar">
+          <div class="search-wrap">
+            <i data-lucide="search" class="search-icon"></i>
+            <input type="text" id="fc-search" placeholder="Buscar por carrier, agente o notas...">
+          </div>
+          <span class="fc-total" id="fc-total">0 filas</span>
+        </div>
+
+        <div class="fc-filter-row">
+          <button type="button" class="fc-filter-chip active" data-origen="all">Todos</button>
+          <button type="button" class="fc-filter-chip" data-origen="HERO">HERO</button>
+          <button type="button" class="fc-filter-chip" data-origen="FRIENDS">FRIENDS</button>
+          <button type="button" class="fc-filter-chip" data-origen="AGENTES">AGENTES</button>
+        </div>
+
+        <div id="fc-table"></div>
+
+        <div class="fc-status" id="fc-status"></div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════ -->
+      <!-- SECCIÓN BROKERS                                -->
+      <!-- ══════════════════════════════════════════════ -->
+      <section class="admin-section" id="tab-brokers" style="display:none;">
+        <div class="ad-toolbar">
+          <div>
+            <h2 style="margin:0;">🤝 Brokers</h2>
+            <p class="admin-note" style="margin:4px 0 0;">Receptores de payouts (ENSURE, FRIENDS, KHAN, etc.). El email se usa al enviar reportes.</p>
+          </div>
+          <div class="ad-toolbar-actions">
+            <sl-button variant="primary" size="medium" id="fb-add-btn">
+              <i data-lucide="plus" slot="prefix" style="width:14px;height:14px;"></i>
+              Nuevo broker
+            </sl-button>
+          </div>
+        </div>
+
+        <div class="fc-toolbar">
+          <div class="search-wrap">
+            <i data-lucide="search" class="search-icon"></i>
+            <input type="text" id="fb-search" placeholder="Buscar por nombre o email...">
+          </div>
+          <span class="fc-total" id="fb-total">0 brokers</span>
+        </div>
+
+        <div id="fb-table"></div>
+
+        <div class="fc-status" id="fb-status"></div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════ -->
+      <!-- SECCIÓN COMPARATIVAS                           -->
+      <!-- ══════════════════════════════════════════════ -->
+      <section class="admin-section" id="tab-comparativas" style="display:none;">
+        <div class="ad-toolbar">
+          <div>
+            <h2 style="margin:0;">📈 Comparativas</h2>
+            <p class="admin-note" style="margin:4px 0 0;">Flujo neto, tendencias mensuales y distribución por tipo, carrier o broker.</p>
+          </div>
+        </div>
+
+        <div class="ad-loading" style="padding:48px;text-align:center;color:var(--muted);">
+          <i data-lucide="hammer" style="width:32px;height:32px;color:var(--accent);"></i>
+          <p style="margin:12px 0 4px;font-weight:600;">Comparativas en construcción</p>
+          <p style="font-size:13px;margin:0;">Gráficos de línea, barras agrupadas, tabla comparativa mes a mes.</p>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════ -->
+      <!-- SECCIÓN EXPORTAR                               -->
+      <!-- ══════════════════════════════════════════════ -->
+      <section class="admin-section" id="tab-exportar" style="display:none;">
+        <div class="ad-toolbar">
+          <div>
+            <h2 style="margin:0;">⬇ Exportar</h2>
+            <p class="admin-note" style="margin:4px 0 0;">Descarga de reportes ejecutivos en CSV, Excel y PDF para auditoría externa o uso interno.</p>
+          </div>
+        </div>
+
+        <div class="ad-loading" style="padding:48px;text-align:center;color:var(--muted);">
+          <i data-lucide="hammer" style="width:32px;height:32px;color:var(--accent);"></i>
+          <p style="margin:12px 0 4px;font-weight:600;">Exportación en construcción</p>
+          <p style="font-size:13px;margin:0;">Botones de descarga por periodo + reportes PDF con branding Hero Light.</p>
+        </div>
+      </section>
+
+    </main>
+
+  </div><!-- /.admin-shell -->
+
+  <footer class="hero-footer">
+    <span>HERO HUB · FINANZAS v2.3</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+  </footer>
+
+</div><!-- /#finanzas-panel -->
+
+<script>
+  window.refreshIcons = () => { if (window.lucide) lucide.createIcons(); };
+
+  const FIN_TAB_TITLES = {
+    dashboard: 'Dashboard',
+    ingresos: 'Ingresos',
+    comisiones: 'Tabla de Comisiones',
+    brokers: 'Brokers',
+    comparativas: 'Comparativas',
+    exportar: 'Exportar'
+  };
+  const FIN_TABS = Object.keys(FIN_TAB_TITLES);
+
+  document.addEventListener("DOMContentLoaded", () => {
+    window.refreshIcons();
+
+    const sidebar = document.getElementById('admin-sidebar');
+    const backdrop = document.getElementById('admin-sidebar-backdrop');
+    const toggle = document.getElementById('admin-sidebar-toggle');
+    const breadcrumb = document.getElementById('finanzas-breadcrumb-current');
+
+    const closeSidebar = () => {
+      sidebar.classList.remove('open');
+      backdrop.classList.remove('visible');
+    };
+    const openSidebar = () => {
+      sidebar.classList.add('open');
+      backdrop.classList.add('visible');
+    };
+
+    if (toggle) toggle.addEventListener('click', () => {
+      sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+    });
+    if (backdrop) backdrop.addEventListener('click', closeSidebar);
+
+    document.querySelectorAll('.admin-sidebar-link[data-tab]').forEach(b => {
+      b.addEventListener('click', () => {
+        const tab = b.dataset.tab;
+        document.querySelectorAll('.admin-sidebar-link[data-tab]').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        FIN_TABS.forEach(t => {
+          const sec = document.getElementById('tab-' + t);
+          if (sec) sec.style.display = (t === tab) ? 'block' : 'none';
+        });
+        if (breadcrumb && FIN_TAB_TITLES[tab]) breadcrumb.textContent = FIN_TAB_TITLES[tab];
+        if (window.innerWidth <= 900) closeSidebar();
+      });
+    });
+  });
+</script>
+<script type="module" src="js/firebase-config.js"></script>
+<script type="module" src="js/page-guard.js"></script>
+<script type="module" src="js/finanzas.js"></script>
+<script type="module" src="js/tracker.js"></script>
+</body>
+</html>
