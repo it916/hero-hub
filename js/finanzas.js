@@ -38,6 +38,8 @@ document.addEventListener("DOMContentLoaded", () => {
   bindBrokersLazyInit();
   bindIngresosStaticHandlers();
   bindIngresosLazyInit();
+  bindDashboardStaticHandlers();
+  bindDashboardLazyInit();
 });
 
 
@@ -61,6 +63,10 @@ onAuthStateChanged(auth, async (user) => {
   document.getElementById("loading").style.display = "none";
   document.getElementById("finanzas-panel").style.display = "block";
   if (window.refreshIcons) window.refreshIcons();
+
+  // Dashboard es el tab activo por default → init inmediato
+  const activeTab = document.querySelector(".admin-sidebar-link.active");
+  if (activeTab?.dataset.tab === "dashboard") initDashboardPanel();
 });
 
 
@@ -84,6 +90,8 @@ function bindThemeToggle() {
     document.body.dataset.theme = next;
     try { localStorage.setItem("hero-theme", next); } catch (_) {}
     syncIcon();
+    // Re-render charts del Dashboard para que colores/labels usen el tema nuevo
+    if (fdInited) renderDashboard();
     if (!currentUserEmail) return;
     try {
       await updateDoc(doc(db, "users", currentUserEmail), { theme: next });
@@ -922,7 +930,8 @@ async function addDescDepositoToList(rawValue) {
 let ingresosData = [];
 let fiTable = null;
 let ingresosInited = false;
-const fiFilter = { text: "", periodo: "all", tipo: "all", categoria: "all", broker: "all" };
+const fiFilter = { text: "", periodo: "all", tipo: "all", categoria: "all", broker: "all", fromDate: null, toDate: null };
+let fiCustomPickers = null; // { fp1, fp2 }
 
 function bindIngresosStaticHandlers() {
   const btn = document.getElementById("fi-add-btn");
@@ -947,10 +956,55 @@ function bindIngresosStaticHandlers() {
       sel.dataset.bound = "1";
       sel.addEventListener("change", (e) => {
         fiFilter[key] = e.target.value;
+        if (key === "periodo") toggleFiCustomRange(e.target.value === "custom");
         applyFiFilters();
       });
     }
   });
+}
+
+function toggleFiCustomRange(show) {
+  const wrap = document.getElementById("fi-custom-range");
+  if (!wrap) return;
+  wrap.hidden = !show;
+  if (show) ensureFiCustomPickers();
+}
+
+function ensureFiCustomPickers() {
+  if (fiCustomPickers) return;
+  const fromEl = document.getElementById("fi-date-from");
+  const toEl = document.getElementById("fi-date-to");
+  if (!fromEl || !toEl || typeof flatpickr === "undefined") return;
+
+  // Default: año actual completo (donde está la mayoría de la data)
+  const today = new Date();
+  const yearStart = new Date(today.getFullYear(), 0, 1);
+
+  const fp1 = flatpickr(fromEl, {
+    locale: "es",
+    dateFormat: "m/d/Y",
+    defaultDate: yearStart,
+    onChange: ([d]) => {
+      fiFilter.fromDate = d ? startOfDay(d) : null;
+      if (d && fp2) fp2.set("minDate", d);
+      applyFiFilters();
+    }
+  });
+  const fp2 = flatpickr(toEl, {
+    locale: "es",
+    dateFormat: "m/d/Y",
+    defaultDate: today,
+    onChange: ([d]) => {
+      fiFilter.toDate = d ? endOfDay(d) : null;
+      if (d && fp1) fp1.set("maxDate", d);
+      applyFiFilters();
+    }
+  });
+  fiCustomPickers = { fp1, fp2 };
+
+  // Aplicar los defaults iniciales como filtro
+  fiFilter.fromDate = startOfDay(yearStart);
+  fiFilter.toDate = endOfDay(today);
 }
 
 function bindIngresosLazyInit() {
@@ -1184,7 +1238,22 @@ function matchesPeriodo(fecha, periodo) {
   }
   if (periodo === "this-year") return y === cY;
   if (periodo === "last-year") return y === cY - 1;
+  if (periodo === "custom") {
+    if (!fiFilter.fromDate || !fiFilter.toDate) return true;
+    return d >= fiFilter.fromDate && d <= fiFilter.toDate;
+  }
   return true;
+}
+
+function startOfDay(d) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+function endOfDay(d) {
+  const x = new Date(d);
+  x.setHours(23, 59, 59, 999);
+  return x;
 }
 
 function updateIngresosSummary() {
@@ -1242,6 +1311,396 @@ function formatFechaUS(yyyyMmDd) {
   if (!yyyyMmDd || !/^\d{4}-\d{2}-\d{2}$/.test(yyyyMmDd)) return yyyyMmDd || "";
   const [y, m, d] = yyyyMmDd.split("-");
   return `${m}/${d}/${y}`;
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// DASHBOARD — KPIs + gráficos con Chart.js
+// ═══════════════════════════════════════════════════════════
+let fdInited = false;
+const fdCharts = {};
+const fdState = { periodo: "year", fromDate: null, toDate: null };
+let fdCustomPickers = null;
+
+const FD_PALETTE = ["#06a3b6", "#22a06b", "#e8a317", "#0891a3", "#9333ea",
+                    "#c0392b", "#0065F3", "#1e8456", "#946614", "#5b21b6",
+                    "#7f1d1d", "#0a3d4a"];
+
+function bindDashboardStaticHandlers() {
+  const periodSel = document.getElementById("fd-period");
+  if (periodSel && !periodSel.dataset.bound) {
+    periodSel.dataset.bound = "1";
+    periodSel.addEventListener("change", (e) => {
+      fdState.periodo = e.target.value;
+      toggleFdCustomRange(e.target.value === "custom");
+      if (fdInited) renderDashboard();
+    });
+  }
+
+  const refreshBtn = document.getElementById("fd-refresh");
+  if (refreshBtn && !refreshBtn.dataset.bound) {
+    refreshBtn.dataset.bound = "1";
+    refreshBtn.addEventListener("click", async () => {
+      try {
+        await loadIngresos();
+        // Si la lista ya estaba inicializada, refresca también su tabla
+        if (fiTable) { fiTable.setData(ingresosData); updateIngresosSummary(); }
+        renderDashboard();
+      } catch (e) {
+        alert("Error al actualizar: " + e.message);
+      }
+    });
+  }
+}
+
+function bindDashboardLazyInit() {
+  document.querySelectorAll('.admin-sidebar-link[data-tab="dashboard"]').forEach(b => {
+    if (b.dataset.fdBound) return;
+    b.dataset.fdBound = "1";
+    b.addEventListener("click", () => {
+      if (!fdInited) initDashboardPanel();
+    });
+  });
+}
+
+async function initDashboardPanel() {
+  if (fdInited) return;
+  fdInited = true;
+  try {
+    if (ingresosData.length === 0) await loadIngresos();
+    renderDashboard();
+  } catch (e) {
+    console.error("Error inicializando Dashboard:", e);
+    fdInited = false;
+    const msg = e?.code === "permission-denied" || /permission|insufficient/i.test(e?.message || "")
+      ? `Firestore rechazó la lectura de "${INGRESOS_COL}". Verifica las reglas.`
+      : `No se pudo cargar el Dashboard:\n${e?.message || e}`;
+    alert(msg);
+  }
+}
+
+function filterByPeriodo(rows, periodo) {
+  if (periodo === "all") return rows;
+  const now = new Date();
+  const cY = now.getFullYear();
+  const cM = now.getMonth();
+
+  return rows.filter(r => {
+    if (!r.fecha) return false;
+    const d = new Date(r.fecha + "T00:00:00");
+    if (isNaN(d.getTime())) return false;
+    const y = d.getFullYear();
+    const m = d.getMonth();
+    if (periodo === "year") return y === cY;
+    if (periodo === "lastYear") return y === cY - 1;
+    if (periodo === "month") return y === cY && m === cM;
+    if (periodo === "lastMonth") {
+      const lm = new Date(cY, cM - 1, 1);
+      return y === lm.getFullYear() && m === lm.getMonth();
+    }
+    if (periodo === "custom") {
+      if (!fdState.fromDate || !fdState.toDate) return true;
+      return d >= fdState.fromDate && d <= fdState.toDate;
+    }
+    return true;
+  });
+}
+
+function toggleFdCustomRange(show) {
+  const wrap = document.getElementById("fd-custom-range");
+  if (!wrap) return;
+  wrap.hidden = !show;
+  if (show) ensureFdCustomPickers();
+}
+
+function ensureFdCustomPickers() {
+  if (fdCustomPickers) return;
+  const fromEl = document.getElementById("fd-date-from");
+  const toEl = document.getElementById("fd-date-to");
+  if (!fromEl || !toEl || typeof flatpickr === "undefined") return;
+
+  const today = new Date();
+  const yearStart = new Date(today.getFullYear(), 0, 1);
+
+  const fp1 = flatpickr(fromEl, {
+    locale: "es",
+    dateFormat: "m/d/Y",
+    defaultDate: yearStart,
+    onChange: ([d]) => {
+      fdState.fromDate = d ? startOfDay(d) : null;
+      if (d && fp2) fp2.set("minDate", d);
+      if (fdInited) renderDashboard();
+    }
+  });
+  const fp2 = flatpickr(toEl, {
+    locale: "es",
+    dateFormat: "m/d/Y",
+    defaultDate: today,
+    onChange: ([d]) => {
+      fdState.toDate = d ? endOfDay(d) : null;
+      if (d && fp1) fp1.set("maxDate", d);
+      if (fdInited) renderDashboard();
+    }
+  });
+  fdCustomPickers = { fp1, fp2 };
+
+  fdState.fromDate = startOfDay(yearStart);
+  fdState.toDate = endOfDay(today);
+}
+
+function renderDashboard() {
+  const data = filterByPeriodo(ingresosData, fdState.periodo);
+
+  // KPIs
+  const bruto = data.reduce((s, r) => s + (Number(r.monto) || 0), 0);
+  const pagado = data.reduce((s, r) => s + (Number(r.pagado) || 0), 0);
+  const ganancia = data.reduce((s, r) => s + (Number(r.ganancia) || 0), 0);
+  const count = data.length;
+  const withPayouts = data.filter(r => Array.isArray(r.payouts) && r.payouts.length > 0).length;
+
+  setText("fd-kpi-bruto", formatMoney(bruto));
+  setText("fd-kpi-pagado", formatMoney(pagado));
+  setText("fd-kpi-ganancia", formatMoney(ganancia));
+  setText("fd-kpi-count", String(count));
+  setText("fd-kpi-count-sub", `${withPayouts} con payouts`);
+
+  // Charts
+  renderMonthlyChart(data);
+  renderCategoriaChart(data);
+  renderCarriersChart(data);
+  renderBrokersChart(data);
+}
+
+function destroyChart(key) {
+  if (fdCharts[key]) {
+    fdCharts[key].destroy();
+    delete fdCharts[key];
+  }
+}
+
+function setEmpty(key, isEmpty) {
+  const el = document.getElementById(`fd-chart-${key}-empty`);
+  if (el) el.style.display = isEmpty ? "" : "none";
+}
+
+function monthSortKey(mesStr) {
+  // "ENE 2026" → 2026.01 (sortable number)
+  if (!mesStr) return 0;
+  const [m, y] = mesStr.split(" ");
+  const idx = MESES_ABREV.indexOf(m);
+  if (idx < 0) return 0;
+  return parseInt(y, 10) * 100 + (idx + 1);
+}
+
+function getChartTextColor() {
+  return document.body.dataset.theme === "dark" ? "#e8f4f6" : "#0a3d4a";
+}
+function getChartGridColor() {
+  return document.body.dataset.theme === "dark" ? "rgba(255,255,255,.08)" : "rgba(10,61,74,.10)";
+}
+
+function renderMonthlyChart(data) {
+  destroyChart("monthly");
+  const byMonth = {};
+  for (const r of data) {
+    if (!r.mes) continue;
+    if (!byMonth[r.mes]) byMonth[r.mes] = { bruto: 0, ganancia: 0 };
+    byMonth[r.mes].bruto += Number(r.monto) || 0;
+    byMonth[r.mes].ganancia += Number(r.ganancia) || 0;
+  }
+  const meses = Object.keys(byMonth).sort((a, b) => monthSortKey(a) - monthSortKey(b));
+  setEmpty("monthly", meses.length === 0);
+  if (meses.length === 0) return;
+
+  const ctx = document.getElementById("fd-chart-monthly");
+  fdCharts.monthly = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: meses,
+      datasets: [
+        {
+          label: "Bruto",
+          data: meses.map(m => byMonth[m].bruto),
+          borderColor: "#06a3b6",
+          backgroundColor: "rgba(6,163,182,.10)",
+          tension: 0.3,
+          fill: true,
+          borderWidth: 2.5
+        },
+        {
+          label: "Ganancia",
+          data: meses.map(m => byMonth[m].ganancia),
+          borderColor: "#22a06b",
+          backgroundColor: "rgba(34,160,107,.10)",
+          tension: 0.3,
+          fill: true,
+          borderWidth: 2.5
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: "bottom", labels: { color: getChartTextColor(), font: { size: 12 } } },
+        tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${formatMoney(ctx.parsed.y)}` } }
+      },
+      scales: {
+        x: { ticks: { color: getChartTextColor() }, grid: { color: getChartGridColor() } },
+        y: {
+          ticks: { color: getChartTextColor(), callback: v => formatMoneyShort(v) },
+          grid: { color: getChartGridColor() },
+          beginAtZero: true
+        }
+      }
+    }
+  });
+}
+
+function renderCategoriaChart(data) {
+  destroyChart("categoria");
+  const byCat = {};
+  for (const r of data) {
+    const cat = r.categoria || "—";
+    byCat[cat] = (byCat[cat] || 0) + (Number(r.monto) || 0);
+  }
+  const labels = Object.keys(byCat);
+  setEmpty("categoria", labels.length === 0);
+  if (labels.length === 0) return;
+
+  const colorMap = { COMISSION: "#22a06b", OVERRIDES: "#e8a317", HERO: "#06a3b6" };
+  const colors = labels.map(l => colorMap[l] || "#64748b");
+
+  const ctx = document.getElementById("fd-chart-categoria");
+  fdCharts.categoria = new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels,
+      datasets: [{ data: labels.map(l => byCat[l]), backgroundColor: colors, borderWidth: 2, borderColor: document.body.dataset.theme === "dark" ? "#0f2a33" : "#fff" }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: "60%",
+      plugins: {
+        legend: { position: "bottom", labels: { color: getChartTextColor(), font: { size: 12 } } },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const total = ctx.dataset.data.reduce((s, v) => s + v, 0);
+              const pct = total ? ((ctx.parsed / total) * 100).toFixed(1) : 0;
+              return `${ctx.label}: ${formatMoney(ctx.parsed)} (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderCarriersChart(data) {
+  destroyChart("carriers");
+  const byCarrier = {};
+  for (const r of data) {
+    const c = r.descripcionDeposito || "—";
+    byCarrier[c] = (byCarrier[c] || 0) + (Number(r.monto) || 0);
+  }
+  const sorted = Object.entries(byCarrier).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  setEmpty("carriers", sorted.length === 0);
+  if (sorted.length === 0) return;
+
+  const ctx = document.getElementById("fd-chart-carriers");
+  fdCharts.carriers = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: sorted.map(([c]) => c),
+      datasets: [{
+        label: "Bruto",
+        data: sorted.map(([, v]) => v),
+        backgroundColor: "rgba(6,163,182,.7)",
+        borderColor: "#06a3b6",
+        borderWidth: 1.5,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: "y",
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (ctx) => formatMoney(ctx.parsed.x) } }
+      },
+      scales: {
+        x: { ticks: { color: getChartTextColor(), callback: v => formatMoneyShort(v) }, grid: { color: getChartGridColor() }, beginAtZero: true },
+        y: { ticks: { color: getChartTextColor(), font: { size: 11 } }, grid: { display: false } }
+      }
+    }
+  });
+}
+
+function renderBrokersChart(data) {
+  destroyChart("brokers");
+  const byBroker = {};
+  for (const r of data) {
+    if (!Array.isArray(r.payouts)) continue;
+    for (const p of r.payouts) {
+      const b = p.broker || "—";
+      byBroker[b] = (byBroker[b] || 0) + (Number(p.saldo) || 0);
+    }
+  }
+  // Top 8 brokers + "Otros" si hay más
+  let entries = Object.entries(byBroker).sort((a, b) => b[1] - a[1]);
+  if (entries.length > 8) {
+    const top = entries.slice(0, 8);
+    const otros = entries.slice(8).reduce((s, [, v]) => s + v, 0);
+    entries = [...top, ["Otros", otros]];
+  }
+  setEmpty("brokers", entries.length === 0);
+  if (entries.length === 0) return;
+
+  const ctx = document.getElementById("fd-chart-brokers");
+  fdCharts.brokers = new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: entries.map(([b]) => b),
+      datasets: [{
+        data: entries.map(([, v]) => v),
+        backgroundColor: entries.map((_, i) => FD_PALETTE[i % FD_PALETTE.length]),
+        borderWidth: 2,
+        borderColor: document.body.dataset.theme === "dark" ? "#0f2a33" : "#fff"
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: "55%",
+      plugins: {
+        legend: { position: "right", labels: { color: getChartTextColor(), font: { size: 11 }, boxWidth: 12, padding: 8 } },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const total = ctx.dataset.data.reduce((s, v) => s + v, 0);
+              const pct = total ? ((ctx.parsed / total) * 100).toFixed(1) : 0;
+              return `${ctx.label}: ${formatMoney(ctx.parsed)} (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function setText(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+function formatMoneyShort(n) {
+  const abs = Math.abs(n);
+  if (abs >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
+  if (abs >= 1e3) return `$${(n / 1e3).toFixed(0)}K`;
+  return `$${Math.round(n)}`;
 }
 
 async function openIngresoModal(existing) {

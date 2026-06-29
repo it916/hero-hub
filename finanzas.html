@@ -150,22 +150,70 @@
             <p class="admin-note" style="margin:4px 0 0;">Resumen de ingresos, payouts a brokers y ganancia neta de Hero.</p>
           </div>
           <div class="ad-toolbar-actions">
-            <select id="fin-period" class="ad-select">
-              <option value="month" selected>Este mes</option>
-              <option value="prevMonth">Mes pasado</option>
-              <option value="ytd">Año actual</option>
+            <select id="fd-period" class="fi-filter-select">
+              <option value="year" selected>Año actual</option>
+              <option value="month">Este mes</option>
+              <option value="lastMonth">Mes pasado</option>
+              <option value="lastYear">Año anterior</option>
+              <option value="all">Todo</option>
+              <option value="custom">Personalizado…</option>
             </select>
-            <sl-button id="fin-refresh" variant="primary" size="medium">
+            <div id="fd-custom-range" class="fi-custom-range" hidden>
+              <input type="text" id="fd-date-from" class="fi-custom-input" placeholder="Desde" autocomplete="off">
+              <span class="fi-custom-sep">→</span>
+              <input type="text" id="fd-date-to" class="fi-custom-input" placeholder="Hasta" autocomplete="off">
+            </div>
+            <sl-button id="fd-refresh" variant="primary" size="medium">
               <i data-lucide="refresh-cw" slot="prefix" style="width:14px;height:14px;"></i>
               Actualizar
             </sl-button>
           </div>
         </div>
 
-        <div class="ad-loading" style="padding:48px;text-align:center;color:var(--muted);">
-          <i data-lucide="hammer" style="width:32px;height:32px;color:var(--accent);"></i>
-          <p style="margin:12px 0 4px;font-weight:600;">Dashboard en construcción</p>
-          <p style="font-size:13px;margin:0;">Los KPIs (Monto bruto · Pagado · Ganancia) y gráficos aparecerán aquí.</p>
+        <div class="fd-kpis">
+          <div class="fd-kpi">
+            <div class="fd-kpi-label">Bruto</div>
+            <div class="fd-kpi-value" id="fd-kpi-bruto">$0.00</div>
+          </div>
+          <div class="fd-kpi">
+            <div class="fd-kpi-label">Pagado a brokers</div>
+            <div class="fd-kpi-value" id="fd-kpi-pagado">$0.00</div>
+          </div>
+          <div class="fd-kpi fd-kpi-highlight">
+            <div class="fd-kpi-label">Ganancia Hero</div>
+            <div class="fd-kpi-value" id="fd-kpi-ganancia">$0.00</div>
+          </div>
+          <div class="fd-kpi">
+            <div class="fd-kpi-label">Ingresos</div>
+            <div class="fd-kpi-value" id="fd-kpi-count">0</div>
+            <div class="fd-kpi-sub" id="fd-kpi-count-sub">0 con payouts</div>
+          </div>
+        </div>
+
+        <div class="fd-charts-row">
+          <div class="fd-chart-card">
+            <h3 class="fd-chart-title">Bruto vs Ganancia por mes</h3>
+            <div class="fd-chart-wrap"><canvas id="fd-chart-monthly"></canvas></div>
+            <div class="fd-chart-empty" id="fd-chart-monthly-empty" style="display:none;">Sin datos en el periodo</div>
+          </div>
+          <div class="fd-chart-card">
+            <h3 class="fd-chart-title">Distribución por categoría</h3>
+            <div class="fd-chart-wrap"><canvas id="fd-chart-categoria"></canvas></div>
+            <div class="fd-chart-empty" id="fd-chart-categoria-empty" style="display:none;">Sin datos en el periodo</div>
+          </div>
+        </div>
+
+        <div class="fd-charts-row">
+          <div class="fd-chart-card">
+            <h3 class="fd-chart-title">Top 10 carriers por monto</h3>
+            <div class="fd-chart-wrap"><canvas id="fd-chart-carriers"></canvas></div>
+            <div class="fd-chart-empty" id="fd-chart-carriers-empty" style="display:none;">Sin datos en el periodo</div>
+          </div>
+          <div class="fd-chart-card">
+            <h3 class="fd-chart-title">Top brokers por payouts</h3>
+            <div class="fd-chart-wrap"><canvas id="fd-chart-brokers"></canvas></div>
+            <div class="fd-chart-empty" id="fd-chart-brokers-empty" style="display:none;">Sin payouts en el periodo</div>
+          </div>
         </div>
       </section>
 
@@ -202,7 +250,13 @@
               <option value="last-month">Mes pasado</option>
               <option value="this-year">Año actual</option>
               <option value="last-year">Año anterior</option>
+              <option value="custom">Personalizado…</option>
             </select>
+            <div id="fi-custom-range" class="fi-custom-range" hidden>
+              <input type="text" id="fi-date-from" class="fi-custom-input" placeholder="Desde" autocomplete="off">
+              <span class="fi-custom-sep">→</span>
+              <input type="text" id="fi-date-to" class="fi-custom-input" placeholder="Hasta" autocomplete="off">
+            </div>
           </div>
           <div class="fi-filter-group">
             <label for="fi-filter-tipo">Tipo</label>

@@ -1,5 +1,23 @@
 [
   {
+    "id": "2026-06-29-finanzas-dashboard",
+    "version": "v2.3",
+    "date": "2026-06-29",
+    "category": "feat",
+    "scope": "finanzas",
+    "audience": "admin",
+    "title": "Dashboard de Finanzas + rango personalizado",
+    "items": [
+      "Dashboard con 4 KPIs (Bruto, Pagado, Ganancia, # Ingresos) y 4 gráficos Chart.js",
+      "Línea Bruto vs Ganancia por mes",
+      "Donut de distribución por categoría (COMISSION/OVERRIDES/HERO)",
+      "Bar horizontal Top 10 carriers por monto",
+      "Donut Top brokers por payouts",
+      "Selector de periodo (Año actual / Este mes / Mes pasado / Año anterior / Todo / Personalizado)",
+      "Rango personalizado con date pickers (Flatpickr, locale ES) en Dashboard y Lista de Ingresos"
+    ]
+  },
+  {
     "id": "2026-06-29-finanzas-migracion-historica",
     "version": "v2.3",
     "date": "2026-06-29",

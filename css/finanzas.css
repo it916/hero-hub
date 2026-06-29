@@ -229,6 +229,104 @@ body[data-theme="dark"] .fc-link { color: #3dbccc; }
 }
 
 /* ─────────────────────────────────────────────
+   Dashboard de Finanzas — KPIs + charts
+   ───────────────────────────────────────────── */
+.fd-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+@media (max-width: 900px) {
+  .fd-kpis { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+  .fd-kpis { grid-template-columns: 1fr; }
+}
+
+.fd-kpi {
+  background: var(--card, #fff);
+  border: 1px solid var(--border, #e8e8e8);
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: var(--shadow-sm);
+}
+.fd-kpi-highlight {
+  background: linear-gradient(135deg, var(--cyan), var(--cyan-2));
+  border-color: var(--cyan);
+  color: #fff;
+}
+.fd-kpi-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--muted, #64748b);
+  margin-bottom: 8px;
+}
+.fd-kpi-highlight .fd-kpi-label { color: rgba(255,255,255,.85); }
+.fd-kpi-value {
+  font-family: var(--mono, "JetBrains Mono", monospace);
+  font-size: 24px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text, #1a1a1a);
+  line-height: 1.1;
+}
+.fd-kpi-highlight .fd-kpi-value { color: #fff; }
+.fd-kpi-sub {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 6px;
+  font-weight: 500;
+}
+.fd-kpi-highlight .fd-kpi-sub { color: rgba(255,255,255,.75); }
+body[data-theme="dark"] .fd-kpi { background: var(--card); border-color: var(--border); }
+
+.fd-charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+@media (max-width: 900px) {
+  .fd-charts-row { grid-template-columns: 1fr; }
+}
+
+.fd-chart-card {
+  background: var(--card, #fff);
+  border: 1px solid var(--border, #e8e8e8);
+  border-radius: 14px;
+  padding: 16px 18px 18px;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+}
+body[data-theme="dark"] .fd-chart-card { background: var(--card); border-color: var(--border); }
+.fd-chart-title {
+  margin: 0 0 12px;
+  font-family: var(--display, "Bricolage Grotesque");
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text, #1a1a1a);
+  letter-spacing: 0.3px;
+}
+.fd-chart-wrap {
+  position: relative;
+  height: 280px;
+}
+.fd-chart-empty {
+  position: absolute;
+  inset: 50px 16px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted, #64748b);
+  font-size: 13px;
+  font-style: italic;
+  pointer-events: none;
+}
+
+/* ─────────────────────────────────────────────
    Lista de Ingresos — filtros + summary bar
    ───────────────────────────────────────────── */
 .fi-filters-row {
@@ -277,6 +375,42 @@ body[data-theme="dark"] .fi-filter-select {
 body[data-theme="dark"] .fi-filter-select option {
   background: var(--card);
   color: var(--text);
+}
+
+/* Rango personalizado — dos inputs date que aparecen al elegir "Personalizado" */
+.fi-custom-range {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.fi-custom-range[hidden] { display: none; }
+.fi-custom-input {
+  width: 120px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border, #d4d4d8);
+  border-radius: 6px;
+  background: var(--card, #fff);
+  color: var(--text, #1a1a1a);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.fi-custom-input:focus {
+  outline: none;
+  border-color: #06a3b6;
+  box-shadow: 0 0 0 3px rgba(6, 163, 182, 0.15);
+}
+.fi-custom-sep {
+  color: var(--muted, #64748b);
+  font-size: 14px;
+}
+body[data-theme="dark"] .fi-custom-input {
+  background: var(--card);
+  border-color: var(--border);
+  color: var(--text);
+  color-scheme: dark;
 }
 
 .fi-summary-bar {
