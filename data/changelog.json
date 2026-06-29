@@ -1,5 +1,20 @@
 [
   {
+    "id": "2026-06-29-finanzas-migracion-historica",
+    "version": "v2.3",
+    "date": "2026-06-29",
+    "category": "feat",
+    "scope": "finanzas",
+    "audience": "admin",
+    "title": "Migración histórica de ingresos ENE-MAY 2026",
+    "items": [
+      "233 ingresos del Excel original importados a Firestore",
+      "Bruto total $364,410 · Pagado $38,461 · Ganancia $325,949",
+      "Carriers nuevos agregados automáticamente al dropdown: CIGNA, OSCAR",
+      "Saldos del Excel (negativos) convertidos a positivos siguiendo la convención del modal de captura"
+    ]
+  },
+  {
     "id": "2026-06-29-finanzas-modulo",
     "version": "v2.3",
     "date": "2026-06-29",
