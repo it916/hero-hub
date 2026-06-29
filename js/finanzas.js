@@ -40,6 +40,10 @@ document.addEventListener("DOMContentLoaded", () => {
   bindIngresosLazyInit();
   bindDashboardStaticHandlers();
   bindDashboardLazyInit();
+  bindComparativasStaticHandlers();
+  bindComparativasLazyInit();
+  bindExportarStaticHandlers();
+  bindExportarLazyInit();
 });
 
 
@@ -1379,7 +1383,7 @@ async function initDashboardPanel() {
   }
 }
 
-function filterByPeriodo(rows, periodo) {
+function filterByPeriodo(rows, periodo, fromDate = null, toDate = null) {
   if (periodo === "all") return rows;
   const now = new Date();
   const cY = now.getFullYear();
@@ -1399,8 +1403,8 @@ function filterByPeriodo(rows, periodo) {
       return y === lm.getFullYear() && m === lm.getMonth();
     }
     if (periodo === "custom") {
-      if (!fdState.fromDate || !fdState.toDate) return true;
-      return d >= fdState.fromDate && d <= fdState.toDate;
+      if (!fromDate || !toDate) return true;
+      return d >= fromDate && d <= toDate;
     }
     return true;
   });
@@ -1449,7 +1453,7 @@ function ensureFdCustomPickers() {
 }
 
 function renderDashboard() {
-  const data = filterByPeriodo(ingresosData, fdState.periodo);
+  const data = filterByPeriodo(ingresosData, fdState.periodo, fdState.fromDate, fdState.toDate);
 
   // KPIs
   const bruto = data.reduce((s, r) => s + (Number(r.monto) || 0), 0);
@@ -1701,6 +1705,500 @@ function formatMoneyShort(n) {
   if (abs >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
   if (abs >= 1e3) return `$${(n / 1e3).toFixed(0)}K`;
   return `$${Math.round(n)}`;
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// COMPARATIVAS — 3 gráficos: bar agrupado mes a mes,
+// líneas por tipoPago, stacked bar de payouts por broker.
+// ═══════════════════════════════════════════════════════════
+let fcompInited = false;
+const fcompCharts = {};
+const fcompState = { periodo: "year", fromDate: null, toDate: null };
+let fcompCustomPickers = null;
+
+function bindComparativasStaticHandlers() {
+  const periodSel = document.getElementById("fcomp-period");
+  if (periodSel && !periodSel.dataset.bound) {
+    periodSel.dataset.bound = "1";
+    periodSel.addEventListener("change", (e) => {
+      fcompState.periodo = e.target.value;
+      toggleFcompCustomRange(e.target.value === "custom");
+      if (fcompInited) renderComparativas();
+    });
+  }
+}
+
+function bindComparativasLazyInit() {
+  document.querySelectorAll('.admin-sidebar-link[data-tab="comparativas"]').forEach(b => {
+    if (b.dataset.fcompBound) return;
+    b.dataset.fcompBound = "1";
+    b.addEventListener("click", () => {
+      if (!fcompInited) initComparativasPanel();
+    });
+  });
+}
+
+async function initComparativasPanel() {
+  if (fcompInited) return;
+  fcompInited = true;
+  try {
+    if (ingresosData.length === 0) await loadIngresos();
+    renderComparativas();
+  } catch (e) {
+    console.error("Error inicializando Comparativas:", e);
+    fcompInited = false;
+    alert(`No se pudo cargar Comparativas:\n${e?.message || e}`);
+  }
+}
+
+function toggleFcompCustomRange(show) {
+  const wrap = document.getElementById("fcomp-custom-range");
+  if (!wrap) return;
+  wrap.hidden = !show;
+  if (show) ensureFcompCustomPickers();
+}
+
+function ensureFcompCustomPickers() {
+  if (fcompCustomPickers) return;
+  const fromEl = document.getElementById("fcomp-date-from");
+  const toEl = document.getElementById("fcomp-date-to");
+  if (!fromEl || !toEl || typeof flatpickr === "undefined") return;
+  const today = new Date();
+  const yearStart = new Date(today.getFullYear(), 0, 1);
+  const fp1 = flatpickr(fromEl, {
+    locale: "es", dateFormat: "m/d/Y", defaultDate: yearStart,
+    onChange: ([d]) => { fcompState.fromDate = d ? startOfDay(d) : null; if (d && fp2) fp2.set("minDate", d); if (fcompInited) renderComparativas(); }
+  });
+  const fp2 = flatpickr(toEl, {
+    locale: "es", dateFormat: "m/d/Y", defaultDate: today,
+    onChange: ([d]) => { fcompState.toDate = d ? endOfDay(d) : null; if (d && fp1) fp1.set("maxDate", d); if (fcompInited) renderComparativas(); }
+  });
+  fcompCustomPickers = { fp1, fp2 };
+  fcompState.fromDate = startOfDay(yearStart);
+  fcompState.toDate = endOfDay(today);
+}
+
+function renderComparativas() {
+  const data = filterByPeriodo(ingresosData, fcompState.periodo, fcompState.fromDate, fcompState.toDate);
+  renderCompMonthlyBars(data);
+  renderCompTipoLines(data);
+  renderCompBrokerStack(data);
+}
+
+function destroyFcompChart(key) {
+  if (fcompCharts[key]) { fcompCharts[key].destroy(); delete fcompCharts[key]; }
+}
+
+function renderCompMonthlyBars(data) {
+  destroyFcompChart("bars");
+  const byMonth = {};
+  for (const r of data) {
+    if (!r.mes) continue;
+    if (!byMonth[r.mes]) byMonth[r.mes] = { bruto: 0, pagado: 0, ganancia: 0 };
+    byMonth[r.mes].bruto += Number(r.monto) || 0;
+    byMonth[r.mes].pagado += Number(r.pagado) || 0;
+    byMonth[r.mes].ganancia += Number(r.ganancia) || 0;
+  }
+  const meses = Object.keys(byMonth).sort((a, b) => monthSortKey(a) - monthSortKey(b));
+  setFcompEmpty("bars", meses.length === 0);
+  if (meses.length === 0) return;
+
+  fcompCharts.bars = new Chart(document.getElementById("fcomp-chart-bars"), {
+    type: "bar",
+    data: {
+      labels: meses,
+      datasets: [
+        { label: "Bruto", data: meses.map(m => byMonth[m].bruto), backgroundColor: "rgba(6,163,182,.75)", borderColor: "#06a3b6", borderWidth: 1, borderRadius: 4 },
+        { label: "Pagado", data: meses.map(m => byMonth[m].pagado), backgroundColor: "rgba(232,163,23,.75)", borderColor: "#e8a317", borderWidth: 1, borderRadius: 4 },
+        { label: "Ganancia", data: meses.map(m => byMonth[m].ganancia), backgroundColor: "rgba(34,160,107,.75)", borderColor: "#22a06b", borderWidth: 1, borderRadius: 4 }
+      ]
+    },
+    options: commonBarLineOpts({ stacked: false, tooltip: "money" })
+  });
+}
+
+function renderCompTipoLines(data) {
+  destroyFcompChart("tipo");
+  const TIPOS = ["LIFE", "SUPP", "ACA", "MEDICARE", "OTROS"];
+  const COLOR_TIPO = { LIFE: "#06a3b6", SUPP: "#9333ea", ACA: "#c0392b", MEDICARE: "#e8a317", OTROS: "#5b21b6" };
+
+  const byMonthTipo = {};
+  for (const r of data) {
+    if (!r.mes) continue;
+    if (!byMonthTipo[r.mes]) byMonthTipo[r.mes] = {};
+    const t = r.tipoPago || "OTROS";
+    byMonthTipo[r.mes][t] = (byMonthTipo[r.mes][t] || 0) + (Number(r.monto) || 0);
+  }
+  const meses = Object.keys(byMonthTipo).sort((a, b) => monthSortKey(a) - monthSortKey(b));
+  setFcompEmpty("tipo", meses.length === 0);
+  if (meses.length === 0) return;
+
+  const datasets = TIPOS.map(t => ({
+    label: t,
+    data: meses.map(m => byMonthTipo[m][t] || 0),
+    borderColor: COLOR_TIPO[t],
+    backgroundColor: COLOR_TIPO[t] + "22",
+    tension: 0.3,
+    borderWidth: 2,
+    fill: false
+  }));
+
+  fcompCharts.tipo = new Chart(document.getElementById("fcomp-chart-tipo"), {
+    type: "line",
+    data: { labels: meses, datasets },
+    options: commonBarLineOpts({ stacked: false, tooltip: "money" })
+  });
+}
+
+function renderCompBrokerStack(data) {
+  destroyFcompChart("brokers");
+  const byMonthBroker = {};
+  const allBrokers = new Set();
+  for (const r of data) {
+    if (!r.mes || !Array.isArray(r.payouts) || !r.payouts.length) continue;
+    if (!byMonthBroker[r.mes]) byMonthBroker[r.mes] = {};
+    for (const p of r.payouts) {
+      const b = p.broker || "—";
+      allBrokers.add(b);
+      byMonthBroker[r.mes][b] = (byMonthBroker[r.mes][b] || 0) + (Number(p.saldo) || 0);
+    }
+  }
+  const meses = Object.keys(byMonthBroker).sort((a, b) => monthSortKey(a) - monthSortKey(b));
+  setFcompEmpty("brokers", meses.length === 0);
+  if (meses.length === 0) return;
+
+  // Tomar top brokers globalmente y agrupar el resto en "Otros"
+  const brokerTotals = {};
+  for (const m of meses) {
+    for (const [b, v] of Object.entries(byMonthBroker[m])) {
+      brokerTotals[b] = (brokerTotals[b] || 0) + v;
+    }
+  }
+  const topN = 7;
+  const topBrokers = Object.entries(brokerTotals).sort((a, b) => b[1] - a[1]).slice(0, topN).map(([b]) => b);
+  const useBrokers = topBrokers.length < allBrokers.size ? [...topBrokers, "Otros"] : topBrokers;
+
+  const datasets = useBrokers.map((b, i) => ({
+    label: b,
+    data: meses.map(m => {
+      if (b === "Otros") {
+        return Object.entries(byMonthBroker[m] || {})
+          .filter(([k]) => !topBrokers.includes(k))
+          .reduce((s, [, v]) => s + v, 0);
+      }
+      return byMonthBroker[m]?.[b] || 0;
+    }),
+    backgroundColor: FD_PALETTE[i % FD_PALETTE.length],
+    borderWidth: 0
+  }));
+
+  fcompCharts.brokers = new Chart(document.getElementById("fcomp-chart-brokers"), {
+    type: "bar",
+    data: { labels: meses, datasets },
+    options: commonBarLineOpts({ stacked: true, tooltip: "money" })
+  });
+}
+
+function commonBarLineOpts({ stacked = false, tooltip = "money" } = {}) {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: "bottom", labels: { color: getChartTextColor(), font: { size: 12 } } },
+      tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${formatMoney(ctx.parsed.y ?? ctx.parsed)}` } }
+    },
+    scales: {
+      x: { stacked, ticks: { color: getChartTextColor() }, grid: { color: getChartGridColor() } },
+      y: { stacked, beginAtZero: true, ticks: { color: getChartTextColor(), callback: v => formatMoneyShort(v) }, grid: { color: getChartGridColor() } }
+    }
+  };
+}
+
+function setFcompEmpty(key, isEmpty) {
+  const el = document.getElementById(`fcomp-chart-${key}-empty`);
+  if (el) el.style.display = isEmpty ? "" : "none";
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// EXPORTAR — CSVs + reporte ejecutivo para imprimir
+// ═══════════════════════════════════════════════════════════
+let fexpInited = false;
+const fexpState = { periodo: "year", fromDate: null, toDate: null };
+let fexpCustomPickers = null;
+
+function bindExportarStaticHandlers() {
+  const periodSel = document.getElementById("fexp-period");
+  if (periodSel && !periodSel.dataset.bound) {
+    periodSel.dataset.bound = "1";
+    periodSel.addEventListener("change", (e) => {
+      fexpState.periodo = e.target.value;
+      toggleFexpCustomRange(e.target.value === "custom");
+      if (fexpInited) updateExportarSummary();
+    });
+  }
+
+  const csvIng = document.getElementById("fexp-csv-ingresos");
+  if (csvIng && !csvIng.dataset.bound) {
+    csvIng.dataset.bound = "1";
+    csvIng.addEventListener("click", exportIngresosCSV);
+  }
+  const csvPay = document.getElementById("fexp-csv-payouts");
+  if (csvPay && !csvPay.dataset.bound) {
+    csvPay.dataset.bound = "1";
+    csvPay.addEventListener("click", exportPayoutsCSV);
+  }
+  const printBtn = document.getElementById("fexp-print-report");
+  if (printBtn && !printBtn.dataset.bound) {
+    printBtn.dataset.bound = "1";
+    printBtn.addEventListener("click", generatePrintReport);
+  }
+}
+
+function bindExportarLazyInit() {
+  document.querySelectorAll('.admin-sidebar-link[data-tab="exportar"]').forEach(b => {
+    if (b.dataset.fexpBound) return;
+    b.dataset.fexpBound = "1";
+    b.addEventListener("click", () => {
+      if (!fexpInited) initExportarPanel();
+    });
+  });
+}
+
+async function initExportarPanel() {
+  if (fexpInited) return;
+  fexpInited = true;
+  try {
+    if (ingresosData.length === 0) await loadIngresos();
+    updateExportarSummary();
+  } catch (e) {
+    console.error("Error inicializando Exportar:", e);
+    fexpInited = false;
+    alert(`No se pudo cargar Exportar:\n${e?.message || e}`);
+  }
+}
+
+function toggleFexpCustomRange(show) {
+  const wrap = document.getElementById("fexp-custom-range");
+  if (!wrap) return;
+  wrap.hidden = !show;
+  if (show) ensureFexpCustomPickers();
+}
+
+function ensureFexpCustomPickers() {
+  if (fexpCustomPickers) return;
+  const fromEl = document.getElementById("fexp-date-from");
+  const toEl = document.getElementById("fexp-date-to");
+  if (!fromEl || !toEl || typeof flatpickr === "undefined") return;
+  const today = new Date();
+  const yearStart = new Date(today.getFullYear(), 0, 1);
+  const fp1 = flatpickr(fromEl, {
+    locale: "es", dateFormat: "m/d/Y", defaultDate: yearStart,
+    onChange: ([d]) => { fexpState.fromDate = d ? startOfDay(d) : null; if (d && fp2) fp2.set("minDate", d); updateExportarSummary(); }
+  });
+  const fp2 = flatpickr(toEl, {
+    locale: "es", dateFormat: "m/d/Y", defaultDate: today,
+    onChange: ([d]) => { fexpState.toDate = d ? endOfDay(d) : null; if (d && fp1) fp1.set("maxDate", d); updateExportarSummary(); }
+  });
+  fexpCustomPickers = { fp1, fp2 };
+  fexpState.fromDate = startOfDay(yearStart);
+  fexpState.toDate = endOfDay(today);
+}
+
+function exportarData() {
+  return filterByPeriodo(ingresosData, fexpState.periodo, fexpState.fromDate, fexpState.toDate);
+}
+
+function periodoLabel() {
+  const labels = {
+    year: "Año actual", month: "Este mes", lastMonth: "Mes pasado",
+    lastYear: "Año anterior", all: "Todo", custom: "Personalizado"
+  };
+  if (fexpState.periodo === "custom" && fexpState.fromDate && fexpState.toDate) {
+    return `${formatDateShort(fexpState.fromDate)}–${formatDateShort(fexpState.toDate)}`;
+  }
+  return labels[fexpState.periodo] || "Periodo";
+}
+
+function formatDateShort(d) {
+  if (!d) return "";
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${m}-${day}-${d.getFullYear()}`;
+}
+
+function updateExportarSummary() {
+  const data = exportarData();
+  const count = data.length;
+  const bruto = data.reduce((s, r) => s + (Number(r.monto) || 0), 0);
+  setText("fexp-summary-count", `${count} ingreso${count === 1 ? "" : "s"}`);
+  setText("fexp-summary-bruto", `${formatMoney(bruto)} bruto`);
+}
+
+function exportIngresosCSV() {
+  const data = exportarData();
+  if (!data.length) { alert("No hay ingresos en el periodo seleccionado."); return; }
+  const rows = [[
+    "Fecha", "Mes", "Tipo de pago", "Categoría",
+    "Descripción depósito", "Descripción transacción",
+    "Monto", "Pagado", "Ganancia", "# Payouts", "Notas",
+    "Creado por", "Archivo original"
+  ]];
+  for (const r of data) {
+    rows.push([
+      r.fecha || "",
+      r.mes || "",
+      r.tipoPago || "",
+      r.categoria || "",
+      r.descripcionDeposito || "",
+      r.descripcionTransaccion || "",
+      r.monto ?? 0,
+      r.pagado ?? 0,
+      r.ganancia ?? 0,
+      Array.isArray(r.payouts) ? r.payouts.length : 0,
+      r.notas || "",
+      r.creadoPor || "",
+      r.archivoOriginalDriveUrl || ""
+    ]);
+  }
+  downloadCSV(`hero-finanzas-ingresos-${slugify(periodoLabel())}.csv`, rows);
+}
+
+function exportPayoutsCSV() {
+  const data = exportarData();
+  const rows = [[
+    "Fecha ingreso", "Mes", "Desc. depósito", "Categoría", "Monto ingreso",
+    "Broker", "Saldo (payout)", "Reporte file"
+  ]];
+  let count = 0;
+  for (const r of data) {
+    if (!Array.isArray(r.payouts) || !r.payouts.length) continue;
+    for (const p of r.payouts) {
+      rows.push([
+        r.fecha || "",
+        r.mes || "",
+        r.descripcionDeposito || "",
+        r.categoria || "",
+        r.monto ?? 0,
+        p.broker || "",
+        p.saldo ?? 0,
+        p.reporteFile || ""
+      ]);
+      count++;
+    }
+  }
+  if (count === 0) { alert("No hay payouts en el periodo seleccionado."); return; }
+  downloadCSV(`hero-finanzas-payouts-${slugify(periodoLabel())}.csv`, rows);
+}
+
+function slugify(s) {
+  return String(s || "")
+    .toLowerCase()
+    .replace(/[áéíóú]/g, m => ({á:"a",é:"e",í:"i",ó:"o",ú:"u"}[m]))
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function csvEscape(v) {
+  if (v == null) return "";
+  const s = String(v);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function downloadCSV(filename, rows) {
+  const csv = rows.map(r => r.map(csvEscape).join(",")).join("\r\n");
+  const bom = "﻿"; // UTF-8 BOM para que Excel abra los acentos bien
+  const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 100);
+}
+
+function generatePrintReport() {
+  const data = exportarData();
+  if (!data.length) { alert("No hay ingresos en el periodo seleccionado."); return; }
+
+  // Aggregate por mes
+  const byMonth = {};
+  for (const r of data) {
+    const m = r.mes || "—";
+    if (!byMonth[m]) byMonth[m] = { count: 0, bruto: 0, pagado: 0, ganancia: 0 };
+    byMonth[m].count += 1;
+    byMonth[m].bruto += Number(r.monto) || 0;
+    byMonth[m].pagado += Number(r.pagado) || 0;
+    byMonth[m].ganancia += Number(r.ganancia) || 0;
+  }
+  const meses = Object.keys(byMonth).sort((a, b) => monthSortKey(a) - monthSortKey(b));
+
+  const totalBruto = data.reduce((s, r) => s + (Number(r.monto) || 0), 0);
+  const totalPagado = data.reduce((s, r) => s + (Number(r.pagado) || 0), 0);
+  const totalGanancia = data.reduce((s, r) => s + (Number(r.ganancia) || 0), 0);
+  const totalCount = data.length;
+
+  const now = new Date();
+  const fechaGen = now.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
+
+  const html = `
+    <div class="fpr-header">
+      <div class="fpr-brand">
+        <img src="icons/favicon-hero.png" alt="Hero">
+        <div>
+          <h1>Hero Insurance USA</h1>
+          <div class="fpr-sub">Hero Hub · Módulo de Finanzas</div>
+        </div>
+      </div>
+      <div class="fpr-meta">
+        <strong>${escapeHtml(periodoLabel())}</strong><br>
+        Generado: ${fechaGen}<br>
+        Por: ${escapeHtml(currentUserEmail || "—")}
+      </div>
+    </div>
+
+    <h2 class="fpr-title">Resumen Ejecutivo</h2>
+    <div class="fpr-period">Totales del periodo seleccionado</div>
+
+    <div class="fpr-kpis">
+      <div class="fpr-kpi"><div class="fpr-kpi-label">Bruto</div><div class="fpr-kpi-value">${formatMoney(totalBruto)}</div></div>
+      <div class="fpr-kpi"><div class="fpr-kpi-label">Pagado</div><div class="fpr-kpi-value">${formatMoney(totalPagado)}</div></div>
+      <div class="fpr-kpi fpr-kpi-highlight"><div class="fpr-kpi-label">Ganancia</div><div class="fpr-kpi-value">${formatMoney(totalGanancia)}</div></div>
+      <div class="fpr-kpi"><div class="fpr-kpi-label">Ingresos</div><div class="fpr-kpi-value">${totalCount}</div></div>
+    </div>
+
+    <div class="fpr-section-title">Breakdown mes a mes</div>
+    <table class="fpr-table">
+      <thead>
+        <tr><th>Mes</th><th># Ingresos</th><th class="num">Bruto</th><th class="num">Pagado</th><th class="num">Ganancia</th></tr>
+      </thead>
+      <tbody>
+        ${meses.map(m => `
+          <tr>
+            <td>${escapeHtml(m)}</td>
+            <td>${byMonth[m].count}</td>
+            <td class="num">${formatMoney(byMonth[m].bruto)}</td>
+            <td class="num">${formatMoney(byMonth[m].pagado)}</td>
+            <td class="num">${formatMoney(byMonth[m].ganancia)}</td>
+          </tr>
+        `).join("")}
+      </tbody>
+      <tfoot>
+        <tr><td>Total</td><td>${totalCount}</td><td class="num">${formatMoney(totalBruto)}</td><td class="num">${formatMoney(totalPagado)}</td><td class="num">${formatMoney(totalGanancia)}</td></tr>
+      </tfoot>
+    </table>
+
+    <div class="fpr-footer">
+      Documento generado automáticamente por Hero Hub.
+      Las cifras corresponden a los registros de la colección <code>finanzas-ingresos</code> al momento de la generación.
+    </div>
+  `;
+
+  const report = document.getElementById("fexp-print-report");
+  report.innerHTML = html;
+  window.print();
 }
 
 async function openIngresoModal(existing) {

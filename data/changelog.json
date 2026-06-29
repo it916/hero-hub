@@ -1,5 +1,20 @@
 [
   {
+    "id": "2026-06-29-finanzas-comparativas-exportar",
+    "version": "v2.3",
+    "date": "2026-06-29",
+    "category": "feat",
+    "scope": "finanzas",
+    "audience": "admin",
+    "title": "Comparativas + Exportar en Finanzas",
+    "items": [
+      "Comparativas: bar agrupado Bruto/Pagado/Ganancia por mes, líneas por tipo de pago, stacked bar de payouts por broker",
+      "Exportar a CSV: lista de ingresos (13 columnas) y detalle de payouts (8 columnas), con BOM UTF-8 para Excel",
+      "Reporte ejecutivo: vista de impresión con KPIs + tabla mes a mes (Guardar como PDF desde el navegador)",
+      "Rango personalizado disponible en ambos tabs (Flatpickr con locale ES)"
+    ]
+  },
+  {
     "id": "2026-06-29-finanzas-dashboard",
     "version": "v2.3",
     "date": "2026-06-29",

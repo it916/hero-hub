@@ -229,6 +229,236 @@ body[data-theme="dark"] .fc-link { color: #3dbccc; }
 }
 
 /* ─────────────────────────────────────────────
+   Exportar — tarjetas + resumen del periodo
+   ───────────────────────────────────────────── */
+.fexp-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, rgba(6,163,182,.06), rgba(6,163,182,.02));
+  border: 1px solid rgba(6,163,182,.18);
+  border-radius: 10px;
+  font-size: 13px;
+}
+body[data-theme="dark"] .fexp-summary {
+  background: linear-gradient(135deg, rgba(6,163,182,.12), rgba(6,163,182,.04));
+  border-color: rgba(6,163,182,.32);
+}
+.fexp-summary-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--muted, #64748b);
+}
+.fexp-summary-value {
+  font-family: var(--mono, "JetBrains Mono", monospace);
+  font-weight: 700;
+  color: var(--text, #1a1a1a);
+  font-variant-numeric: tabular-nums;
+}
+.fexp-summary-sep { color: var(--muted); }
+body[data-theme="dark"] .fexp-summary-value { color: var(--text); }
+
+.fexp-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.fexp-card-wide { grid-column: 1 / -1; }
+@media (max-width: 800px) {
+  .fexp-grid { grid-template-columns: 1fr; }
+  .fexp-card-wide { grid-column: auto; }
+}
+
+.fexp-card {
+  background: var(--card, #fff);
+  border: 1px solid var(--border, #e8e8e8);
+  border-radius: 14px;
+  padding: 18px 20px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+body[data-theme="dark"] .fexp-card { background: var(--card); border-color: var(--border); }
+.fexp-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  background: rgba(6,163,182,.10);
+  color: var(--cyan, #06a3b6);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+body[data-theme="dark"] .fexp-icon {
+  background: rgba(6,163,182,.22);
+  color: #3dbccc;
+}
+.fexp-icon i[data-lucide],
+.fexp-icon svg { width: 22px; height: 22px; }
+.fexp-card h3 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+.fexp-card p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--muted);
+  flex: 1;
+}
+.fexp-card sl-button { align-self: flex-start; }
+
+/* ─────────────────────────────────────────────
+   Reporte ejecutivo (visible solo al imprimir)
+   ───────────────────────────────────────────── */
+#fexp-print-report { display: none; }
+
+@media print {
+  /* Esconder TODO menos el reporte */
+  body * { visibility: hidden; }
+  #fexp-print-report,
+  #fexp-print-report * { visibility: visible; }
+  #fexp-print-report {
+    display: block !important;
+    position: absolute;
+    left: 0; top: 0;
+    width: 100%;
+    padding: 24px 32px;
+    background: #fff !important;
+    color: #062a33 !important;
+    font-family: Inter, system-ui, sans-serif;
+  }
+}
+
+.fpr-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid #06a3b6;
+  padding-bottom: 12px;
+  margin-bottom: 18px;
+}
+.fpr-brand { display: flex; align-items: center; gap: 12px; }
+.fpr-brand img { width: 44px; height: 44px; }
+.fpr-brand h1 {
+  margin: 0;
+  font-size: 18px;
+  color: #062a33;
+  font-family: "Bricolage Grotesque", system-ui, sans-serif;
+  font-weight: 800;
+}
+.fpr-brand .fpr-sub {
+  font-size: 12px;
+  color: #5a7480;
+  margin-top: 2px;
+}
+.fpr-meta {
+  text-align: right;
+  font-size: 11px;
+  color: #5a7480;
+  line-height: 1.5;
+}
+.fpr-meta strong { color: #062a33; }
+
+.fpr-title {
+  font-family: "Bricolage Grotesque", system-ui, sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: #06a3b6;
+  margin: 0 0 6px;
+}
+.fpr-period {
+  font-size: 13px;
+  color: #5a7480;
+  margin-bottom: 18px;
+}
+
+.fpr-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 22px;
+}
+.fpr-kpi {
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.fpr-kpi.fpr-kpi-highlight { background: #06a3b6; color: #fff; border-color: #06a3b6; }
+.fpr-kpi-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #5a7480;
+}
+.fpr-kpi.fpr-kpi-highlight .fpr-kpi-label { color: rgba(255,255,255,.85); }
+.fpr-kpi-value {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 18px;
+  font-weight: 700;
+  color: #062a33;
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+.fpr-kpi.fpr-kpi-highlight .fpr-kpi-value { color: #fff; }
+
+.fpr-section-title {
+  font-family: "Bricolage Grotesque", system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #062a33;
+  margin: 18px 0 10px;
+  border-bottom: 1px solid #e8e8e8;
+  padding-bottom: 4px;
+}
+table.fpr-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+table.fpr-table th,
+table.fpr-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #e8e8e8;
+}
+table.fpr-table th {
+  background: #f0f4f8;
+  text-align: left;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #5a7480;
+}
+table.fpr-table td.num {
+  font-family: "JetBrains Mono", monospace;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+table.fpr-table tfoot td {
+  font-weight: 700;
+  border-top: 2px solid #06a3b6;
+  border-bottom: none;
+  background: #f0f4f8;
+}
+.fpr-footer {
+  margin-top: 22px;
+  padding-top: 10px;
+  border-top: 1px solid #e8e8e8;
+  font-size: 10.5px;
+  color: #5a7480;
+  text-align: center;
+}
+
+/* ─────────────────────────────────────────────
    Dashboard de Finanzas — KPIs + charts
    ───────────────────────────────────────────── */
 .fd-kpis {

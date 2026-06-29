@@ -380,14 +380,37 @@
         <div class="ad-toolbar">
           <div>
             <h2 style="margin:0;">📈 Comparativas</h2>
-            <p class="admin-note" style="margin:4px 0 0;">Flujo neto, tendencias mensuales y distribución por tipo, carrier o broker.</p>
+            <p class="admin-note" style="margin:4px 0 0;">Tendencias y distribuciones mes a mes para entender el flujo del módulo.</p>
+          </div>
+          <div class="ad-toolbar-actions">
+            <select id="fcomp-period" class="fi-filter-select">
+              <option value="year" selected>Año actual</option>
+              <option value="lastYear">Año anterior</option>
+              <option value="all">Todo</option>
+              <option value="custom">Personalizado…</option>
+            </select>
+            <div id="fcomp-custom-range" class="fi-custom-range" hidden>
+              <input type="text" id="fcomp-date-from" class="fi-custom-input" placeholder="Desde" autocomplete="off">
+              <span class="fi-custom-sep">→</span>
+              <input type="text" id="fcomp-date-to" class="fi-custom-input" placeholder="Hasta" autocomplete="off">
+            </div>
           </div>
         </div>
 
-        <div class="ad-loading" style="padding:48px;text-align:center;color:var(--muted);">
-          <i data-lucide="hammer" style="width:32px;height:32px;color:var(--accent);"></i>
-          <p style="margin:12px 0 4px;font-weight:600;">Comparativas en construcción</p>
-          <p style="font-size:13px;margin:0;">Gráficos de línea, barras agrupadas, tabla comparativa mes a mes.</p>
+        <div class="fd-chart-card" style="margin-bottom:14px;">
+          <h3 class="fd-chart-title">Bruto vs Pagado vs Ganancia por mes</h3>
+          <div class="fd-chart-wrap" style="height:320px;"><canvas id="fcomp-chart-bars"></canvas></div>
+          <div class="fd-chart-empty" id="fcomp-chart-bars-empty" style="display:none;">Sin datos en el periodo</div>
+        </div>
+        <div class="fd-chart-card" style="margin-bottom:14px;">
+          <h3 class="fd-chart-title">Bruto por tipo de pago a lo largo del tiempo</h3>
+          <div class="fd-chart-wrap" style="height:320px;"><canvas id="fcomp-chart-tipo"></canvas></div>
+          <div class="fd-chart-empty" id="fcomp-chart-tipo-empty" style="display:none;">Sin datos en el periodo</div>
+        </div>
+        <div class="fd-chart-card">
+          <h3 class="fd-chart-title">Payouts por broker, por mes (stacked)</h3>
+          <div class="fd-chart-wrap" style="height:320px;"><canvas id="fcomp-chart-brokers"></canvas></div>
+          <div class="fd-chart-empty" id="fcomp-chart-brokers-empty" style="display:none;">Sin payouts en el periodo</div>
         </div>
       </section>
 
@@ -398,14 +421,62 @@
         <div class="ad-toolbar">
           <div>
             <h2 style="margin:0;">⬇ Exportar</h2>
-            <p class="admin-note" style="margin:4px 0 0;">Descarga de reportes ejecutivos en CSV, Excel y PDF para auditoría externa o uso interno.</p>
+            <p class="admin-note" style="margin:4px 0 0;">Descarga de datos para auditoría externa o uso interno. Selecciona el periodo abajo.</p>
+          </div>
+          <div class="ad-toolbar-actions">
+            <select id="fexp-period" class="fi-filter-select">
+              <option value="year" selected>Año actual</option>
+              <option value="month">Este mes</option>
+              <option value="lastMonth">Mes pasado</option>
+              <option value="lastYear">Año anterior</option>
+              <option value="all">Todo</option>
+              <option value="custom">Personalizado…</option>
+            </select>
+            <div id="fexp-custom-range" class="fi-custom-range" hidden>
+              <input type="text" id="fexp-date-from" class="fi-custom-input" placeholder="Desde" autocomplete="off">
+              <span class="fi-custom-sep">→</span>
+              <input type="text" id="fexp-date-to" class="fi-custom-input" placeholder="Hasta" autocomplete="off">
+            </div>
           </div>
         </div>
 
-        <div class="ad-loading" style="padding:48px;text-align:center;color:var(--muted);">
-          <i data-lucide="hammer" style="width:32px;height:32px;color:var(--accent);"></i>
-          <p style="margin:12px 0 4px;font-weight:600;">Exportación en construcción</p>
-          <p style="font-size:13px;margin:0;">Botones de descarga por periodo + reportes PDF con branding Hero Light.</p>
+        <div class="fexp-summary" id="fexp-summary">
+          <span class="fexp-summary-label">Listo para exportar:</span>
+          <span class="fexp-summary-value" id="fexp-summary-count">0 ingresos</span>
+          <span class="fexp-summary-sep">·</span>
+          <span class="fexp-summary-value" id="fexp-summary-bruto">$0.00 bruto</span>
+        </div>
+
+        <div class="fexp-grid">
+          <div class="fexp-card">
+            <div class="fexp-icon"><i data-lucide="table"></i></div>
+            <h3>Lista de ingresos (CSV)</h3>
+            <p>Una fila por ingreso. Incluye fecha, mes, tipo, categoría, descripciones, monto, pagado, ganancia, conteo de payouts y notas.</p>
+            <sl-button id="fexp-csv-ingresos" variant="primary">
+              <i data-lucide="download" slot="prefix" style="width:14px;height:14px;"></i>
+              Descargar CSV
+            </sl-button>
+          </div>
+
+          <div class="fexp-card">
+            <div class="fexp-icon"><i data-lucide="users"></i></div>
+            <h3>Detalle de payouts (CSV)</h3>
+            <p>Una fila por payout, expandiendo cada ingreso. Incluye broker, reporte file y saldo. Útil para reconciliar pagos.</p>
+            <sl-button id="fexp-csv-payouts" variant="primary">
+              <i data-lucide="download" slot="prefix" style="width:14px;height:14px;"></i>
+              Descargar CSV
+            </sl-button>
+          </div>
+
+          <div class="fexp-card fexp-card-wide">
+            <div class="fexp-icon"><i data-lucide="file-text"></i></div>
+            <h3>Resumen ejecutivo (imprimir / PDF)</h3>
+            <p>KPIs del periodo + tabla mes a mes con Bruto, Pagado y Ganancia. Abre vista de impresión del navegador — desde ahí puedes "Guardar como PDF" o imprimir directo.</p>
+            <sl-button id="fexp-print-report" variant="default">
+              <i data-lucide="printer" slot="prefix" style="width:14px;height:14px;"></i>
+              Generar reporte
+            </sl-button>
+          </div>
         </div>
       </section>
 
@@ -418,6 +489,9 @@
   </footer>
 
 </div><!-- /#finanzas-panel -->
+
+<!-- Reporte ejecutivo (oculto en pantalla, visible solo al imprimir) -->
+<div id="fexp-print-report"></div>
 
 <script>
   window.refreshIcons = () => { if (window.lucide) lucide.createIcons(); };
