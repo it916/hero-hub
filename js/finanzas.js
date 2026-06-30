@@ -22,6 +22,12 @@ import { logEvent, ACTIONS } from "./audit-log.js";
 
 const ALLOWED_DOMAIN = "heroinsuranceusa.com";
 
+// URL del Worker (Cloudflare) — disparador de emails a brokers.
+// Es el MISMO Worker que usa el IT Console; aquí solo consumimos el endpoint
+// /finanzas/send-report. La auth es por Firebase ID token verificado del lado
+// del Worker contra el dominio del Hub.
+const FINANZAS_WORKER_URL = "https://hero-email-worker.broad-fire-d2d6.workers.dev";
+
 let currentUserEmail = null;
 
 
@@ -1173,12 +1179,18 @@ function initFiTable() {
       {
         title: "",
         field: "_actions",
-        width: 90,
+        width: 120,
         hozAlign: "center",
         headerSort: false,
         formatter: (cell) => {
           const r = cell.getRow().getData();
+          const hasPayouts = Array.isArray(r.payouts) && r.payouts.length > 0;
+          // Tag verde si TODOS los payouts ya tienen emailSentAt
+          const allSent = hasPayouts && r.payouts.every(p => p && p.emailSentAt);
+          const emailBtnCls = "fc-act-btn fc-email" + (allSent ? " sent" : "");
+          const emailTitle = allSent ? "Reportes enviados — reenviar" : "Enviar reporte a brokers";
           return `<div class="fc-actions">
+            ${hasPayouts ? `<button class="${emailBtnCls}" data-id="${escapeHtmlAttr(r.id)}" title="${emailTitle}">✉</button>` : ""}
             <button class="fc-act-btn fc-edit" data-id="${escapeHtmlAttr(r.id)}" title="Editar">✎</button>
             <button class="fc-act-btn fc-del" data-id="${escapeHtmlAttr(r.id)}" title="Eliminar">✕</button>
           </div>`;
@@ -1194,12 +1206,14 @@ function initFiTable() {
     openIngresoModal(row);
   });
 
-  // Delegación para ✎ y ✕
+  // Delegación para ✉, ✎ y ✕
   const tableEl = document.getElementById("fi-table");
   tableEl.addEventListener("click", (e) => {
+    const emailBtn = e.target.closest(".fc-email");
     const editBtn = e.target.closest(".fc-edit");
     const delBtn = e.target.closest(".fc-del");
-    if (editBtn) { e.stopPropagation(); onEditIngreso(editBtn.dataset.id); }
+    if (emailBtn) { e.stopPropagation(); onEmailIngreso(emailBtn.dataset.id); }
+    else if (editBtn) { e.stopPropagation(); onEditIngreso(editBtn.dataset.id); }
     else if (delBtn) { e.stopPropagation(); onDeleteIngreso(delBtn.dataset.id); }
   });
 
@@ -1315,6 +1329,317 @@ function formatFechaUS(yyyyMmDd) {
   if (!yyyyMmDd || !/^\d{4}-\d{2}-\d{2}$/.test(yyyyMmDd)) return yyyyMmDd || "";
   const [y, m, d] = yyyyMmDd.split("-");
   return `${m}/${d}/${y}`;
+}
+
+// ─── Email reports a brokers ──────────────
+// El botón ✉ tiene dos modos según cuántos payouts tenga el ingreso:
+//   - 1 payout: confirm nativo + envío directo (atajo para el caso común).
+//   - 2+ payouts: modal con la lista de payouts, cada uno con su botón
+//     "Enviar"/"Reenviar". Es el modal completo.
+// El envío real lo hace el Worker (POST /finanzas/send-report); el frontend
+// solo prepara payload, muestra estado y marca emailSentAt/emailSentTo en el
+// payout al confirmar.
+async function onEmailIngreso(id) {
+  const row = ingresosData.find(r => r.id === id);
+  if (!row) { showFiStatus("Ingreso no encontrado."); return; }
+  if (!Array.isArray(row.payouts) || row.payouts.length === 0) {
+    showFiStatus("Este ingreso no tiene payouts."); return;
+  }
+  // Asegura que tenemos los brokers cargados para resolver email por nombre.
+  if (brokersData.length === 0) {
+    try { await loadBrokers(); } catch (e) { console.warn("brokers load:", e); }
+  }
+
+  // Atajo: 1 payout → mini-dialog con email editable + envío directo.
+  if (row.payouts.length === 1) {
+    openSingleEmailDialog(row);
+    return;
+  }
+
+  openEmailReportDialog(row);
+}
+
+// Regex laxo para sanity-check de email cliente (Resend hará la validación real).
+function looksLikeEmail(s) {
+  return typeof s === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s.trim());
+}
+
+function openSingleEmailDialog(ingreso) {
+  const payout = ingreso.payouts[0];
+  const broker = brokersData.find(b => b.nombre === payout.broker) || { nombre: payout.broker || "", email: "" };
+  const wasSent = !!payout.emailSentAt;
+  const prefillEmail = broker.email || payout.emailSentTo || "";
+  const fechaTxt = ingreso.fecha ? formatFechaUS(ingreso.fecha) : "—";
+
+  const dialog = document.createElement("sl-dialog");
+  dialog.label = (wasSent ? "Reenviar" : "Enviar") + " reporte de comisión";
+  dialog.className = "fi-email-modal fi-email-single";
+  dialog.innerHTML = `
+    <div class="fi-em-body">
+      <div class="fi-em-intro">
+        <div class="fi-em-desc">${escapeHtml(ingreso.descripcionDeposito || "—")}</div>
+        <div class="fi-em-meta">
+          <span>${escapeHtml(fechaTxt)}</span>
+          <span class="fi-em-meta-dot">·</span>
+          <span>${escapeHtml(ingreso.tipoPago || "")}</span>
+          <span class="fi-em-meta-dot">·</span>
+          <span>${formatMoney(ingreso.monto)}</span>
+        </div>
+      </div>
+
+      <div class="fi-em-single-payout">
+        <div class="fi-em-single-broker">
+          <span class="fi-em-single-broker-lbl">Broker</span>
+          <span class="fi-em-single-broker-val">${escapeHtml(broker.nombre || "(sin broker)")}</span>
+        </div>
+        <div class="fi-em-single-saldo">
+          <span class="fi-em-single-saldo-lbl">Payout</span>
+          <span class="fi-em-single-saldo-val">${formatMoney(payout.saldo)}</span>
+        </div>
+      </div>
+
+      <sl-input
+        id="fi-em-single-email"
+        label="Enviar a"
+        type="email"
+        placeholder="broker@ejemplo.com"
+        value="${escapeHtmlAttr(prefillEmail)}"
+        help-text="Pre-llenado con el email del broker si existe. Puedes cambiarlo solo para este envío."
+        clearable
+        required>
+      </sl-input>
+
+      ${wasSent ? `<div class="fi-em-resend-note">Este reporte ya fue enviado el ${escapeHtml(formatFechaUS((payout.emailSentAt || "").slice(0, 10)))} a <strong>${escapeHtml(payout.emailSentTo || "")}</strong>.</div>` : ""}
+
+      <div class="fi-em-status" id="fi-em-single-status"></div>
+    </div>
+    <sl-button slot="footer" class="fi-em-cancel-btn" variant="default">Cancelar</sl-button>
+    <sl-button slot="footer" class="fi-em-confirm-btn" variant="primary">${wasSent ? "Reenviar" : "Enviar"}</sl-button>
+  `;
+
+  document.body.appendChild(dialog);
+  dialog.show();
+
+  const emailInput = dialog.querySelector("#fi-em-single-email");
+  const statusEl = dialog.querySelector("#fi-em-single-status");
+  const confirmBtn = dialog.querySelector(".fi-em-confirm-btn");
+  const cancelBtn = dialog.querySelector(".fi-em-cancel-btn");
+
+  cancelBtn.addEventListener("click", () => dialog.hide());
+  dialog.addEventListener("sl-after-hide", () => dialog.remove());
+
+  confirmBtn.addEventListener("click", async () => {
+    const email = String(emailInput.value || "").trim();
+    if (!looksLikeEmail(email)) {
+      statusEl.className = "fi-em-status error";
+      statusEl.textContent = "Email inválido. Verifica el formato.";
+      emailInput.focus();
+      return;
+    }
+    confirmBtn.disabled = true;
+    cancelBtn.disabled = true;
+    confirmBtn.textContent = "Enviando…";
+    statusEl.className = "fi-em-status";
+    statusEl.textContent = "";
+    try {
+      await sendIngresoEmail(ingreso, 0, { nombre: broker.nombre, email });
+      statusEl.className = "fi-em-status success";
+      statusEl.textContent = `✓ Reporte enviado a ${email}`;
+      showFiStatus(`✓ Reporte enviado a ${email}`);
+      setTimeout(() => dialog.hide(), 900);
+    } catch (err) {
+      statusEl.className = "fi-em-status error";
+      statusEl.textContent = "✕ " + (err?.message || "No se pudo enviar");
+      confirmBtn.disabled = false;
+      cancelBtn.disabled = false;
+      confirmBtn.textContent = wasSent ? "Reenviar" : "Enviar";
+    }
+  });
+}
+
+function openEmailReportDialog(ingreso) {
+  const dialog = document.createElement("sl-dialog");
+  dialog.label = "Enviar reporte a brokers";
+  dialog.className = "fi-email-modal";
+
+  const rowsHtml = ingreso.payouts.map((p, i) => {
+    const broker = brokersData.find(b => b.nombre === p.broker);
+    const prefill = broker?.email || p.emailSentTo || "";
+    const sent = !!p.emailSentAt;
+    const sentDate = sent ? formatFechaUS((p.emailSentAt || "").slice(0, 10)) : "";
+    const statusTag = sent
+      ? `<span class="fi-em-sent-tag">Enviado · ${escapeHtml(sentDate)}</span>`
+      : "";
+    return `
+      <div class="fi-em-row${sent ? " sent" : ""}" data-idx="${i}">
+        <div class="fi-em-row-main">
+          <div class="fi-em-broker">${escapeHtml(p.broker || "(sin broker)")}</div>
+          <input
+            type="email"
+            class="fi-em-email-input"
+            data-idx="${i}"
+            value="${escapeHtmlAttr(prefill)}"
+            placeholder="broker@ejemplo.com"
+            autocomplete="off"
+          />
+        </div>
+        <div class="fi-em-row-side">
+          <div class="fi-em-saldo">${formatMoney(p.saldo)}</div>
+          <div class="fi-em-status-cell">${statusTag}</div>
+          <button type="button" class="fi-em-send-btn" data-idx="${i}">
+            ${sent ? "Reenviar" : "Enviar"}
+          </button>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  dialog.innerHTML = `
+    <div class="fi-em-body">
+      <div class="fi-em-intro">
+        <div class="fi-em-desc">${escapeHtml(ingreso.descripcionDeposito || "—")}</div>
+        <div class="fi-em-meta">
+          <span>${formatFechaUS(ingreso.fecha)}</span>
+          <span class="fi-em-meta-dot">·</span>
+          <span>${escapeHtml(ingreso.tipoPago || "")}</span>
+          <span class="fi-em-meta-dot">·</span>
+          <span>${formatMoney(ingreso.monto)}</span>
+        </div>
+      </div>
+      <div class="fi-em-list">${rowsHtml}</div>
+      <div class="fi-em-status" id="fi-em-modal-status"></div>
+    </div>
+    <sl-button slot="footer" class="fi-em-close-btn" variant="default">Cerrar</sl-button>
+  `;
+
+  document.body.appendChild(dialog);
+  dialog.show();
+  dialog.querySelector(".fi-em-close-btn").addEventListener("click", () => dialog.hide());
+  dialog.addEventListener("sl-after-hide", () => dialog.remove());
+
+  dialog.querySelectorAll(".fi-em-send-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const idx = Number(btn.dataset.idx);
+      const payout = ingreso.payouts[idx];
+      const broker = brokersData.find(b => b.nombre === payout.broker)
+                  || { nombre: payout.broker || "", email: "" };
+      const statusEl = dialog.querySelector("#fi-em-modal-status");
+      const inputEl = dialog.querySelector(`.fi-em-email-input[data-idx="${idx}"]`);
+      const email = String(inputEl?.value || "").trim();
+      const wasSent = !!payout.emailSentAt;
+
+      if (!looksLikeEmail(email)) {
+        statusEl.className = "fi-em-status error";
+        statusEl.textContent = "Email inválido para " + (broker.nombre || "este payout") + ".";
+        inputEl?.focus();
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Enviando…";
+      statusEl.className = "fi-em-status";
+      statusEl.textContent = "";
+
+      try {
+        await sendIngresoEmail(ingreso, idx, { nombre: broker.nombre, email });
+        const rowEl = dialog.querySelector(`.fi-em-row[data-idx="${idx}"]`);
+        rowEl.classList.add("sent");
+        const cellEl = rowEl.querySelector(".fi-em-status-cell");
+        const nowTxt = formatFechaUS(new Date().toISOString().slice(0, 10));
+        cellEl.innerHTML = `<span class="fi-em-sent-tag">Enviado · ${escapeHtml(nowTxt)}</span>`;
+        btn.textContent = "Reenviar";
+        statusEl.className = "fi-em-status success";
+        statusEl.textContent = "✓ Reporte enviado a " + email;
+      } catch (err) {
+        statusEl.className = "fi-em-status error";
+        statusEl.textContent = "✕ " + (err?.message || "No se pudo enviar el reporte");
+        btn.textContent = wasSent ? "Reenviar" : "Enviar";
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  });
+}
+
+async function sendIngresoEmail(ingreso, payoutIdx, broker) {
+  const payout = ingreso.payouts[payoutIdx];
+  if (!payout) throw new Error("Payout no encontrado");
+  const user = auth.currentUser;
+  if (!user) throw new Error("Sin sesión activa");
+
+  let idToken;
+  try { idToken = await user.getIdToken(); }
+  catch (e) { throw new Error("No se pudo obtener tu sesión: " + (e.message || e)); }
+
+  const payload = {
+    idToken,
+    ingreso: {
+      fecha: ingreso.fecha || "",
+      mes: ingreso.mes || "",
+      descripcionDeposito: ingreso.descripcionDeposito || "",
+      tipoPago: ingreso.tipoPago || "",
+      categoria: ingreso.categoria || "",
+      monto: Number(ingreso.monto) || 0,
+    },
+    payout: {
+      broker: payout.broker || "",
+      saldo: Number(payout.saldo) || 0,
+      reporteFile: payout.reporteFile || "",
+    },
+    broker: { nombre: broker.nombre || "", email: broker.email || "" },
+  };
+
+  let resp;
+  try {
+    resp = await fetch(FINANZAS_WORKER_URL + "/finanzas/send-report", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch (e) {
+    throw new Error("Red caída: " + (e.message || e));
+  }
+  let data = {};
+  try { data = await resp.json(); } catch (_) {}
+  if (!resp.ok) throw new Error(data.error || ("HTTP " + resp.status));
+
+  // Persistir emailSentAt en el payout del doc Firestore.
+  const now = new Date().toISOString();
+  const newPayouts = ingreso.payouts.map((p, i) =>
+    i === payoutIdx ? { ...p, emailSentAt: now, emailSentTo: broker.email } : p
+  );
+  try {
+    await updateDoc(doc(db, INGRESOS_COL, ingreso.id), {
+      payouts: newPayouts,
+      actualizadoPor: user.email,
+      actualizadoEn: serverTimestamp(),
+    });
+  } catch (e) {
+    // El email salió, pero falló persistir el flag. Lo notamos sin romper la UX.
+    console.warn("payout flag persist failed:", e);
+  }
+
+  // Sincronizar estado local + Tabulator
+  const idx = ingresosData.findIndex(r => r.id === ingreso.id);
+  if (idx >= 0) {
+    ingresosData[idx].payouts = newPayouts;
+    ingreso.payouts = newPayouts; // mutamos también el ref pasado al modal
+    if (fiTable) {
+      try { fiTable.updateRow(ingreso.id, { payouts: newPayouts }); } catch (_) {}
+    }
+  }
+
+  // Audit log
+  logEvent(ACTIONS.FINANZAS_EMAIL_SEND, broker.email, {
+    ingresoId: ingreso.id,
+    fecha: ingreso.fecha || "",
+    descripcionDeposito: ingreso.descripcionDeposito || "",
+    broker: broker.nombre,
+    saldo: Number(payout.saldo) || 0,
+    resendId: data.id || null,
+  });
+
+  return data;
 }
 
 

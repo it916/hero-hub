@@ -1096,3 +1096,283 @@ body[data-theme="dark"] .fc-theme-toggle:hover {
   border-color: var(--cyan);
   color: var(--cyan);
 }
+
+/* ─────────────────────────────────────────────
+   Botón ✉ en Lista de Ingresos
+   ───────────────────────────────────────────── */
+.fc-act-btn.fc-email:hover {
+  color: var(--cyan, #06a3b6);
+  border-color: rgba(6, 163, 182, 0.3);
+  background: rgba(6, 163, 182, 0.08);
+}
+.fc-act-btn.fc-email.sent {
+  color: #22a06b;
+}
+.fc-act-btn.fc-email.sent:hover {
+  border-color: rgba(34, 160, 107, 0.3);
+  background: rgba(34, 160, 107, 0.08);
+}
+body[data-theme="dark"] .fc-act-btn.fc-email:hover {
+  background: rgba(6, 163, 182, 0.15);
+}
+body[data-theme="dark"] .fc-act-btn.fc-email.sent:hover {
+  background: rgba(34, 160, 107, 0.18);
+}
+
+/* ─────────────────────────────────────────────
+   Modal "Enviar reporte a brokers" (fi-em-*)
+   ───────────────────────────────────────────── */
+.fi-email-modal::part(panel) {
+  max-width: 600px;
+}
+.fi-em-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.fi-em-intro {
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--paper, #f0f4f8);
+  border: 1px solid var(--border, #e8e8e8);
+}
+.fi-em-desc {
+  font-family: var(--display, "Bricolage Grotesque"), system-ui, sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text, #1a1a1a);
+  margin-bottom: 4px;
+}
+.fi-em-meta {
+  font-size: 12px;
+  color: var(--muted, #777);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.fi-em-meta-dot {
+  opacity: 0.5;
+}
+.fi-em-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.fi-em-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border, #e8e8e8);
+  background: var(--card, #fff);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.fi-em-row.disabled {
+  opacity: 0.6;
+}
+.fi-em-row.sent {
+  border-color: rgba(34, 160, 107, 0.4);
+  background: rgba(34, 160, 107, 0.04);
+}
+.fi-em-row-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.fi-em-broker {
+  font-weight: 700;
+  color: var(--text, #1a1a1a);
+  margin-bottom: 2px;
+}
+.fi-em-email {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  color: var(--cyan, #06a3b6);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fi-em-email-input {
+  width: 100%;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  padding: 6px 10px;
+  border: 1px solid var(--border, #e8e8e8);
+  border-radius: 8px;
+  background: var(--card, #fff);
+  color: var(--text, #1a1a1a);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.fi-em-email-input:focus {
+  outline: none;
+  border-color: var(--cyan, #06a3b6);
+  box-shadow: 0 0 0 3px rgba(6, 163, 182, 0.12);
+}
+.fi-em-email-input::placeholder { color: var(--muted, #aaa); }
+body[data-theme="dark"] .fi-em-email-input {
+  background: var(--paper);
+  border-color: var(--border);
+  color: var(--text);
+}
+body[data-theme="dark"] .fi-em-email-input:focus {
+  background: var(--card);
+}
+
+/* Mini-modal de 1 payout */
+.fi-em-single-payout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--card, #fff);
+  border: 1px solid var(--border, #e8e8e8);
+}
+.fi-em-single-broker,
+.fi-em-single-saldo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.fi-em-single-saldo { text-align: right; }
+.fi-em-single-broker-lbl,
+.fi-em-single-saldo-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--cyan, #06a3b6);
+}
+.fi-em-single-broker-val {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text, #1a1a1a);
+}
+.fi-em-single-saldo-val {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text, #1a1a1a);
+}
+.fi-em-resend-note {
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(232, 163, 23, 0.08);
+  border-left: 3px solid #e8a317;
+  font-size: 12px;
+  color: var(--text, #1a1a1a);
+  line-height: 1.5;
+}
+body[data-theme="dark"] .fi-em-single-payout {
+  background: var(--paper);
+  border-color: var(--border);
+}
+body[data-theme="dark"] .fi-em-resend-note {
+  background: rgba(232, 163, 23, 0.12);
+  color: var(--text);
+}
+.fi-em-row-side {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.fi-em-saldo {
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text, #1a1a1a);
+  text-align: right;
+  min-width: 80px;
+}
+.fi-em-status-cell {
+  min-width: 130px;
+  text-align: right;
+}
+.fi-em-sent-tag {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #22a06b;
+  background: rgba(34, 160, 107, 0.1);
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.fi-em-warn {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #c0392b;
+  background: rgba(192, 57, 43, 0.1);
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.fi-em-send-btn {
+  background: var(--cyan, #06a3b6);
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  min-width: 92px;
+}
+.fi-em-send-btn:hover:not(:disabled) {
+  background: #048395;
+}
+.fi-em-send-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.fi-em-send-btn:disabled {
+  background: var(--muted, #bbb);
+  cursor: not-allowed;
+}
+.fi-em-row.sent .fi-em-send-btn {
+  background: transparent;
+  color: var(--cyan, #06a3b6);
+  border: 1px solid var(--cyan, #06a3b6);
+}
+.fi-em-row.sent .fi-em-send-btn:hover:not(:disabled) {
+  background: rgba(6, 163, 182, 0.08);
+}
+.fi-em-status {
+  min-height: 22px;
+  font-size: 13px;
+  padding: 8px 0 0;
+  text-align: center;
+}
+.fi-em-status.success { color: #22a06b; font-weight: 600; }
+.fi-em-status.error   { color: #c0392b; font-weight: 600; }
+
+/* Dark mode */
+body[data-theme="dark"] .fi-em-intro {
+  background: var(--paper);
+  border-color: var(--border);
+}
+body[data-theme="dark"] .fi-em-row {
+  background: var(--card);
+  border-color: var(--border);
+}
+body[data-theme="dark"] .fi-em-row.sent {
+  background: rgba(34, 160, 107, 0.08);
+  border-color: rgba(34, 160, 107, 0.35);
+}
+body[data-theme="dark"] .fi-em-sent-tag {
+  background: rgba(34, 160, 107, 0.18);
+}
+body[data-theme="dark"] .fi-em-warn {
+  background: rgba(192, 57, 43, 0.18);
+}
+body[data-theme="dark"] .fi-email-modal {
+  --sl-panel-background-color: var(--card);
+  --sl-color-neutral-0: var(--card);
+  --sl-color-neutral-1000: var(--text);
+}

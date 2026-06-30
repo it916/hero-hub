@@ -74,7 +74,10 @@ export const ACTIONS = {
   // Finanzas — Ingresos
   FINANZAS_INGRESO_ADD: "finanzas.ingreso.add",
   FINANZAS_INGRESO_EDIT: "finanzas.ingreso.edit",
-  FINANZAS_INGRESO_DELETE: "finanzas.ingreso.delete"
+  FINANZAS_INGRESO_DELETE: "finanzas.ingreso.delete",
+
+  // Finanzas — Envío de reportes por email a brokers
+  FINANZAS_EMAIL_SEND: "finanzas.email.send"
 };
 
 // Etiquetas amigables para mostrar en la UI
@@ -103,7 +106,8 @@ export const ACTION_LABELS = {
   "finanzas.broker.delete": { label: "Broker eliminado", icon: "user-x", color: "#c0392b" },
   "finanzas.ingreso.add": { label: "Ingreso registrado", icon: "arrow-down-circle", color: "#22a06b" },
   "finanzas.ingreso.edit": { label: "Ingreso editado", icon: "edit-3", color: "#06a3b6" },
-  "finanzas.ingreso.delete": { label: "Ingreso eliminado", icon: "trash-2", color: "#c0392b" }
+  "finanzas.ingreso.delete": { label: "Ingreso eliminado", icon: "trash-2", color: "#c0392b" },
+  "finanzas.email.send": { label: "Reporte enviado al broker", icon: "send", color: "#06a3b6" }
 };
 
 

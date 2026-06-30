@@ -1,5 +1,24 @@
 [
   {
+    "id": "2026-06-30-finanzas-email-reports",
+    "version": "v2.3",
+    "date": "2026-06-30",
+    "category": "feat",
+    "scope": "finanzas",
+    "audience": "admin",
+    "title": "Envío de reportes de comisión por email a brokers",
+    "items": [
+      "Botón ✉ en cada fila de la Lista de Ingresos con payouts",
+      "Si el ingreso tiene 1 payout: mini-dialog con resumen + email destinatario editable",
+      "Si tiene 2+ payouts: modal con todos los payouts, cada uno con su input de email",
+      "El email destinatario se puede escribir libremente — pre-llenado con el del broker si está registrado",
+      "Template Hero Light branded (cyan + logo) con detalle de la comisión y el payout",
+      "Persistencia de emailSentAt / emailSentTo por payout (visible al reabrir)",
+      "Audit log: nueva acción FINANZAS_EMAIL_SEND registra cada envío",
+      "Backend: Cloudflare Worker compartido con IT Console, auth con Firebase ID token"
+    ]
+  },
+  {
     "id": "2026-06-29-finanzas-comparativas-exportar",
     "version": "v2.3",
     "date": "2026-06-29",
