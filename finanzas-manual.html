@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="icons/favicon-hero.png">
+<link rel="apple-touch-icon" href="icons/favicon-hero.png">
+<meta name="theme-color" content="#06a3b6">
+<title>Manual de Finanzas — Hero Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/finanzas.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css">
+<script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/shoelace-autoloader.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<style>
+  /* ══════════════════════════════════════════════
+     Manual de Finanzas — layout de dos columnas
+     ══════════════════════════════════════════════ */
+  .fm-shell {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 32px;
+  }
+  @media (max-width: 900px) {
+    .fm-shell { grid-template-columns: 1fr; }
+  }
+
+  /* ── Sidebar índice ── */
+  .fm-toc {
+    position: sticky;
+    top: 24px;
+    align-self: start;
+    padding: 20px 0;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+  }
+  @media (max-width: 900px) {
+    .fm-toc { position: static; max-height: none; padding-top: 0; }
+  }
+  .fm-toc-kicker {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--cyan, #06a3b6);
+    padding: 0 12px 10px;
+    border-bottom: 1px solid var(--border, #e8e8e8);
+    margin-bottom: 10px;
+  }
+  .fm-toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .fm-toc-list li a {
+    display: block;
+    padding: 8px 12px;
+    text-decoration: none;
+    color: var(--text-2, #555);
+    font-size: 14px;
+    border-radius: 8px;
+    transition: background 0.15s ease, color 0.15s ease;
+    border-left: 3px solid transparent;
+  }
+  .fm-toc-list li a:hover {
+    background: var(--card-hover, #f3f7fa);
+    color: var(--text, #1a1a1a);
+  }
+  .fm-toc-list li a.active {
+    background: rgba(6, 163, 182, 0.08);
+    color: var(--cyan, #06a3b6);
+    font-weight: 700;
+    border-left-color: var(--cyan, #06a3b6);
+  }
+  body[data-theme="dark"] .fm-toc-list li a:hover { background: rgba(255,255,255,0.05); }
+  body[data-theme="dark"] .fm-toc-list li a.active { background: rgba(6, 163, 182, 0.18); }
+
+  /* ── Contenido principal ── */
+  .fm-content {
+    padding: 20px 0;
+    min-width: 0;
+  }
+  .fm-hero {
+    padding: 32px 36px;
+    background: linear-gradient(135deg, #06a3b6, #048395);
+    color: #fff;
+    border-radius: 20px;
+    margin-bottom: 32px;
+    box-shadow: 0 10px 30px rgba(6, 163, 182, 0.18);
+  }
+  .fm-hero-kicker {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    opacity: 0.9;
+    margin-bottom: 8px;
+  }
+  .fm-hero h1 {
+    font-family: var(--display, "Bricolage Grotesque"), system-ui, sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    margin: 0 0 8px;
+    letter-spacing: -0.5px;
+  }
+  .fm-hero p {
+    margin: 0;
+    font-size: 15px;
+    opacity: 0.9;
+    line-height: 1.55;
+  }
+
+  .fm-section {
+    background: var(--card, #fff);
+    border: 1px solid var(--border, #e8e8e8);
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-bottom: 20px;
+    scroll-margin-top: 24px;
+  }
+  body[data-theme="dark"] .fm-section {
+    background: var(--card);
+    border-color: var(--border);
+  }
+  .fm-section h2 {
+    font-family: var(--display, "Bricolage Grotesque"), system-ui, sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text, #1a1a1a);
+    margin: 0 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .fm-section h2 i[data-lucide],
+  .fm-section h2 svg {
+    width: 24px; height: 24px;
+    color: var(--cyan, #06a3b6);
+    stroke-width: 2;
+  }
+  .fm-section h3 {
+    font-family: var(--display, "Bricolage Grotesque"), system-ui, sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text, #1a1a1a);
+    margin: 22px 0 8px;
+  }
+  .fm-section p, .fm-section li {
+    color: var(--text-2, #555);
+    line-height: 1.65;
+    font-size: 14.5px;
+  }
+  body[data-theme="dark"] .fm-section p,
+  body[data-theme="dark"] .fm-section li { color: var(--text-2); }
+  .fm-section ul, .fm-section ol {
+    padding-left: 22px;
+    margin: 8px 0 16px;
+  }
+  .fm-section li {
+    margin-bottom: 6px;
+  }
+  .fm-section strong {
+    color: var(--text, #1a1a1a);
+    font-weight: 700;
+  }
+  body[data-theme="dark"] .fm-section strong { color: var(--text); }
+  .fm-section code {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 13px;
+    background: var(--paper, #f0f4f8);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--cyan, #06a3b6);
+  }
+  body[data-theme="dark"] .fm-section code { background: rgba(255,255,255,0.06); }
+
+  /* ── Callouts ── */
+  .fm-callout {
+    padding: 14px 18px;
+    border-radius: 10px;
+    margin: 14px 0;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    font-size: 14px;
+    line-height: 1.55;
+  }
+  .fm-callout i[data-lucide],
+  .fm-callout svg { width: 20px; height: 20px; flex-shrink: 0; margin-top: 2px; }
+  .fm-callout-tip {
+    background: rgba(6, 163, 182, 0.06);
+    border-left: 4px solid #06a3b6;
+    color: var(--text, #1a1a1a);
+  }
+  .fm-callout-tip i[data-lucide],
+  .fm-callout-tip svg { color: #06a3b6; }
+  .fm-callout-warn {
+    background: rgba(232, 163, 23, 0.08);
+    border-left: 4px solid #e8a317;
+    color: var(--text, #1a1a1a);
+  }
+  .fm-callout-warn i[data-lucide],
+  .fm-callout-warn svg { color: #e8a317; }
+  .fm-callout-note {
+    background: rgba(147, 51, 234, 0.06);
+    border-left: 4px solid #9333ea;
+    color: var(--text, #1a1a1a);
+  }
+  .fm-callout-note i[data-lucide],
+  .fm-callout-note svg { color: #9333ea; }
+  body[data-theme="dark"] .fm-callout { color: var(--text); }
+  body[data-theme="dark"] .fm-callout-tip { background: rgba(6, 163, 182, 0.15); }
+  body[data-theme="dark"] .fm-callout-warn { background: rgba(232, 163, 23, 0.15); }
+  body[data-theme="dark"] .fm-callout-note { background: rgba(147, 51, 234, 0.15); }
+
+  /* ── Botón ficticio (para ilustrar UI en el manual) ── */
+  .fm-fake-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: var(--paper, #f0f4f8);
+    border: 1px solid var(--border, #e8e8e8);
+    border-radius: 6px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--cyan, #06a3b6);
+    vertical-align: middle;
+  }
+  body[data-theme="dark"] .fm-fake-btn { background: rgba(255,255,255,0.05); }
+
+  /* ── Grid de tabs (recorrido) ── */
+  .fm-tabs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin: 18px 0;
+  }
+  .fm-tab-card {
+    background: var(--paper, #f0f4f8);
+    border: 1px solid var(--border, #e8e8e8);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  body[data-theme="dark"] .fm-tab-card { background: rgba(255,255,255,0.03); }
+  .fm-tab-card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    color: var(--cyan, #06a3b6);
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  .fm-tab-card-desc {
+    font-size: 13px;
+    color: var(--text-2, #555);
+    line-height: 1.5;
+  }
+
+  /* ── FAQ items ── */
+  .fm-faq details {
+    background: var(--paper, #f0f4f8);
+    border: 1px solid var(--border, #e8e8e8);
+    border-radius: 10px;
+    padding: 4px 0;
+    margin-bottom: 8px;
+  }
+  body[data-theme="dark"] .fm-faq details { background: rgba(255,255,255,0.03); }
+  .fm-faq summary {
+    cursor: pointer;
+    padding: 12px 18px;
+    font-weight: 600;
+    color: var(--text, #1a1a1a);
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .fm-faq summary::-webkit-details-marker { display: none; }
+  .fm-faq summary::before {
+    content: "+";
+    font-family: "JetBrains Mono", monospace;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--cyan, #06a3b6);
+    transition: transform 0.2s ease;
+  }
+  .fm-faq details[open] summary::before { transform: rotate(45deg); }
+  .fm-faq details > *:not(summary) {
+    padding: 0 18px 14px;
+    color: var(--text-2, #555);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  body[data-theme="dark"] .fm-faq details > *:not(summary) { color: var(--text-2); }
+
+  /* ── Contact card ── */
+  .fm-contact {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, rgba(6, 163, 182, 0.06), rgba(6, 163, 182, 0.02));
+    border: 1px solid rgba(6, 163, 182, 0.2);
+    border-radius: 14px;
+    margin-top: 14px;
+  }
+  body[data-theme="dark"] .fm-contact {
+    background: linear-gradient(135deg, rgba(6, 163, 182, 0.12), rgba(6, 163, 182, 0.04));
+  }
+  .fm-contact-avatar {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--cyan, #06a3b6);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--display, "Bricolage Grotesque");
+    font-weight: 800;
+    font-size: 22px;
+  }
+  .fm-contact-info { flex: 1; }
+  .fm-contact-name {
+    font-weight: 700;
+    color: var(--text, #1a1a1a);
+    font-size: 15px;
+  }
+  .fm-contact-role {
+    font-size: 12px;
+    color: var(--muted, #999);
+    margin-top: 2px;
+  }
+  .fm-contact-email {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 13px;
+    color: var(--cyan, #06a3b6);
+    margin-top: 4px;
+  }
+
+  /* ── Table simple para campos ── */
+  .fm-fields-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 14px;
+  }
+  .fm-fields-table th,
+  .fm-fields-table td {
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border, #e8e8e8);
+  }
+  .fm-fields-table th {
+    background: var(--paper, #f0f4f8);
+    color: var(--cyan, #06a3b6);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  body[data-theme="dark"] .fm-fields-table th { background: rgba(255,255,255,0.05); }
+  body[data-theme="dark"] .fm-fields-table th,
+  body[data-theme="dark"] .fm-fields-table td { border-bottom-color: var(--border); }
+  .fm-fields-table td:first-child {
+    font-weight: 700;
+    color: var(--text, #1a1a1a);
+    width: 30%;
+  }
+  body[data-theme="dark"] .fm-fields-table td:first-child { color: var(--text); }
+</style>
+</head>
+<body>
+<script>try{var t=localStorage.getItem("hero-theme");if(t)document.body.dataset.theme=t;}catch(e){}</script>
+<script>try{var r=localStorage.getItem("hero-user-role");if(r){document.body.classList.add("skip-loading","role-"+r);}}catch(e){}</script>
+
+<noscript>
+  <div style="position:fixed;inset:0;background:#062a33;color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font-family:system-ui,sans-serif;z-index:99999;">
+    <div>
+      <h1 style="margin:0 0 12px;">Hero Hub requiere JavaScript</h1>
+      <p style="margin:0;opacity:.85;">Activa JavaScript en tu navegador para acceder al Hero Hub.</p>
+    </div>
+  </div>
+</noscript>
+
+<div id="loading" class="login-container"><div class="login-card"><p>Verificando acceso...</p></div></div>
+
+<div id="finanzas-manual-panel" style="display:none;">
+
+  <!-- ══ HEADER ══ -->
+  <header class="admin-shell-header">
+    <div class="admin-shell-header-inner">
+      <a href="finanzas.html" class="admin-shell-brand">
+        <div class="admin-shell-logo"><img src="icons/favicon-hero.png" alt="Hero"></div>
+        <div>
+          <div class="admin-shell-brand-name">HERO HUB · MANUAL DE FINANZAS</div>
+          <div class="admin-shell-brand-sub">Guía completa para el equipo</div>
+        </div>
+      </a>
+      <div class="admin-shell-header-actions">
+        <button type="button" id="fc-theme-toggle" class="fc-theme-toggle" title="Cambiar tema" aria-label="Cambiar tema">
+          <i data-lucide="moon"></i>
+        </button>
+        <sl-button href="finanzas.html" variant="default" size="small">
+          <i data-lucide="arrow-left" slot="prefix" style="width:14px;height:14px;"></i>
+          Volver a Finanzas
+        </sl-button>
+      </div>
+    </div>
+  </header>
+
+  <main class="fm-shell">
+
+    <!-- ══ SIDEBAR ÍNDICE ══ -->
+    <aside class="fm-toc">
+      <div class="fm-toc-kicker">Contenido</div>
+      <ul class="fm-toc-list" id="fm-toc-list">
+        <li><a href="#bienvenida">Bienvenida</a></li>
+        <li><a href="#acceso">Acceso al módulo</a></li>
+        <li><a href="#pantalla">La pantalla principal</a></li>
+        <li><a href="#ingresos">Registrar un ingreso</a></li>
+        <li><a href="#brokers">Gestionar Brokers</a></li>
+        <li><a href="#comisiones">Tabla de Comisiones</a></li>
+        <li><a href="#dashboard">Dashboard</a></li>
+        <li><a href="#comparativas">Comparativas</a></li>
+        <li><a href="#exportar">Exportar</a></li>
+        <li><a href="#email">Enviar reportes por email</a></li>
+        <li><a href="#faq">Preguntas frecuentes</a></li>
+        <li><a href="#contacto">Contacto</a></li>
+      </ul>
+    </aside>
+
+    <!-- ══ CONTENIDO ══ -->
+    <div class="fm-content">
+
+      <!-- Hero -->
+      <div class="fm-hero">
+        <div class="fm-hero-kicker">MANUAL DEL USUARIO</div>
+        <h1>Módulo de Finanzas</h1>
+        <p>Todo lo que necesitas saber para registrar ingresos, reconciliar payouts a brokers, revisar el desempeño mensual y enviar reportes con branding Hero.</p>
+      </div>
+
+      <!-- ══ 1. BIENVENIDA ══ -->
+      <section class="fm-section" id="bienvenida">
+        <h2><i data-lucide="hand"></i>Bienvenida</h2>
+        <p>El módulo de <strong>Finanzas</strong> es el reemplazo digital del Excel de ingresos que Gilbana mantenía a mano. Centraliza:</p>
+        <ul>
+          <li><strong>Captura de ingresos</strong> con cálculo automático de la ganancia.</li>
+          <li><strong>Reconciliación de payouts a brokers</strong> (los pagos que Hero reparte a socios externos).</li>
+          <li><strong>Dashboard</strong> con indicadores clave y gráficos.</li>
+          <li><strong>Comparativas</strong> mes a mes, por tipo de pago y por broker.</li>
+          <li><strong>Exportación</strong> a CSV y reporte ejecutivo imprimible.</li>
+          <li><strong>Envío de reportes por email</strong> a brokers con plantilla Hero Light.</li>
+        </ul>
+
+        <h3>¿Quién puede usarlo?</h3>
+        <p>Solo cuentas con rol <code>finanzas</code> o <code>admin</code>. Actualmente:</p>
+        <ul>
+          <li><strong>Gilbana Barroso</strong> — Finance Support (captura principal)</li>
+          <li><strong>Aurys Rodríguez</strong> — CFO</li>
+          <li><strong>Samuel Ortiz</strong></li>
+          <li><strong>Ramón Portillo</strong> — Broker Support</li>
+          <li>Administradores de IT</li>
+        </ul>
+
+        <div class="fm-callout fm-callout-note">
+          <i data-lucide="info"></i>
+          <div>Todo lo que se registra queda auditado con tu nombre y la fecha. El equipo de IT puede consultar quién hizo cada cambio desde el panel de administración.</div>
+        </div>
+      </section>
+
+      <!-- ══ 2. ACCESO ══ -->
+      <section class="fm-section" id="acceso">
+        <h2><i data-lucide="log-in"></i>Acceso al módulo</h2>
+        <ol>
+          <li>Entra al Hero Hub con tu cuenta corporativa (<code>@heroinsuranceusa.com</code>).</li>
+          <li>En la pantalla principal, busca la tarjeta <strong>FINANZAS</strong>. Si no la ves, tu cuenta no tiene el rol asignado — contacta a IT.</li>
+          <li>Haz clic en la tarjeta y llegarás al Dashboard del módulo.</li>
+        </ol>
+
+        <div class="fm-callout fm-callout-tip">
+          <i data-lucide="lightbulb"></i>
+          <div>Puedes marcar la página como favorita en tu navegador: <code>hub.heroinsuranceusa.com/finanzas.html</code>. Igual necesitas iniciar sesión.</div>
+        </div>
+      </section>
+
+      <!-- ══ 3. PANTALLA PRINCIPAL ══ -->
+      <section class="fm-section" id="pantalla">
+        <h2><i data-lucide="layout-dashboard"></i>La pantalla principal</h2>
+        <p>El módulo tiene <strong>6 secciones</strong>, accesibles desde el menú lateral izquierdo:</p>
+
+        <div class="fm-tabs-grid">
+          <div class="fm-tab-card">
+            <div class="fm-tab-card-title"><i data-lucide="line-chart" style="width:16px;height:16px;"></i>Dashboard</div>
+            <div class="fm-tab-card-desc">KPIs y 4 gráficos. Es la primera pantalla que ves.</div>
+          </div>
+          <div class="fm-tab-card">
+            <div class="fm-tab-card-title"><i data-lucide="arrow-down-circle" style="width:16px;height:16px;"></i>Ingresos</div>
+            <div class="fm-tab-card-desc">Lista completa de ingresos capturados. Aquí se registran los nuevos.</div>
+          </div>
+          <div class="fm-tab-card">
+            <div class="fm-tab-card-title"><i data-lucide="percent" style="width:16px;height:16px;"></i>Tabla de Comisiones</div>
+            <div class="fm-tab-card-desc">Referencia de las tasas de comisión por carrier y origen.</div>
+          </div>
+          <div class="fm-tab-card">
+            <div class="fm-tab-card-title"><i data-lucide="users" style="width:16px;height:16px;"></i>Brokers</div>
+            <div class="fm-tab-card-desc">Lista de brokers externos que reciben payouts.</div>
+          </div>
+          <div class="fm-tab-card">
+            <div class="fm-tab-card-title"><i data-lucide="bar-chart-2" style="width:16px;height:16px;"></i>Comparativas</div>
+            <div class="fm-tab-card-desc">Gráficos para comparar meses, tipos de pago y brokers.</div>
+          </div>
+          <div class="fm-tab-card">
+            <div class="fm-tab-card-title"><i data-lucide="download" style="width:16px;height:16px;"></i>Exportar</div>
+            <div class="fm-tab-card-desc">CSV para Excel y reporte ejecutivo imprimible.</div>
+          </div>
+        </div>
+
+        <h3>Elementos del encabezado</h3>
+        <ul>
+          <li><strong>Volver al Hub</strong> (arriba a la derecha) — regresa al dashboard principal.</li>
+          <li><strong>Toggle Día/Noche</strong> — cambia entre modo claro y oscuro. Tu preferencia queda guardada.</li>
+        </ul>
+      </section>
+
+      <!-- ══ 4. INGRESOS ══ -->
+      <section class="fm-section" id="ingresos">
+        <h2><i data-lucide="arrow-down-circle"></i>Registrar un ingreso</h2>
+        <p>Un <strong>ingreso</strong> representa un depósito de comisión recibido por Hero (típicamente de un carrier). Cada ingreso puede repartirse en uno o varios <strong>payouts</strong> a brokers externos.</p>
+
+        <h3>Paso a paso</h3>
+        <ol>
+          <li>Entra a la pestaña <strong>Ingresos</strong> desde el menú lateral.</li>
+          <li>Haz clic en <span class="fm-fake-btn"><i data-lucide="plus" style="width:12px;height:12px;"></i> Nuevo ingreso</span> arriba a la derecha.</li>
+          <li>Se abre un modal. Completa los campos (ver tabla abajo).</li>
+          <li>Agrega los <strong>payouts</strong> a brokers si corresponden (categoría COMISSION u OVERRIDES).</li>
+          <li>Verifica el <strong>resumen</strong> en tiempo real: Bruto − Pagado = Ganancia.</li>
+          <li>Guarda con el botón <span class="fm-fake-btn">Guardar ingreso</span>.</li>
+        </ol>
+
+        <h3>Campos del modal</h3>
+        <table class="fm-fields-table">
+          <thead>
+            <tr><th>Campo</th><th>Descripción</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Fecha</td><td>Cuándo se recibió el depósito. El "Mes" se auto-calcula.</td></tr>
+            <tr><td>Tipo de pago</td><td>LIFE, SUPP, ACA, MEDICARE u OTROS.</td></tr>
+            <tr><td>Categoría</td><td>COMISSION (comisión estándar), OVERRIDES (bono) o HERO (queda 100% en Hero).</td></tr>
+            <tr><td>Monto ($)</td><td>Monto bruto recibido.</td></tr>
+            <tr><td>Descripción depósito</td><td>Nombre del carrier (dropdown editable con opción "+ Agregar nuevo").</td></tr>
+            <tr><td>Descripción transacción</td><td>Referencia del banco. Opcional.</td></tr>
+            <tr><td>Archivo original (URL de Drive)</td><td>Link al PDF/reporte que envió el carrier. Opcional.</td></tr>
+            <tr><td>Payouts</td><td>Uno por cada broker que recibe una parte. Cada payout: broker, reporte, saldo.</td></tr>
+            <tr><td>Notas</td><td>Comentarios internos. Opcional.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="fm-callout fm-callout-tip">
+          <i data-lucide="lightbulb"></i>
+          <div><strong>Ganancia neta = Monto − Suma de payouts.</strong> Se muestra en verde si es positiva, en rojo si es negativa. Nunca debería quedar en rojo salvo error de captura.</div>
+        </div>
+
+        <h3>Editar o eliminar un ingreso</h3>
+        <ul>
+          <li>Haz clic en cualquier fila para <strong>abrir el modal en modo edición</strong>.</li>
+          <li>Usa el botón <span class="fm-fake-btn">✎</span> a la derecha para editar sin abrir la fila.</li>
+          <li>Usa el botón <span class="fm-fake-btn">✕</span> para eliminar (pide confirmación).</li>
+        </ul>
+
+        <div class="fm-callout fm-callout-warn">
+          <i data-lucide="alert-triangle"></i>
+          <div>Eliminar un ingreso es <strong>irreversible</strong>. Los datos se borran de Firestore pero queda registro en el audit log.</div>
+        </div>
+
+        <h3>Filtros de la lista</h3>
+        <p>Arriba de la tabla puedes filtrar por:</p>
+        <ul>
+          <li><strong>Periodo</strong>: este mes, mes pasado, año actual, año anterior, todo, o rango personalizado.</li>
+          <li><strong>Tipo de pago</strong> y <strong>Categoría</strong>.</li>
+          <li><strong>Broker</strong>: muestra solo los ingresos con payout a ese broker.</li>
+          <li><strong>Texto libre</strong>: busca en descripción, transacción y notas.</li>
+        </ul>
+        <p>El resumen abajo de la tabla se actualiza automáticamente con los filtros aplicados.</p>
+      </section>
+
+      <!-- ══ 5. BROKERS ══ -->
+      <section class="fm-section" id="brokers">
+        <h2><i data-lucide="users"></i>Gestionar Brokers</h2>
+        <p>Los brokers son las personas o entidades externas que reciben payouts. Registrar sus datos aquí facilita:</p>
+        <ul>
+          <li>Seleccionarlos rápido en el modal de nuevo ingreso.</li>
+          <li>Pre-llenar su email al enviarles el reporte.</li>
+          <li>Filtrar ingresos por broker.</li>
+        </ul>
+
+        <h3>Agregar un broker</h3>
+        <ol>
+          <li>Ve a la pestaña <strong>Brokers</strong>.</li>
+          <li>Haz clic en <span class="fm-fake-btn"><i data-lucide="plus" style="width:12px;height:12px;"></i> Agregar broker</span>.</li>
+          <li>Completa <strong>nombre</strong> (obligatorio), <strong>email</strong>, <strong>teléfono</strong> y <strong>notas</strong>.</li>
+          <li>Guarda.</li>
+        </ol>
+
+        <div class="fm-callout fm-callout-tip">
+          <i data-lucide="lightbulb"></i>
+          <div>Si un broker no tiene email registrado, igual puedes enviarle un reporte — el sistema te dejará escribir el email al vuelo desde el envío. Ver la sección "Enviar reportes por email".</div>
+        </div>
+
+        <h3>Editar o eliminar</h3>
+        <p>Igual que en Ingresos: click en fila para editar, botón <span class="fm-fake-btn">✕</span> para eliminar. Eliminar un broker <strong>no borra los ingresos históricos</strong> que lo referenciaban — el nombre queda como texto en esos payouts.</p>
+      </section>
+
+      <!-- ══ 6. COMISIONES ══ -->
+      <section class="fm-section" id="comisiones">
+        <h2><i data-lucide="percent"></i>Tabla de Comisiones</h2>
+        <p>Esta tabla es una <strong>referencia</strong> de las tasas de comisión que Hero cobra por cada combinación de carrier, origen y agente. Sirve para consulta rápida y verificación cuando se recibe un depósito.</p>
+
+        <p>No afecta cálculos automáticos: los ingresos se capturan con el monto real recibido. La tabla es puramente informativa.</p>
+
+        <h3>Campos</h3>
+        <table class="fm-fields-table">
+          <tbody>
+            <tr><td>Carrier</td><td>Aseguradora que paga la comisión.</td></tr>
+            <tr><td>Origen</td><td>HERO, FRIENDS o AGENTES (fuente de la producción).</td></tr>
+            <tr><td>Agente</td><td>Nombre del agente si el origen es AGENTES.</td></tr>
+            <tr><td>Tasa</td><td>Porcentaje como decimal. Ej: <code>1.15</code> = 115%.</td></tr>
+            <tr><td>Notas</td><td>Comentarios de referencia. Opcional.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ══ 7. DASHBOARD ══ -->
+      <section class="fm-section" id="dashboard">
+        <h2><i data-lucide="line-chart"></i>Dashboard</h2>
+        <p>Es la primera pantalla al entrar a Finanzas. Da una vista rápida de cómo va el mes/año.</p>
+
+        <h3>KPIs (los 4 cuadros de arriba)</h3>
+        <ul>
+          <li><strong>Bruto</strong>: total de ingresos recibidos en el periodo.</li>
+          <li><strong>Pagado</strong>: suma de payouts a brokers en el periodo.</li>
+          <li><strong>Ganancia</strong>: Bruto − Pagado.</li>
+          <li><strong># Ingresos</strong>: cantidad de registros.</li>
+        </ul>
+
+        <h3>Gráficos</h3>
+        <ul>
+          <li><strong>Bruto vs Ganancia por mes</strong> (líneas) — evolución mensual.</li>
+          <li><strong>Distribución por categoría</strong> (donut) — cuánto va a COMISSION, OVERRIDES o HERO.</li>
+          <li><strong>Top 10 carriers por monto</strong> (barra horizontal) — quiénes aportan más.</li>
+          <li><strong>Top brokers por payouts</strong> (donut) — a quién le pagamos más.</li>
+        </ul>
+
+        <h3>Selector de periodo</h3>
+        <p>Arriba a la derecha puedes elegir: Año actual, Este mes, Mes pasado, Año anterior, Todo o Personalizado (te habilita dos date pickers para elegir rango exacto).</p>
+
+        <div class="fm-callout fm-callout-tip">
+          <i data-lucide="lightbulb"></i>
+          <div>El botón <span class="fm-fake-btn"><i data-lucide="refresh-cw" style="width:12px;height:12px;"></i> Actualizar</span> vuelve a leer los datos de Firestore. Útil si alguien más registró un ingreso mientras estabas viendo el dashboard.</div>
+        </div>
+      </section>
+
+      <!-- ══ 8. COMPARATIVAS ══ -->
+      <section class="fm-section" id="comparativas">
+        <h2><i data-lucide="bar-chart-2"></i>Comparativas</h2>
+        <p>Tres gráficos pensados para análisis más profundo. Cada uno responde una pregunta:</p>
+        <ul>
+          <li><strong>Bar agrupado Bruto / Pagado / Ganancia por mes</strong> — <em>"¿Cómo se comparan mes a mes?"</em></li>
+          <li><strong>Líneas por tipo de pago</strong> — <em>"¿Qué producto está creciendo? ¿ACA sube y LIFE baja?"</em></li>
+          <li><strong>Stacked bar de payouts por broker</strong> — <em>"¿Qué brokers pesan más en cada mes?"</em></li>
+        </ul>
+
+        <p>Todos aceptan el selector de periodo con la opción "Personalizado" para rangos exactos.</p>
+      </section>
+
+      <!-- ══ 9. EXPORTAR ══ -->
+      <section class="fm-section" id="exportar">
+        <h2><i data-lucide="download"></i>Exportar</h2>
+        <p>Tres formas de sacar los datos afuera de la aplicación:</p>
+
+        <h3>CSV de Ingresos</h3>
+        <p>13 columnas con toda la info de cada ingreso. Se abre en Excel/Google Sheets. Incluye BOM UTF-8 para que las tildes se vean bien.</p>
+
+        <h3>CSV de Payouts</h3>
+        <p>8 columnas, una fila por cada payout. Útil para cruzar contra los reportes que envían los brokers.</p>
+
+        <h3>Reporte ejecutivo</h3>
+        <p>Abre una vista optimizada para imprimir o guardar como PDF (desde <code>Archivo → Imprimir → Guardar como PDF</code>). Incluye KPIs + tabla mes a mes con branding Hero Light.</p>
+
+        <div class="fm-callout fm-callout-tip">
+          <i data-lucide="lightbulb"></i>
+          <div>Los CSV respetan el filtro de periodo que tengas seleccionado. Cambia el rango antes de exportar si necesitas otro subconjunto.</div>
+        </div>
+      </section>
+
+      <!-- ══ 10. EMAIL ══ -->
+      <section class="fm-section" id="email">
+        <h2><i data-lucide="mail"></i>Enviar reportes por email a brokers</h2>
+        <p>El módulo permite enviar el detalle del payout directamente al broker desde la Lista de Ingresos. El email se envía desde <code>Hero Finanzas &lt;financesupport@heroinsuranceusa.com&gt;</code> con plantilla Hero Light.</p>
+
+        <h3>Dónde está el botón</h3>
+        <p>En la <strong>Lista de Ingresos</strong>, columna de acciones a la derecha. Si el ingreso tiene payouts, verás el botón <span class="fm-fake-btn">✉</span> junto a <span class="fm-fake-btn">✎</span> y <span class="fm-fake-btn">✕</span>.</p>
+
+        <div class="fm-callout fm-callout-note">
+          <i data-lucide="info"></i>
+          <div>Si el ícono ✉ se ve <strong>verde</strong>, significa que <strong>todos los payouts de ese ingreso ya fueron enviados</strong> al menos una vez. Aún así puedes reenviar.</div>
+        </div>
+
+        <h3>Caso 1: el ingreso tiene UN solo payout</h3>
+        <ol>
+          <li>Click en ✉ → se abre un <strong>mini-diálogo</strong>.</li>
+          <li>Muestra: descripción del ingreso, broker, monto del payout.</li>
+          <li>Un campo <strong>"Enviar a"</strong> pre-llenado con el email del broker (si existe). <strong>Puedes cambiarlo</strong>.</li>
+          <li>Click en <span class="fm-fake-btn">Enviar</span> → el email sale.</li>
+          <li>Verás un mensaje verde de éxito y el modal se cierra solo.</li>
+        </ol>
+
+        <h3>Caso 2: el ingreso tiene 2 o más payouts</h3>
+        <ol>
+          <li>Click en ✉ → se abre un <strong>modal grande</strong> con todos los payouts listados.</li>
+          <li>Cada fila muestra: broker, input editable de email, monto, estado, botón Enviar.</li>
+          <li>Envías uno a la vez. Cada envío es independiente.</li>
+          <li>Los payouts ya enviados quedan marcados con <strong>"Enviado · fecha"</strong>. El botón cambia a "Reenviar".</li>
+        </ol>
+
+        <h3>¿A qué email va?</h3>
+        <p>El email destinatario es siempre lo que esté escrito en el campo <strong>"Enviar a"</strong> al momento del envío. Puedes:</p>
+        <ul>
+          <li><strong>Dejarlo tal cual</strong> si el broker está registrado y el email es correcto.</li>
+          <li><strong>Cambiarlo</strong> si quieres enviarlo a otro destinatario (por ejemplo, al asistente del broker, o a tu propio correo para revisarlo primero).</li>
+          <li><strong>Escribirlo desde cero</strong> si el broker no tiene email registrado.</li>
+        </ul>
+        <p>El email que uses queda registrado en el payout como <code>emailSentTo</code>, así puedes ver a quién le enviaste efectivamente.</p>
+
+        <h3>¿Qué contiene el email?</h3>
+        <p>Plantilla con branding Hero Light:</p>
+        <ul>
+          <li>Logo y encabezado cyan.</li>
+          <li>Saludo con el nombre del broker.</li>
+          <li>Detalle de la comisión (fecha, tipo, categoría, monto total).</li>
+          <li>Bloque destacado con <strong>el monto de su payout</strong>.</li>
+          <li>Archivo de reporte mencionado (si estaba registrado).</li>
+          <li>Firma indicando quién lo envió.</li>
+        </ul>
+
+        <div class="fm-callout fm-callout-warn">
+          <i data-lucide="alert-triangle"></i>
+          <div>El email <strong>no incluye adjuntos</strong>. Si el broker necesita el PDF del carrier, envíalo aparte. Estamos evaluando agregar adjuntos en una próxima versión.</div>
+        </div>
+
+        <h3>¿Puedo reenviar?</h3>
+        <p>Sí. Un payout marcado como enviado sigue permitiendo reenvíos — el botón cambia a "Reenviar". Cada reenvío queda registrado en el audit log con su fecha.</p>
+
+        <h3>Rastro y auditoría</h3>
+        <p>Cada envío queda registrado en dos lugares:</p>
+        <ul>
+          <li>En el <strong>ingreso mismo</strong>: se marca <code>emailSentAt</code> y <code>emailSentTo</code> en el payout enviado.</li>
+          <li>En el <strong>audit log del Hub</strong>: acción <code>finanzas.email.send</code>, incluye quién envió, a qué broker, en qué ingreso.</li>
+        </ul>
+      </section>
+
+      <!-- ══ 11. FAQ ══ -->
+      <section class="fm-section" id="faq">
+        <h2><i data-lucide="help-circle"></i>Preguntas frecuentes</h2>
+
+        <div class="fm-faq">
+
+          <details>
+            <summary>El broker no tiene email registrado. ¿Puedo enviarle el reporte igual?</summary>
+            <div>Sí. Cuando abras el modal de envío, el campo "Enviar a" estará vacío — solo escribe el email a mano y envía. Si quieres guardar el email del broker para el futuro, ve a la pestaña Brokers y edítalo ahí.</div>
+          </details>
+
+          <details>
+            <summary>El email no llegó al broker. ¿Qué hago?</summary>
+            <div>
+              Verifica primero:
+              <ul>
+                <li>¿Está bien escrito el email? (revisa mayúsculas, puntos, dominio).</li>
+                <li>¿El broker revisó su carpeta de spam?</li>
+                <li>¿Recibiste tú un mensaje de error en el modal al enviar?</li>
+              </ul>
+              Si todo parece correcto y sigue sin llegar, contacta a IT — puede ser problema del servidor de correo del broker o del proveedor Resend.
+            </div>
+          </details>
+
+          <details>
+            <summary>Ya envié un reporte y me di cuenta de que estaba mal. ¿Puedo corregirlo?</summary>
+            <div>El sistema no puede "cancelar" un email ya enviado. Lo que sí puedes hacer:
+              <ol>
+                <li>Editar el ingreso o el broker con la información correcta.</li>
+                <li>Reenviar el reporte al mismo destinatario (el botón se llamará "Reenviar").</li>
+                <li>Opcionalmente, mandarle un email manual al broker explicando el ajuste.</li>
+              </ol>
+            </div>
+          </details>
+
+          <details>
+            <summary>No aparece el botón ✉ en un ingreso.</summary>
+            <div>El botón solo aparece cuando el ingreso tiene <strong>al menos un payout</strong>. Si es un ingreso de categoría HERO sin payouts, no hay a quién enviar el reporte. Si crees que debería tener payouts, edita el ingreso y agrégalos.</div>
+          </details>
+
+          <details>
+            <summary>El botón ✉ está verde en algunos ingresos. ¿Qué significa?</summary>
+            <div>Significa que <strong>todos los payouts</strong> de ese ingreso ya fueron enviados por email al menos una vez. Es un indicador visual — igual puedes reenviar cualquiera de ellos.</div>
+          </details>
+
+          <details>
+            <summary>¿Los cambios se guardan automáticamente?</summary>
+            <div>Los cambios en ingresos y brokers se guardan cuando presionas <strong>Guardar</strong> en cada modal. Los filtros y la selección de periodo no necesitan guardarse — se aplican al vuelo.</div>
+          </details>
+
+          <details>
+            <summary>¿Puedo trabajar dos personas al mismo tiempo?</summary>
+            <div>Sí. Los datos viven en Firestore (Google Cloud) y se sincronizan casi al instante. Si ves un cambio de otra persona, presiona el botón "Actualizar" en el Dashboard o simplemente recarga la página.</div>
+          </details>
+
+          <details>
+            <summary>Estoy en modo oscuro y no me gusta. ¿Cómo lo cambio?</summary>
+            <div>El botón de luna/sol arriba a la derecha (junto a "Volver al Hub") cambia entre día y noche. Tu preferencia queda guardada por usuario, así que también aplica en el resto del Hub.</div>
+          </details>
+
+          <details>
+            <summary>¿Se puede recuperar un ingreso que borré por error?</summary>
+            <div>No hay botón de deshacer en el momento. Los datos borrados no son recuperables desde la interfaz. Contacta a IT lo antes posible — dependiendo del tiempo transcurrido, puede haber backup.</div>
+          </details>
+
+          <details>
+            <summary>¿Qué pasa si me quedo sin internet mientras registro un ingreso?</summary>
+            <div>Si intentas guardar sin conexión, verás un error. Los datos que hayas tipeado en el modal se pierden. Termina de completarlo con internet estable.</div>
+          </details>
+
+        </div>
+      </section>
+
+      <!-- ══ 12. CONTACTO ══ -->
+      <section class="fm-section" id="contacto">
+        <h2><i data-lucide="life-buoy"></i>Contacto</h2>
+        <p>Si algo no funciona como esperas, si necesitas que se agregue una función, o si simplemente tienes una duda:</p>
+
+        <div class="fm-contact">
+          <div class="fm-contact-avatar">FR</div>
+          <div class="fm-contact-info">
+            <div class="fm-contact-name">Fernando Romero</div>
+            <div class="fm-contact-role">IT Manager · Autor del Hero Hub</div>
+            <div class="fm-contact-email">it@heroinsuranceusa.com</div>
+          </div>
+        </div>
+
+        <div class="fm-callout fm-callout-tip">
+          <i data-lucide="lightbulb"></i>
+          <div>Si el reporte de un envío por email no llega, incluye en tu mensaje: (1) email al que enviaste, (2) fecha aproximada, (3) nombre del broker, (4) captura del error si aparece.</div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="hero-footer">
+    <span>HERO HUB · v2.3</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+  </footer>
+</div>
+
+<script>
+  window.refreshIcons = () => { if (window.lucide) lucide.createIcons(); };
+</script>
+
+<script type="module">
+  import { auth } from "./js/firebase-config.js";
+  import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import { loadUserRole, canAccessPage } from "./js/roles.js";
+
+  // Gate + reveal
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { location.href = "index.html"; return; }
+    const role = await loadUserRole(user.email);
+    if (!role || !canAccessPage("finanzas-manual", role)) {
+      location.href = "finanzas.html";
+      return;
+    }
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("finanzas-manual-panel").style.display = "";
+    window.refreshIcons();
+  });
+</script>
+
+<script type="module">
+  // Toggle Día/Noche (mismo patrón que finanzas.html)
+  import { auth, db } from "./js/firebase-config.js";
+  import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  const themeBtn = document.getElementById("fc-theme-toggle");
+  function updateThemeIcon() {
+    const isDark = document.body.dataset.theme === "dark";
+    themeBtn.innerHTML = isDark
+      ? '<i data-lucide="sun"></i>'
+      : '<i data-lucide="moon"></i>';
+    if (window.lucide) lucide.createIcons();
+  }
+  updateThemeIcon();
+  themeBtn.addEventListener("click", async () => {
+    const isDark = document.body.dataset.theme === "dark";
+    const next = isDark ? "light" : "dark";
+    if (next === "dark") document.body.dataset.theme = "dark";
+    else delete document.body.dataset.theme;
+    try { localStorage.setItem("hero-theme", next); } catch (_) {}
+    updateThemeIcon();
+    const u = auth.currentUser;
+    if (u) {
+      try { await setDoc(doc(db, "users", u.email), { theme: next }, { merge: true }); }
+      catch (_) {}
+    }
+  });
+</script>
+
+<script>
+  // Scroll-spy simple: marca en el índice la sección visible
+  document.addEventListener("DOMContentLoaded", () => {
+    const links = document.querySelectorAll("#fm-toc-list a");
+    const sections = Array.from(document.querySelectorAll(".fm-section"));
+    const map = new Map();
+    links.forEach(a => {
+      const id = a.getAttribute("href").slice(1);
+      map.set(id, a);
+    });
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.id;
+          links.forEach(a => a.classList.remove("active"));
+          const active = map.get(id);
+          if (active) active.classList.add("active");
+        }
+      });
+    }, { rootMargin: "-30% 0px -60% 0px", threshold: 0 });
+
+    sections.forEach(s => observer.observe(s));
+
+    // Smooth scroll para los links del índice
+    links.forEach(a => {
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        const id = a.getAttribute("href").slice(1);
+        const target = document.getElementById(id);
+        if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+  });
+</script>
+
+</body>
+</html>

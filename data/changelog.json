@@ -1,5 +1,22 @@
 [
   {
+    "id": "2026-06-30-finanzas-manual",
+    "version": "v2.3",
+    "date": "2026-06-30",
+    "category": "docs",
+    "scope": "finanzas",
+    "audience": "admin",
+    "title": "Manual del módulo Finanzas para el usuario final",
+    "items": [
+      "Nueva página finanzas-manual.html con 12 secciones (bienvenida, acceso, registro de ingresos, brokers, comisiones, dashboard, comparativas, exportar, envío de reportes, FAQ, contacto)",
+      "Sidebar sticky con scroll-spy: la sección visible se resalta en el índice",
+      "Callouts diferenciados para consejos, atenciones y notas",
+      "Compatible con modo oscuro",
+      "Acceso desde el botón ? en el header de finanzas.html",
+      "Gated por rol finanzas + admin"
+    ]
+  },
+  {
     "id": "2026-06-30-finanzas-email-reports",
     "version": "v2.3",
     "date": "2026-06-30",
