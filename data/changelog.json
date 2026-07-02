@@ -1,5 +1,25 @@
 [
   {
+    "id": "2026-07-02-modulos-acceso-launcher",
+    "version": "v2.5",
+    "date": "2026-07-02",
+    "category": "feat",
+    "scope": "dashboard",
+    "audience": "all",
+    "title": "Nuevo segmento \"Módulos de Acceso\" con diseño tech y efecto 3D",
+    "items": [
+      "Nueva sección arriba del Cuartel General con 4 tiles horizontales: Base de Datos, Finanzas, IT Console y Calendario",
+      "Diseño tipo terminal con dots pattern de fondo, glow radial del color del módulo y LED indicador en la esquina",
+      "Efecto tilt 3D con vanilla-tilt.js: los tiles rotan siguiendo el cursor con perspectiva y brillo holográfico",
+      "Ícono y nombre flotan sobre el tile gracias a translateZ (efecto de levitación)",
+      "Glow neón fuerte debajo de cada tile con el color propio del módulo, intensificado en hover",
+      "Línea de roles con acceso mostrada en cada tile (JetBrains Mono, tono muted)",
+      "Colores neón por módulo: cyan, ámbar, indigo y verde",
+      "Respeta prefers-reduced-motion",
+      "Librería nueva: vanilla-tilt@1.8.1 via CDN"
+    ]
+  },
+  {
     "id": "2026-07-02-it-console-integration",
     "version": "v2.4",
     "date": "2026-07-02",

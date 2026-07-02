@@ -16,6 +16,8 @@
 <script defer src="https://unpkg.com/lucide@0.474.0"></script>
 <!-- GSAP para la animación de "Activar Misión" -->
 <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<!-- vanilla-tilt para el efecto 3D flotante de los Módulos de Acceso -->
+<script defer src="https://cdn.jsdelivr.net/npm/vanilla-tilt@1.8.1/dist/vanilla-tilt.min.js"></script>
 <!-- Efecto eléctrico (Canvas procedural) para el clic de "Activar Misión" -->
 <script defer src="js/electricity.js"></script>
 <script defer src="js/topbar-dropdown.js"></script>
@@ -262,6 +264,47 @@
 
     <div class="connector"></div>
 
+    <!-- ══ MÓDULOS DE ACCESO — Launcher moderno para los 4 módulos principales ══ -->
+    <section class="section fade-in" id="sec-access-modules">
+      <div class="section-label"><span class="kicker-dot"></span>Módulos de acceso</div>
+
+      <div class="access-grid">
+        <a href="https://docs.google.com/spreadsheets/d/1100HED8B6MxpDrOxnFoxitsRzZPRerwN6TkAJvXVu2I/edit?gid=969364169#gid=969364169" target="_blank" rel="noopener" class="access-tile at-database">
+          <div class="access-icon"><i data-lucide="database"></i></div>
+          <div class="access-content">
+            <div class="access-name">Base de Datos</div>
+            <div class="access-roles">admin · interno · finanzas · IT</div>
+          </div>
+        </a>
+
+        <a href="finanzas.html" class="access-tile at-finanzas">
+          <div class="access-icon"><i data-lucide="landmark"></i></div>
+          <div class="access-content">
+            <div class="access-name">Finanzas</div>
+            <div class="access-roles">admin · finanzas</div>
+          </div>
+        </a>
+
+        <a href="it-console.html" class="access-tile at-it-console">
+          <div class="access-icon"><i data-lucide="terminal-square"></i></div>
+          <div class="access-content">
+            <div class="access-name">IT Console</div>
+            <div class="access-roles">admin · IT</div>
+          </div>
+        </a>
+
+        <button type="button" class="access-tile at-calendario" id="access-calendar-btn">
+          <div class="access-icon"><i data-lucide="calendar-days"></i></div>
+          <div class="access-content">
+            <div class="access-name">Calendario</div>
+            <div class="access-roles">todos los roles</div>
+          </div>
+        </button>
+      </div>
+    </section>
+
+    <div class="connector"></div>
+
     <!-- ══ CUARTEL GENERAL — Recursos del Hub + Arsenal del Héroe ══ -->
     <section class="section fade-in">
       <div class="section-label"><span class="kicker-dot"></span>Tu cuartel general</div>
@@ -309,98 +352,6 @@
             </div>
             <div class="hc-cta">
               <span>Abrir portales</span>
-              <i data-lucide="arrow-right"></i>
-            </div>
-          </div>
-        </a>
-
-        <!-- CARD: ENTRENAMIENTOS (oculta por defecto, visible solo para rol "agente") -->
-        <button type="button" class="hub-card hc-trainings" id="hc-trainings-btn">
-          <div class="hc-halftone"></div>
-          <div class="hc-stripe"></div>
-          <div class="hc-content">
-            <div class="hc-icon-wrap">
-              <div class="hc-icon"><i data-lucide="graduation-cap"></i></div>
-              <div class="hc-burst">✦</div>
-            </div>
-            <div class="hc-label">ENTRENAMIENTOS</div>
-            <div class="hc-title">Calendario y grabaciones</div>
-            <div class="hc-desc">Agenda de capacitaciones y todas las sesiones grabadas del equipo. Elige qué quieres ver.</div>
-            <div class="hc-feature">
-              <i data-lucide="calendar-days"></i>
-              <span>Calendario y grabaciones</span>
-            </div>
-            <div class="hc-cta">
-              <span>Abrir</span>
-              <i data-lucide="arrow-right"></i>
-            </div>
-          </div>
-        </button>
-
-        <!-- CARD: BASE DE DATOS DE AGENTES -->
-        <a href="https://docs.google.com/spreadsheets/d/1100HED8B6MxpDrOxnFoxitsRzZPRerwN6TkAJvXVu2I/edit?gid=969364169#gid=969364169" target="_blank" rel="noopener" class="hub-card hc-database">
-          <div class="hc-halftone"></div>
-          <div class="hc-stripe"></div>
-          <div class="hc-content">
-            <div class="hc-icon-wrap">
-              <div class="hc-icon"><i data-lucide="database"></i></div>
-              <div class="hc-burst">✦</div>
-            </div>
-            <div class="hc-label">BASE DE DATOS</div>
-            <div class="hc-title">Registro de agentes</div>
-            <div class="hc-desc">Hoja viva con el registro completo del equipo: contactos, agencias, productos y estado.</div>
-            <div class="hc-feature">
-              <i data-lucide="sheet"></i>
-              <span>Sheet vivo</span>
-            </div>
-            <div class="hc-cta">
-              <span>Abrir sheet</span>
-              <i data-lucide="arrow-right"></i>
-            </div>
-          </div>
-        </a>
-
-        <!-- CARD: FINANZAS (oculta por defecto, visible solo para admin y finanzas) -->
-        <a href="finanzas.html" class="hub-card hc-finanzas">
-          <div class="hc-halftone"></div>
-          <div class="hc-stripe"></div>
-          <div class="hc-content">
-            <div class="hc-icon-wrap">
-              <div class="hc-icon"><i data-lucide="landmark"></i></div>
-              <div class="hc-burst">$</div>
-            </div>
-            <div class="hc-label">FINANZAS</div>
-            <div class="hc-title">Ingresos y reconciliación</div>
-            <div class="hc-desc">Comisiones por carrier, payouts a brokers, reportes de pago — todo en un solo módulo.</div>
-            <div class="hc-feature">
-              <i data-lucide="wallet"></i>
-              <span>Solo equipo de Finanzas</span>
-            </div>
-            <div class="hc-cta">
-              <span>Abrir Finanzas</span>
-              <i data-lucide="arrow-right"></i>
-            </div>
-          </div>
-        </a>
-
-        <!-- CARD: IT CONSOLE (oculta por defecto, visible solo para admin e IT) -->
-        <a href="it-console.html" class="hub-card hc-it-console">
-          <div class="hc-halftone"></div>
-          <div class="hc-stripe"></div>
-          <div class="hc-content">
-            <div class="hc-icon-wrap">
-              <div class="hc-icon"><i data-lucide="terminal-square"></i></div>
-              <div class="hc-burst">&gt;</div>
-            </div>
-            <div class="hc-label">IT CONSOLE</div>
-            <div class="hc-title">Herramientas del equipo IT</div>
-            <div class="hc-desc">Tickets, usuarios de Workspace, dispositivos, licencias — la consola interna de IT.</div>
-            <div class="hc-feature">
-              <i data-lucide="lock"></i>
-              <span>Solo equipo de IT</span>
-            </div>
-            <div class="hc-cta">
-              <span>Abrir consola</span>
               <i data-lucide="arrow-right"></i>
             </div>
           </div>
@@ -643,7 +594,7 @@
   </div>
 
   <footer class="hero-footer">
-    <span>HERO HUB · v2.4</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+    <span>HERO HUB · v2.5</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
   </footer>
 </div>
 
@@ -1035,7 +986,7 @@
 <script>
   // ══ Modal Entrenamientos: Calendario vs Grabaciones ══
   (function () {
-    const btn = document.getElementById("hc-trainings-btn");
+    const btn = document.getElementById("access-calendar-btn");
     const modal = document.getElementById("trainings-modal");
     const closeBtn = document.getElementById("tm-close");
     if (!btn || !modal || !closeBtn) return;
@@ -1060,6 +1011,25 @@
       if (e.key === "Escape" && modal.classList.contains("is-open")) closeModal();
     });
   })();
+
+  // ══ Efecto 3D flotante para los Módulos de Acceso ══
+  // vanilla-tilt: rotación con perspectiva siguiendo el cursor + brillo sutil.
+  // Se aplica solo si el usuario no prefiere reduced-motion.
+  window.addEventListener("load", () => {
+    if (typeof VanillaTilt === "undefined") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const tiles = document.querySelectorAll(".access-tile");
+    if (!tiles.length) return;
+    VanillaTilt.init(tiles, {
+      max: 12,
+      speed: 400,
+      scale: 1.04,
+      perspective: 1000,
+      glare: true,
+      "max-glare": 0.25,
+      "gyroscope": false
+    });
+  });
 </script>
 </body>
 </html>

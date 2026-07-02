@@ -7736,3 +7736,279 @@ body[data-theme="dark"] .ad-pm-kpi-value { color: var(--cyan); }
   .ad-pm-table thead th { font-size: 9.5px; padding: 8px 10px; }
   .ad-pm-table tbody td { padding: 7px 10px; }
 }
+
+
+/* ═══════════════════════════════════════════════════════════
+   MÓDULOS DE ACCESO — Launcher moderno (tiles cuadrados)
+   ═══════════════════════════════════════════════════════════
+   Segmento arriba del Cuartel General con 4 tiles para los
+   módulos principales: Base de Datos, Finanzas, IT Console y
+   Calendario. Diseño minimalista tipo Google Workspace launcher.
+   Colores por módulo, hover animado, dark mode, responsive. */
+
+.access-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+  margin-top: 24px;
+}
+
+@media (max-width: 980px) {
+  .access-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 500px) {
+  .access-grid { grid-template-columns: 1fr; }
+}
+
+/* Tile individual (anchor o button)
+   Formato horizontal: ícono a la izquierda, nombre a la derecha.
+   aspect-ratio 2/1 hace que sean bien bajos y rectangulares.
+   transform-style: preserve-3d + overflow: hidden permiten que vanilla-tilt
+   rote con perspectiva y los hijos leviten con translateZ. */
+.access-tile {
+  position: relative;
+  aspect-ratio: 2 / 1;
+  background:
+    radial-gradient(ellipse at top right,
+      var(--tile-accent, transparent) 0%, transparent 55%),
+    radial-gradient(circle at 1px 1px,
+      rgba(15, 23, 42, 0.08) 1px, transparent 0) 0 0 / 14px 14px,
+    #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  font-family: inherit;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  will-change: transform;
+  transition: box-shadow 300ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 240ms ease;
+  box-shadow:
+    0 18px 30px -8px var(--tile-glow, rgba(15, 23, 42, 0.08)),
+    0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.access-tile:hover {
+  box-shadow:
+    0 28px 55px -6px var(--tile-glow-strong, rgba(15, 23, 42, 0.28)),
+    0 10px 20px -8px var(--tile-glow, rgba(15, 23, 42, 0.18)),
+    0 2px 4px rgba(15, 23, 42, 0.08);
+}
+
+/* LED indicador tipo terminal en la esquina inferior derecha. Ligero glow
+   del color del módulo (más intenso al hover). */
+.access-tile::after {
+  content: '';
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--tile-led, rgba(15, 23, 42, 0.15));
+  box-shadow: 0 0 6px var(--tile-led, rgba(15, 23, 42, 0.25));
+  transform: translateZ(10px);
+  transition: box-shadow 240ms ease, background 240ms ease;
+  z-index: 2;
+}
+
+.access-tile:hover::after {
+  box-shadow: 0 0 12px var(--tile-led, rgba(15, 23, 42, 0.4)),
+              0 0 22px var(--tile-led, rgba(15, 23, 42, 0.25));
+}
+
+button.access-tile {
+  width: 100%;
+  outline: none;
+}
+
+.access-tile:focus-visible {
+  outline: 3px solid rgba(6, 163, 182, 0.4);
+  outline-offset: 2px;
+}
+
+/* Ícono — flotando 30px hacia el usuario para el efecto 3D.
+   56px porque el layout ahora es horizontal y el tile es más bajo. */
+.access-icon {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.04);
+  transform: translateZ(30px);
+  transition: background 240ms ease, box-shadow 240ms ease;
+}
+
+.access-tile:hover .access-icon {
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.08);
+}
+
+.access-icon i {
+  width: 28px;
+  height: 28px;
+  stroke-width: 1.75;
+}
+
+/* Contenedor a la derecha del ícono con el nombre + roles apilados. */
+.access-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  transform: translateZ(15px);
+}
+
+/* Nombre del módulo — alineado a la izquierda */
+.access-name {
+  font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+  text-align: left;
+  line-height: 1.2;
+}
+
+/* Roles con acceso — monospace tipo terminal, tono muted */
+.access-roles {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px;
+  color: rgba(15, 23, 42, 0.55);
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-theme="dark"] .access-roles {
+  color: rgba(226, 232, 240, 0.55);
+}
+
+/* Reduced motion: cuando el usuario pide menos animación, aplanar todo. */
+@media (prefers-reduced-motion: reduce) {
+  .access-icon,
+  .access-name { transform: none; }
+}
+
+/* ── Colores por módulo ──
+   --tile-accent      → glow radial en la esquina superior derecha.
+   --tile-led         → LED tipo terminal en la esquina inferior derecha.
+   --tile-glow        → luz neón base debajo del tile (box-shadow).
+   --tile-glow-strong → luz neón intensificada al hover. */
+.at-database {
+  --tile-accent: rgba(6, 107, 120, 0.12);
+  --tile-led: #06b6d4;
+  --tile-glow: rgba(6, 182, 212, 0.32);
+  --tile-glow-strong: rgba(6, 182, 212, 0.60);
+}
+.at-database   .access-icon      { background: rgba(6, 107, 120, 0.10); }
+.at-database   .access-icon i    { color: #066b78; }
+.at-database:hover               { border-color: #066b78; }
+.at-database:hover .access-icon  { background: rgba(6, 107, 120, 0.16); }
+
+.at-finanzas {
+  --tile-accent: rgba(245, 158, 11, 0.14);
+  --tile-led: #fbbf24;
+  --tile-glow: rgba(251, 191, 36, 0.32);
+  --tile-glow-strong: rgba(251, 191, 36, 0.60);
+}
+.at-finanzas   .access-icon      { background: rgba(245, 158, 11, 0.10); }
+.at-finanzas   .access-icon i    { color: #d97706; }
+.at-finanzas:hover               { border-color: #d97706; }
+.at-finanzas:hover .access-icon  { background: rgba(245, 158, 11, 0.16); }
+
+.at-it-console {
+  --tile-accent: rgba(67, 56, 202, 0.14);
+  --tile-led: #818cf8;
+  --tile-glow: rgba(99, 102, 241, 0.32);
+  --tile-glow-strong: rgba(99, 102, 241, 0.60);
+}
+.at-it-console .access-icon      { background: rgba(67, 56, 202, 0.10); }
+.at-it-console .access-icon i    { color: #4338ca; }
+.at-it-console:hover             { border-color: #4338ca; }
+.at-it-console:hover .access-icon{ background: rgba(67, 56, 202, 0.16); }
+
+.at-calendario {
+  --tile-accent: rgba(5, 150, 105, 0.14);
+  --tile-led: #34d399;
+  --tile-glow: rgba(16, 185, 129, 0.32);
+  --tile-glow-strong: rgba(16, 185, 129, 0.60);
+}
+.at-calendario .access-icon      { background: rgba(5, 150, 105, 0.10); }
+.at-calendario .access-icon i    { color: #059669; }
+.at-calendario:hover             { border-color: #059669; }
+.at-calendario:hover .access-icon{ background: rgba(5, 150, 105, 0.16); }
+
+/* ── Dark mode ──
+   Dots más brillantes contra el fondo oscuro para acentuar el efecto tipo
+   pantalla de terminal. Glow del acento más intenso también. */
+[data-theme="dark"] .access-tile {
+  background:
+    radial-gradient(ellipse at top right,
+      var(--tile-accent, transparent) 0%, transparent 55%),
+    radial-gradient(circle at 1px 1px,
+      rgba(148, 163, 184, 0.14) 1px, transparent 0) 0 0 / 14px 14px,
+    #0f172a;
+  border-color: #334155;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .access-tile {
+  box-shadow:
+    0 20px 35px -8px var(--tile-glow, rgba(0, 0, 0, 0.4)),
+    0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .access-tile:hover {
+  box-shadow:
+    0 30px 60px -6px var(--tile-glow-strong, rgba(0, 0, 0, 0.5)),
+    0 12px 24px -8px var(--tile-glow, rgba(0, 0, 0, 0.35)),
+    0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .access-name {
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .access-icon {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .at-database:hover   .access-icon { background: rgba(6, 107, 120, 0.28); }
+[data-theme="dark"] .at-finanzas:hover   .access-icon { background: rgba(245, 158, 11, 0.28); }
+[data-theme="dark"] .at-it-console:hover .access-icon { background: rgba(67, 56, 202, 0.28); }
+[data-theme="dark"] .at-calendario:hover .access-icon { background: rgba(5, 150, 105, 0.28); }
+
+/* En dark, subir la intensidad del acento para que se note más */
+[data-theme="dark"] .at-database   { --tile-accent: rgba(6, 163, 182, 0.22); }
+[data-theme="dark"] .at-finanzas   { --tile-accent: rgba(245, 158, 11, 0.22); }
+[data-theme="dark"] .at-it-console { --tile-accent: rgba(99, 102, 241, 0.22); }
+[data-theme="dark"] .at-calendario { --tile-accent: rgba(16, 185, 129, 0.22); }
+
+/* ── Visibilidad por rol ──
+   Base de Datos: interno / admin / finanzas / IT (agente NO)
+   Finanzas:      solo admin y finanzas
+   IT Console:    solo admin e IT
+   Calendario:    todos los roles */
+body.role-agente .access-tile.at-database { display: none; }
+
+.access-tile.at-finanzas { display: none; }
+body.role-admin    .access-tile.at-finanzas,
+body.role-finanzas .access-tile.at-finanzas { display: flex; }
+
+.access-tile.at-it-console { display: none; }
+body.role-admin .access-tile.at-it-console,
+body.role-it    .access-tile.at-it-console { display: flex; }
