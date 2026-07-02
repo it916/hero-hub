@@ -1,5 +1,20 @@
 [
   {
+    "id": "2026-07-02-user-menu-hub-wide",
+    "version": "v2.5",
+    "date": "2026-07-02",
+    "category": "feat",
+    "scope": "ui",
+    "audience": "all",
+    "title": "Menú del avatar disponible en todas las páginas del Hub",
+    "items": [
+      "El menú desplegable del avatar (Mi perfil, Admin, toggle día/noche, Cerrar sesión) ahora vive en las 11 páginas del Hero Hub",
+      "Nuevo módulo compartido js/user-menu.js que se auto-inicializa con onAuthStateChanged en cada página",
+      "Los botones sueltos de Admin del topbar quedaron consolidados en el menú del avatar en todas las páginas",
+      "La foto del usuario se replica automáticamente al header del menú usando MutationObserver"
+    ]
+  },
+  {
     "id": "2026-07-02-user-menu-dropdown",
     "version": "v2.5",
     "date": "2026-07-02",

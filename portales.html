@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
+<script type="module" src="js/user-menu.js"></script>
 <script defer src="https://unpkg.com/lucide@0.474.0"></script>
 <script defer src="js/topbar-dropdown.js"></script>
 
@@ -78,9 +79,38 @@
         <a href="changelog.html" class="nav-link"><i data-lucide="sparkles"></i><span>Changelog</span></a>
       </nav>
       <div class="topbar-actions">
-        <img id="user-avatar" src="" alt="" class="avatar">
-        <a id="btn-admin" href="admin.html" class="icon-btn" style="display:none;" title="Admin"><i data-lucide="shield-check"></i></a>
-        <button id="btn-logout" class="icon-btn" title="Salir"><i data-lucide="log-out"></i></button>
+        <button id="btn-logout" class="icon-btn" title="Salir" style="display:none;"><i data-lucide="log-out"></i></button>
+
+        <div class="user-menu-wrap">
+          <button id="user-avatar-btn" class="user-avatar-btn" type="button" aria-label="Menú de usuario" aria-haspopup="true" aria-expanded="false">
+            <img id="user-avatar" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="" class="avatar">
+          </button>
+          <div id="user-menu" class="user-menu" role="menu" hidden>
+            <div class="user-menu-header">
+              <img id="user-menu-avatar" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="" class="user-menu-photo">
+              <div class="user-menu-info">
+                <div class="user-menu-name" id="user-menu-name">—</div>
+                <div class="user-menu-email" id="user-menu-email">—</div>
+                <div class="user-menu-role" id="user-menu-role" hidden></div>
+              </div>
+            </div>
+            <div class="user-menu-divider"></div>
+            <a href="equipo.html" class="user-menu-item" role="menuitem">
+              <i data-lucide="user"></i><span>Mi perfil</span>
+            </a>
+            <a href="admin.html" id="user-menu-admin" class="user-menu-item" role="menuitem" hidden>
+              <i data-lucide="shield-check"></i><span>Admin</span>
+            </a>
+            <div class="user-menu-divider"></div>
+            <button id="user-menu-theme" class="user-menu-item" type="button" role="menuitem">
+              <i data-lucide="sun"></i><span>Cambiar a noche</span>
+            </button>
+            <div class="user-menu-divider"></div>
+            <button id="user-menu-logout" class="user-menu-item user-menu-item-danger" type="button" role="menuitem">
+              <i data-lucide="log-out"></i><span>Cerrar sesión</span>
+            </button>
+          </div>
+        </div>
         <button id="btn-menu" class="icon-btn menu-toggle" title="Menú"><i data-lucide="menu"></i></button>
       </div>
     </div>

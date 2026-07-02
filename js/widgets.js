@@ -74,79 +74,9 @@ export async function renderWidgets(userData) {
   renderSpotlight();
   renderBirthday();
   renderMessageWidget();
-  attachUserMenu();
+  // El menú del avatar se auto-inicializa desde js/user-menu.js (cargado en
+  // el <head> del HTML). No hace falta llamarlo desde acá.
   if (window.refreshIcons) window.refreshIcons();
-}
-
-// Dropdown del avatar en el topbar. Muestra header con foto+nombre+email+rol,
-// link a Mi perfil y botón Cerrar sesión (dispara #btn-logout que ya tiene el
-// handler de signOut en auth.js — así reusamos sin importar Firebase acá).
-function attachUserMenu() {
-  const btn = document.getElementById("user-avatar-btn");
-  const menu = document.getElementById("user-menu");
-  if (!btn || !menu || btn.dataset.bound) return;
-  btn.dataset.bound = "1";
-
-  const user = auth.currentUser;
-  if (user) {
-    const nameEl  = document.getElementById("user-menu-name");
-    const emailEl = document.getElementById("user-menu-email");
-    const photoEl = document.getElementById("user-menu-avatar");
-    if (nameEl)  nameEl.textContent  = user.displayName || user.email.split("@")[0];
-    if (emailEl) emailEl.textContent = user.email;
-    if (photoEl && user.photoURL) photoEl.src = user.photoURL;
-
-    // Rol: leer del body class que aplicó auth.js (patrón role-{nombre}).
-    // Además, si es admin, hacer visible el ítem "Admin" del menú.
-    const roleClass = [...document.body.classList].find(c => c.startsWith("role-"));
-    if (roleClass) {
-      const roleName = roleClass.replace("role-", "");
-      const roleEl = document.getElementById("user-menu-role");
-      if (roleEl) {
-        roleEl.textContent = roleName.toUpperCase();
-        roleEl.hidden = false;
-      }
-      if (roleName === "admin") {
-        const adminItem = document.getElementById("user-menu-admin");
-        if (adminItem) adminItem.hidden = false;
-      }
-    }
-  }
-
-  btn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    const willOpen = menu.hidden;
-    menu.hidden = !willOpen;
-    btn.setAttribute("aria-expanded", String(willOpen));
-  });
-
-  document.addEventListener("click", (e) => {
-    if (!menu.hidden && !btn.contains(e.target) && !menu.contains(e.target)) {
-      menu.hidden = true;
-      btn.setAttribute("aria-expanded", "false");
-    }
-  });
-
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !menu.hidden) {
-      menu.hidden = true;
-      btn.setAttribute("aria-expanded", "false");
-      btn.focus();
-    }
-  });
-
-  const logoutBtn = document.getElementById("user-menu-logout");
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", () => {
-      const legacyLogoutBtn = document.getElementById("btn-logout");
-      if (legacyLogoutBtn) legacyLogoutBtn.click();
-    });
-  }
-
-  // Ítem de tema día/noche: setea el ícono/label inicial y bindea el toggle.
-  syncThemeMenuItem();
-  const themeItem = document.getElementById("user-menu-theme");
-  if (themeItem) themeItem.addEventListener("click", toggleHubTheme);
 }
 
 // ═══ ARSENAL ═══
@@ -542,25 +472,3 @@ async function saveUserField(fields) {
   catch (e) { console.error("Error guardando:", e); }
 }
 
-// Toggle día/noche desde el ítem del menú del avatar (antes vivía como
-// botón separado en el topbar). Un click alterna, actualiza el ícono y
-// el label del ítem, y guarda en Firestore + localStorage.
-async function toggleHubTheme() {
-  const current = document.body.dataset.theme || "light";
-  const next = current === "dark" ? "light" : "dark";
-  document.body.dataset.theme = next;
-  currentUserData.theme = next;
-  try { localStorage.setItem("hero-theme", next); } catch (e) {}
-  syncThemeMenuItem();
-  await saveUserField({ theme: next });
-}
-
-function syncThemeMenuItem() {
-  const item = document.getElementById("user-menu-theme");
-  if (!item) return;
-  const theme = document.body.dataset.theme || "light";
-  const icon = theme === "dark" ? "sun" : "moon";
-  const label = theme === "dark" ? "Cambiar a día" : "Cambiar a noche";
-  item.innerHTML = `<i data-lucide="${icon}"></i><span>${label}</span>`;
-  if (window.refreshIcons) window.refreshIcons();
-}
