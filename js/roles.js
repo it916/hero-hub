@@ -21,7 +21,7 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-
 export const ROLES = {
   admin: {
     label: "Administrador",
-    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones", "changelog", "admin", "finanzas", "finanzas-manual"],
+    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones", "changelog", "admin", "finanzas", "finanzas-manual", "it-console"],
     isAdmin: true
   },
   interno: {
@@ -33,6 +33,14 @@ export const ROLES = {
     label: "Finanzas",
     // Misma visibilidad que "interno" + la página de Finanzas y su manual. Sin acceso a admin/grabaciones/onboarding.
     pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "reuniones", "changelog", "finanzas", "finanzas-manual"],
+    isAdmin: false
+  },
+  it: {
+    label: "IT",
+    // Misma visibilidad que "interno" + la IT Console. Sin acceso a admin/finanzas.
+    // it@ está en LEGACY_ADMIN_EMAILS y entra como admin — este rol es para
+    // futuros asistentes de IT o cuentas de servicio que necesiten la consola.
+    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "reuniones", "changelog", "it-console"],
     isAdmin: false
   },
   agente: {

@@ -1,5 +1,23 @@
 [
   {
+    "id": "2026-07-02-it-console-integration",
+    "version": "v2.4",
+    "date": "2026-07-02",
+    "category": "feat",
+    "scope": "it-console",
+    "audience": "admin",
+    "title": "Integración del IT Console al Hero Hub",
+    "items": [
+      "El IT Console (antes en it916.github.io/hero-it-console) ahora vive como página nativa del Hub: it-console.html",
+      "Nueva tarjeta 'IT CONSOLE' en el dashboard (indigo, ícono terminal), visible solo para admin e IT",
+      "Nuevo rol 'IT' asignable desde el panel admin — hereda visibilidad de interno + acceso a la consola",
+      "Auth híbrida: la consola reutiliza la sesión Firebase del Hub vía nuevo endpoint POST /auth/hub-login del Worker (whitelist IT_EMAILS)",
+      "Tema día/noche sincronizado entre Hub y Console (misma key hero-theme, mismo selector body)",
+      "Todos los módulos del Console operativos: Home, Solicitudes, Soporte (Tickets/Toolbox/Dispositivos/Licencias), Usuarios, Auditoría, Logs, Configuración",
+      "El deploy anterior de GitHub Pages queda como backup 1-2 semanas antes de apagarse"
+    ]
+  },
+  {
     "id": "2026-06-30-finanzas-manual",
     "version": "v2.3",
     "date": "2026-06-30",

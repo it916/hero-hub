@@ -6585,6 +6585,7 @@ button.hub-card {
 .hc-database .hc-icon i { color: #066b78; }
 .hc-alta .hc-icon i { color: #7c3aed; }
 .hc-reuniones .hc-icon i { color: #4338ca; }
+.hc-it-console .hc-icon i { color: #4338ca; }
 
 /* Burst (estrellita esquina del ícono) */
 .hc-burst {
@@ -6632,6 +6633,7 @@ button.hub-card {
 .hc-database .hc-label { color: #066b78; }
 .hc-alta .hc-label { color: #7c3aed; }
 .hc-reuniones .hc-label { color: #4338ca; }
+.hc-it-console .hc-label { color: #4338ca; }
 
 .hc-title {
   font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif;
@@ -6790,6 +6792,7 @@ button.hub-card {
 .hc-database:hover .hc-cta { background: #066b78; border-color: #066b78; }
 .hc-alta:hover .hc-cta { background: #7c3aed; border-color: #7c3aed; }
 .hc-reuniones:hover .hc-cta { background: #4f46e5; border-color: #4f46e5; }
+.hc-it-console:hover .hc-cta { background: #4f46e5; border-color: #4f46e5; }
 
 /* ── Dark mode ── */
 [data-theme="dark"] .hub-card {
@@ -6820,6 +6823,7 @@ button.hub-card {
 [data-theme="dark"] .hc-database .hc-cta  { color: #67e8f9; border-color: rgba(6,163,182,.55); }
 [data-theme="dark"] .hc-alta .hc-cta      { color: #c4b5fd; border-color: rgba(168,85,247,.50); }
 [data-theme="dark"] .hc-reuniones .hc-cta { color: #a5b4fc; border-color: rgba(79,70,229,.55); }
+[data-theme="dark"] .hc-it-console .hc-cta { color: #a5b4fc; border-color: rgba(79,70,229,.55); }
 [data-theme="dark"] .hc-team:hover .hc-cta,
 [data-theme="dark"] .hc-directory:hover .hc-cta,
 [data-theme="dark"] .hc-guides:hover .hc-cta,
@@ -6827,7 +6831,8 @@ button.hub-card {
 [data-theme="dark"] .hc-trainings:hover .hc-cta,
 [data-theme="dark"] .hc-database:hover .hc-cta,
 [data-theme="dark"] .hc-alta:hover .hc-cta,
-[data-theme="dark"] .hc-reuniones:hover .hc-cta { color: #fff; }
+[data-theme="dark"] .hc-reuniones:hover .hc-cta,
+[data-theme="dark"] .hc-it-console:hover .hc-cta { color: #fff; }
 
 /* Pills (hc-tag, hc-feature): el texto en light era ámbar/violeta oscuro,
    ilegibles sobre card oscuro. Subimos a tonos claros del mismo matiz. */
@@ -6918,6 +6923,20 @@ body.role-agente .hub-cards {
 }
 body.role-admin .hub-card.hc-finanzas,
 body.role-finanzas .hub-card.hc-finanzas {
+  display: flex;
+}
+
+
+/* ═══════════════════════════════════════════
+   VISIBILIDAD — Tarjeta de IT Console
+   ═══════════════════════════════════════════
+   Solo visible para roles "admin" e "it".
+   El resto del Hub no la ve. */
+.hub-card.hc-it-console {
+  display: none;
+}
+body.role-admin .hub-card.hc-it-console,
+body.role-it .hub-card.hc-it-console {
   display: flex;
 }
 
