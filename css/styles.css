@@ -8012,3 +8012,212 @@ body.role-finanzas .access-tile.at-finanzas { display: flex; }
 .access-tile.at-it-console { display: none; }
 body.role-admin .access-tile.at-it-console,
 body.role-it    .access-tile.at-it-console { display: flex; }
+
+
+/* ═══════════════════════════════════════════════════════════
+   MENÚ DE USUARIO — dropdown del avatar en el topbar
+   ═══════════════════════════════════════════════════════════
+   El avatar se envuelve en un botón que abre un dropdown con:
+   header (foto grande + nombre + email + rol), link a Mi perfil,
+   y botón Cerrar sesión. Reemplaza el flujo pasivo del avatar. */
+
+.user-menu-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.user-avatar-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+  line-height: 0;
+}
+
+.user-avatar-btn:hover {
+  transform: scale(1.05);
+}
+
+.user-avatar-btn:focus-visible {
+  outline: 3px solid rgba(6, 163, 182, 0.4);
+  outline-offset: 2px;
+}
+
+.user-avatar-btn .avatar {
+  transition: box-shadow 160ms ease;
+}
+
+.user-avatar-btn:hover .avatar,
+.user-avatar-btn[aria-expanded="true"] .avatar {
+  box-shadow: 0 0 0 2px #06a3b6, 0 4px 12px rgba(6, 163, 182, 0.25);
+}
+
+.user-menu {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  min-width: 260px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16),
+              0 4px 8px rgba(15, 23, 42, 0.06);
+  padding: 4px;
+  z-index: 200;
+  animation: user-menu-in 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes user-menu-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.user-menu-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px 14px;
+}
+
+.user-menu-photo {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px #e2e8f0;
+}
+
+.user-menu-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.user-menu-name {
+  font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-menu-email {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: rgba(15, 23, 42, 0.60);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-menu-role {
+  display: inline-block;
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 2px 8px;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #06a3b6;
+  background: rgba(6, 163, 182, 0.10);
+  border: 1px solid rgba(6, 163, 182, 0.20);
+  border-radius: 6px;
+}
+
+.user-menu-divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 4px 6px;
+}
+
+.user-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #334155;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.user-menu-item i {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: #64748b;
+}
+
+.user-menu-item:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.user-menu-item:hover i {
+  color: #06a3b6;
+}
+
+.user-menu-item-danger {
+  color: #dc2626;
+}
+
+.user-menu-item-danger i {
+  color: #dc2626;
+}
+
+.user-menu-item-danger:hover {
+  background: rgba(220, 38, 38, 0.08);
+  color: #b91c1c;
+}
+
+.user-menu-item-danger:hover i {
+  color: #b91c1c;
+}
+
+/* ── Dark mode ── */
+[data-theme="dark"] .user-menu {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5),
+              0 4px 8px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="dark"] .user-menu-name { color: #f1f5f9; }
+[data-theme="dark"] .user-menu-email { color: rgba(226, 232, 240, 0.60); }
+[data-theme="dark"] .user-menu-photo { box-shadow: 0 0 0 1px #475569; }
+[data-theme="dark"] .user-menu-divider { background: #334155; }
+[data-theme="dark"] .user-menu-item { color: #cbd5e1; }
+[data-theme="dark"] .user-menu-item i { color: #94a3b8; }
+[data-theme="dark"] .user-menu-item:hover { background: #334155; color: #f1f5f9; }
+[data-theme="dark"] .user-menu-item-danger { color: #f87171; }
+[data-theme="dark"] .user-menu-item-danger i { color: #f87171; }
+[data-theme="dark"] .user-menu-item-danger:hover { background: rgba(220, 38, 38, 0.15); color: #fca5a5; }
+[data-theme="dark"] .user-menu-role {
+  color: #67e8f9;
+  background: rgba(6, 163, 182, 0.20);
+  border-color: rgba(6, 163, 182, 0.35);
+}
+
+@media (max-width: 640px) {
+  .user-menu {
+    min-width: 240px;
+    right: -8px;
+  }
+}

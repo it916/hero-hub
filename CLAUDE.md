@@ -33,7 +33,7 @@ Todo módulo nuevo debe respetar esta paleta para mantener consistencia visual c
 
 ## Modo oscuro
 
-El Hub soporta **modo oscuro** además de Hero Light. Activación: toggle "Día / Noche" en el modal de Configuración (`widgets.js → openSettingsModal`). La selección se guarda por usuario en Firestore (`users/{email}.theme`) y se cachea en `localStorage["hero-theme"]` para pre-aplicarse antes de la auth (evita el flash de tema incorrecto).
+El Hub soporta **modo oscuro** además de Hero Light. Activación: botón sol/luna en el topbar del Hub (`widgets.js → toggleHubTheme`) — click directo, sin modal intermedio. La selección se guarda por usuario en Firestore (`users/{email}.theme`) y se cachea en `localStorage["hero-theme"]` para pre-aplicarse antes de la auth (evita el flash de tema incorrecto).
 
 - **Selector CSS:** `body[data-theme="dark"]` (y `[data-theme="dark"]` para scope reducido).
 - **Dónde viven las reglas:** `css/styles.css` (general) y `css/agencias.css` (vista de agencias).

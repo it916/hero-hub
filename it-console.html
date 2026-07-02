@@ -283,6 +283,36 @@ nav { padding: 12px; flex: 1; }
 .topbar-title { font-size: 12px; color: var(--hero-text-muted); }
 .topbar-title span { color: var(--hero-primary); font-weight: 700; }
 .topbar-right { display: flex; align-items: center; gap: 14px; }
+
+/* Botón "Volver al Hero Hub" — visible siempre en el topbar. Regresa al
+   dashboard principal del Hub (no al dashboard interno del Console). */
+.btn-back-to-hub {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px 0 10px;
+  border: 1px solid var(--hero-border);
+  border-radius: var(--hero-radius-btn);
+  background: var(--hero-bg);
+  color: var(--hero-text-body);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
+  flex-shrink: 0;
+}
+.btn-back-to-hub iconify-icon { font-size: 16px; }
+.btn-back-to-hub:hover {
+  border-color: var(--hero-primary);
+  color: var(--hero-primary);
+  background: var(--hero-bg-card);
+}
+@media (max-width: 640px) {
+  .btn-back-to-hub span { display: none; }
+  .btn-back-to-hub { padding: 0 8px; }
+}
 .clock { font-size: 11px; color: var(--hero-text-subtle); font-family: var(--mono); }
 #global-status {
   font-size: 10px;
@@ -1091,6 +1121,7 @@ html { scroll-behavior: smooth; }
   <div class="topbar" style="position:relative;">
     <div style="display:flex;align-items:center;gap:12px;">
       <button class="btn-hamburger" onclick="toggleSidebar()" aria-label="Abrir menú lateral"><iconify-icon icon="tabler:menu-2"></iconify-icon></button>
+      <a href="/index.html" class="btn-back-to-hub" title="Volver al Hero Hub"><iconify-icon icon="tabler:arrow-back-up"></iconify-icon><span>Hero Hub</span></a>
       <div class="topbar-title"><button onclick="showPage('dashboard')" style="background:transparent;border:none;color:inherit;font:inherit;cursor:pointer;padding:0;" title="Volver al dashboard">Hero IT Console</button> / <span id="current-section-label">Dashboard</span></div>
     </div>
     <div class="topbar-right">

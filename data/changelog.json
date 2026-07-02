@@ -1,5 +1,21 @@
 [
   {
+    "id": "2026-07-02-user-menu-dropdown",
+    "version": "v2.5",
+    "date": "2026-07-02",
+    "category": "feat",
+    "scope": "ui",
+    "audience": "all",
+    "title": "Menú de usuario en el avatar y botón volver al Hub en IT Console",
+    "items": [
+      "Nuevo menú desplegable al hacer click en el avatar: header con foto, nombre, email y rol; enlaces a Mi perfil, Admin (solo admins) y Cerrar sesión",
+      "Toggle día/noche movido al menú del avatar",
+      "Botón 'Volver al Hero Hub' agregado al topbar del IT Console",
+      "Se eliminó el modal de Configuración: solo tenía el toggle de tema, ahora directo desde el menú",
+      "Se eliminaron del topbar del Hub los botones sueltos de Admin y Configuración — todo consolidado en el menú del avatar"
+    ]
+  },
+  {
     "id": "2026-07-02-modulos-acceso-launcher",
     "version": "v2.5",
     "date": "2026-07-02",

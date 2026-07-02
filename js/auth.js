@@ -53,7 +53,10 @@ function showLogin() {
 async function showDashboard() {
   document.getElementById("login-screen").style.display = "none";
   document.getElementById("dashboard").style.display = "block";
-  document.getElementById("user-avatar").src = await getFreshGooglePhotoURL(currentUser);
+  const photoUrl = await getFreshGooglePhotoURL(currentUser);
+  document.getElementById("user-avatar").src = photoUrl;
+  const menuAvatarEl = document.getElementById("user-menu-avatar");
+  if (menuAvatarEl) menuAvatarEl.src = photoUrl;
 
   // Filtrar el topbar según el rol del usuario
   // (oculta links a páginas no permitidas y maneja el botón admin)
