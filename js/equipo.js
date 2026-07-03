@@ -295,12 +295,13 @@ function openProfile(idx) {
   overlay.querySelector('[data-field="union"]').textContent = merged.union;
   overlay.querySelector('[data-field="frase"]').textContent = merged.frase;
 
-  // Contactos
+  // Contactos (email y phone pueden venir como string o array)
   const contacts = [];
-  (p.email || []).filter(e => e).forEach(e => {
+  const asList = (v) => v == null ? [] : (Array.isArray(v) ? v : [v]);
+  asList(p.email).filter(e => e).forEach(e => {
     contacts.push(`<div class="hp-contact-row">${ICONS.email}<a href="mailto:${e}">${e}</a></div>`);
   });
-  (p.phone || []).filter(ph => ph).forEach(ph => {
+  asList(p.phone).filter(ph => ph).forEach(ph => {
     contacts.push(`<div class="hp-contact-row">${ICONS.phone}<a href="tel:${ph.replace(/\s|\(|\)|-/g,'')}" class="mono">${ph}</a></div>`);
   });
   if (p.birthdate && /^\d{2}-\d{2}$/.test(p.birthdate)) {
