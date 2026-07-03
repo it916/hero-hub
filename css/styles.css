@@ -8221,3 +8221,166 @@ body.role-it    .access-tile.at-it-console { display: flex; }
     right: -8px;
   }
 }
+
+
+/* ═══════════════════════════════════════════════════════════
+   MODAL MI PERFIL — sl-dialog con datos personales del usuario
+   ═══════════════════════════════════════════════════════════
+   Se abre al hacer click en "Mi perfil" del menú del avatar.
+   Muestra header con foto/nombre/cargo/rol/email + secciones
+   Contacto, Datos y Sobre mí. Solo lectura en v1. */
+
+.hh-my-profile-dialog::part(panel) {
+  border-radius: 18px;
+  max-width: 480px;
+}
+
+.mp-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 8px;
+}
+
+.mp-photo {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px #e2e8f0, 0 8px 20px rgba(15, 23, 42, 0.08);
+  background: #f1f5f9;
+}
+
+.mp-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.mp-name {
+  font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.15;
+}
+
+.mp-cargo {
+  font-size: 14px;
+  color: #475569;
+  font-weight: 500;
+}
+
+.mp-badge {
+  display: inline-block;
+  align-self: flex-start;
+  margin-top: 6px;
+  padding: 3px 10px;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #06a3b6;
+  background: rgba(6, 163, 182, 0.10);
+  border: 1px solid rgba(6, 163, 182, 0.22);
+  border-radius: 6px;
+}
+
+.mp-email {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: rgba(15, 23, 42, 0.60);
+  padding: 4px 0 14px;
+  border-bottom: 1px solid #e2e8f0;
+  word-break: break-all;
+}
+
+.mp-section {
+  padding: 14px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.mp-section:last-of-type {
+  border-bottom: none;
+}
+
+.mp-section-title {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(15, 23, 42, 0.55);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.mp-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+  font-size: 14px;
+}
+
+.mp-label {
+  color: rgba(15, 23, 42, 0.55);
+  flex-shrink: 0;
+}
+
+.mp-value {
+  color: #0f172a;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-align: right;
+}
+
+.mp-flag {
+  width: 22px;
+  height: auto;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.08);
+}
+
+.mp-bio {
+  font-size: 14px;
+  color: #0f172a;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.mp-empty {
+  color: rgba(15, 23, 42, 0.35);
+  font-style: italic;
+}
+
+/* ── Dark mode ── */
+[data-theme="dark"] .mp-name { color: #f1f5f9; }
+[data-theme="dark"] .mp-cargo { color: #cbd5e1; }
+[data-theme="dark"] .mp-email { color: rgba(226, 232, 240, 0.60); border-bottom-color: #334155; }
+[data-theme="dark"] .mp-section { border-bottom-color: #334155; }
+[data-theme="dark"] .mp-section-title { color: rgba(226, 232, 240, 0.55); }
+[data-theme="dark"] .mp-label { color: rgba(226, 232, 240, 0.55); }
+[data-theme="dark"] .mp-value { color: #f1f5f9; }
+[data-theme="dark"] .mp-bio { color: #f1f5f9; }
+[data-theme="dark"] .mp-empty { color: rgba(226, 232, 240, 0.35); }
+[data-theme="dark"] .mp-photo {
+  box-shadow: 0 0 0 2px #475569, 0 8px 20px rgba(0, 0, 0, 0.4);
+  background: #334155;
+}
+[data-theme="dark"] .mp-flag { box-shadow: 0 0 0 1px rgba(226, 232, 240, 0.15); }
+[data-theme="dark"] .mp-badge {
+  color: #67e8f9;
+  background: rgba(6, 163, 182, 0.20);
+  border-color: rgba(6, 163, 182, 0.35);
+}
+
+@media (max-width: 500px) {
+  .mp-header { flex-direction: column; text-align: center; align-items: center; }
+  .mp-header-info { align-items: center; }
+  .mp-photo { width: 84px; height: 84px; }
+}

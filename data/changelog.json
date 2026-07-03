@@ -1,5 +1,23 @@
 [
   {
+    "id": "2026-07-02-mi-perfil-modal",
+    "version": "v2.5",
+    "date": "2026-07-02",
+    "category": "feat",
+    "scope": "ui",
+    "audience": "all",
+    "title": "Modal \"Mi perfil\" con datos personales del usuario",
+    "items": [
+      "Click en 'Mi perfil' del menú del avatar ahora abre un modal en lugar de navegar a Equipo",
+      "Header con foto grande, nombre, cargo, badge del rol del sistema y email",
+      "Sección Contacto con teléfono y país (con bandera SVG)",
+      "Sección Datos con cumpleaños formateado en español y tema actual",
+      "Sección Sobre mí con la bio del usuario",
+      "Datos leídos desde shared/team.members matcheado por email; campos faltantes se muestran con em dash",
+      "Solo lectura en v1"
+    ]
+  },
+  {
     "id": "2026-07-02-user-menu-hub-wide",
     "version": "v2.5",
     "date": "2026-07-02",
