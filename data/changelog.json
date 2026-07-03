@@ -1,7 +1,7 @@
 [
   {
     "id": "2026-07-03-busqueda-web",
-    "version": "v2.8",
+    "version": "v2.6.2",
     "date": "2026-07-03",
     "category": "feat",
     "scope": "ui",
@@ -16,7 +16,7 @@
   },
   {
     "id": "2026-07-03-cumple-invitacion",
-    "version": "v2.7",
+    "version": "v2.6.1",
     "date": "2026-07-03",
     "category": "feat",
     "scope": "ui",
@@ -33,7 +33,7 @@
   },
   {
     "id": "2026-07-03-mi-perfil-pagina",
-    "version": "v2.6",
+    "version": "v2.6.0",
     "date": "2026-07-03",
     "category": "feat",
     "scope": "ui",
@@ -51,7 +51,7 @@
   },
   {
     "id": "2026-07-02-user-menu-hub-wide",
-    "version": "v2.5",
+    "version": "v2.5.0",
     "date": "2026-07-02",
     "category": "feat",
     "scope": "ui",
@@ -66,7 +66,7 @@
   },
   {
     "id": "2026-07-02-user-menu-dropdown",
-    "version": "v2.5",
+    "version": "v2.5.0",
     "date": "2026-07-02",
     "category": "feat",
     "scope": "ui",
@@ -82,7 +82,7 @@
   },
   {
     "id": "2026-07-02-modulos-acceso-launcher",
-    "version": "v2.5",
+    "version": "v2.5.0",
     "date": "2026-07-02",
     "category": "feat",
     "scope": "dashboard",
@@ -102,7 +102,7 @@
   },
   {
     "id": "2026-07-02-it-console-integration",
-    "version": "v2.4",
+    "version": "v2.4.0",
     "date": "2026-07-02",
     "category": "feat",
     "scope": "it-console",
@@ -120,7 +120,7 @@
   },
   {
     "id": "2026-06-30-finanzas-manual",
-    "version": "v2.3",
+    "version": "v2.3.0",
     "date": "2026-06-30",
     "category": "docs",
     "scope": "finanzas",
@@ -137,7 +137,7 @@
   },
   {
     "id": "2026-06-30-finanzas-email-reports",
-    "version": "v2.3",
+    "version": "v2.3.0",
     "date": "2026-06-30",
     "category": "feat",
     "scope": "finanzas",
@@ -156,7 +156,7 @@
   },
   {
     "id": "2026-06-29-finanzas-comparativas-exportar",
-    "version": "v2.3",
+    "version": "v2.3.0",
     "date": "2026-06-29",
     "category": "feat",
     "scope": "finanzas",
@@ -171,7 +171,7 @@
   },
   {
     "id": "2026-06-29-finanzas-dashboard",
-    "version": "v2.3",
+    "version": "v2.3.0",
     "date": "2026-06-29",
     "category": "feat",
     "scope": "finanzas",
@@ -189,7 +189,7 @@
   },
   {
     "id": "2026-06-29-finanzas-migracion-historica",
-    "version": "v2.3",
+    "version": "v2.3.0",
     "date": "2026-06-29",
     "category": "feat",
     "scope": "finanzas",
@@ -204,7 +204,7 @@
   },
   {
     "id": "2026-06-29-finanzas-modulo",
-    "version": "v2.3",
+    "version": "v2.3.0",
     "date": "2026-06-29",
     "category": "feat",
     "scope": "finanzas",
@@ -222,7 +222,7 @@
   },
   {
     "id": "2026-06-12-asistencia-rango-custom",
-    "version": "v2.2",
+    "version": "v2.2.0",
     "date": "2026-06-12",
     "category": "feat",
     "scope": "admin",
@@ -237,7 +237,7 @@
   },
   {
     "id": "2026-06-12-asistencia-detalle-persona",
-    "version": "v2.2",
+    "version": "v2.2.0",
     "date": "2026-06-12",
     "category": "feat",
     "scope": "admin",
@@ -255,7 +255,7 @@
   },
   {
     "id": "2026-06-11-metricas-fix",
-    "version": "v2.2",
+    "version": "v2.2.0",
     "date": "2026-06-11",
     "category": "fix",
     "scope": "admin",
@@ -269,7 +269,7 @@
   },
   {
     "id": "2026-06-11-skip-loading",
-    "version": "v2.2",
+    "version": "v2.2.0",
     "date": "2026-06-11",
     "category": "refactor",
     "scope": "performance",
@@ -283,7 +283,7 @@
   },
   {
     "id": "2026-06-11-changelog-sistema",
-    "version": "v2.2",
+    "version": "v2.2.0",
     "date": "2026-06-11",
     "category": "feat",
     "scope": "changelog",
@@ -298,7 +298,7 @@
   },
   {
     "id": "2026-06-10-asistencia-elapsed",
-    "version": "v2.2",
+    "version": "v2.2.0",
     "date": "2026-06-10",
     "category": "feat",
     "scope": "asistencia",
@@ -311,7 +311,7 @@
   },
   {
     "id": "2026-06-10-dashboard-reorg",
-    "version": "v2.2",
+    "version": "v2.2.0",
     "date": "2026-06-10",
     "category": "refactor",
     "scope": "dashboard",
@@ -325,7 +325,7 @@
   },
   {
     "id": "2026-06-08-grabaciones-grid",
-    "version": "v2.1",
+    "version": "v2.1.0",
     "date": "2026-06-08",
     "category": "feat",
     "scope": "grabaciones",
@@ -337,7 +337,7 @@
   },
   {
     "id": "2026-06-08-reuniones-page",
-    "version": "v2.1",
+    "version": "v2.1.0",
     "date": "2026-06-08",
     "category": "feat",
     "scope": "reuniones",
@@ -351,7 +351,7 @@
   },
   {
     "id": "2026-06-08-fathom-sync",
-    "version": "v2.1",
+    "version": "v2.1.0",
     "date": "2026-06-08",
     "category": "feat",
     "scope": "integraciones",
@@ -364,7 +364,7 @@
   },
   {
     "id": "2026-06-04-asistencia-horas",
-    "version": "v2.0",
+    "version": "v2.0.0",
     "date": "2026-06-04",
     "category": "feat",
     "scope": "asistencia",
@@ -377,7 +377,7 @@
   },
   {
     "id": "2026-06-04-admin-default-asistencia",
-    "version": "v2.0",
+    "version": "v2.0.0",
     "date": "2026-06-04",
     "category": "feat",
     "scope": "admin",
@@ -390,7 +390,7 @@
   },
   {
     "id": "2026-06-03-role-agente",
-    "version": "v2.0",
+    "version": "v2.0.0",
     "date": "2026-06-03",
     "category": "feat",
     "scope": "roles",
@@ -402,7 +402,7 @@
   },
   {
     "id": "2026-05-30-portales-hero",
-    "version": "v2.0",
+    "version": "v2.0.0",
     "date": "2026-05-30",
     "category": "feat",
     "scope": "portales",
@@ -416,7 +416,7 @@
   },
   {
     "id": "2026-05-30-cumple-unificado",
-    "version": "v2.0",
+    "version": "v2.0.0",
     "date": "2026-05-30",
     "category": "fix",
     "scope": "cumple",
