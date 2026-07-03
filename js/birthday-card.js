@@ -208,7 +208,7 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-async function saveMessage(person, currentUser, messageText) {
+export async function saveMessage(person, currentUser, messageText) {
   const cardId = getCardId(person, currentYear());
   const ref = doc(db, "birthdays", cardId);
 

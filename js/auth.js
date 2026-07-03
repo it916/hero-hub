@@ -5,6 +5,7 @@ import { doc, getDoc, setDoc, updateDoc }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { renderWidgets } from "./widgets.js";
 import { openBirthdayCardModal, checkBirthdayPopup } from "./birthday-card.js";
+import { checkBirthdayInvitePopup } from "./birthday-invite.js";
 import { loadUserRole, filterTopbarByRole, isAdmin as isAdminRole, clearRoleCache, canAccessPage } from "./roles.js";
 import { getFreshGooglePhotoURL } from "./user-photo.js";
 
@@ -98,6 +99,9 @@ async function showDashboard() {
 
   // Pop-up cumpleaños del día (si corresponde)
   setTimeout(() => checkBirthdayPopup(currentUser, teamMembers), 1800);
+
+  // Pop-up invitando a felicitar a otro cumpleañero (D-1 y D)
+  setTimeout(() => checkBirthdayInvitePopup(currentUser, teamMembers), 2400);
 
   if (window.refreshIcons) window.refreshIcons();
 }

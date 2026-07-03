@@ -1,5 +1,22 @@
 [
   {
+    "id": "2026-07-03-cumple-invitacion",
+    "version": "v2.7",
+    "date": "2026-07-03",
+    "category": "feat",
+    "scope": "ui",
+    "audience": "all",
+    "title": "Pop-up para felicitar al cumpleañero desde el día anterior",
+    "items": [
+      "Al entrar al Hub, si algún compañero cumple hoy o mañana, aparece un pop-up invitándote a dejarle una felicitación",
+      "Textarea con contador de 0/400 y picker rápido de 10 emojis populares (🎂🎉🎈🎊✨💝🙌🥳❤️🌟) que se insertan en la posición del cursor",
+      "El botón 'Publicar felicitación' guarda el mensaje directo en la tarjeta colectiva del cumpleañero",
+      "El botón 'Ahora no' cierra sin escribir; en ambos casos no se vuelve a abrir en el mismo día por ese cumpleaños",
+      "Al día siguiente, si el cumpleaños sigue vigente y aún no has escrito, el pop-up reaparece",
+      "El cumpleañero no ve este pop-up: sigue viendo el suyo propio con la tarjeta colectiva completa"
+    ]
+  },
+  {
     "id": "2026-07-03-mi-perfil-pagina",
     "version": "v2.6",
     "date": "2026-07-03",
