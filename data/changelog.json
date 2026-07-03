@@ -1,5 +1,20 @@
 [
   {
+    "id": "2026-07-03-busqueda-web",
+    "version": "v2.8",
+    "date": "2026-07-03",
+    "category": "feat",
+    "scope": "ui",
+    "audience": "all",
+    "title": "Búsqueda web integrada al dashboard",
+    "items": [
+      "Nueva sección 'Búsqueda web' en el dashboard, entre 'Mi asistencia' y 'Módulos de acceso'",
+      "Input estilo pill con lupa e integración a Google: al escribir y presionar Enter se abre google.com/search con tu consulta en una nueva pestaña",
+      "Diseño coherente con Hero Light, con dark mode y responsive en pantallas chicas",
+      "Sin dependencias externas ni scripts de terceros — la búsqueda se abre en el buscador nativo del sistema"
+    ]
+  },
+  {
     "id": "2026-07-03-cumple-invitacion",
     "version": "v2.7",
     "date": "2026-07-03",

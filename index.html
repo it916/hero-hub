@@ -293,6 +293,29 @@
 
     <div class="connector"></div>
 
+    <!-- ══ BÚSQUEDA WEB — Input que redirige a google.com en nueva pestaña ══ -->
+    <section class="section fade-in" id="sec-web-search">
+      <div class="section-label"><span class="kicker-dot"></span>Búsqueda web</div>
+      <form class="gws-card" id="gws-form" role="search">
+        <div class="gws-title">
+          <i data-lucide="search"></i>
+          <span>Buscar en Google</span>
+        </div>
+        <div class="gws-input-row">
+          <div class="gws-input-wrap">
+            <i data-lucide="search" class="gws-input-icon"></i>
+            <input type="search" id="gws-input" class="gws-input"
+                   placeholder="Escribe tu búsqueda…" autocomplete="off" required
+                   aria-label="Buscar en Google">
+          </div>
+          <button type="submit" class="gws-btn">Buscar</button>
+        </div>
+        <div class="gws-note">Los resultados se abrirán en una nueva pestaña</div>
+      </form>
+    </section>
+
+    <div class="connector"></div>
+
     <!-- ══ MÓDULOS DE ACCESO — Launcher moderno para los 4 módulos principales ══ -->
     <section class="section fade-in" id="sec-access-modules">
       <div class="section-label"><span class="kicker-dot"></span>Módulos de acceso</div>
@@ -623,7 +646,7 @@
   </div>
 
   <footer class="hero-footer">
-    <span>HERO HUB · v2.7</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+    <span>HERO HUB · v2.8</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
   </footer>
 </div>
 
@@ -644,6 +667,20 @@
     const nav = document.getElementById("topbar-nav");
     if (menuBtn && nav) {
       menuBtn.addEventListener("click", () => nav.classList.toggle("open"));
+    }
+
+    // Búsqueda web: redirige a google.com en nueva pestaña.
+    const gwsForm = document.getElementById("gws-form");
+    const gwsInput = document.getElementById("gws-input");
+    if (gwsForm && gwsInput) {
+      gwsForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const q = (gwsInput.value || "").trim();
+        if (!q) return;
+        window.open("https://www.google.com/search?q=" + encodeURIComponent(q), "_blank", "noopener");
+        gwsInput.value = "";
+        gwsInput.blur();
+      });
     }
 
     // ── Activar Misión: animación cinemática (GSAP + confetti + Web Audio) + redirect ──
