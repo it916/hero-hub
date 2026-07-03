@@ -24,6 +24,7 @@ const FLAG_URLS = {
   'cuba': 'https://flagicons.lipis.dev/flags/4x3/cu.svg',
   'colombia': 'https://flagicons.lipis.dev/flags/4x3/co.svg',
   'chile': 'https://flagicons.lipis.dev/flags/4x3/cl.svg',
+  'honduras': 'https://flagicons.lipis.dev/flags/4x3/hn.svg',
   'estados unidos': 'https://flagicons.lipis.dev/flags/4x3/us.svg',
   'eeuu': 'https://flagicons.lipis.dev/flags/4x3/us.svg',
   'us': 'https://flagicons.lipis.dev/flags/4x3/us.svg',
