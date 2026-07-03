@@ -1,20 +1,20 @@
 [
   {
-    "id": "2026-07-02-mi-perfil-modal",
-    "version": "v2.5",
-    "date": "2026-07-02",
+    "id": "2026-07-03-mi-perfil-pagina",
+    "version": "v2.6",
+    "date": "2026-07-03",
     "category": "feat",
     "scope": "ui",
     "audience": "all",
-    "title": "Modal \"Mi perfil\" con datos personales del usuario",
+    "title": "Página \"Mi perfil\" con bio editable, estadísticas del mes y actividad reciente",
     "items": [
-      "Click en 'Mi perfil' del menú del avatar ahora abre un modal en lugar de navegar a Equipo",
-      "Header con foto grande, nombre, cargo, badge del rol del sistema y email",
-      "Sección Contacto con teléfono y país (con bandera SVG)",
-      "Sección Datos con cumpleaños formateado en español y tema actual",
-      "Sección Sobre mí con la bio del usuario",
-      "Datos leídos desde shared/team.members matcheado por email; campos faltantes se muestran con em dash",
-      "Solo lectura en v1"
+      "Click en 'Mi perfil' del menú del avatar ahora abre una página completa (mi-perfil.html) en lugar del modal anterior",
+      "Hero con foto grande de 160 px, nombre, cargo, badge del rol del sistema y email en JetBrains Mono",
+      "Card de información personal: teléfono, país con bandera SVG, cumpleaños en español y tema actual",
+      "Card 'Sobre mí' con bio editable inline — botón de lápiz abre un textarea con contador y guardado directo a shared/team",
+      "Card 'Estadísticas del mes': días marcados de entrada, descansos tomados y días para tu cumpleaños",
+      "Card 'Actividad reciente' con los últimos 10 eventos del audit-log del usuario (link 'Ver todo' visible solo para admins)",
+      "Diseño responsive: grid 2×2 en escritorio, columna única en mobile"
     ]
   },
   {

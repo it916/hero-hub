@@ -6,7 +6,7 @@
 <link rel="icon" type="image/png" href="icons/favicon-hero.png">
 <link rel="apple-touch-icon" href="icons/favicon-hero.png">
 <meta name="theme-color" content="#06a3b6">
-<title>Guías — Hero Hub</title>
+<title>Mi perfil — Hero Hub</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -14,10 +14,6 @@
 <script type="module" src="js/user-menu.js"></script>
 <script defer src="https://unpkg.com/lucide@0.474.0"></script>
 <script defer src="js/topbar-dropdown.js"></script>
-
-<!-- Shoelace · component library -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css">
-<script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/shoelace-autoloader.js"></script>
 </head>
 <body>
 <script>try{var t=localStorage.getItem("hero-theme");if(t)document.body.dataset.theme=t;}catch(e){}</script>
@@ -69,7 +65,7 @@
             <i data-lucide="chevron-down" class="nav-group-arrow"></i>
           </button>
           <div class="nav-dropdown" role="menu">
-            <a href="guias.html" class="nav-link active" role="menuitem"><i data-lucide="book-open"></i><span>Guías</span></a>
+            <a href="guias.html" class="nav-link" role="menuitem"><i data-lucide="book-open"></i><span>Guías</span></a>
             <a href="politicas.html" class="nav-link" role="menuitem"><i data-lucide="scroll-text"></i><span>Políticas</span></a>
             <a href="onboarding.html" class="nav-link" role="menuitem"><i data-lucide="rocket"></i><span>Onboarding</span></a>
             <a href="reuniones.html" class="nav-link" role="menuitem"><i data-lucide="presentation"></i><span>Reuniones</span></a>
@@ -118,24 +114,88 @@
 
   <main class="page">
 
-    <section class="page-header">
-      <div class="page-kicker">• Hero Insurance USA •</div>
-      <h1 class="page-title">Guías de Procedimientos</h1>
-      <p class="page-sub">Paso a paso para cada proceso del equipo Hero</p>
+    <section class="mp-hero">
+      <div class="mp-hero-photo-wrap">
+        <img id="mp-photo" class="mp-hero-photo" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="">
+      </div>
+      <div class="mp-hero-info">
+        <h1 id="mp-name" class="mp-hero-name">—</h1>
+        <div id="mp-cargo" class="mp-hero-cargo">—</div>
+        <div class="mp-hero-meta">
+          <span id="mp-badge" class="mp-hero-badge" hidden></span>
+          <span id="mp-email" class="mp-hero-email">—</span>
+        </div>
+      </div>
     </section>
 
-    <section class="dir-toolbar">
-      <div class="search-wrap">
-        <i data-lucide="search" class="search-icon"></i>
-        <input type="text" id="guias-search" placeholder="Buscar por título o categoría...">
-      </div>
-      <div class="dir-stats">
-        <div class="stat-pill"><strong id="stat-guias">0</strong> guías</div>
-      </div>
-      <button id="btn-add-guia" class="btn-primary btn-add-contact"><i data-lucide="plus"></i><span>Agregar guía</span></button>
-    </section>
+    <section class="mp-grid">
 
-    <section id="guias-grid" class="guias-grid"><p class="loading">Cargando guías...</p></section>
+      <div class="mp-card">
+        <div class="mp-card-title"><i data-lucide="id-card"></i>Información personal</div>
+        <div class="mp-card-rows" id="mp-info-rows">
+          <div class="mp-row"><span class="mp-label">Teléfono</span><span class="mp-value" id="mp-phone">—</span></div>
+          <div class="mp-row"><span class="mp-label">País</span><span class="mp-value" id="mp-country">—</span></div>
+          <div class="mp-row"><span class="mp-label">Cumpleaños</span><span class="mp-value" id="mp-birthday">—</span></div>
+          <div class="mp-row"><span class="mp-label">Tema</span><span class="mp-value" id="mp-theme">—</span></div>
+        </div>
+      </div>
+
+      <div class="mp-card mp-card-bio">
+        <div class="mp-card-title">
+          <i data-lucide="quote"></i>Sobre mí
+          <button id="mp-bio-edit" class="mp-icon-btn" type="button" title="Editar bio" aria-label="Editar bio"><i data-lucide="edit-3"></i></button>
+        </div>
+        <div id="mp-bio-view" class="mp-bio">—</div>
+        <div id="mp-bio-editor" class="mp-bio-editor" hidden>
+          <textarea id="mp-bio-input" class="mp-bio-textarea" rows="5" maxlength="500" placeholder="Escribe algo sobre ti — máximo 500 caracteres"></textarea>
+          <div class="mp-bio-editor-footer">
+            <span id="mp-bio-counter" class="mp-bio-counter">0/500</span>
+            <div class="mp-bio-actions">
+              <button id="mp-bio-cancel" class="mp-btn mp-btn-ghost" type="button">Cancelar</button>
+              <button id="mp-bio-save" class="mp-btn mp-btn-primary" type="button">Guardar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mp-card">
+        <div class="mp-card-title"><i data-lucide="bar-chart-3"></i>Estadísticas del mes</div>
+        <div class="mp-stats" id="mp-stats">
+          <div class="mp-stat">
+            <div class="mp-stat-icon"><i data-lucide="calendar-check"></i></div>
+            <div class="mp-stat-body">
+              <div class="mp-stat-value" id="mp-stat-days">—</div>
+              <div class="mp-stat-label">Días marcados</div>
+            </div>
+          </div>
+          <div class="mp-stat">
+            <div class="mp-stat-icon"><i data-lucide="coffee"></i></div>
+            <div class="mp-stat-body">
+              <div class="mp-stat-value" id="mp-stat-breaks">—</div>
+              <div class="mp-stat-label">Descansos tomados</div>
+            </div>
+          </div>
+          <div class="mp-stat">
+            <div class="mp-stat-icon"><i data-lucide="cake"></i></div>
+            <div class="mp-stat-body">
+              <div class="mp-stat-value" id="mp-stat-birthday-in">—</div>
+              <div class="mp-stat-label">Días para tu cumpleaños</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mp-card mp-card-activity">
+        <div class="mp-card-title">
+          <i data-lucide="activity"></i>Actividad reciente
+          <a href="admin.html" id="mp-activity-more" class="mp-link" hidden>Ver todo →</a>
+        </div>
+        <div id="mp-activity" class="mp-activity">
+          <p class="mp-empty">Cargando actividad...</p>
+        </div>
+      </div>
+
+    </section>
 
   </main>
 
@@ -153,9 +213,6 @@
     if (menuBtn && nav) menuBtn.addEventListener("click", () => nav.classList.toggle("open"));
   });
 </script>
-<script type="module" src="js/firebase-config.js"></script>
-<script type="module" src="js/page-guard.js"></script>
-<script type="module" src="js/guias.js"></script>
-<script type="module" src="js/tracker.js"></script>
+<script type="module" src="js/mi-perfil.js"></script>
 </body>
 </html>

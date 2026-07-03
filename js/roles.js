@@ -21,18 +21,18 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-
 export const ROLES = {
   admin: {
     label: "Administrador",
-    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones", "changelog", "admin", "finanzas", "finanzas-manual", "it-console"],
+    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones", "changelog", "admin", "finanzas", "finanzas-manual", "it-console", "mi-perfil"],
     isAdmin: true
   },
   interno: {
     label: "Equipo interno",
-    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones", "changelog"],
+    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones", "changelog", "mi-perfil"],
     isAdmin: false
   },
   finanzas: {
     label: "Finanzas",
     // Misma visibilidad que "interno" + la página de Finanzas y su manual. Sin acceso a admin/grabaciones/onboarding.
-    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "reuniones", "changelog", "finanzas", "finanzas-manual"],
+    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "reuniones", "changelog", "finanzas", "finanzas-manual", "mi-perfil"],
     isAdmin: false
   },
   it: {
@@ -40,14 +40,14 @@ export const ROLES = {
     // Misma visibilidad que "interno" + la IT Console. Sin acceso a admin/finanzas.
     // it@ está en LEGACY_ADMIN_EMAILS y entra como admin — este rol es para
     // futuros asistentes de IT o cuentas de servicio que necesiten la consola.
-    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "reuniones", "changelog", "it-console"],
+    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "reuniones", "changelog", "it-console", "mi-perfil"],
     isAdmin: false
   },
   agente: {
     label: "Agente",
     // Acceso restringido: solo Inicio, Equipo, Portales, Grabaciones y Changelog.
     // En portales.js sigue habiendo lógica que muestra al agente solo su sección personal.
-    pages: ["index", "equipo", "portales", "grabaciones", "changelog"],
+    pages: ["index", "equipo", "portales", "grabaciones", "changelog", "mi-perfil"],
     isAdmin: false
   }
 };
