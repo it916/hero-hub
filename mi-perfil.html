@@ -11,6 +11,15 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
+
+<!-- Flatpickr · date pickers para el rango personalizado de asistencia -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+
+<!-- Chart.js · gráficos de la sección Mi asistencia -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+
 <script type="module" src="js/user-menu.js"></script>
 <script defer src="https://unpkg.com/lucide@0.474.0"></script>
 <script defer src="js/topbar-dropdown.js"></script>
@@ -135,7 +144,13 @@
         <div class="mp-card-rows" id="mp-info-rows">
           <div class="mp-row"><span class="mp-label">Teléfono</span><span class="mp-value" id="mp-phone">—</span></div>
           <div class="mp-row"><span class="mp-label">País</span><span class="mp-value" id="mp-country">—</span></div>
-          <div class="mp-row"><span class="mp-label">Cumpleaños</span><span class="mp-value" id="mp-birthday">—</span></div>
+          <div class="mp-row">
+            <span class="mp-label">Cumpleaños</span>
+            <span class="mp-value">
+              <span id="mp-birthday">—</span>
+              <span id="mp-birthday-in" class="mp-birthday-in" hidden></span>
+            </span>
+          </div>
           <div class="mp-row"><span class="mp-label">Tema</span><span class="mp-value" id="mp-theme">—</span></div>
         </div>
       </div>
@@ -158,49 +173,103 @@
         </div>
       </div>
 
-      <div class="mp-card">
-        <div class="mp-card-title"><i data-lucide="bar-chart-3"></i>Estadísticas del mes</div>
-        <div class="mp-stats" id="mp-stats">
-          <div class="mp-stat">
-            <div class="mp-stat-icon"><i data-lucide="calendar-check"></i></div>
-            <div class="mp-stat-body">
-              <div class="mp-stat-value" id="mp-stat-days">—</div>
-              <div class="mp-stat-label">Días marcados</div>
-            </div>
+    </section>
+
+    <!-- ══ Mi asistencia · vista amplia ══ -->
+    <section class="mp-att">
+      <header class="mp-att-header">
+        <div class="mp-att-title">
+          <i data-lucide="bar-chart-3"></i>
+          <span>Mi asistencia</span>
+        </div>
+        <div class="mp-att-toolbar">
+          <label class="mp-att-period-lbl" for="mp-att-period">Periodo:</label>
+          <select class="mp-att-select" id="mp-att-period">
+            <option value="month">Mes actual</option>
+            <option value="prevMonth">Mes pasado</option>
+            <option value="last30">Últimos 30 días</option>
+            <option value="last90">Últimos 90 días</option>
+            <option value="all">Todo el historial</option>
+            <option value="custom">Rango personalizado…</option>
+          </select>
+          <div class="mp-att-custom-range" id="mp-att-custom-range" hidden>
+            <label class="mp-att-date-lbl">Desde
+              <input type="text" id="mp-att-from" class="mp-att-date" placeholder="MM/DD/YYYY" autocomplete="off">
+            </label>
+            <label class="mp-att-date-lbl">Hasta
+              <input type="text" id="mp-att-to" class="mp-att-date" placeholder="MM/DD/YYYY" autocomplete="off">
+            </label>
           </div>
-          <div class="mp-stat">
-            <div class="mp-stat-icon"><i data-lucide="coffee"></i></div>
-            <div class="mp-stat-body">
-              <div class="mp-stat-value" id="mp-stat-breaks">—</div>
-              <div class="mp-stat-label">Descansos tomados</div>
-            </div>
+          <div class="mp-att-period-label" id="mp-att-period-label">—</div>
+        </div>
+      </header>
+
+      <div id="mp-att-loading" class="mp-att-loading">
+        <div class="mp-att-spinner"></div>
+        <span>Cargando tu asistencia…</span>
+      </div>
+
+      <div id="mp-att-error" class="mp-att-error" hidden>
+        <div class="mp-att-error-icon"><i data-lucide="alert-triangle"></i></div>
+        <div class="mp-att-error-text">No pudimos cargar tu asistencia.</div>
+        <div class="mp-att-error-detail" id="mp-att-error-detail"></div>
+      </div>
+
+      <div id="mp-att-content" hidden>
+        <div class="mp-att-kpis" id="mp-att-kpis"></div>
+
+        <div class="mp-att-charts">
+          <div class="mp-att-chart-card">
+            <div class="mp-att-chart-title">Horas trabajadas por día</div>
+            <div class="mp-att-chart-canvas-wrap"><canvas id="mp-att-chart-line"></canvas></div>
           </div>
-          <div class="mp-stat">
-            <div class="mp-stat-icon"><i data-lucide="cake"></i></div>
-            <div class="mp-stat-body">
-              <div class="mp-stat-value" id="mp-stat-birthday-in">—</div>
-              <div class="mp-stat-label">Días para tu cumpleaños</div>
-            </div>
+          <div class="mp-att-chart-card">
+            <div class="mp-att-chart-title">Distribución de tiempo</div>
+            <div class="mp-att-chart-canvas-wrap"><canvas id="mp-att-chart-donut"></canvas></div>
+          </div>
+          <div class="mp-att-chart-card mp-att-chart-card-wide">
+            <div class="mp-att-chart-title">Horas por día de semana</div>
+            <div class="mp-att-chart-canvas-wrap"><canvas id="mp-att-chart-bars"></canvas></div>
+          </div>
+        </div>
+
+        <div class="mp-att-detail">
+          <div class="mp-att-detail-title">Detalle por día</div>
+          <div class="mp-att-table-wrap">
+            <table class="mp-att-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Entrada</th>
+                  <th>Salida</th>
+                  <th>Trabajado</th>
+                  <th>Breaks</th>
+                  <th>Cortes</th>
+                  <th>Ausencia</th>
+                </tr>
+              </thead>
+              <tbody id="mp-att-detail-tbody"></tbody>
+            </table>
           </div>
         </div>
       </div>
+    </section>
 
-      <div class="mp-card mp-card-activity">
-        <div class="mp-card-title">
-          <i data-lucide="activity"></i>Actividad reciente
-          <a href="admin.html" id="mp-activity-more" class="mp-link" hidden>Ver todo →</a>
-        </div>
-        <div id="mp-activity" class="mp-activity">
-          <p class="mp-empty">Cargando actividad...</p>
-        </div>
+    <!-- ══ Actividad reciente ══ -->
+    <section class="mp-card mp-card-activity-standalone">
+      <div class="mp-card-title">
+        <i data-lucide="activity"></i>Actividad reciente
+        <a href="admin.html" id="mp-activity-more" class="mp-link" hidden>Ver todo →</a>
       </div>
-
+      <div id="mp-activity" class="mp-activity">
+        <p class="mp-empty">Cargando actividad...</p>
+      </div>
     </section>
 
   </main>
 
   <footer class="hero-footer">
-    <span>HERO HUB · v2.6.2</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+    <span>HERO HUB · v2.7.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
   </footer>
 </div>
 

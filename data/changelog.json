@@ -1,5 +1,22 @@
 [
   {
+    "id": "2026-07-06-mi-asistencia-amplia",
+    "version": "v2.7.0",
+    "date": "2026-07-06",
+    "category": "feat",
+    "scope": "mi-perfil",
+    "audience": "all",
+    "title": "Sección \"Mi asistencia\" amplia en Mi perfil",
+    "items": [
+      "Nueva sección debajo del grid con tus estadísticas completas de asistencia: horas trabajadas, días activos, promedio por día, breaks (cantidad y duración promedio), cortes de luz, ausencias y hora de entrada promedio",
+      "Selector de periodo: Mes actual, Mes pasado, Últimos 30 días, Últimos 90 días, Todo el historial o rango personalizado",
+      "Tres gráficos: horas trabajadas por día (línea), distribución de tiempo (donut) y horas por día de semana (barras)",
+      "Tabla de detalle por día con entrada, salida, horas trabajadas, breaks, cortes y ausencias",
+      "El card antiguo \"Estadísticas del mes\" se retiró — la sub-línea 'en N días' del cumpleaños se movió al card Información personal",
+      "Diseño respeta modo día/noche y es responsive: KPIs colapsan a 2 columnas y los gráficos a una sola columna en mobile"
+    ]
+  },
+  {
     "id": "2026-07-03-busqueda-web",
     "version": "v2.6.2",
     "date": "2026-07-03",

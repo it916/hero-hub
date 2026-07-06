@@ -8304,7 +8304,12 @@ body.role-it    .access-tile.at-it-console { display: flex; }
   padding: 22px 24px;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
-.mp-card-activity, .mp-card-bio { grid-column: 1 / -1; }
+.mp-card-activity { grid-column: 1 / -1; }
+/* Actividad reciente vive como sección independiente debajo de Mi asistencia,
+   así que necesita margen superior para separarse. */
+.mp-card-activity-standalone { margin-top: 24px; }
+/* .mp-card-bio se queda en 1 columna para acompañar a Info en la fila 1;
+   en mobile todo colapsa a 1 col vía media query más abajo. */
 
 .mp-card-title {
   display: flex;
@@ -8549,16 +8554,277 @@ body.role-it    .access-tile.at-it-console { display: flex; }
 [data-theme="dark"] .mp-activity-label { color: #f1f5f9; }
 [data-theme="dark"] .mp-activity-time { color: rgba(226, 232, 240, 0.55); }
 
+/* Sub-línea "en N días" al lado del cumpleaños en Info personal */
+.mp-birthday-in {
+  color: #06a3b6;
+  font-weight: 600;
+  margin-left: 6px;
+  font-size: 13px;
+}
+[data-theme="dark"] .mp-birthday-in { color: #67e8f9; }
+
+
+/* ═══════════════════════════════════════════════════════════
+   MI ASISTENCIA (.mp-att-*)
+   Sección amplia debajo del grid: selector de periodo, 8 KPIs,
+   3 gráficos (Chart.js) y tabla detalle por día. Reusa el motor
+   de attendance-stats.js y espeja el look del modal admin ad-pm-*.
+   ═══════════════════════════════════════════════════════════ */
+
+.mp-att {
+  margin-top: 24px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+[data-theme="dark"] .mp-att { background: #1e293b; border-color: #334155; }
+
+.mp-att-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.mp-att-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Bricolage Grotesque', 'Trebuchet MS', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+.mp-att-title > i { width: 22px; height: 22px; color: #06a3b6; }
+[data-theme="dark"] .mp-att-title { color: #f1f5f9; }
+
+.mp-att-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.mp-att-period-lbl {
+  font-size: 13px;
+  color: rgba(15, 23, 42, 0.6);
+  font-weight: 600;
+}
+[data-theme="dark"] .mp-att-period-lbl { color: rgba(226, 232, 240, 0.65); }
+
+.mp-att-select {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #0f172a;
+  cursor: pointer;
+}
+.mp-att-select:focus { outline: none; border-color: #06a3b6; }
+[data-theme="dark"] .mp-att-select {
+  background: #0f172a; border-color: #334155; color: #f1f5f9;
+}
+
+.mp-att-period-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: rgba(15, 23, 42, 0.55);
+  background: #f0f4f8;
+  border-radius: 6px;
+  padding: 4px 10px;
+  letter-spacing: 0.02em;
+}
+[data-theme="dark"] .mp-att-period-label {
+  color: rgba(226, 232, 240, 0.6); background: #0f172a;
+}
+
+.mp-att-custom-range { display: flex; gap: 8px; }
+.mp-att-custom-range[hidden] { display: none; }
+.mp-att-date-lbl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(15, 23, 42, 0.6);
+  font-weight: 600;
+}
+[data-theme="dark"] .mp-att-date-lbl { color: rgba(226, 232, 240, 0.65); }
+.mp-att-date {
+  width: 130px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #0f172a;
+  background: #f8fafc;
+}
+.mp-att-date:focus { outline: none; border-color: #06a3b6; }
+[data-theme="dark"] .mp-att-date {
+  background: #0f172a; border-color: #334155; color: #f1f5f9;
+}
+
+/* Loading + error states */
+.mp-att-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px 20px;
+  color: rgba(15, 23, 42, 0.55);
+  font-size: 14px;
+}
+[data-theme="dark"] .mp-att-loading { color: rgba(226, 232, 240, 0.6); }
+.mp-att-spinner {
+  width: 20px; height: 20px;
+  border: 2.5px solid rgba(6, 163, 182, 0.25);
+  border-top-color: #06a3b6;
+  border-radius: 50%;
+  animation: mpAttSpin 800ms linear infinite;
+}
+@keyframes mpAttSpin { to { transform: rotate(360deg); } }
+.mp-att-error {
+  padding: 32px 20px;
+  text-align: center;
+  color: #b91c1c;
+}
+.mp-att-error-icon i { width: 28px; height: 28px; color: #f59e0b; }
+.mp-att-error-text { font-weight: 600; margin: 8px 0 4px; font-size: 14px; }
+.mp-att-error-detail { font-size: 12px; color: rgba(15, 23, 42, 0.55); }
+[data-theme="dark"] .mp-att-error-detail { color: rgba(226, 232, 240, 0.6); }
+
+/* KPIs */
+.mp-att-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.mp-att-kpi {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  text-align: center;
+}
+[data-theme="dark"] .mp-att-kpi { background: #0f172a; border-color: #334155; }
+.mp-att-kpi-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 20px;
+  font-weight: 700;
+  color: #06a3b6;
+  line-height: 1.1;
+}
+[data-theme="dark"] .mp-att-kpi-value { color: #67e8f9; }
+.mp-att-kpi-label {
+  font-size: 11px;
+  color: rgba(15, 23, 42, 0.55);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-weight: 600;
+}
+[data-theme="dark"] .mp-att-kpi-label { color: rgba(226, 232, 240, 0.6); }
+
+/* Charts */
+.mp-att-charts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.mp-att-chart-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+}
+[data-theme="dark"] .mp-att-chart-card { background: #0f172a; border-color: #334155; }
+.mp-att-chart-card-wide { grid-column: 1 / -1; }
+.mp-att-chart-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 12px;
+}
+[data-theme="dark"] .mp-att-chart-title { color: #f1f5f9; }
+.mp-att-chart-canvas-wrap {
+  position: relative;
+  height: 220px;
+}
+.mp-att-chart-card-wide .mp-att-chart-canvas-wrap { height: 180px; }
+
+/* Detalle por día */
+.mp-att-detail-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 10px;
+}
+[data-theme="dark"] .mp-att-detail-title { color: #f1f5f9; }
+.mp-att-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+[data-theme="dark"] .mp-att-table-wrap { border-color: #334155; }
+.mp-att-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.mp-att-table thead th {
+  background: #f0f4f8;
+  color: rgba(15, 23, 42, 0.65);
+  text-align: left;
+  padding: 10px 12px;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+[data-theme="dark"] .mp-att-table thead th {
+  background: #0f172a; color: rgba(226, 232, 240, 0.65); border-bottom-color: #334155;
+}
+.mp-att-table tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #0f172a;
+  white-space: nowrap;
+}
+[data-theme="dark"] .mp-att-table tbody td { border-bottom-color: #1e293b; color: #f1f5f9; }
+.mp-att-table tbody tr:last-child td { border-bottom: none; }
+.mp-att-cell-date { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+.mp-att-cell-dim { color: rgba(15, 23, 42, 0.35); }
+[data-theme="dark"] .mp-att-cell-dim { color: rgba(226, 232, 240, 0.35); }
+.mp-att-cell-absent { color: #b91c1c; font-weight: 600; }
+[data-theme="dark"] .mp-att-cell-absent { color: #fca5a5; }
+.mp-att-cell-ongoing { color: #06a3b6; font-weight: 600; }
+[data-theme="dark"] .mp-att-cell-ongoing { color: #67e8f9; }
+
+
 /* Responsive */
 @media (max-width: 900px) {
   .mp-grid { grid-template-columns: 1fr; }
   .mp-stats { grid-template-columns: 1fr; }
+  .mp-att-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mp-att-charts { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {
   .mp-hero { flex-direction: column; text-align: center; align-items: center; }
   .mp-hero-photo { width: 132px; height: 132px; }
   .mp-hero-name { font-size: 28px; }
   .mp-hero-meta { justify-content: center; }
+  .mp-att { padding: 18px 16px; }
+  .mp-att-title { font-size: 17px; }
+  .mp-att-toolbar { width: 100%; }
 }
 
 

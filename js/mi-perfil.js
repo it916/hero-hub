@@ -5,8 +5,9 @@
 //   - Hero header con foto, nombre, cargo, rol y email.
 //   - Información personal (teléfono, país, cumpleaños, tema).
 //   - Sobre mí (bio) con edición inline.
-//   - Estadísticas del mes (desde el Sheet de asistencia).
 //   - Actividad reciente (desde audit-log en Firestore).
+//   - Mi asistencia: sección amplia con selector de periodo, 8 KPIs,
+//     3 gráficos y tabla detalle. Reusa js/attendance-stats.js.
 
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -16,8 +17,12 @@ import {
 import { guardPage, filterTopbarByRole } from "./roles.js";
 import { getFreshGooglePhotoURL } from "./user-photo.js";
 import { ACTION_LABELS } from "./audit-log.js";
-
-const ATTENDANCE_URL = "https://script.google.com/macros/s/AKfycbxgZulYURxNjprHfvXuj82HHveHtNueg1J6SYkRPzqh8AjYSduzN9RkK-n5-1zO1N3F/exec";
+import {
+  fetchAttendanceEvents,
+  computePersonStats, computePeriod,
+  fmtTime, fmtHoursMinutes, fmtTimeOfDay,
+  renderPersonLineChart, renderPersonDonutChart, renderPersonWeekdayBars,
+} from "./attendance-stats.js";
 
 const FLAG_URLS = {
   'venezuela': 'https://flagicons.lipis.dev/flags/4x3/ve.svg',
@@ -68,15 +73,6 @@ function daysUntilBirthday({ month, day }) {
 }
 
 function startOfDay(d) { const x = new Date(d); x.setHours(0,0,0,0); return x; }
-function startOfMonth(d) { return new Date(d.getFullYear(), d.getMonth(), 1); }
-
-function parseAttendanceDate(fecha) {
-  if (!fecha) return null;
-  if (fecha instanceof Date) return new Date(fecha);
-  const [m, d, y] = String(fecha).split("/");
-  if (!m || !d || !y) return null;
-  return new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
-}
 
 function relativeTime(date) {
   const now = Date.now();
@@ -100,6 +96,9 @@ function relativeTime(date) {
 
 let currentUser = null;
 let currentMember = null;
+let allEvents = [];
+const attCharts = {};
+let fpFrom = null, fpTo = null;
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) { location.href = "index.html"; return; }
@@ -128,11 +127,12 @@ onAuthStateChanged(auth, async (user) => {
   await Promise.all([
     loadTeamData(),
     loadActivity(),
-    loadStats(),
+    loadAttendance(),
   ]);
 
   // Bind del botón editar bio
   wireBioEditor();
+  wireAttendanceToolbar();
 
   // Handler de cerrar sesión (para el #btn-logout oculto que el dropdown dispara)
   document.getElementById("btn-logout")?.addEventListener("click", () =>
@@ -203,8 +203,19 @@ function renderInfo() {
   }
 
   const bdEl = document.getElementById("mp-birthday");
-  if (bd) bdEl.textContent = formatBirthday(bd);
-  else { bdEl.textContent = "—"; bdEl.classList.add("mp-empty"); }
+  const bdInEl = document.getElementById("mp-birthday-in");
+  if (bd) {
+    bdEl.textContent = formatBirthday(bd);
+    const days = daysUntilBirthday(bd);
+    if (days === 0) bdInEl.textContent = "· ¡hoy!";
+    else if (days === 1) bdInEl.textContent = "· mañana";
+    else bdInEl.textContent = `· en ${days} días`;
+    bdInEl.hidden = false;
+  } else {
+    bdEl.textContent = "—";
+    bdEl.classList.add("mp-empty");
+    bdInEl.hidden = true;
+  }
 
   const themeEl = document.getElementById("mp-theme");
   themeEl.textContent = document.body.dataset.theme === "dark" ? "Noche" : "Día";
@@ -290,54 +301,152 @@ async function saveBio(newBio) {
   currentMember = members[idx];
 }
 
-// ── Estadísticas del mes ──────────────────────────────────────
+// ── Mi asistencia (vista amplia) ─────────────────────────────
 
-async function loadStats() {
-  const bd = parseBirthdate(currentMember?.birthdate);
-  const bdEl = document.getElementById("mp-stat-birthday-in");
-  if (bd) {
-    const d = daysUntilBirthday(bd);
-    if (d === 0) bdEl.textContent = "¡Hoy!";
-    else if (d === 1) bdEl.textContent = "mañana";
-    else bdEl.textContent = String(d);
-  } else {
-    bdEl.textContent = "—";
-    bdEl.classList.add("mp-empty");
-  }
+async function loadAttendance() {
+  const loading = document.getElementById("mp-att-loading");
+  const errorEl = document.getElementById("mp-att-error");
+  const content = document.getElementById("mp-att-content");
 
-  // Asistencia: fetch al Sheet y contar del mes actual.
+  loading.hidden = false;
+  errorEl.hidden = true;
+  content.hidden = true;
+
   try {
-    const resp = await fetch(ATTENDANCE_URL, { method: "GET", redirect: "follow" });
-    if (!resp.ok) throw new Error("HTTP " + resp.status);
-    const data = await resp.json();
-    if (!data.ok) throw new Error(data.error || "Respuesta inválida del Apps Script");
-    const events = data.data || [];
-    const monthStart = startOfMonth(new Date());
-    const email = currentUser.email.toLowerCase();
-
-    const mine = events.filter(ev => {
-      if (!ev.email || String(ev.email).toLowerCase() !== email) return false;
-      const d = parseAttendanceDate(ev.fecha);
-      return d && d >= monthStart;
-    });
-
-    // Días únicos con al menos una "Entrada"
-    const workDays = new Set();
-    let breaks = 0;
-    for (const ev of mine) {
-      if (ev.tipo === "Entrada") {
-        const d = parseAttendanceDate(ev.fecha);
-        if (d) workDays.add(d.toDateString());
-      }
-      if (ev.tipo === "Inicio Break") breaks++;
-    }
-    document.getElementById("mp-stat-days").textContent = String(workDays.size);
-    document.getElementById("mp-stat-breaks").textContent = String(breaks);
+    allEvents = await fetchAttendanceEvents();
+    loading.hidden = true;
+    content.hidden = false;
+    renderAttendance();
   } catch (e) {
     console.error("[mi-perfil] Error cargando asistencia:", e);
-    document.getElementById("mp-stat-days").textContent = "—";
-    document.getElementById("mp-stat-breaks").textContent = "—";
+    loading.hidden = true;
+    errorEl.hidden = false;
+    document.getElementById("mp-att-error-detail").textContent = e.message || "";
+    if (window.refreshIcons) window.refreshIcons();
   }
+}
+
+function wireAttendanceToolbar() {
+  const periodSel = document.getElementById("mp-att-period");
+  if (!periodSel) return;
+  periodSel.addEventListener("change", () => {
+    const wrap = document.getElementById("mp-att-custom-range");
+    const isCustom = periodSel.value === "custom";
+    if (wrap) wrap.hidden = !isCustom;
+    if (isCustom) ensureCustomPickers();
+    renderAttendance();
+  });
+}
+
+// Inicializa flatpickr la primera vez que se elige "custom".
+function ensureCustomPickers() {
+  if (fpFrom && fpTo) return;
+  const fromEl = document.getElementById("mp-att-from");
+  const toEl = document.getElementById("mp-att-to");
+  if (!fromEl || !toEl || typeof flatpickr === "undefined") return;
+
+  const today = new Date();
+  const monthAgo = new Date();
+  monthAgo.setDate(monthAgo.getDate() - 30);
+
+  fpFrom = flatpickr(fromEl, {
+    locale: "es",
+    dateFormat: "m/d/Y",
+    defaultDate: monthAgo,
+    maxDate: today,
+    onChange: ([d]) => {
+      if (d && fpTo) fpTo.set("minDate", d);
+      renderAttendance();
+    }
+  });
+  fpTo = flatpickr(toEl, {
+    locale: "es",
+    dateFormat: "m/d/Y",
+    defaultDate: today,
+    maxDate: today,
+    minDate: monthAgo,
+    onChange: ([d]) => {
+      if (d && fpFrom) fpFrom.set("maxDate", d);
+      renderAttendance();
+    }
+  });
+}
+
+function renderAttendance() {
+  const periodVal = document.getElementById("mp-att-period").value;
+  const custom = periodVal === "custom"
+    ? { from: document.getElementById("mp-att-from")?.value, to: document.getElementById("mp-att-to")?.value }
+    : null;
+  const { rangeStart, rangeEnd, label } = computePeriod(periodVal, custom);
+  document.getElementById("mp-att-period-label").textContent = label;
+
+  // El email del user en el Sheet respeta may/min como llegó desde Google Auth.
+  // Buscamos primero exacto; si no aparece, probamos case-insensitive.
+  const emailLower = currentUser.email.toLowerCase();
+  let matchEmail = currentUser.email;
+  if (!allEvents.some(e => e.email === matchEmail)) {
+    const hit = allEvents.find(e => e.email && String(e.email).toLowerCase() === emailLower);
+    if (hit) matchEmail = hit.email;
+  }
+
+  const stats = computePersonStats(allEvents, matchEmail, rangeStart, rangeEnd);
+
+  renderAttendanceKPIs(stats);
+  attCharts.line  = renderPersonLineChart(document.getElementById("mp-att-chart-line"),   attCharts.line,  stats, rangeStart, rangeEnd);
+  attCharts.donut = renderPersonDonutChart(document.getElementById("mp-att-chart-donut"), attCharts.donut, stats);
+  attCharts.bars  = renderPersonWeekdayBars(document.getElementById("mp-att-chart-bars"), attCharts.bars,  stats);
+  renderAttendanceTable(stats);
+
+  if (window.refreshIcons) window.refreshIcons();
+}
+
+function renderAttendanceKPIs(stats) {
+  const items = [
+    { label: "Trabajado",     value: fmtHoursMinutes(stats.totalMs) },
+    { label: "Días activos",  value: stats.activeDays },
+    { label: "Prom/día",      value: fmtHoursMinutes(stats.avgWorkPerDay) },
+    { label: "Breaks",        value: stats.totalBreaks },
+    { label: "Brk-prom",      value: fmtHoursMinutes(stats.avgBreakDuration) },
+    { label: "Cortes luz",    value: stats.totalOutages },
+    { label: "Ausencias",     value: stats.totalAbsences },
+    { label: "Entrada prom",  value: fmtTimeOfDay(stats.avgEntrada) },
+  ];
+  document.getElementById("mp-att-kpis").innerHTML = items.map(k => `
+    <div class="mp-att-kpi">
+      <div class="mp-att-kpi-value">${escapeHtml(String(k.value))}</div>
+      <div class="mp-att-kpi-label">${escapeHtml(k.label)}</div>
+    </div>
+  `).join("");
+}
+
+function renderAttendanceTable(stats) {
+  const tbody = document.getElementById("mp-att-detail-tbody");
+  if (!stats.dailyStats.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="mp-att-cell-dim" style="text-align:center;padding:24px;">Sin registros en este periodo.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = stats.dailyStats.map(d => {
+    const dateStr = d.date.toLocaleDateString("es", { day: "2-digit", month: "2-digit", year: "2-digit" });
+    const dim = `<span class="mp-att-cell-dim">—</span>`;
+    const breaksCell = d.breaksCount ? `${d.breaksCount} (${fmtHoursMinutes(d.breaksMs)})` : dim;
+    const outagesCell = d.outages ? `${d.outages} (${fmtHoursMinutes(d.outagesMs)})` : dim;
+    const absentCell = d.absent ? `<span class="mp-att-cell-absent">Sí</span>` : dim;
+    let workedCell = dim;
+    if (d.worked > 0) {
+      workedCell = d.ongoing
+        ? `<span class="mp-att-cell-ongoing">${fmtHoursMinutes(d.worked)} (en curso)</span>`
+        : fmtHoursMinutes(d.worked);
+    }
+    return `<tr>
+      <td class="mp-att-cell-date">${dateStr}</td>
+      <td>${d.entrada ? fmtTime(d.entrada) : dim}</td>
+      <td>${d.salida ? fmtTime(d.salida) : dim}</td>
+      <td>${workedCell}</td>
+      <td>${breaksCell}</td>
+      <td>${outagesCell}</td>
+      <td>${absentCell}</td>
+    </tr>`;
+  }).join("");
 }
 
 // ── Actividad reciente (audit-log) ─────────────────────────────
