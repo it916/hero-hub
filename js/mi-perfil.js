@@ -15,7 +15,7 @@ import {
   doc, getDoc, setDoc, collection, query, where, orderBy, limit, getDocs
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { guardPage, filterTopbarByRole } from "./roles.js";
-import { getFreshGooglePhotoURL } from "./user-photo.js";
+import { getFreshGooglePhotoURL, getGooglePhotoURL } from "./user-photo.js";
 import { ACTION_LABELS } from "./audit-log.js";
 import {
   fetchAttendanceEvents,
@@ -167,7 +167,9 @@ function renderHero() {
   const user = currentUser;
   const name = currentMember?.name || user.displayName || user.email.split("@")[0];
   const cargo = currentMember?.role || "";
-  const photo = user.photoURL || currentMember?.photo || "";
+  // getGooglePhotoURL prioriza providerData (fresh) sobre user.photoURL (stale cache).
+  // El reload() ya lo hizo getFreshGooglePhotoURL en el bootstrap, así que aquí sync está OK.
+  const photo = getGooglePhotoURL(user) || currentMember?.photo || "";
 
   document.getElementById("mp-name").textContent = name;
   document.getElementById("mp-cargo").textContent = cargo || "—";
