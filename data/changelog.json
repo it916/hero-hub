@@ -1,5 +1,22 @@
 [
   {
+    "id": "2026-07-07-finanzas-fase2",
+    "version": "v2.10.0",
+    "date": "2026-07-07",
+    "category": "feat",
+    "scope": "finanzas",
+    "audience": "team",
+    "title": "Finanzas · Fase 2: importar Excel, exportar a .xlsx, dropdowns simplificados",
+    "items": [
+      "Nuevo tab 'Importar' en Finanzas con dos cards: importar ingresos desde INGRESOS 2026.xlsx (match por fecha + descripción + monto para evitar duplicados) y aplicar URLs de reportes desde URLS_INGRESOS_2026.xlsx",
+      "Exportar ahora también genera archivos .xlsx nativos (además del CSV): incluye formato moneda automático en las columnas Monto/Pagado/Ganancia/Saldo",
+      "Los 4 dropdowns de periodo (Dashboard, Ingresos, Comparativas, Exportar) se simplificaron a: Todo (default) · Enero–Diciembre · Personalizado",
+      "Todas las fechas visibles en Finanzas usan formato MM/DD/YYYY (incluyendo el modal en modo lectura, con span estático que no depende del navegador)",
+      "Fix: el summary bar de Ingresos ya no queda en cero al filtrar por primera vez por un mes o carrier (race condition con Tabulator resuelto)",
+      "Bump v2.9.0 → v2.10.0"
+    ]
+  },
+  {
     "id": "2026-07-07-finanzas-fase1",
     "version": "v2.9.0",
     "date": "2026-07-07",

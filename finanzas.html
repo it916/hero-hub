@@ -30,6 +30,9 @@
 <!-- Chart.js · gráficos -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 
+<!-- SheetJS · export Excel (.xlsx) -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
 <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
@@ -122,6 +125,10 @@
             <i data-lucide="download"></i>
             <span>Exportar</span>
           </button>
+          <button type="button" class="admin-sidebar-link" data-tab="importar">
+            <i data-lucide="upload"></i>
+            <span>Importar</span>
+          </button>
         </div>
 
       </nav>
@@ -154,11 +161,19 @@
           </div>
           <div class="ad-toolbar-actions">
             <select id="fd-period" class="fi-filter-select">
-              <option value="year" selected>Año actual</option>
-              <option value="month">Este mes</option>
-              <option value="lastMonth">Mes pasado</option>
-              <option value="lastYear">Año anterior</option>
-              <option value="all">Todo</option>
+              <option value="all" selected>Todo</option>
+              <option value="m-01">Enero</option>
+              <option value="m-02">Febrero</option>
+              <option value="m-03">Marzo</option>
+              <option value="m-04">Abril</option>
+              <option value="m-05">Mayo</option>
+              <option value="m-06">Junio</option>
+              <option value="m-07">Julio</option>
+              <option value="m-08">Agosto</option>
+              <option value="m-09">Septiembre</option>
+              <option value="m-10">Octubre</option>
+              <option value="m-11">Noviembre</option>
+              <option value="m-12">Diciembre</option>
               <option value="custom">Personalizado…</option>
             </select>
             <div id="fd-custom-range" class="fi-custom-range" hidden>
@@ -248,11 +263,19 @@
           <div class="fi-filter-group">
             <label for="fi-filter-periodo">Periodo</label>
             <select id="fi-filter-periodo" class="fi-filter-select">
-              <option value="all">Todo</option>
-              <option value="this-month">Este mes</option>
-              <option value="last-month">Mes pasado</option>
-              <option value="this-year">Año actual</option>
-              <option value="last-year">Año anterior</option>
+              <option value="all" selected>Todo</option>
+              <option value="m-01">Enero</option>
+              <option value="m-02">Febrero</option>
+              <option value="m-03">Marzo</option>
+              <option value="m-04">Abril</option>
+              <option value="m-05">Mayo</option>
+              <option value="m-06">Junio</option>
+              <option value="m-07">Julio</option>
+              <option value="m-08">Agosto</option>
+              <option value="m-09">Septiembre</option>
+              <option value="m-10">Octubre</option>
+              <option value="m-11">Noviembre</option>
+              <option value="m-12">Diciembre</option>
               <option value="custom">Personalizado…</option>
             </select>
             <div id="fi-custom-range" class="fi-custom-range" hidden>
@@ -399,9 +422,19 @@
           </div>
           <div class="ad-toolbar-actions">
             <select id="fcomp-period" class="fi-filter-select">
-              <option value="year" selected>Año actual</option>
-              <option value="lastYear">Año anterior</option>
-              <option value="all">Todo</option>
+              <option value="all" selected>Todo</option>
+              <option value="m-01">Enero</option>
+              <option value="m-02">Febrero</option>
+              <option value="m-03">Marzo</option>
+              <option value="m-04">Abril</option>
+              <option value="m-05">Mayo</option>
+              <option value="m-06">Junio</option>
+              <option value="m-07">Julio</option>
+              <option value="m-08">Agosto</option>
+              <option value="m-09">Septiembre</option>
+              <option value="m-10">Octubre</option>
+              <option value="m-11">Noviembre</option>
+              <option value="m-12">Diciembre</option>
               <option value="custom">Personalizado…</option>
             </select>
             <div id="fcomp-custom-range" class="fi-custom-range" hidden>
@@ -440,11 +473,19 @@
           </div>
           <div class="ad-toolbar-actions">
             <select id="fexp-period" class="fi-filter-select">
-              <option value="year" selected>Año actual</option>
-              <option value="month">Este mes</option>
-              <option value="lastMonth">Mes pasado</option>
-              <option value="lastYear">Año anterior</option>
-              <option value="all">Todo</option>
+              <option value="all" selected>Todo</option>
+              <option value="m-01">Enero</option>
+              <option value="m-02">Febrero</option>
+              <option value="m-03">Marzo</option>
+              <option value="m-04">Abril</option>
+              <option value="m-05">Mayo</option>
+              <option value="m-06">Junio</option>
+              <option value="m-07">Julio</option>
+              <option value="m-08">Agosto</option>
+              <option value="m-09">Septiembre</option>
+              <option value="m-10">Octubre</option>
+              <option value="m-11">Noviembre</option>
+              <option value="m-12">Diciembre</option>
               <option value="custom">Personalizado…</option>
             </select>
             <div id="fexp-custom-range" class="fi-custom-range" hidden>
@@ -465,22 +506,34 @@
         <div class="fexp-grid">
           <div class="fexp-card">
             <div class="fexp-icon"><i data-lucide="table"></i></div>
-            <h3>Lista de ingresos (CSV)</h3>
-            <p>Una fila por ingreso. Incluye fecha, mes, tipo, categoría, descripciones, monto, pagado, ganancia, conteo de payouts y notas.</p>
-            <sl-button id="fexp-csv-ingresos" variant="primary">
-              <i data-lucide="download" slot="prefix" style="width:14px;height:14px;"></i>
-              Descargar CSV
-            </sl-button>
+            <h3>Lista de ingresos</h3>
+            <p>Una fila por ingreso. Incluye fecha, mes, tipo, categoría, carrier, descripciones, monto, pagado, ganancia, conteo de payouts y notas.</p>
+            <div class="fexp-btn-row">
+              <sl-button id="fexp-csv-ingresos" variant="primary">
+                <i data-lucide="download" slot="prefix" style="width:14px;height:14px;"></i>
+                CSV
+              </sl-button>
+              <sl-button id="fexp-xlsx-ingresos" variant="primary">
+                <i data-lucide="file-spreadsheet" slot="prefix" style="width:14px;height:14px;"></i>
+                Excel
+              </sl-button>
+            </div>
           </div>
 
           <div class="fexp-card">
             <div class="fexp-icon"><i data-lucide="users"></i></div>
-            <h3>Detalle de payouts (CSV)</h3>
+            <h3>Detalle de payouts</h3>
             <p>Una fila por payout, expandiendo cada ingreso. Incluye destinatario (agencia/broker), reporte file y saldo. Útil para reconciliar pagos.</p>
-            <sl-button id="fexp-csv-payouts" variant="primary">
-              <i data-lucide="download" slot="prefix" style="width:14px;height:14px;"></i>
-              Descargar CSV
-            </sl-button>
+            <div class="fexp-btn-row">
+              <sl-button id="fexp-csv-payouts" variant="primary">
+                <i data-lucide="download" slot="prefix" style="width:14px;height:14px;"></i>
+                CSV
+              </sl-button>
+              <sl-button id="fexp-xlsx-payouts" variant="primary">
+                <i data-lucide="file-spreadsheet" slot="prefix" style="width:14px;height:14px;"></i>
+                Excel
+              </sl-button>
+            </div>
           </div>
 
           <div class="fexp-card fexp-card-wide">
@@ -495,12 +548,88 @@
         </div>
       </section>
 
+      <!-- ══════════════════════════════════════════════ -->
+      <!-- SECCIÓN IMPORTAR                               -->
+      <!-- ══════════════════════════════════════════════ -->
+      <section class="admin-section" id="tab-importar" style="display:none;">
+        <div class="ad-toolbar">
+          <div>
+            <h2 style="margin:0;">⬆ Importar desde Excel</h2>
+            <p class="admin-note" style="margin:4px 0 0;">Carga los ingresos y URLs de reportes desde los archivos maestros que mantiene Gilbana. Cada archivo se procesa de forma independiente: preview primero, aplicar después.</p>
+          </div>
+        </div>
+
+        <div class="fimp-grid">
+
+          <!-- Card A: Importar ingresos -->
+          <div class="fimp-card">
+            <div class="fimp-card-head">
+              <div class="fimp-icon"><i data-lucide="database"></i></div>
+              <div>
+                <h3>1. Importar ingresos</h3>
+                <p class="fimp-sub">Espera <code>INGRESOS 2026.xlsx</code> con una hoja por mes (ENE 2026, FEB 2026, ...). Solo se insertan los que <strong>no existan</strong> en Firestore (match por fecha + descripción depósito + monto).</p>
+              </div>
+            </div>
+
+            <label class="fimp-file-label">
+              <input type="file" id="fimp-ingresos-file" accept=".xlsx" class="fimp-file-input">
+              <span class="fimp-file-btn">
+                <i data-lucide="file-plus"></i>
+                <span id="fimp-ingresos-filename">Seleccionar archivo…</span>
+              </span>
+            </label>
+
+            <div id="fimp-ingresos-preview" class="fimp-preview" hidden></div>
+
+            <div class="fimp-actions">
+              <sl-button id="fimp-ingresos-apply" variant="primary" disabled>
+                <i data-lucide="upload-cloud" slot="prefix" style="width:14px;height:14px;"></i>
+                Importar nuevos
+              </sl-button>
+            </div>
+
+            <div class="fimp-status" id="fimp-ingresos-status"></div>
+          </div>
+
+          <!-- Card B: Aplicar URLs -->
+          <div class="fimp-card">
+            <div class="fimp-card-head">
+              <div class="fimp-icon"><i data-lucide="link-2"></i></div>
+              <div>
+                <h3>2. Aplicar URLs de reportes</h3>
+                <p class="fimp-sub">Espera <code>URLS_INGRESOS_2026.xlsx</code> con la hoja "URLS". Actualiza el <em>Archivo original</em> y los <em>Reporte file de payouts</em> de los ingresos existentes. Requiere que hayas cargado el Excel de ingresos arriba (para el lookup de fecha).</p>
+              </div>
+            </div>
+
+            <label class="fimp-file-label">
+              <input type="file" id="fimp-urls-file" accept=".xlsx" class="fimp-file-input">
+              <span class="fimp-file-btn">
+                <i data-lucide="file-plus"></i>
+                <span id="fimp-urls-filename">Seleccionar archivo…</span>
+              </span>
+            </label>
+
+            <div id="fimp-urls-preview" class="fimp-preview" hidden></div>
+
+            <div class="fimp-actions">
+              <sl-button id="fimp-urls-apply" variant="primary" disabled>
+                <i data-lucide="link-2" slot="prefix" style="width:14px;height:14px;"></i>
+                Aplicar URLs
+              </sl-button>
+            </div>
+
+            <div class="fimp-status" id="fimp-urls-status"></div>
+          </div>
+
+        </div>
+      </section>
+
     </main>
 
   </div><!-- /.admin-shell -->
 
   <footer class="hero-footer">
-    <span>HERO HUB · FINANZAS v2.9.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+    <span>HERO HUB · FINANZAS v2.10.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
   </footer>
 
 </div><!-- /#finanzas-panel -->
@@ -517,7 +646,8 @@
     comisiones: 'Tabla de Comisiones',
     brokers: 'Agencias',
     comparativas: 'Comparativas',
-    exportar: 'Exportar'
+    exportar: 'Exportar',
+    importar: 'Importar'
   };
   const FIN_TABS = Object.keys(FIN_TAB_TITLES);
 

@@ -16,7 +16,7 @@ import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import {
   collection, getDocs, getDoc, setDoc, addDoc, updateDoc, deleteDoc, doc,
-  serverTimestamp, query, orderBy
+  serverTimestamp, query, orderBy, writeBatch
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { logEvent, ACTIONS } from "./audit-log.js";
 
@@ -50,6 +50,8 @@ document.addEventListener("DOMContentLoaded", () => {
   bindComparativasLazyInit();
   bindExportarStaticHandlers();
   bindExportarLazyInit();
+  bindImportarStaticHandlers();
+  bindImportarLazyInit();
 });
 
 
@@ -952,7 +954,7 @@ const TIPO_DEST_LABEL = { agencia: "Agencia", broker: "Broker/Agente" };
 // Catálogo de carriers — editable desde el dropdown del modal de ingreso.
 // Se persiste en finanzas-config/carriers.list. El array de abajo es solo el seed.
 const CARRIERS_DEFAULT = [
-  "Aetna", "Aetna ACA", "Ambetter ACA", "Amerigroup", "Anthem Blue Cross",
+  "Aetna", "Aetna ACA", "Agility", "Ambetter ACA", "Amerigroup", "Anthem Blue Cross",
   "Cigna", "Ameritas", "AGA", "Careington", "CarePoint",
   "Elevance", "FG Life", "Health Family", "Health Sun", "Humana",
   "Loyal", "Manhattan Life", "Molina", "Mutual of Omaha", "National Life",
@@ -1358,8 +1360,13 @@ function initFiTable() {
     else if (delBtn) { e.stopPropagation(); onDeleteIngreso(delBtn.dataset.id); }
   });
 
-  fiTable.on("dataFiltered", updateIngresosSummary);
-  fiTable.on("dataLoaded", updateIngresosSummary);
+  // dataFiltered(filters, rows) → usamos los rows filtrados directamente en vez
+  // de getData("active"), que puede llegar stale en el primer cambio de filtro.
+  fiTable.on("dataFiltered", (_filters, rows) => {
+    const data = Array.isArray(rows) ? rows.map(r => r.getData()) : null;
+    updateIngresosSummary(data);
+  });
+  fiTable.on("dataLoaded", () => updateIngresosSummary());
 }
 
 // ─── Filtros ──────────────────────────────
@@ -1386,24 +1393,23 @@ function applyFiFilters() {
     }
     return true;
   });
+  // Actualizar summary de inmediato — dataFiltered puede llegar tarde en el primer cambio
+  updateIngresosSummary();
 }
 
 function matchesPeriodo(fecha, periodo) {
   if (!fecha) return false;
   const d = new Date(fecha + "T00:00:00");
   if (isNaN(d.getTime())) return false;
-  const now = new Date();
   const y = d.getFullYear();
   const m = d.getMonth();
-  const cY = now.getFullYear();
-  const cM = now.getMonth();
-  if (periodo === "this-month") return y === cY && m === cM;
-  if (periodo === "last-month") {
-    const lm = new Date(cY, cM - 1, 1);
-    return y === lm.getFullYear() && m === lm.getMonth();
+  const cY = new Date().getFullYear();
+  // Meses del año actual: valores "m-01" ... "m-12"
+  if (typeof periodo === "string" && periodo.startsWith("m-")) {
+    const targetMonth = parseInt(periodo.slice(2), 10) - 1;
+    if (isNaN(targetMonth) || targetMonth < 0 || targetMonth > 11) return true;
+    return y === cY && m === targetMonth;
   }
-  if (periodo === "this-year") return y === cY;
-  if (periodo === "last-year") return y === cY - 1;
   if (periodo === "custom") {
     if (!fiFilter.fromDate || !fiFilter.toDate) return true;
     return d >= fiFilter.fromDate && d <= fiFilter.toDate;
@@ -1422,14 +1428,16 @@ function endOfDay(d) {
   return x;
 }
 
-function updateIngresosSummary() {
+function updateIngresosSummary(data) {
   const totalEl = document.getElementById("fi-sum-total");
   const brutoEl = document.getElementById("fi-sum-bruto");
   const pagadoEl = document.getElementById("fi-sum-pagado");
   const gananciaEl = document.getElementById("fi-sum-ganancia");
   if (!totalEl || !fiTable) return;
 
-  const visibleRows = fiTable.getData("active");
+  // Preferimos la data ya filtrada que nos pasa Tabulator vía dataFiltered;
+  // sino, caemos a getData("active") (que puede estar stale en el primer cambio).
+  const visibleRows = Array.isArray(data) ? data : fiTable.getData("active");
   const total = visibleRows.length;
   const bruto = visibleRows.reduce((s, r) => s + (parseFloat(r.monto) || 0), 0);
   const pagado = visibleRows.reduce((s, r) => s + (parseFloat(r.pagado) || 0), 0);
@@ -1797,7 +1805,7 @@ async function sendIngresoEmail(ingreso, payoutIdx, broker) {
 // ═══════════════════════════════════════════════════════════
 let fdInited = false;
 const fdCharts = {};
-const fdState = { periodo: "year", fromDate: null, toDate: null };
+const fdState = { periodo: "all", fromDate: null, toDate: null };
 let fdCustomPickers = null;
 
 const FD_PALETTE = ["#06a3b6", "#22a06b", "#e8a317", "#0891a3", "#9333ea",
@@ -1859,9 +1867,7 @@ async function initDashboardPanel() {
 
 function filterByPeriodo(rows, periodo, fromDate = null, toDate = null) {
   if (periodo === "all") return rows;
-  const now = new Date();
-  const cY = now.getFullYear();
-  const cM = now.getMonth();
+  const cY = new Date().getFullYear();
 
   return rows.filter(r => {
     if (!r.fecha) return false;
@@ -1869,12 +1875,10 @@ function filterByPeriodo(rows, periodo, fromDate = null, toDate = null) {
     if (isNaN(d.getTime())) return false;
     const y = d.getFullYear();
     const m = d.getMonth();
-    if (periodo === "year") return y === cY;
-    if (periodo === "lastYear") return y === cY - 1;
-    if (periodo === "month") return y === cY && m === cM;
-    if (periodo === "lastMonth") {
-      const lm = new Date(cY, cM - 1, 1);
-      return y === lm.getFullYear() && m === lm.getMonth();
+    if (typeof periodo === "string" && periodo.startsWith("m-")) {
+      const targetMonth = parseInt(periodo.slice(2), 10) - 1;
+      if (isNaN(targetMonth) || targetMonth < 0 || targetMonth > 11) return true;
+      return y === cY && m === targetMonth;
     }
     if (periodo === "custom") {
       if (!fromDate || !toDate) return true;
@@ -2188,7 +2192,7 @@ function formatMoneyShort(n) {
 // ═══════════════════════════════════════════════════════════
 let fcompInited = false;
 const fcompCharts = {};
-const fcompState = { periodo: "year", fromDate: null, toDate: null };
+const fcompState = { periodo: "all", fromDate: null, toDate: null };
 let fcompCustomPickers = null;
 
 function bindComparativasStaticHandlers() {
@@ -2399,7 +2403,7 @@ function setFcompEmpty(key, isEmpty) {
 // EXPORTAR — CSVs + reporte ejecutivo para imprimir
 // ═══════════════════════════════════════════════════════════
 let fexpInited = false;
-const fexpState = { periodo: "year", fromDate: null, toDate: null };
+const fexpState = { periodo: "all", fromDate: null, toDate: null };
 let fexpCustomPickers = null;
 
 function bindExportarStaticHandlers() {
@@ -2422,6 +2426,16 @@ function bindExportarStaticHandlers() {
   if (csvPay && !csvPay.dataset.bound) {
     csvPay.dataset.bound = "1";
     csvPay.addEventListener("click", exportPayoutsCSV);
+  }
+  const xlsxIng = document.getElementById("fexp-xlsx-ingresos");
+  if (xlsxIng && !xlsxIng.dataset.bound) {
+    xlsxIng.dataset.bound = "1";
+    xlsxIng.addEventListener("click", exportIngresosXLSX);
+  }
+  const xlsxPay = document.getElementById("fexp-xlsx-payouts");
+  if (xlsxPay && !xlsxPay.dataset.bound) {
+    xlsxPay.dataset.bound = "1";
+    xlsxPay.addEventListener("click", exportPayoutsXLSX);
   }
   const printBtn = document.getElementById("fexp-print-report");
   if (printBtn && !printBtn.dataset.bound) {
@@ -2485,10 +2499,14 @@ function exportarData() {
 }
 
 function periodoLabel() {
-  const labels = {
-    year: "Año actual", month: "Este mes", lastMonth: "Mes pasado",
-    lastYear: "Año anterior", all: "Todo", custom: "Personalizado"
-  };
+  const cY = new Date().getFullYear();
+  const MESES_FULL = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                      "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+  if (typeof fexpState.periodo === "string" && fexpState.periodo.startsWith("m-")) {
+    const idx = parseInt(fexpState.periodo.slice(2), 10) - 1;
+    if (idx >= 0 && idx < 12) return `${MESES_FULL[idx]} ${cY}`;
+  }
+  const labels = { all: "Todo", custom: "Personalizado" };
   if (fexpState.periodo === "custom" && fexpState.fromDate && fexpState.toDate) {
     return `${formatDateShort(fexpState.fromDate)}–${formatDateShort(fexpState.toDate)}`;
   }
@@ -2499,7 +2517,7 @@ function formatDateShort(d) {
   if (!d) return "";
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
-  return `${m}-${day}-${d.getFullYear()}`;
+  return `${m}/${day}/${d.getFullYear()}`;
 }
 
 function updateExportarSummary() {
@@ -2579,6 +2597,109 @@ function slugify(s) {
     .replace(/^-+|-+$/g, "");
 }
 
+// ─── Exportar a Excel (.xlsx) — usa SheetJS cargado por CDN ───
+function ensureSheetJS() {
+  if (typeof XLSX === "undefined") {
+    alert("La librería para generar Excel (SheetJS) aún no cargó. Espera un segundo y vuelve a intentar.");
+    return false;
+  }
+  return true;
+}
+
+function exportIngresosXLSX() {
+  if (!ensureSheetJS()) return;
+  const data = exportarData();
+  if (!data.length) { alert("No hay ingresos en el periodo seleccionado."); return; }
+  const aoa = [[
+    "Fecha", "Mes", "Tipo de pago", "Categoría", "Carrier",
+    "Descripción depósito", "Descripción transacción",
+    "Monto", "Pagado", "Ganancia", "# Payouts", "Notas",
+    "Creado por", "Archivo original"
+  ]];
+  for (const r of data) {
+    aoa.push([
+      r.fecha ? formatFechaUS(r.fecha) : "",
+      r.mes || "",
+      r.tipoPago || "",
+      r.categoria || "",
+      r.carrier || "",
+      r.descripcionDeposito || "",
+      r.descripcionTransaccion || "",
+      Number(r.monto) || 0,
+      Number(r.pagado) || 0,
+      Number(r.ganancia) || 0,
+      Array.isArray(r.payouts) ? r.payouts.length : 0,
+      r.notas || "",
+      r.creadoPor || "",
+      r.archivoOriginalDriveUrl || ""
+    ]);
+  }
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  // Ancho de columnas
+  ws["!cols"] = [
+    { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 20 },
+    { wch: 24 }, { wch: 26 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
+    { wch: 10 }, { wch: 30 }, { wch: 28 }, { wch: 40 }
+  ];
+  // Formato moneda en las columnas H, I, J (Monto, Pagado, Ganancia)
+  for (let i = 2; i <= aoa.length; i++) {
+    ["H", "I", "J"].forEach(col => {
+      const cell = ws[col + i];
+      if (cell) cell.z = '"$"#,##0.00';
+    });
+  }
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Ingresos");
+  XLSX.writeFile(wb, `hero-finanzas-ingresos-${slugify(periodoLabel())}.xlsx`);
+}
+
+function exportPayoutsXLSX() {
+  if (!ensureSheetJS()) return;
+  const data = exportarData();
+  const aoa = [[
+    "Fecha ingreso", "Mes", "Desc. depósito", "Categoría", "Carrier", "Monto ingreso",
+    "Tipo destinatario", "Destinatario", "Saldo (payout)", "Reporte file",
+    "Email enviado a", "Fecha envío"
+  ]];
+  let count = 0;
+  for (const r of data) {
+    if (!Array.isArray(r.payouts) || !r.payouts.length) continue;
+    for (const p of r.payouts) {
+      aoa.push([
+        r.fecha ? formatFechaUS(r.fecha) : "",
+        r.mes || "",
+        r.descripcionDeposito || "",
+        r.categoria || "",
+        r.carrier || "",
+        Number(r.monto) || 0,
+        TIPO_DEST_LABEL[p.tipo || "agencia"] || (p.tipo || "agencia"),
+        p.broker || "",
+        Number(p.saldo) || 0,
+        p.reporteFile || "",
+        p.emailSentTo || "",
+        p.emailSentAt ? formatFechaUS(String(p.emailSentAt).slice(0, 10)) : ""
+      ]);
+      count++;
+    }
+  }
+  if (count === 0) { alert("No hay payouts en el periodo seleccionado."); return; }
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws["!cols"] = [
+    { wch: 14 }, { wch: 10 }, { wch: 24 }, { wch: 12 }, { wch: 20 }, { wch: 14 },
+    { wch: 16 }, { wch: 26 }, { wch: 14 }, { wch: 40 }, { wch: 26 }, { wch: 12 }
+  ];
+  // Formato moneda en columnas F (Monto) e I (Saldo)
+  for (let i = 2; i <= aoa.length; i++) {
+    ["F", "I"].forEach(col => {
+      const cell = ws[col + i];
+      if (cell) cell.z = '"$"#,##0.00';
+    });
+  }
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Payouts");
+  XLSX.writeFile(wb, `hero-finanzas-payouts-${slugify(periodoLabel())}.xlsx`);
+}
+
 function csvEscape(v) {
   if (v == null) return "";
   const s = String(v);
@@ -2620,7 +2741,7 @@ function generatePrintReport() {
   const totalCount = data.length;
 
   const now = new Date();
-  const fechaGen = now.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const fechaGen = formatFechaUS(now.toISOString().slice(0, 10));
 
   const html = `
     <div class="fpr-header">
@@ -2728,7 +2849,8 @@ async function openIngresoModal(existing, opts = {}) {
             Fecha
             <span class="fi-mes-pill" id="fi-mes-pill"></span>
           </label>
-          <input type="date" id="fi-f-fecha" class="fc-native-date" value="${initialFecha}" required>
+          <input type="date" id="fi-f-fecha" class="fc-native-date fi-edit-only" value="${initialFecha}" required>
+          <div class="fc-native-static fi-view-only" id="fi-f-fecha-static">${escapeHtml(formatFechaUS(initialFecha))}</div>
         </div>
         <div class="fc-native-field">
           <label for="fi-f-tipopago" class="fc-native-label">Tipo de pago</label>
@@ -2869,11 +2991,13 @@ async function openIngresoModal(existing, opts = {}) {
   const pagadoEl = dialog.querySelector("#fi-summary-pagado");
   const gananciaEl = dialog.querySelector("#fi-summary-ganancia");
 
-  // ─── Mes derivado de la fecha ───
+  // ─── Mes derivado de la fecha + mirror de fecha para modo view ───
+  const fechaStaticEl = dialog.querySelector("#fi-f-fecha-static");
   function updateMes() {
     const mes = deriveMes(fechaInp.value);
     mesPill.textContent = mes;
     mesPill.style.display = mes ? "" : "none";
+    if (fechaStaticEl) fechaStaticEl.textContent = fechaInp.value ? formatFechaUS(fechaInp.value) : "—";
   }
   fechaInp.addEventListener("change", updateMes);
   fechaInp.addEventListener("input", updateMes);
@@ -3397,4 +3521,762 @@ function showFcStatus(msg) {
   el.classList.add("visible");
   if (fcStatusTimeout) clearTimeout(fcStatusTimeout);
   fcStatusTimeout = setTimeout(() => el.classList.remove("visible"), 3000);
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// MIGRACIÓN ÚNICA: poblar `carrier` en ingresos históricos
+// ═══════════════════════════════════════════════════════════
+// Uso desde la consola de finanzas.html:
+//   await __migrarCarriersHistoricos({ dryRun: true })   → solo preview
+//   await __migrarCarriersHistoricos({ dryRun: false })  → aplica en Firestore
+// Después de correr con éxito, esta función se elimina en el próximo commit.
+
+const CARRIER_MATCH_RULES = [
+  { pattern: /aetna/i,              carrier: "Aetna" },
+  { pattern: /ameritas/i,           carrier: "Ameritas" },
+  { pattern: /agility/i,            carrier: "Agility" },
+  { pattern: /carepoint/i,          carrier: "CarePoint" },
+  { pattern: /cigna/i,              carrier: "Cigna" },
+  { pattern: /elevance/i,           carrier: "Elevance" },
+  { pattern: /fg\s*life/i,          carrier: "FG Life" },
+  { pattern: /health\s*family/i,    carrier: "Health Family" },
+  { pattern: /health\s*sun/i,       carrier: "Health Sun" },
+  { pattern: /manhattan/i,          carrier: "Manhattan Life" },
+  { pattern: /mutual\s+of\s+omaha/i, carrier: "Mutual of Omaha" },
+  { pattern: /national\s+life/i,    carrier: "National Life" },
+  { pattern: /senior\s+life/i,      carrier: "Senior Life" },
+  { pattern: /solis/i,              carrier: "Solis" },
+  { pattern: /standard\s+life/i,    carrier: "Standard Life" },
+  { pattern: /united\s+health|uhc/i, carrier: "United Health Care" },
+];
+
+function matchCarrier(descDeposito) {
+  if (!descDeposito) return null;
+  for (const rule of CARRIER_MATCH_RULES) {
+    if (rule.pattern.test(descDeposito)) return rule.carrier;
+  }
+  return null;
+}
+
+async function migrarCarriersHistoricos(opts = {}) {
+  const dryRun = opts.dryRun !== false; // default: dry run
+  console.group(`%c[migración carriers] ${dryRun ? "DRY RUN" : "APLICAR"}`, "color:#06a3b6;font-weight:bold");
+
+  // Sanity: ingresos cargados
+  if (!Array.isArray(ingresosData) || ingresosData.length === 0) {
+    console.error("ingresosData vacío. Abre el tab 'Ingresos' primero para que se cargue.");
+    console.groupEnd();
+    return { ok: false, reason: "no_data" };
+  }
+
+  // Asegura que carriersList esté cargado y contenga "Agility"
+  try { await loadCarriersList(); } catch (e) { console.warn(e); }
+  if (!carriersList.some(c => c.toLowerCase() === "agility")) {
+    console.log("Añadiendo 'Agility' al catálogo…");
+    if (!dryRun) {
+      try { await addCarrierToList("Agility"); }
+      catch (e) { console.error("No se pudo añadir 'Agility':", e.message); }
+    } else {
+      console.log("(dry run — no se añadió)");
+    }
+  }
+
+  // Categorizar
+  const skipped = [];   // ya tienen carrier
+  const matched = [];   // van a recibir carrier según regla
+  const unmatched = []; // sin match, quedan sin carrier
+
+  for (const r of ingresosData) {
+    if (r.carrier) { skipped.push(r); continue; }
+    const c = matchCarrier(r.descripcionDeposito);
+    if (c) matched.push({ row: r, carrier: c });
+    else unmatched.push(r);
+  }
+
+  // Agrupar matched por carrier para reportar
+  const byCarrier = {};
+  matched.forEach(m => {
+    byCarrier[m.carrier] = (byCarrier[m.carrier] || 0) + 1;
+  });
+
+  console.log(`Total ingresos: ${ingresosData.length}`);
+  console.log(`Ya con carrier: ${skipped.length}`);
+  console.log(`Matchean para asignar: ${matched.length}`);
+  console.log(`Sin match (quedan vacíos): ${unmatched.length}`);
+  console.log("");
+  console.log("%cResumen por carrier a asignar:", "font-weight:bold");
+  console.table(byCarrier);
+
+  if (unmatched.length) {
+    console.log("");
+    console.log("%cEjemplos de ingresos sin match (primeros 10):", "font-weight:bold");
+    console.table(unmatched.slice(0, 10).map(r => ({
+      fecha: r.fecha, descDeposito: r.descripcionDeposito, monto: r.monto
+    })));
+  }
+
+  if (dryRun) {
+    console.log("");
+    console.log("%c[DRY RUN] Nada se modificó. Corre con { dryRun: false } para aplicar.", "color:#e8a317;font-weight:bold");
+    console.groupEnd();
+    return { ok: true, dryRun: true, matched: matched.length, unmatched: unmatched.length };
+  }
+
+  // Aplicar en batches de 400 (límite Firestore = 500)
+  const BATCH_SIZE = 400;
+  let applied = 0;
+  for (let i = 0; i < matched.length; i += BATCH_SIZE) {
+    const chunk = matched.slice(i, i + BATCH_SIZE);
+    const batch = writeBatch(db);
+    chunk.forEach(m => {
+      const ref = doc(db, INGRESOS_COL, m.row.id);
+      batch.update(ref, {
+        carrier: m.carrier,
+        actualizadoPor: currentUserEmail,
+        actualizadoEn: serverTimestamp()
+      });
+    });
+    try {
+      await batch.commit();
+      applied += chunk.length;
+      console.log(`Batch ${Math.floor(i / BATCH_SIZE) + 1} commited (${chunk.length} docs). Acumulado: ${applied}`);
+    } catch (e) {
+      console.error(`Falló batch ${Math.floor(i / BATCH_SIZE) + 1}:`, e.message);
+      console.groupEnd();
+      return { ok: false, applied, error: e.message };
+    }
+  }
+
+  // Actualizar estado local + Tabulator + audit log
+  matched.forEach(m => {
+    m.row.carrier = m.carrier;
+    if (fiTable) {
+      try { fiTable.updateRow(m.row.id, { carrier: m.carrier }); } catch (_) {}
+    }
+    logEvent(ACTIONS.FINANZAS_INGRESO_EDIT, m.row.fecha || m.row.id, {
+      migracion: "carriers-historicos",
+      carrier: m.carrier
+    });
+  });
+  populateCarrierFilter();
+
+  console.log("");
+  console.log(`%c✓ Aplicado: ${applied} ingresos actualizados`, "color:#22a06b;font-weight:bold");
+  console.groupEnd();
+  return { ok: true, applied, unmatched: unmatched.length };
+}
+
+// Exposición temporal para correr desde la consola.
+// Se elimina en el commit siguiente después de ejecutar la migración.
+window.__migrarCarriersHistoricos = migrarCarriersHistoricos;
+
+
+// ═══════════════════════════════════════════════════════════
+// IMPORTAR — Excel Ingresos + Excel URLs de reportes
+// ═══════════════════════════════════════════════════════════
+// Task 8. Dos cards independientes:
+//   A) INGRESOS 2026.xlsx: importa los ingresos que no existan en Firestore
+//      (match por fecha + descDep + monto)
+//   B) URLS_INGRESOS_2026.xlsx: rellena `archivoOriginalDriveUrl` y
+//      `payouts[N-1].reporteFile` en los ingresos que ya existan
+//
+// Match: cada URL trae (MES, ID, TIPO). El ID no es el ID de Firestore,
+// pero apunta a una fila del otro Excel, de donde sacamos (fecha, descDep,
+// monto) y con eso encontramos el ingreso en Firestore.
+
+const MESES_TO_NUM = {
+  "ENE": 1, "ENERO": 1, "FEB": 2, "FEBRERO": 2, "MAR": 3, "MARZO": 3,
+  "ABRIL": 4, "ABR": 4, "MAY": 5, "MAYO": 5, "JUN": 6, "JUNIO": 6,
+  "JUL": 7, "JULIO": 7, "AGO": 8, "AGOS": 8, "AGOSTO": 8,
+  "SEP": 9, "SEPT": 9, "SEPTIEMBRE": 9, "OCT": 10, "OCTUBRE": 10,
+  "NOV": 11, "NOVIEMBRE": 11, "DIC": 12, "DICIEMBRE": 12
+};
+
+const fimpState = {
+  ingresosParsed: null,    // Array de ingresos normalizados desde el Excel
+  ingresosDiff: null,      // { nuevos: [...], existentes: [...], sinMatch: [...] }
+  urlsParsed: null,        // Array de URLs {mes, id, fecha, tipo, nombre, url}
+  urlsDiff: null           // { matched: [...], huerfanos: [...] }
+};
+
+function bindImportarStaticHandlers() {
+  const iFile = document.getElementById("fimp-ingresos-file");
+  if (iFile && !iFile.dataset.bound) {
+    iFile.dataset.bound = "1";
+    iFile.addEventListener("change", (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (f) handleIngresosFile(f);
+    });
+  }
+  const iApply = document.getElementById("fimp-ingresos-apply");
+  if (iApply && !iApply.dataset.bound) {
+    iApply.dataset.bound = "1";
+    iApply.addEventListener("click", applyIngresosImport);
+  }
+
+  const uFile = document.getElementById("fimp-urls-file");
+  if (uFile && !uFile.dataset.bound) {
+    uFile.dataset.bound = "1";
+    uFile.addEventListener("change", (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (f) handleUrlsFile(f);
+    });
+  }
+  const uApply = document.getElementById("fimp-urls-apply");
+  if (uApply && !uApply.dataset.bound) {
+    uApply.dataset.bound = "1";
+    uApply.addEventListener("click", applyUrlsImport);
+  }
+}
+
+function bindImportarLazyInit() {
+  document.querySelectorAll('.admin-sidebar-link[data-tab="importar"]').forEach(b => {
+    if (b.dataset.fimpBound) return;
+    b.dataset.fimpBound = "1";
+    b.addEventListener("click", async () => {
+      // Asegura que los ingresos de Firestore estén cargados para hacer el diff
+      if (ingresosData.length === 0) {
+        try { await loadIngresos(); } catch (_) {}
+      }
+    });
+  });
+}
+
+// ─── Helpers de normalización ─────────────────────────────
+function parseFechaExcel(val) {
+  if (!val) return null;
+  // Date object (cellDates:true)
+  if (val instanceof Date && !isNaN(val.getTime())) {
+    const y = val.getFullYear();
+    const m = String(val.getMonth() + 1).padStart(2, "0");
+    const d = String(val.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+  // String
+  const s = String(val).trim();
+  // MM/DD/YYYY o MM/DD/YY
+  let m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (m) {
+    let y = parseInt(m[3], 10);
+    if (y < 100) y = 2000 + y;
+    return `${y}-${String(m[1]).padStart(2, "0")}-${String(m[2]).padStart(2, "0")}`;
+  }
+  return null;
+}
+
+function parseMontoExcel(val) {
+  if (val == null) return 0;
+  if (typeof val === "number") return val;
+  const s = String(val).replace(/[\s$,]/g, "").replace(/[()]/g, "-");
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+
+function normalizeDescDep(s) {
+  return String(s || "").trim().toUpperCase().replace(/\s+/g, " ");
+}
+
+function ingresoKey(fecha, descDep, monto) {
+  return `${fecha}|${normalizeDescDep(descDep)}|${(Math.round(monto * 100) / 100).toFixed(2)}`;
+}
+
+function inferMesFromSheetName(name) {
+  const s = String(name || "").toUpperCase().trim();
+  const parts = s.split(/\s+/);
+  const mesToken = parts[0];
+  const yearToken = parts[1] ? parseInt(parts[1], 10) : new Date().getFullYear();
+  const mesNum = MESES_TO_NUM[mesToken];
+  if (!mesNum) return null;
+  return { mes: mesNum, year: yearToken };
+}
+
+// ─── Parser del Excel de INGRESOS ─────────────────────────
+function parseIngresosWorkbook(wb) {
+  const results = [];
+  for (const sheetName of wb.SheetNames) {
+    const mesInfo = inferMesFromSheetName(sheetName);
+    if (!mesInfo) continue; // hoja LIFE u otra
+    const ws = wb.Sheets[sheetName];
+    const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: false });
+    if (!aoa || aoa.length < 2) continue;
+
+    // El Excel puede tener filas en blanco antes del header. Detectamos la
+    // fila del header buscando la que empiece con "ID" en index 0.
+    let headerRow = -1;
+    for (let r = 0; r < Math.min(aoa.length, 20); r++) {
+      if (String(aoa[r]?.[0] || "").trim().toUpperCase() === "ID") { headerRow = r; break; }
+    }
+    if (headerRow === -1) continue;
+    const header = aoa[headerRow];
+
+    // Encontrar índice de "PAGADO" para saber cuántos pares (rep, saldo)
+    let pagadoIdx = -1;
+    for (let i = 0; i < header.length; i++) {
+      if (String(header[i] || "").trim().toUpperCase() === "PAGADO") { pagadoIdx = i; break; }
+    }
+    if (pagadoIdx === -1) continue;
+    // Los payouts van de índice 8 hasta pagadoIdx-1, en pares (rep, saldo)
+    const numPayouts = Math.max(0, Math.floor((pagadoIdx - 8) / 2));
+
+    for (let r = headerRow + 1; r < aoa.length; r++) {
+      const row = aoa[r];
+      if (!row) continue;
+      const firstCell = row[0];
+      if (!firstCell || String(firstCell).trim() === "" || String(firstCell).toUpperCase() === "TOTAL") continue;
+      if (!row[1]) continue;
+
+      const fecha = parseFechaExcel(row[1]);
+      if (!fecha) continue;
+      const tipoPago = String(row[2] || "").trim().toUpperCase();
+      const categoria = String(row[3] || "").trim().toUpperCase();
+      const descDep = String(row[4] || "").trim();
+      const descTrans = String(row[5] || "").trim();
+      const monto = parseMontoExcel(row[6]);
+      const archivoOriginal = String(row[7] || "").trim();
+
+      // Payouts — el Excel guarda chargebacks con signo negativo pero en
+      // Firestore siempre se almacenan positivos (misma convención que la
+      // migración anterior de 233 registros).
+      const payouts = [];
+      for (let p = 0; p < numPayouts; p++) {
+        const repIdx = 8 + p * 2;
+        const saldoIdx = 9 + p * 2;
+        const rep = String(row[repIdx] || "").trim();
+        const saldoRaw = parseMontoExcel(row[saldoIdx]);
+        const saldo = Math.abs(saldoRaw);
+        if (saldo > 0 || rep) {
+          payouts.push({ tipo: "agencia", broker: "", reporteFile: rep, saldo });
+        }
+      }
+
+      const pagado = payouts.reduce((s, p) => s + p.saldo, 0);
+      const ganancia = monto - pagado;
+
+      results.push({
+        excelId: String(row[0]).padStart(2, "0"),
+        excelMes: sheetName,
+        fecha,
+        mes: `${["", "ENE","FEB","MAR","ABR","MAY","JUN","JUL","AGO","SEP","OCT","NOV","DIC"][mesInfo.mes]} ${mesInfo.year}`,
+        tipoPago: TIPOS_PAGO.includes(tipoPago) ? tipoPago : "OTROS",
+        categoria: CATEGORIAS.includes(categoria) ? categoria : "COMISSION",
+        carrier: "",
+        descripcionDeposito: descDep,
+        descripcionTransaccion: descTrans,
+        monto,
+        archivoOriginalDriveUrl: "", // solo si viene URL en el otro Excel
+        _archivoOriginalNombre: archivoOriginal, // temporal para debug/match
+        payouts,
+        pagado,
+        ganancia,
+        notas: String(row[header.length - 1] || "").trim()
+      });
+    }
+  }
+  return results;
+}
+
+// ─── Handler: subir Excel de ingresos ─────────────────────
+async function handleIngresosFile(file) {
+  const nameEl = document.getElementById("fimp-ingresos-filename");
+  const previewEl = document.getElementById("fimp-ingresos-preview");
+  const applyBtn = document.getElementById("fimp-ingresos-apply");
+  const statusEl = document.getElementById("fimp-ingresos-status");
+  if (nameEl) nameEl.textContent = file.name;
+  if (statusEl) { statusEl.textContent = "Procesando..."; statusEl.className = "fimp-status"; }
+  applyBtn.disabled = true;
+
+  if (typeof XLSX === "undefined") {
+    statusEl.textContent = "✕ La librería XLSX no está cargada aún, espera un segundo y reintenta.";
+    statusEl.className = "fimp-status error";
+    return;
+  }
+
+  try {
+    // Asegurar que ingresos Firestore están cargados
+    if (ingresosData.length === 0) await loadIngresos();
+
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { cellDates: true });
+    const parsed = parseIngresosWorkbook(wb);
+    if (!parsed.length) {
+      statusEl.textContent = "✕ No se encontraron ingresos válidos en el Excel.";
+      statusEl.className = "fimp-status error";
+      return;
+    }
+
+    // Diff con Firestore
+    const firestoreKeys = new Set(ingresosData.map(r =>
+      ingresoKey(r.fecha, r.descripcionDeposito, r.monto)
+    ));
+    const nuevos = [];
+    const existentes = [];
+    for (const p of parsed) {
+      const k = ingresoKey(p.fecha, p.descripcionDeposito, p.monto);
+      if (firestoreKeys.has(k)) existentes.push(p);
+      else nuevos.push(p);
+    }
+
+    fimpState.ingresosParsed = parsed;
+    fimpState.ingresosDiff = { nuevos, existentes };
+
+    // Preview
+    const byMes = {};
+    nuevos.forEach(n => { byMes[n.excelMes] = (byMes[n.excelMes] || 0) + 1; });
+    const mesesLista = Object.keys(byMes).sort();
+
+    previewEl.hidden = false;
+    previewEl.innerHTML = `
+      <div class="fimp-preview-title">Resumen</div>
+      <div class="fimp-preview-stats">
+        <div class="fimp-stat">
+          <div class="fimp-stat-label">Total en Excel</div>
+          <div class="fimp-stat-value neu">${parsed.length}</div>
+        </div>
+        <div class="fimp-stat">
+          <div class="fimp-stat-label">Ya en Firestore</div>
+          <div class="fimp-stat-value">${existentes.length}</div>
+        </div>
+        <div class="fimp-stat">
+          <div class="fimp-stat-label">Nuevos a importar</div>
+          <div class="fimp-stat-value pos">${nuevos.length}</div>
+        </div>
+      </div>
+      ${nuevos.length ? `
+        <div class="fimp-preview-details">
+          <table>
+            <thead><tr><th>Mes</th><th>Fecha</th><th>Desc. depósito</th><th>Monto</th></tr></thead>
+            <tbody>
+              ${nuevos.slice(0, 30).map(n => `
+                <tr>
+                  <td>${escapeHtml(n.excelMes)}</td>
+                  <td>${escapeHtml(formatFechaUS(n.fecha))}</td>
+                  <td>${escapeHtml(n.descripcionDeposito)}</td>
+                  <td>${formatMoney(n.monto)}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+          ${nuevos.length > 30 ? `<p style="margin:8px 0 0;font-size:11.5px;color:rgba(15,23,42,0.5);">Mostrando 30 de ${nuevos.length}. El resto se importa igual.</p>` : ""}
+        </div>
+      ` : `<p style="margin:12px 0 0;font-size:13px;">Todo el Excel ya está en Firestore. Nada que importar.</p>`}
+    `;
+
+    applyBtn.disabled = nuevos.length === 0;
+    statusEl.textContent = "";
+  } catch (e) {
+    statusEl.textContent = "✕ Error: " + (e?.message || e);
+    statusEl.className = "fimp-status error";
+    console.error(e);
+  }
+}
+
+// ─── Apply: importar los nuevos ────────────────────────────
+async function applyIngresosImport() {
+  const statusEl = document.getElementById("fimp-ingresos-status");
+  const applyBtn = document.getElementById("fimp-ingresos-apply");
+  if (!fimpState.ingresosDiff || !fimpState.ingresosDiff.nuevos.length) {
+    statusEl.textContent = "No hay nuevos ingresos para importar.";
+    return;
+  }
+  const nuevos = fimpState.ingresosDiff.nuevos;
+  if (!confirm(`Confirma importar ${nuevos.length} nuevos ingresos a Firestore. Esta acción no se puede deshacer.`)) return;
+
+  applyBtn.disabled = true;
+  statusEl.textContent = `Importando ${nuevos.length} ingresos...`;
+  statusEl.className = "fimp-status";
+
+  const BATCH_SIZE = 400;
+  let inserted = 0;
+  try {
+    for (let i = 0; i < nuevos.length; i += BATCH_SIZE) {
+      const chunk = nuevos.slice(i, i + BATCH_SIZE);
+      // Firestore no permite batch.add — se usan doc + set con IDs autogenerados
+      const batch = writeBatch(db);
+      const newDocs = [];
+      for (const p of chunk) {
+        const docRef = doc(collection(db, INGRESOS_COL));
+        const payload = {
+          fecha: p.fecha,
+          mes: p.mes,
+          tipoPago: p.tipoPago,
+          categoria: p.categoria,
+          carrier: p.carrier || "",
+          monto: p.monto,
+          descripcionDeposito: p.descripcionDeposito,
+          descripcionTransaccion: p.descripcionTransaccion,
+          archivoOriginalDriveUrl: p.archivoOriginalDriveUrl || "",
+          payouts: p.payouts,
+          pagado: p.pagado,
+          ganancia: p.ganancia,
+          notas: p.notas || "",
+          creadoPor: currentUserEmail,
+          creadoEn: serverTimestamp(),
+          actualizadoPor: currentUserEmail,
+          actualizadoEn: serverTimestamp(),
+          origen: "import-excel"
+        };
+        batch.set(docRef, payload);
+        newDocs.push({ id: docRef.id, ...payload, creadoEn: new Date(), actualizadoEn: new Date() });
+      }
+      await batch.commit();
+      // Sync local
+      for (const nd of newDocs) {
+        ingresosData.push(nd);
+        if (fiTable) { try { fiTable.addRow(nd); } catch (_) {} }
+        logEvent(ACTIONS.FINANZAS_INGRESO_ADD, nd.fecha, {
+          origen: "import-excel", monto: nd.monto, tipoPago: nd.tipoPago, categoria: nd.categoria
+        });
+      }
+      inserted += chunk.length;
+      statusEl.textContent = `Insertado ${inserted} de ${nuevos.length}...`;
+    }
+    statusEl.textContent = `✓ Importados ${inserted} ingresos correctamente.`;
+    statusEl.className = "fimp-status success";
+    updateIngresosSummary();
+    populateCarrierFilter();
+    // Refresca el preview marcando 0 nuevos
+    document.getElementById("fimp-ingresos-preview").hidden = true;
+    document.getElementById("fimp-ingresos-filename").textContent = "Seleccionar archivo…";
+    document.getElementById("fimp-ingresos-file").value = "";
+    fimpState.ingresosDiff = null;
+  } catch (e) {
+    statusEl.textContent = `✕ Falló al insertar (${inserted}/${nuevos.length}): ${e.message}`;
+    statusEl.className = "fimp-status error";
+    console.error(e);
+  } finally {
+    applyBtn.disabled = false;
+  }
+}
+
+// ─── Parser del Excel de URLs ─────────────────────────────
+function parseUrlsWorkbook(wb) {
+  // Espera hoja "URLS" con header: MES, ID, FECHA, TIPO, COL, FILA, NOMBRE VISIBLE, URL
+  const ws = wb.Sheets["URLS"] || wb.Sheets[wb.SheetNames[0]];
+  if (!ws) return [];
+  const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: false });
+  if (aoa.length < 2) return [];
+  const results = [];
+  for (let i = 1; i < aoa.length; i++) {
+    const row = aoa[i];
+    if (!row || !row[0]) continue;
+    const mes = String(row[0]).trim();
+    const id = String(row[1] || "").padStart(2, "0");
+    const fecha = parseFechaExcel(row[2]);
+    const tipo = String(row[3] || "").trim().toUpperCase();
+    const nombre = String(row[6] || "").trim();
+    const url = String(row[7] || "").trim();
+    if (!url || !url.startsWith("http")) continue;
+    results.push({ mes, id, fecha, tipo, nombre, url });
+  }
+  return results;
+}
+
+// ─── Handler: subir Excel de URLs ─────────────────────────
+async function handleUrlsFile(file) {
+  const nameEl = document.getElementById("fimp-urls-filename");
+  const previewEl = document.getElementById("fimp-urls-preview");
+  const applyBtn = document.getElementById("fimp-urls-apply");
+  const statusEl = document.getElementById("fimp-urls-status");
+  if (nameEl) nameEl.textContent = file.name;
+  if (statusEl) { statusEl.textContent = "Procesando..."; statusEl.className = "fimp-status"; }
+  applyBtn.disabled = true;
+
+  if (typeof XLSX === "undefined") {
+    statusEl.textContent = "✕ La librería XLSX no está cargada.";
+    statusEl.className = "fimp-status error";
+    return;
+  }
+  if (!fimpState.ingresosParsed) {
+    statusEl.textContent = "✕ Primero carga el Excel de INGRESOS 2026 arriba (necesario para el lookup por MES+ID).";
+    statusEl.className = "fimp-status error";
+    return;
+  }
+
+  try {
+    if (ingresosData.length === 0) await loadIngresos();
+
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { cellDates: true });
+    const urls = parseUrlsWorkbook(wb);
+    fimpState.urlsParsed = urls;
+    if (!urls.length) {
+      statusEl.textContent = "✕ No se encontraron URLs válidas.";
+      statusEl.className = "fimp-status error";
+      return;
+    }
+
+    // Index de ingresos parseados del Excel por (mes, id)
+    const idxByMesId = {};
+    fimpState.ingresosParsed.forEach(p => {
+      idxByMesId[`${p.excelMes}|${p.excelId}`] = p;
+    });
+    // Index de Firestore ingresos por key (fecha, descDep, monto)
+    const idxFs = {};
+    ingresosData.forEach(r => {
+      idxFs[ingresoKey(r.fecha, r.descripcionDeposito, r.monto)] = r;
+    });
+
+    const matched = []; // { url, fsIngreso, tipoUrl (archivo|pago), payoutIdx }
+    const huerfanos = []; // urls sin match
+    for (const u of urls) {
+      const excelRow = idxByMesId[`${u.mes}|${u.id}`];
+      if (!excelRow) { huerfanos.push({ ...u, motivo: "no está en INGRESOS.xlsx" }); continue; }
+      const fs = idxFs[ingresoKey(excelRow.fecha, excelRow.descripcionDeposito, excelRow.monto)];
+      if (!fs) { huerfanos.push({ ...u, motivo: "no está en Firestore" }); continue; }
+      if (u.tipo === "ARCHIVO ORIGINAL") {
+        matched.push({ url: u, fsIngreso: fs, tipoUrl: "archivo", payoutIdx: null });
+      } else if (/^PAGO\s+(\d+)/.test(u.tipo)) {
+        const m = u.tipo.match(/^PAGO\s+(\d+)/);
+        const payoutIdx = parseInt(m[1], 10) - 1;
+        matched.push({ url: u, fsIngreso: fs, tipoUrl: "pago", payoutIdx });
+      } else {
+        huerfanos.push({ ...u, motivo: "tipo desconocido: " + u.tipo });
+      }
+    }
+
+    fimpState.urlsDiff = { matched, huerfanos };
+    const cntArchivo = matched.filter(m => m.tipoUrl === "archivo").length;
+    const cntPago = matched.filter(m => m.tipoUrl === "pago").length;
+
+    previewEl.hidden = false;
+    previewEl.innerHTML = `
+      <div class="fimp-preview-title">Resumen URLs</div>
+      <div class="fimp-preview-stats">
+        <div class="fimp-stat">
+          <div class="fimp-stat-label">Total URLs</div>
+          <div class="fimp-stat-value neu">${urls.length}</div>
+        </div>
+        <div class="fimp-stat">
+          <div class="fimp-stat-label">Match a ingreso</div>
+          <div class="fimp-stat-value pos">${matched.length}</div>
+        </div>
+        <div class="fimp-stat">
+          <div class="fimp-stat-label">Archivo original</div>
+          <div class="fimp-stat-value">${cntArchivo}</div>
+        </div>
+        <div class="fimp-stat">
+          <div class="fimp-stat-label">Payouts</div>
+          <div class="fimp-stat-value">${cntPago}</div>
+        </div>
+        <div class="fimp-stat">
+          <div class="fimp-stat-label">Huérfanos</div>
+          <div class="fimp-stat-value warn">${huerfanos.length}</div>
+        </div>
+      </div>
+      ${huerfanos.length ? `
+        <div class="fimp-preview-details">
+          <table>
+            <thead><tr><th>Mes</th><th>ID</th><th>Tipo</th><th>Motivo</th></tr></thead>
+            <tbody>
+              ${huerfanos.slice(0, 20).map(h => `
+                <tr>
+                  <td>${escapeHtml(h.mes)}</td>
+                  <td>${escapeHtml(h.id)}</td>
+                  <td>${escapeHtml(h.tipo)}</td>
+                  <td>${escapeHtml(h.motivo)}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+          ${huerfanos.length > 20 ? `<p style="margin:8px 0 0;font-size:11.5px;color:rgba(15,23,42,0.5);">Mostrando 20 de ${huerfanos.length}.</p>` : ""}
+        </div>
+      ` : ""}
+    `;
+
+    applyBtn.disabled = matched.length === 0;
+    statusEl.textContent = "";
+  } catch (e) {
+    statusEl.textContent = "✕ Error: " + (e?.message || e);
+    statusEl.className = "fimp-status error";
+    console.error(e);
+  }
+}
+
+// ─── Apply: actualizar URLs en los ingresos ─────────────────
+async function applyUrlsImport() {
+  const statusEl = document.getElementById("fimp-urls-status");
+  const applyBtn = document.getElementById("fimp-urls-apply");
+  if (!fimpState.urlsDiff || !fimpState.urlsDiff.matched.length) {
+    statusEl.textContent = "No hay URLs para aplicar.";
+    return;
+  }
+  const matched = fimpState.urlsDiff.matched;
+  if (!confirm(`Confirma actualizar ${matched.length} URLs en Firestore. Esto puede sobreescribir URLs previas.`)) return;
+
+  applyBtn.disabled = true;
+  statusEl.textContent = `Aplicando ${matched.length} URLs...`;
+  statusEl.className = "fimp-status";
+
+  // Agrupar por ingreso — un solo update por doc con todos los cambios
+  const updatesPerDoc = {};
+  for (const m of matched) {
+    const id = m.fsIngreso.id;
+    if (!updatesPerDoc[id]) {
+      updatesPerDoc[id] = {
+        fsIngreso: m.fsIngreso,
+        archivoOriginalDriveUrl: m.fsIngreso.archivoOriginalDriveUrl || "",
+        payouts: Array.isArray(m.fsIngreso.payouts) ? m.fsIngreso.payouts.map(p => ({ ...p })) : []
+      };
+    }
+    const u = updatesPerDoc[id];
+    if (m.tipoUrl === "archivo") {
+      u.archivoOriginalDriveUrl = m.url.url;
+    } else if (m.tipoUrl === "pago" && m.payoutIdx != null) {
+      // Asegura el índice del payout
+      while (u.payouts.length <= m.payoutIdx) {
+        u.payouts.push({ tipo: "agencia", broker: "", reporteFile: "", saldo: 0 });
+      }
+      u.payouts[m.payoutIdx].reporteFile = m.url.url;
+    }
+  }
+
+  const ids = Object.keys(updatesPerDoc);
+  let done = 0;
+  const BATCH_SIZE = 400;
+  try {
+    for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+      const chunk = ids.slice(i, i + BATCH_SIZE);
+      const batch = writeBatch(db);
+      for (const id of chunk) {
+        const up = updatesPerDoc[id];
+        batch.update(doc(db, INGRESOS_COL, id), {
+          archivoOriginalDriveUrl: up.archivoOriginalDriveUrl,
+          payouts: up.payouts,
+          actualizadoPor: currentUserEmail,
+          actualizadoEn: serverTimestamp()
+        });
+      }
+      await batch.commit();
+      // Sync local
+      for (const id of chunk) {
+        const up = updatesPerDoc[id];
+        const idx = ingresosData.findIndex(r => r.id === id);
+        if (idx >= 0) {
+          ingresosData[idx].archivoOriginalDriveUrl = up.archivoOriginalDriveUrl;
+          ingresosData[idx].payouts = up.payouts;
+          if (fiTable) { try { fiTable.updateRow(id, { archivoOriginalDriveUrl: up.archivoOriginalDriveUrl, payouts: up.payouts }); } catch (_) {} }
+        }
+        logEvent(ACTIONS.FINANZAS_INGRESO_EDIT, up.fsIngreso.fecha, {
+          origen: "import-urls-excel",
+          archivoOriginal: !!up.archivoOriginalDriveUrl,
+          payoutUrls: up.payouts.filter(p => p.reporteFile).length
+        });
+      }
+      done += chunk.length;
+      statusEl.textContent = `Actualizado ${done} de ${ids.length} ingresos...`;
+    }
+    statusEl.textContent = `✓ Aplicado a ${done} ingresos.`;
+    statusEl.className = "fimp-status success";
+    document.getElementById("fimp-urls-preview").hidden = true;
+    document.getElementById("fimp-urls-filename").textContent = "Seleccionar archivo…";
+    document.getElementById("fimp-urls-file").value = "";
+    fimpState.urlsDiff = null;
+  } catch (e) {
+    statusEl.textContent = `✕ Falló (${done}/${ids.length}): ${e.message}`;
+    statusEl.className = "fimp-status error";
+    console.error(e);
+  } finally {
+    applyBtn.disabled = false;
+  }
 }

@@ -10,3 +10,9 @@ INGRESOS 2026.xlsx
 Contracting Information A through L - Applied General Agency, LLC.html
 Contracting Information A through L - Applied General Agency, LLC_files/
 scratch_parse_contracting.js
+
+# Directorio temporal para debugging local del parser de Excel de ingresos.
+.scratch-migrate/
+
+# Excel maestro de URLs de reportes de Gilbana — no va al repo.
+URLS_INGRESOS_2026.xlsx
