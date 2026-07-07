@@ -550,98 +550,253 @@
         <div class="ad-toolbar">
           <div>
             <h2 style="margin:0;">⬇ Exportar</h2>
-            <p class="admin-note" style="margin:4px 0 0;">Descarga de datos para auditoría externa o uso interno. Selecciona el periodo abajo.</p>
-          </div>
-          <div class="ad-toolbar-actions">
-            <select id="fexp-period" class="fi-filter-select">
-              <option value="all" selected>Todo</option>
-              <option value="m-01">Enero</option>
-              <option value="m-02">Febrero</option>
-              <option value="m-03">Marzo</option>
-              <option value="m-04">Abril</option>
-              <option value="m-05">Mayo</option>
-              <option value="m-06">Junio</option>
-              <option value="m-07">Julio</option>
-              <option value="m-08">Agosto</option>
-              <option value="m-09">Septiembre</option>
-              <option value="m-10">Octubre</option>
-              <option value="m-11">Noviembre</option>
-              <option value="m-12">Diciembre</option>
-              <option value="custom">Personalizado…</option>
-            </select>
-            <div id="fexp-custom-range" class="fi-custom-range" hidden>
-              <input type="text" id="fexp-date-from" class="fi-custom-input" placeholder="Desde" autocomplete="off">
-              <span class="fi-custom-sep">→</span>
-              <input type="text" id="fexp-date-to" class="fi-custom-input" placeholder="Hasta" autocomplete="off">
-            </div>
+            <p class="admin-note" style="margin:4px 0 0;">Descarga personalizada. Elige qué exportar, aplica filtros, marca las columnas y descarga en CSV o Excel.</p>
           </div>
         </div>
 
-        <div class="fexp-summary" id="fexp-summary">
-          <span class="fexp-summary-label">Listo para exportar:</span>
-          <span class="fexp-summary-value" id="fexp-summary-count">0 ingresos</span>
-          <span class="fexp-summary-sep">·</span>
-          <span class="fexp-summary-value" id="fexp-summary-bruto">$0.00 bruto</span>
-        </div>
+        <div class="fexp-wizard">
 
-        <div class="fexp-grid">
-          <div class="fexp-card">
-            <div class="fexp-icon"><i data-lucide="table"></i></div>
-            <h3>Lista de ingresos</h3>
-            <p>Una fila por ingreso. Incluye fecha, mes, tipo, categoría, carrier, descripciones, monto, pagado, ganancia, conteo de payouts y notas.</p>
-            <div class="fexp-btn-row">
-              <sl-button id="fexp-csv-ingresos" variant="primary">
-                <i data-lucide="download" slot="prefix" style="width:14px;height:14px;"></i>
-                CSV
-              </sl-button>
-              <sl-button id="fexp-xlsx-ingresos" variant="primary">
-                <i data-lucide="file-spreadsheet" slot="prefix" style="width:14px;height:14px;"></i>
-                Excel
-              </sl-button>
+          <!-- Barra de progreso -->
+          <div class="fexp-progress" id="fexp-progress">
+            <div class="fexp-progress-step is-active" data-step="1"><span class="num">1</span><span class="label">Qué</span></div>
+            <div class="fexp-progress-conn"></div>
+            <div class="fexp-progress-step" data-step="2"><span class="num">2</span><span class="label">Periodo</span></div>
+            <div class="fexp-progress-conn"></div>
+            <div class="fexp-progress-step" data-step="3"><span class="num">3</span><span class="label">Tipo</span></div>
+            <div class="fexp-progress-conn"></div>
+            <div class="fexp-progress-step" data-step="4"><span class="num">4</span><span class="label">Carrier</span></div>
+            <div class="fexp-progress-conn"></div>
+            <div class="fexp-progress-step" data-step="5"><span class="num">5</span><span class="label">Destinat.</span></div>
+            <div class="fexp-progress-conn"></div>
+            <div class="fexp-progress-step" data-step="6"><span class="num">6</span><span class="label">Columnas</span></div>
+            <div class="fexp-progress-conn"></div>
+            <div class="fexp-progress-step" data-step="7"><span class="num">7</span><span class="label">Formato</span></div>
+          </div>
+
+          <!-- Paneles de los pasos -->
+          <div class="fexp-panels">
+
+            <!-- Paso 1: Qué exportar -->
+            <div class="fexp-panel is-active" data-step="1">
+              <div class="fexp-panel-header">
+                <div class="fexp-panel-num">Paso 1 de 7</div>
+                <h3 class="fexp-panel-title">¿Qué quieres exportar?</h3>
+                <p class="fexp-panel-hint">Elige el tipo de datos que quieres descargar.</p>
+              </div>
+              <div class="fexp-radios" id="fexp-dataset-radios">
+                <label class="fexp-radio is-active" data-dataset="ingresos">
+                  <input type="radio" name="fexp-dataset" value="ingresos" checked>
+                  <i data-lucide="table"></i>
+                  <div>
+                    <div class="fexp-radio-title">Ingresos</div>
+                    <div class="fexp-radio-sub">Una fila por ingreso registrado</div>
+                  </div>
+                </label>
+                <label class="fexp-radio" data-dataset="payouts">
+                  <input type="radio" name="fexp-dataset" value="payouts">
+                  <i data-lucide="users"></i>
+                  <div>
+                    <div class="fexp-radio-title">Payouts</div>
+                    <div class="fexp-radio-sub">Una fila por payout, con el ingreso al que pertenece</div>
+                  </div>
+                </label>
+                <label class="fexp-radio" data-dataset="egresos">
+                  <input type="radio" name="fexp-dataset" value="egresos">
+                  <i data-lucide="arrow-up-circle"></i>
+                  <div>
+                    <div class="fexp-radio-title">Egresos</div>
+                    <div class="fexp-radio-sub">Una fila por gasto operativo</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Paso 2: Periodo -->
+            <div class="fexp-panel" data-step="2" hidden>
+              <div class="fexp-panel-header">
+                <div class="fexp-panel-num">Paso 2 de 7</div>
+                <h3 class="fexp-panel-title">¿Qué periodo?</h3>
+                <p class="fexp-panel-hint">Filtra por rango de fechas. Todo trae el histórico completo.</p>
+              </div>
+              <div class="fexp-field-value">
+                <select id="fexp-period" class="fi-filter-select">
+                  <option value="all" selected>Todo</option>
+                  <option value="m-01">Enero</option>
+                  <option value="m-02">Febrero</option>
+                  <option value="m-03">Marzo</option>
+                  <option value="m-04">Abril</option>
+                  <option value="m-05">Mayo</option>
+                  <option value="m-06">Junio</option>
+                  <option value="m-07">Julio</option>
+                  <option value="m-08">Agosto</option>
+                  <option value="m-09">Septiembre</option>
+                  <option value="m-10">Octubre</option>
+                  <option value="m-11">Noviembre</option>
+                  <option value="m-12">Diciembre</option>
+                  <option value="custom">Personalizado…</option>
+                </select>
+                <div id="fexp-custom-range" class="fi-custom-range" hidden>
+                  <input type="text" id="fexp-date-from" class="fi-custom-input" placeholder="Desde" autocomplete="off">
+                  <span class="fi-custom-sep">→</span>
+                  <input type="text" id="fexp-date-to" class="fi-custom-input" placeholder="Hasta" autocomplete="off">
+                </div>
+              </div>
+            </div>
+
+            <!-- Paso 3: Tipo de pago + Categoría (o Tipo de gasto si Egresos) -->
+            <div class="fexp-panel" data-step="3" hidden>
+              <div class="fexp-panel-header">
+                <div class="fexp-panel-num">Paso 3 de 7</div>
+                <h3 class="fexp-panel-title" data-scope="ingresos payouts">Tipo de pago y categoría</h3>
+                <h3 class="fexp-panel-title" data-scope="egresos" hidden>Tipo de gasto</h3>
+                <p class="fexp-panel-hint" data-scope="ingresos payouts">Filtra por LIFE/SUPP/ACA/… y por COMISSION/OVERRIDES/HERO. Los chips marcados se incluyen.</p>
+                <p class="fexp-panel-hint" data-scope="egresos" hidden>Filtra por categoría de gasto (nómina, renta, servicios, …).</p>
+              </div>
+
+              <div class="fexp-field" data-scope="ingresos payouts">
+                <label class="fexp-field-label">
+                  Tipo de pago
+                  <button type="button" class="fexp-chip-all" data-target="fexp-chips-tipoPago">Marcar todos</button>
+                </label>
+                <div class="fexp-chips" id="fexp-chips-tipoPago"></div>
+              </div>
+
+              <div class="fexp-field" data-scope="ingresos payouts">
+                <label class="fexp-field-label">
+                  Categoría
+                  <button type="button" class="fexp-chip-all" data-target="fexp-chips-categoria">Marcar todos</button>
+                </label>
+                <div class="fexp-chips" id="fexp-chips-categoria"></div>
+              </div>
+
+              <div class="fexp-field" data-scope="egresos">
+                <label class="fexp-field-label">
+                  Tipo de gasto
+                  <button type="button" class="fexp-chip-all" data-target="fexp-chips-tipoGasto">Marcar todos</button>
+                </label>
+                <div class="fexp-chips" id="fexp-chips-tipoGasto"></div>
+              </div>
+            </div>
+
+            <!-- Paso 4: Carriers (solo Ingresos/Payouts) -->
+            <div class="fexp-panel" data-step="4" hidden>
+              <div class="fexp-panel-header">
+                <div class="fexp-panel-num">Paso 4 de 7</div>
+                <h3 class="fexp-panel-title">Carriers</h3>
+                <p class="fexp-panel-hint">Filtra por carrier (Aetna, Cigna, …). Solo se incluyen los marcados.</p>
+              </div>
+              <div class="fexp-field">
+                <label class="fexp-field-label">
+                  Carriers
+                  <button type="button" class="fexp-chip-all" data-target="fexp-chips-carrier">Marcar todos</button>
+                </label>
+                <div class="fexp-chips" id="fexp-chips-carrier"></div>
+              </div>
+            </div>
+
+            <!-- Paso 5: Destinatarios (solo Payouts) -->
+            <div class="fexp-panel" data-step="5" hidden>
+              <div class="fexp-panel-header">
+                <div class="fexp-panel-num">Paso 5 de 7</div>
+                <h3 class="fexp-panel-title">Destinatarios</h3>
+                <p class="fexp-panel-hint">Elige el tipo (agencia o broker/agente) y los destinatarios específicos.</p>
+              </div>
+
+              <div class="fexp-field">
+                <label class="fexp-field-label">Tipo de destinatario</label>
+                <div class="fexp-radios fexp-radios-compact" id="fexp-destTipo-radios">
+                  <label class="fexp-radio-compact is-active"><input type="radio" name="fexp-destTipo" value="all" checked> Todos</label>
+                  <label class="fexp-radio-compact"><input type="radio" name="fexp-destTipo" value="agencia"> Solo Agencias</label>
+                  <label class="fexp-radio-compact"><input type="radio" name="fexp-destTipo" value="broker"> Solo Brokers/Agentes</label>
+                </div>
+              </div>
+
+              <div class="fexp-field">
+                <label class="fexp-field-label">
+                  Destinatarios
+                  <button type="button" class="fexp-chip-all" data-target="fexp-chips-destinatario">Marcar todos</button>
+                </label>
+                <div class="fexp-chips" id="fexp-chips-destinatario"></div>
+              </div>
+            </div>
+
+            <!-- Paso 6: Columnas -->
+            <div class="fexp-panel" data-step="6" hidden>
+              <div class="fexp-panel-header">
+                <div class="fexp-panel-num">Paso 6 de 7</div>
+                <h3 class="fexp-panel-title">Columnas a incluir</h3>
+                <p class="fexp-panel-hint">Marca las columnas que quieres ver en el archivo. Los cambios se reflejan al instante en la vista previa.</p>
+                <div class="fexp-cols-actions">
+                  <button type="button" id="fexp-cols-all" class="fexp-mini-btn">Marcar todo</button>
+                  <button type="button" id="fexp-cols-none" class="fexp-mini-btn">Ninguna</button>
+                </div>
+              </div>
+              <div class="fexp-cols" id="fexp-cols"></div>
+            </div>
+
+            <!-- Paso 7: Formato -->
+            <div class="fexp-panel" data-step="7" hidden>
+              <div class="fexp-panel-header">
+                <div class="fexp-panel-num">Paso 7 de 7</div>
+                <h3 class="fexp-panel-title">Formato de descarga</h3>
+                <p class="fexp-panel-hint">Elige el formato del archivo y descarga.</p>
+              </div>
+              <div class="fexp-radios fexp-radios-compact" id="fexp-formato-radios">
+                <label class="fexp-radio-compact is-active"><input type="radio" name="fexp-formato" value="xlsx" checked> Excel (.xlsx)</label>
+                <label class="fexp-radio-compact"><input type="radio" name="fexp-formato" value="csv"> CSV</label>
+              </div>
+              <div class="fexp-final-summary" id="fexp-final-summary">
+                <div class="fexp-final-label">Listo para exportar</div>
+                <div class="fexp-final-count" id="fexp-final-count"><strong>0</strong> registros</div>
+              </div>
             </div>
           </div>
 
-          <div class="fexp-card">
-            <div class="fexp-icon"><i data-lucide="users"></i></div>
-            <h3>Detalle de payouts</h3>
-            <p>Una fila por payout, expandiendo cada ingreso. Incluye destinatario (agencia/broker), reporte file y saldo. Útil para reconciliar pagos.</p>
-            <div class="fexp-btn-row">
-              <sl-button id="fexp-csv-payouts" variant="primary">
-                <i data-lucide="download" slot="prefix" style="width:14px;height:14px;"></i>
-                CSV
-              </sl-button>
-              <sl-button id="fexp-xlsx-payouts" variant="primary">
-                <i data-lucide="file-spreadsheet" slot="prefix" style="width:14px;height:14px;"></i>
-                Excel
-              </sl-button>
-            </div>
-          </div>
-
-          <div class="fexp-card">
-            <div class="fexp-icon"><i data-lucide="arrow-up-circle"></i></div>
-            <h3>Egresos</h3>
-            <p>Una fila por egreso registrado en el periodo. Incluye fecha, mes, tipo de gasto, descripción, monto y notas.</p>
-            <div class="fexp-btn-row">
-              <sl-button id="fexp-csv-egresos" variant="primary">
-                <i data-lucide="download" slot="prefix" style="width:14px;height:14px;"></i>
-                CSV
-              </sl-button>
-              <sl-button id="fexp-xlsx-egresos" variant="primary">
-                <i data-lucide="file-spreadsheet" slot="prefix" style="width:14px;height:14px;"></i>
-                Excel
-              </sl-button>
-            </div>
-          </div>
-
-          <div class="fexp-card fexp-card-wide">
-            <div class="fexp-icon"><i data-lucide="file-text"></i></div>
-            <h3>Resumen ejecutivo (imprimir / PDF)</h3>
-            <p>KPIs del periodo + tabla mes a mes con Bruto, Pagado y Ganancia. Abre vista de impresión del navegador — desde ahí puedes "Guardar como PDF" o imprimir directo.</p>
-            <sl-button id="fexp-print-report" variant="default">
-              <i data-lucide="printer" slot="prefix" style="width:14px;height:14px;"></i>
-              Generar reporte
+          <!-- Navegación -->
+          <div class="fexp-nav">
+            <sl-button id="fexp-back" variant="default" disabled>
+              <i data-lucide="arrow-left" slot="prefix" style="width:14px;height:14px;"></i>
+              Atrás
+            </sl-button>
+            <sl-button id="fexp-next" variant="primary">
+              Siguiente
+              <i data-lucide="arrow-right" slot="suffix" style="width:14px;height:14px;"></i>
+            </sl-button>
+            <sl-button id="fexp-download" variant="primary" size="large" hidden>
+              <i data-lucide="download" slot="prefix" style="width:16px;height:16px;"></i>
+              Descargar archivo
             </sl-button>
           </div>
+
+          <!-- Preview persistente -->
+          <div class="fexp-preview-frame">
+            <div class="fexp-preview-header">
+              <div class="fexp-preview-file">
+                <i data-lucide="file-spreadsheet"></i>
+                <span id="fexp-preview-filename">hero-finanzas-ingresos-todo.xlsx</span>
+              </div>
+              <div class="fexp-preview-count" id="fexp-preview-count">— registros</div>
+            </div>
+            <div class="fexp-preview-badges" id="fexp-preview-badges"></div>
+            <div class="fexp-preview-table-wrap">
+              <table class="fexp-preview-table" id="fexp-preview-table"></table>
+            </div>
+            <div class="fexp-preview-footer">Vista previa · las filas mostradas son ficticias, solo para ver el layout.</div>
+          </div>
+
+        </div>
+
+        <!-- Resumen ejecutivo — independiente del formulario -->
+        <div class="fexp-report-card">
+          <div class="fexp-report-icon"><i data-lucide="file-text"></i></div>
+          <div class="fexp-report-body">
+            <h3>Resumen ejecutivo (imprimir / PDF)</h3>
+            <p>KPIs del periodo seleccionado arriba + tabla mes a mes con Bruto, Pagado y Ganancia. Abre vista de impresión — desde ahí puedes guardar como PDF.</p>
+          </div>
+          <sl-button id="fexp-print-report" variant="default">
+            <i data-lucide="printer" slot="prefix" style="width:14px;height:14px;"></i>
+            Generar reporte
+          </sl-button>
         </div>
       </section>
 
@@ -726,7 +881,7 @@
   </div><!-- /.admin-shell -->
 
   <footer class="hero-footer">
-    <span>HERO HUB · FINANZAS v2.11.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+    <span>HERO HUB · FINANZAS v2.12.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
   </footer>
 
 </div><!-- /#finanzas-panel -->

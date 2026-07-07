@@ -1,5 +1,25 @@
 [
   {
+    "id": "2026-07-07-exportar-wizard",
+    "version": "v2.12.0",
+    "date": "2026-07-07",
+    "category": "feat",
+    "scope": "finanzas",
+    "audience": "team",
+    "title": "Finanzas · Exportar rediseñado como wizard multi-paso con preview en vivo",
+    "items": [
+      "El tab Exportar se convirtió en un wizard de 7 pasos: (1) qué exportar · (2) periodo · (3) tipo de pago y categoría · (4) carriers · (5) destinatarios · (6) columnas · (7) formato y descarga",
+      "Barra de progreso arriba con los 7 pasos numerados: cyan cuando está activo, checkmark verde cuando se completa, punteado gris cuando no aplica al dataset elegido",
+      "Los pasos que no aplican al dataset se saltan automáticamente al presionar 'Siguiente' (ej: Payouts salta 'Egresos', Egresos salta 'Carriers' y 'Destinatarios')",
+      "Se puede volver a un paso ya visitado clickeando su número en la barra de progreso",
+      "Preview persistente abajo del wizard con: nombre del archivo dinámico (ej. hero-finanzas-ingresos-enero-2026.xlsx), badges con los filtros aplicados (periodo, tipo de pago, categoría, carriers, etc.), tabla mock con 3 filas ficticias que refleja exactamente las columnas seleccionadas y el conteo real de registros que se van a exportar",
+      "Filtros combinables: periodo, tipo de pago, categoría, carrier, tipo de destinatario (agencia/broker), destinatario específico y tipo de gasto — todos con chips clickeables para marcar/desmarcar individualmente",
+      "Selección de columnas con checkboxes por dataset + botones 'Marcar todo' / 'Ninguna'",
+      "El resumen ejecutivo (imprimir/PDF) queda separado del wizard como acción independiente abajo",
+      "Bump v2.11.0 → v2.12.0"
+    ]
+  },
+  {
     "id": "2026-07-07-finanzas-egresos",
     "version": "v2.11.0",
     "date": "2026-07-07",

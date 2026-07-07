@@ -2917,58 +2917,274 @@ function setFcompEmpty(key, isEmpty) {
 
 
 // ═══════════════════════════════════════════════════════════
-// EXPORTAR — CSVs + reporte ejecutivo para imprimir
+// EXPORTAR — Formulario único personalizable (v2.12)
 // ═══════════════════════════════════════════════════════════
+// Un solo formulario con: dataset (ingresos/payouts/egresos) + filtros
+// combinables + selección de columnas + formato (CSV/XLSX) + preview
+// de conteo. El resumen ejecutivo (print) queda separado abajo.
+
 let fexpInited = false;
-const fexpState = { periodo: "all", fromDate: null, toDate: null };
 let fexpCustomPickers = null;
 
+// Definición de columnas por dataset. La clave del objeto es el `id` interno;
+// `label` va al header del archivo; `get(row)` extrae el valor. `money` indica
+// si el formato del cell en xlsx debe ser moneda.
+const FEXP_COL_DEFS = {
+  ingresos: [
+    { id: "fecha",              label: "Fecha",                 get: r => r.fecha ? formatFechaUS(r.fecha) : "" },
+    { id: "mes",                label: "Mes",                   get: r => r.mes || "" },
+    { id: "tipoPago",           label: "Tipo de pago",          get: r => r.tipoPago || "" },
+    { id: "categoria",          label: "Categoría",             get: r => r.categoria || "" },
+    { id: "carrier",            label: "Carrier",               get: r => r.carrier || "" },
+    { id: "descDep",            label: "Descripción depósito",  get: r => r.descripcionDeposito || "" },
+    { id: "descTrans",          label: "Descripción transacción", get: r => r.descripcionTransaccion || "" },
+    { id: "monto",              label: "Monto",                 get: r => Number(r.monto) || 0, money: true },
+    { id: "pagado",             label: "Pagado",                get: r => Number(r.pagado) || 0, money: true },
+    { id: "ganancia",           label: "Ganancia",              get: r => Number(r.ganancia) || 0, money: true },
+    { id: "payoutCount",        label: "# Payouts",             get: r => Array.isArray(r.payouts) ? r.payouts.length : 0 },
+    { id: "notas",              label: "Notas",                 get: r => r.notas || "" },
+    { id: "creadoPor",          label: "Creado por",            get: r => r.creadoPor || "" },
+    { id: "archivoOriginal",    label: "Archivo original",      get: r => r.archivoOriginalDriveUrl || "" }
+  ],
+  payouts: [
+    { id: "fechaIngreso",       label: "Fecha ingreso",         get: r => r._ingreso.fecha ? formatFechaUS(r._ingreso.fecha) : "" },
+    { id: "mes",                label: "Mes",                   get: r => r._ingreso.mes || "" },
+    { id: "descDep",            label: "Desc. depósito",        get: r => r._ingreso.descripcionDeposito || "" },
+    { id: "categoria",          label: "Categoría",             get: r => r._ingreso.categoria || "" },
+    { id: "carrier",            label: "Carrier",               get: r => r._ingreso.carrier || "" },
+    { id: "montoIngreso",       label: "Monto ingreso",         get: r => Number(r._ingreso.monto) || 0, money: true },
+    { id: "tipoDest",           label: "Tipo destinatario",     get: r => TIPO_DEST_LABEL[r.tipo || "agencia"] || (r.tipo || "agencia") },
+    { id: "destinatario",       label: "Destinatario",          get: r => r.broker || "" },
+    { id: "saldo",              label: "Saldo (payout)",        get: r => Number(r.saldo) || 0, money: true },
+    { id: "reporteFile",        label: "Reporte file",          get: r => r.reporteFile || "" },
+    { id: "emailSentTo",        label: "Email enviado a",       get: r => r.emailSentTo || "" },
+    { id: "emailSentAt",        label: "Fecha envío",           get: r => r.emailSentAt ? formatFechaUS(String(r.emailSentAt).slice(0, 10)) : "" }
+  ],
+  egresos: [
+    { id: "fecha",              label: "Fecha",                 get: r => r.fecha ? formatFechaUS(r.fecha) : "" },
+    { id: "mes",                label: "Mes",                   get: r => r.mes || "" },
+    { id: "tipoGasto",          label: "Tipo de gasto",         get: r => r.tipoGasto || "" },
+    { id: "descripcion",        label: "Descripción",           get: r => r.descripcion || "" },
+    { id: "monto",              label: "Monto",                 get: r => Number(r.monto) || 0, money: true },
+    { id: "notas",              label: "Notas",                 get: r => r.notas || "" },
+    { id: "creadoPor",          label: "Creado por",            get: r => r.creadoPor || "" }
+  ]
+};
+
+const fexpState = {
+  dataset: "ingresos",
+  periodo: "all",
+  fromDate: null,
+  toDate: null,
+  tiposPago: new Set(TIPOS_PAGO),
+  categorias: new Set(CATEGORIAS),
+  carriers: new Set(),         // se llena tras loadCarriersList
+  destTipo: "all",             // "all" | "agencia" | "broker"
+  destinatarios: new Set(),    // se llena tras loadBrokers
+  tiposGasto: new Set(),       // se llena tras loadTiposGastoList
+  columns: new Set(FEXP_COL_DEFS.ingresos.map(c => c.id)),
+  formato: "xlsx",
+  currentStep: 1
+};
+
+// Definición del wizard: qué pasos aplican para cada dataset
+function isStepApplicable(step, dataset) {
+  if (dataset === "egresos" && (step === 4 || step === 5)) return false;
+  if (dataset === "ingresos" && step === 5) return false;
+  return true;
+}
+function getApplicableSteps(dataset) {
+  return [1, 2, 3, 4, 5, 6, 7].filter(s => isStepApplicable(s, dataset));
+}
+
 function bindExportarStaticHandlers() {
+  // Los handlers se bindean al cargar el DOM (todo el HTML del tab ya existe).
   const periodSel = document.getElementById("fexp-period");
   if (periodSel && !periodSel.dataset.bound) {
     periodSel.dataset.bound = "1";
     periodSel.addEventListener("change", (e) => {
       fexpState.periodo = e.target.value;
       toggleFexpCustomRange(e.target.value === "custom");
-      if (fexpInited) updateExportarSummary();
+      renderPreview();
     });
   }
 
-  const csvIng = document.getElementById("fexp-csv-ingresos");
-  if (csvIng && !csvIng.dataset.bound) {
-    csvIng.dataset.bound = "1";
-    csvIng.addEventListener("click", exportIngresosCSV);
-  }
-  const csvPay = document.getElementById("fexp-csv-payouts");
-  if (csvPay && !csvPay.dataset.bound) {
-    csvPay.dataset.bound = "1";
-    csvPay.addEventListener("click", exportPayoutsCSV);
-  }
-  const xlsxIng = document.getElementById("fexp-xlsx-ingresos");
-  if (xlsxIng && !xlsxIng.dataset.bound) {
-    xlsxIng.dataset.bound = "1";
-    xlsxIng.addEventListener("click", exportIngresosXLSX);
-  }
-  const xlsxPay = document.getElementById("fexp-xlsx-payouts");
-  if (xlsxPay && !xlsxPay.dataset.bound) {
-    xlsxPay.dataset.bound = "1";
-    xlsxPay.addEventListener("click", exportPayoutsXLSX);
-  }
-  const csvEgr = document.getElementById("fexp-csv-egresos");
-  if (csvEgr && !csvEgr.dataset.bound) {
-    csvEgr.dataset.bound = "1";
-    csvEgr.addEventListener("click", exportEgresosCSV);
-  }
-  const xlsxEgr = document.getElementById("fexp-xlsx-egresos");
-  if (xlsxEgr && !xlsxEgr.dataset.bound) {
-    xlsxEgr.dataset.bound = "1";
-    xlsxEgr.addEventListener("click", exportEgresosXLSX);
-  }
   const printBtn = document.getElementById("fexp-print-report");
   if (printBtn && !printBtn.dataset.bound) {
     printBtn.dataset.bound = "1";
     printBtn.addEventListener("click", generatePrintReport);
   }
+
+  const dlBtn = document.getElementById("fexp-download");
+  if (dlBtn && !dlBtn.dataset.bound) {
+    dlBtn.dataset.bound = "1";
+    dlBtn.addEventListener("click", doExport);
+  }
+
+  // Navegación del wizard
+  const backBtn = document.getElementById("fexp-back");
+  if (backBtn && !backBtn.dataset.bound) {
+    backBtn.dataset.bound = "1";
+    backBtn.addEventListener("click", prevStep);
+  }
+  const nextBtn = document.getElementById("fexp-next");
+  if (nextBtn && !nextBtn.dataset.bound) {
+    nextBtn.dataset.bound = "1";
+    nextBtn.addEventListener("click", nextStep);
+  }
+
+  // Barra de progreso — permite volver a un paso ya visitado
+  document.querySelectorAll('.fexp-progress-step').forEach(el => {
+    if (el.dataset.bound) return;
+    el.dataset.bound = "1";
+    el.addEventListener("click", () => {
+      const target = parseInt(el.dataset.step, 10);
+      if (!isNaN(target) && target < fexpState.currentStep && isStepApplicable(target, fexpState.dataset)) {
+        gotoStep(target);
+      }
+    });
+  });
+
+  // Radios dataset
+  document.querySelectorAll('#fexp-dataset-radios input[type="radio"]').forEach(r => {
+    if (r.dataset.bound) return;
+    r.dataset.bound = "1";
+    r.addEventListener("change", () => {
+      fexpState.dataset = r.value;
+      document.querySelectorAll('#fexp-dataset-radios .fexp-radio').forEach(l => {
+        l.classList.toggle("is-active", l.dataset.dataset === r.value);
+      });
+      // Reset columns a todas por default para el nuevo dataset
+      fexpState.columns = new Set(FEXP_COL_DEFS[fexpState.dataset].map(c => c.id));
+      renderExportColumns();
+      updateExportFieldVisibility();
+      // Actualiza la barra de progreso (algunos pasos se marcan skipped)
+      updateProgressBar();
+      renderPreview();
+    });
+  });
+
+  // Radios destTipo
+  document.querySelectorAll('#fexp-destTipo-radios input[type="radio"]').forEach(r => {
+    if (r.dataset.bound) return;
+    r.dataset.bound = "1";
+    r.addEventListener("change", () => {
+      fexpState.destTipo = r.value;
+      document.querySelectorAll('#fexp-destTipo-radios .fexp-radio-compact').forEach(l => {
+        l.classList.toggle("is-active", l.querySelector("input").checked);
+      });
+      renderDestinatarioChips();
+      renderPreview();
+    });
+  });
+
+  // Radios formato
+  document.querySelectorAll('#fexp-formato-radios input[type="radio"]').forEach(r => {
+    if (r.dataset.bound) return;
+    r.dataset.bound = "1";
+    r.addEventListener("change", () => {
+      fexpState.formato = r.value;
+      document.querySelectorAll('#fexp-formato-radios .fexp-radio-compact').forEach(l => {
+        l.classList.toggle("is-active", l.querySelector("input").checked);
+      });
+      renderPreview();
+    });
+  });
+
+  // Botones "Marcar todo" / "Ninguna" de columnas
+  const btnAll = document.getElementById("fexp-cols-all");
+  if (btnAll && !btnAll.dataset.bound) {
+    btnAll.dataset.bound = "1";
+    btnAll.addEventListener("click", () => {
+      fexpState.columns = new Set(FEXP_COL_DEFS[fexpState.dataset].map(c => c.id));
+      renderExportColumns();
+      renderPreview();
+    });
+  }
+  const btnNone = document.getElementById("fexp-cols-none");
+  if (btnNone && !btnNone.dataset.bound) {
+    btnNone.dataset.bound = "1";
+    btnNone.addEventListener("click", () => {
+      fexpState.columns = new Set();
+      renderExportColumns();
+      renderPreview();
+    });
+  }
+
+  // Botones "Marcar todos" para chips
+  document.querySelectorAll('.fexp-chip-all').forEach(btn => {
+    if (btn.dataset.bound) return;
+    btn.dataset.bound = "1";
+    btn.addEventListener("click", () => {
+      toggleAllChips(btn.dataset.target);
+    });
+  });
+}
+
+// ─── Wizard: navegación entre pasos ────────────────────────
+function gotoStep(step) {
+  fexpState.currentStep = step;
+  // Mostrar solo el panel activo
+  document.querySelectorAll(".fexp-panel").forEach(p => {
+    const isActive = parseInt(p.dataset.step, 10) === step;
+    p.classList.toggle("is-active", isActive);
+    p.hidden = !isActive;
+  });
+  updateProgressBar();
+  updateNavButtons();
+  updateExportFieldVisibility();
+  if (window.refreshIcons) window.refreshIcons();
+}
+
+function nextStep() {
+  const applicable = getApplicableSteps(fexpState.dataset);
+  const idx = applicable.indexOf(fexpState.currentStep);
+  if (idx < 0 || idx >= applicable.length - 1) return;
+  gotoStep(applicable[idx + 1]);
+}
+
+function prevStep() {
+  const applicable = getApplicableSteps(fexpState.dataset);
+  const idx = applicable.indexOf(fexpState.currentStep);
+  if (idx <= 0) return;
+  gotoStep(applicable[idx - 1]);
+}
+
+function updateProgressBar() {
+  const applicable = getApplicableSteps(fexpState.dataset);
+  const currentIdx = applicable.indexOf(fexpState.currentStep);
+  document.querySelectorAll(".fexp-progress-step").forEach(el => {
+    const step = parseInt(el.dataset.step, 10);
+    const stepApplicable = isStepApplicable(step, fexpState.dataset);
+    const stepIdx = applicable.indexOf(step);
+    el.classList.remove("is-active", "is-done", "is-skipped");
+    if (!stepApplicable) el.classList.add("is-skipped");
+    else if (step === fexpState.currentStep) el.classList.add("is-active");
+    else if (stepIdx >= 0 && stepIdx < currentIdx) el.classList.add("is-done");
+  });
+  // Conectores entre steps
+  const stepsEls = [...document.querySelectorAll("#fexp-progress > *")];
+  for (let i = 0; i < stepsEls.length; i++) {
+    if (stepsEls[i].classList.contains("fexp-progress-conn")) {
+      // Verifica el step anterior (i-1). Si is-done → conn is-done
+      const prev = stepsEls[i - 1];
+      stepsEls[i].classList.toggle("is-done", prev && prev.classList.contains("is-done"));
+    }
+  }
+}
+
+function updateNavButtons() {
+  const applicable = getApplicableSteps(fexpState.dataset);
+  const idx = applicable.indexOf(fexpState.currentStep);
+  const isFirst = idx === 0;
+  const isLast = idx === applicable.length - 1;
+
+  const backBtn = document.getElementById("fexp-back");
+  const nextBtn = document.getElementById("fexp-next");
+  const dlBtn = document.getElementById("fexp-download");
+  if (backBtn) backBtn.disabled = isFirst;
+  if (nextBtn) nextBtn.hidden = isLast;
+  if (dlBtn) dlBtn.hidden = !isLast;
 }
 
 function bindExportarLazyInit() {
@@ -2987,7 +3203,18 @@ async function initExportarPanel() {
   try {
     if (ingresosData.length === 0) await loadIngresos();
     if (egresosData.length === 0) { try { await loadEgresos(); } catch (_) {} }
-    updateExportarSummary();
+    try { await loadCarriersList(); } catch (_) {}
+    try { await loadBrokers(); } catch (_) {}
+    try { await loadTiposGastoList(); } catch (_) {}
+    // Poblar sets con todos los valores disponibles (default: todos incluidos)
+    fexpState.carriers = new Set(carriersList || []);
+    fexpState.destinatarios = new Set(brokersData.map(b => b.nombre));
+    fexpState.tiposGasto = new Set(tiposGastoList || []);
+    renderExportChips();
+    renderExportColumns();
+    updateExportFieldVisibility();
+    gotoStep(1);
+    renderPreview();
   } catch (e) {
     console.error("Error inicializando Exportar:", e);
     fexpInited = false;
@@ -3011,19 +3238,364 @@ function ensureFexpCustomPickers() {
   const yearStart = new Date(today.getFullYear(), 0, 1);
   const fp1 = flatpickr(fromEl, {
     locale: "es", dateFormat: "m/d/Y", defaultDate: yearStart,
-    onChange: ([d]) => { fexpState.fromDate = d ? startOfDay(d) : null; if (d && fp2) fp2.set("minDate", d); updateExportarSummary(); }
+    onChange: ([d]) => { fexpState.fromDate = d ? startOfDay(d) : null; if (d && fp2) fp2.set("minDate", d); renderPreview(); }
   });
   const fp2 = flatpickr(toEl, {
     locale: "es", dateFormat: "m/d/Y", defaultDate: today,
-    onChange: ([d]) => { fexpState.toDate = d ? endOfDay(d) : null; if (d && fp1) fp1.set("maxDate", d); updateExportarSummary(); }
+    onChange: ([d]) => { fexpState.toDate = d ? endOfDay(d) : null; if (d && fp1) fp1.set("maxDate", d); renderPreview(); }
   });
   fexpCustomPickers = { fp1, fp2 };
   fexpState.fromDate = startOfDay(yearStart);
   fexpState.toDate = endOfDay(today);
 }
 
+// ─── Chips multiselect ───────────────────────────────────
+function renderExportChips() {
+  renderChipGroup("fexp-chips-tipoPago", TIPOS_PAGO, fexpState.tiposPago);
+  renderChipGroup("fexp-chips-categoria", CATEGORIAS, fexpState.categorias);
+  renderChipGroup("fexp-chips-carrier", [...carriersList].sort((a, b) => a.localeCompare(b, "es")), fexpState.carriers);
+  renderDestinatarioChips();
+  renderChipGroup("fexp-chips-tipoGasto", [...tiposGastoList].sort((a, b) => a.localeCompare(b, "es")), fexpState.tiposGasto);
+}
+
+function renderDestinatarioChips() {
+  let names;
+  if (fexpState.destTipo === "agencia") {
+    names = brokersData.filter(b => (b.tipo || "agencia") === "agencia").map(b => b.nombre);
+  } else if (fexpState.destTipo === "broker") {
+    names = brokersData.filter(b => b.tipo === "broker").map(b => b.nombre);
+  } else {
+    names = brokersData.map(b => b.nombre);
+  }
+  names.sort((a, b) => a.localeCompare(b, "es"));
+  // Preservar las selecciones que sigan siendo válidas; agregar los nuevos por default marcados
+  const validSet = new Set(names);
+  const previous = fexpState.destinatarios;
+  const newSelection = new Set();
+  names.forEach(n => { if (previous.has(n) || !previous.size) newSelection.add(n); });
+  // Si el estado previo estaba lleno, mantenemos todo marcado
+  if (previous.size === 0 || [...previous].every(n => validSet.has(n))) {
+    // OK, mantén el filtrado
+  }
+  fexpState.destinatarios = new Set(names.filter(n => previous.has(n)));
+  if (fexpState.destinatarios.size === 0) {
+    // Si nada quedó, marca todos por default para no dejar vacío
+    fexpState.destinatarios = new Set(names);
+  }
+  renderChipGroup("fexp-chips-destinatario", names, fexpState.destinatarios);
+}
+
+function renderChipGroup(elId, values, selectedSet) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  if (!values || values.length === 0) {
+    el.innerHTML = `<span class="fexp-chips-empty">Sin opciones disponibles</span>`;
+    return;
+  }
+  el.innerHTML = values.map(v => {
+    const isActive = selectedSet.has(v);
+    return `<span class="fexp-chip${isActive ? " is-active" : ""}" data-value="${escapeHtmlAttr(v)}">${escapeHtml(v)}</span>`;
+  }).join("");
+  el.querySelectorAll(".fexp-chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      const v = chip.dataset.value;
+      if (selectedSet.has(v)) selectedSet.delete(v);
+      else selectedSet.add(v);
+      chip.classList.toggle("is-active");
+      renderPreview();
+    });
+  });
+}
+
+function toggleAllChips(elId) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const chips = el.querySelectorAll(".fexp-chip");
+  const allActive = [...chips].every(c => c.classList.contains("is-active"));
+  const targetSetName = {
+    "fexp-chips-tipoPago": "tiposPago",
+    "fexp-chips-categoria": "categorias",
+    "fexp-chips-carrier": "carriers",
+    "fexp-chips-destinatario": "destinatarios",
+    "fexp-chips-tipoGasto": "tiposGasto"
+  }[elId];
+  const targetSet = fexpState[targetSetName];
+  if (allActive) {
+    targetSet.clear();
+    chips.forEach(c => c.classList.remove("is-active"));
+  } else {
+    chips.forEach(c => {
+      c.classList.add("is-active");
+      targetSet.add(c.dataset.value);
+    });
+  }
+  renderPreview();
+}
+
+// ─── Columnas ────────────────────────────────────────────
+function renderExportColumns() {
+  const el = document.getElementById("fexp-cols");
+  if (!el) return;
+  const cols = FEXP_COL_DEFS[fexpState.dataset];
+  el.innerHTML = cols.map(c => {
+    const checked = fexpState.columns.has(c.id) ? "checked" : "";
+    return `
+      <label class="fexp-col">
+        <input type="checkbox" value="${escapeHtmlAttr(c.id)}" ${checked}>
+        <span>${escapeHtml(c.label)}</span>
+      </label>
+    `;
+  }).join("");
+  el.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener("change", () => {
+      if (cb.checked) fexpState.columns.add(cb.value);
+      else fexpState.columns.delete(cb.value);
+      renderPreview();
+    });
+  });
+}
+
+// ─── Visibilidad de campos según dataset ─────────────────
+// El paso 3 alberga tanto "Tipo pago + Categoría" (Ingresos/Payouts) como
+// "Tipo de gasto" (Egresos). Aquí sincronizamos qué se ve dentro de ese paso.
+function updateExportFieldVisibility() {
+  document.querySelectorAll("[data-scope]").forEach(f => {
+    const scopes = f.dataset.scope.split(/\s+/);
+    const visible = scopes.includes(fexpState.dataset);
+    if (f.tagName === "H3" || f.tagName === "P") f.hidden = !visible;
+    else f.style.display = visible ? "" : "none";
+  });
+}
+
+// ─── Preview persistente ──────────────────────────────────
+// Actualiza filename, badges de filtros aplicados, tabla mock con 3 filas
+// ficticias y el contador de registros reales que se exportarán.
+function renderPreview() {
+  const dataset = fexpState.dataset;
+  const rows = getFilteredData();
+  const activeCols = FEXP_COL_DEFS[dataset].filter(c => fexpState.columns.has(c.id));
+
+  // Filename
+  const ext = fexpState.formato === "csv" ? "csv" : "xlsx";
+  const filenameEl = document.getElementById("fexp-preview-filename");
+  if (filenameEl) filenameEl.textContent = `hero-finanzas-${dataset}-${slugify(periodoLabel())}.${ext}`;
+
+  // Contador
+  const countEl = document.getElementById("fexp-preview-count");
+  if (countEl) countEl.textContent = `${rows.length} ${dataset === "payouts" ? "payouts" : dataset === "egresos" ? "egresos" : "ingresos"}`;
+  const finalCountEl = document.getElementById("fexp-final-count");
+  if (finalCountEl) finalCountEl.innerHTML = `<strong>${rows.length}</strong> ${dataset === "payouts" ? "payouts" : dataset === "egresos" ? "egresos" : "ingresos"}`;
+
+  // Badges de filtros aplicados
+  renderPreviewBadges();
+
+  // Tabla mock
+  renderPreviewTable(activeCols, dataset);
+}
+
+function renderPreviewBadges() {
+  const el = document.getElementById("fexp-preview-badges");
+  if (!el) return;
+  const badges = [];
+  // Periodo
+  badges.push({ icon: "calendar", label: periodoLabel() });
+  // Tipos de pago
+  if (fexpState.dataset !== "egresos") {
+    const tp = [...fexpState.tiposPago];
+    if (tp.length === 0) badges.push({ icon: "x-circle", label: "Sin tipos de pago" });
+    else if (tp.length < TIPOS_PAGO.length) badges.push({ icon: "credit-card", label: tp.join(", ") });
+    // Categorías
+    const cat = [...fexpState.categorias];
+    if (cat.length === 0) badges.push({ icon: "x-circle", label: "Sin categorías" });
+    else if (cat.length < CATEGORIAS.length) badges.push({ icon: "layers", label: cat.join(", ") });
+    // Carriers
+    const totalCarriers = (carriersList || []).length;
+    const car = [...fexpState.carriers];
+    if (totalCarriers > 0 && car.length < totalCarriers) {
+      const label = car.length === 0 ? "Sin carriers" : (car.length > 3 ? `${car.length} carriers` : car.join(", "));
+      badges.push({ icon: "briefcase", label });
+    }
+  }
+  if (fexpState.dataset === "payouts") {
+    if (fexpState.destTipo !== "all") {
+      badges.push({ icon: "users-round", label: fexpState.destTipo === "agencia" ? "Solo Agencias" : "Solo Brokers/Agentes" });
+    }
+    const dst = [...fexpState.destinatarios];
+    const totalDst = brokersData.length;
+    if (totalDst > 0 && dst.length < totalDst) {
+      const label = dst.length === 0 ? "Sin destinatarios" : (dst.length > 3 ? `${dst.length} destinatarios` : dst.join(", "));
+      badges.push({ icon: "user", label });
+    }
+  }
+  if (fexpState.dataset === "egresos") {
+    const totalTg = (tiposGastoList || []).length;
+    const tg = [...fexpState.tiposGasto];
+    if (totalTg > 0 && tg.length < totalTg) {
+      const label = tg.length === 0 ? "Sin tipos" : (tg.length > 3 ? `${tg.length} tipos de gasto` : tg.join(", "));
+      badges.push({ icon: "tag", label });
+    }
+  }
+
+  if (badges.length === 0) {
+    el.innerHTML = `<span class="fexp-preview-badge-empty">Sin filtros aplicados</span>`;
+  } else {
+    el.innerHTML = badges.map(b => `
+      <span class="fexp-preview-badge">
+        <i data-lucide="${b.icon}"></i>${escapeHtml(b.label)}
+      </span>
+    `).join("");
+  }
+  if (window.refreshIcons) window.refreshIcons();
+}
+
+// Genera valores ficticios por columna para la vista previa.
+function mockValueFor(colId, dataset, rowIdx) {
+  const MOCK = {
+    ingresos: {
+      fecha: ["01/15/2026", "01/22/2026", "02/03/2026"],
+      mes: ["ENE 2026", "ENE 2026", "FEB 2026"],
+      tipoPago: ["LIFE", "SUPP", "ACA"],
+      categoria: ["COMISSION", "COMISSION", "OVERRIDES"],
+      carrier: ["Aetna", "Cigna", "Ambetter ACA"],
+      descDep: ["AETNALIFE", "CIGNA - LOYAL", "HEALTHFAMILY"],
+      descTrans: ["ACH DEPOSIT 12345", "ACH DEPOSIT 67890", "ACH DEPOSIT 11223"],
+      monto: ["$1,234.56", "$820.15", "$2,458.00"],
+      pagado: ["$800.00", "$0.00", "$1,220.00"],
+      ganancia: ["$434.56", "$820.15", "$1,238.00"],
+      payoutCount: ["2", "0", "3"],
+      notas: ["—", "—", "revisar chargeback"],
+      creadoPor: ["gilbana@…", "gilbana@…", "gilbana@…"],
+      archivoOriginal: ["F&G_Statement_…", "Cigna_Report_…", "Health_Fam_…"]
+    },
+    payouts: {
+      fechaIngreso: ["01/15/2026", "01/22/2026", "02/03/2026"],
+      mes: ["ENE 2026", "ENE 2026", "FEB 2026"],
+      descDep: ["AETNALIFE", "AETNALIFE", "HEALTHFAMILY"],
+      categoria: ["COMISSION", "COMISSION", "OVERRIDES"],
+      carrier: ["Aetna", "Aetna", "Ambetter ACA"],
+      montoIngreso: ["$1,234.56", "$1,234.56", "$2,458.00"],
+      tipoDest: ["Agencia", "Broker/Agente", "Agencia"],
+      destinatario: ["ENSURE", "Juan Pérez", "KHAN FINANCIAL"],
+      saldo: ["$500.00", "$300.00", "$1,220.00"],
+      reporteFile: ["PACA-045_…", "—", "PACA-091_…"],
+      emailSentTo: ["ensure@…", "—", "khan@…"],
+      emailSentAt: ["01/16/2026", "—", "02/04/2026"]
+    },
+    egresos: {
+      fecha: ["01/03/2026", "01/15/2026", "02/01/2026"],
+      mes: ["ENE 2026", "ENE 2026", "FEB 2026"],
+      tipoGasto: ["RENTA", "NÓMINA", "SERVICIO"],
+      descripcion: ["Alquiler oficina enero", "Nómina 1a quincena", "Internet y teléfono"],
+      monto: ["$3,500.00", "$8,240.00", "$385.50"],
+      notas: ["—", "—", "renovación anual"],
+      creadoPor: ["aurys@…", "aurys@…", "ramon@…"]
+    }
+  };
+  const table = MOCK[dataset] || {};
+  const arr = table[colId];
+  if (Array.isArray(arr) && arr[rowIdx] != null) return arr[rowIdx];
+  return "…";
+}
+
+function renderPreviewTable(activeCols, dataset) {
+  const table = document.getElementById("fexp-preview-table");
+  if (!table) return;
+  if (activeCols.length === 0) {
+    table.innerHTML = `<tbody><tr><td class="fexp-preview-empty">No hay columnas seleccionadas — nada que mostrar.</td></tr></tbody>`;
+    return;
+  }
+  const header = `<thead><tr>${activeCols.map(c => `<th>${escapeHtml(c.label)}</th>`).join("")}</tr></thead>`;
+  const bodyRows = [0, 1, 2].map((i) => {
+    const cells = activeCols.map(c => `<td>${escapeHtml(mockValueFor(c.id, dataset, i))}</td>`).join("");
+    return `<tr>${cells}</tr>`;
+  }).join("");
+  const ghost = `<tr class="is-ghost"><td colspan="${activeCols.length}">… y así hasta ${document.getElementById("fexp-preview-count")?.textContent || "todos los registros"}</td></tr>`;
+  table.innerHTML = header + `<tbody>${bodyRows}${ghost}</tbody>`;
+}
+
+// ─── Filtrado + conteo ───────────────────────────────────
+function getFilteredIngresos() {
+  return ingresosData.filter(r => {
+    if (fexpState.periodo !== "all" && !matchesPeriodo(r.fecha, fexpState.periodo, fexpState.fromDate, fexpState.toDate)) return false;
+    if (fexpState.tiposPago.size > 0 && !fexpState.tiposPago.has(r.tipoPago)) return false;
+    if (fexpState.categorias.size > 0 && !fexpState.categorias.has(r.categoria)) return false;
+    if (fexpState.carriers.size > 0 && r.carrier && !fexpState.carriers.has(r.carrier)) return false;
+    return true;
+  });
+}
+
+function getFilteredPayouts() {
+  const rows = [];
+  const ingFiltered = getFilteredIngresos();
+  for (const ing of ingFiltered) {
+    if (!Array.isArray(ing.payouts) || ing.payouts.length === 0) continue;
+    for (const p of ing.payouts) {
+      const t = p.tipo || "agencia";
+      if (fexpState.destTipo !== "all" && t !== fexpState.destTipo) continue;
+      if (fexpState.destinatarios.size > 0 && p.broker && !fexpState.destinatarios.has(p.broker)) continue;
+      rows.push({ ...p, _ingreso: ing });
+    }
+  }
+  return rows;
+}
+
+function getFilteredEgresos() {
+  return egresosData.filter(r => {
+    if (fexpState.periodo !== "all" && !matchesPeriodo(r.fecha, fexpState.periodo, fexpState.fromDate, fexpState.toDate)) return false;
+    if (fexpState.tiposGasto.size > 0 && !fexpState.tiposGasto.has(r.tipoGasto)) return false;
+    return true;
+  });
+}
+
+function getFilteredData() {
+  if (fexpState.dataset === "ingresos") return getFilteredIngresos();
+  if (fexpState.dataset === "payouts") return getFilteredPayouts();
+  if (fexpState.dataset === "egresos") return getFilteredEgresos();
+  return [];
+}
+
+// Retorna los datos originales para el print report (mantiene compat).
 function exportarData() {
-  return filterByPeriodo(ingresosData, fexpState.periodo, fexpState.fromDate, fexpState.toDate);
+  return getFilteredIngresos();
+}
+
+// ─── Descarga ─────────────────────────────────────────────
+function doExport() {
+  const rows = getFilteredData();
+  if (rows.length === 0) { alert("No hay registros que coincidan con los filtros."); return; }
+  const activeCols = FEXP_COL_DEFS[fexpState.dataset].filter(c => fexpState.columns.has(c.id));
+  if (activeCols.length === 0) { alert("Selecciona al menos una columna."); return; }
+
+  const header = activeCols.map(c => c.label);
+  const body = rows.map(r => activeCols.map(c => c.get(r)));
+  const filename = `hero-finanzas-${fexpState.dataset}-${slugify(periodoLabel())}`;
+
+  if (fexpState.formato === "csv") {
+    downloadCSV(`${filename}.csv`, [header, ...body]);
+    return;
+  }
+
+  // XLSX
+  if (!ensureSheetJS()) return;
+  const aoa = [header, ...body];
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  // Aplicar formato moneda en columnas correspondientes
+  const moneyLetters = [];
+  activeCols.forEach((c, i) => {
+    if (c.money) moneyLetters.push(XLSX.utils.encode_col(i));
+  });
+  for (let i = 2; i <= aoa.length; i++) {
+    for (const L of moneyLetters) {
+      const cell = ws[L + i];
+      if (cell) cell.z = '"$"#,##0.00';
+    }
+  }
+  // Anchos razonables (heurística ligera por label)
+  ws["!cols"] = activeCols.map(c => ({ wch: Math.max(c.label.length + 2, c.money ? 12 : 16) }));
+  const wb = XLSX.utils.book_new();
+  const sheetName = { ingresos: "Ingresos", payouts: "Payouts", egresos: "Egresos" }[fexpState.dataset];
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  XLSX.writeFile(wb, `${filename}.xlsx`);
 }
 
 function periodoLabel() {
@@ -3048,75 +3620,6 @@ function formatDateShort(d) {
   return `${m}/${day}/${d.getFullYear()}`;
 }
 
-function updateExportarSummary() {
-  const data = exportarData();
-  const count = data.length;
-  const bruto = data.reduce((s, r) => s + (Number(r.monto) || 0), 0);
-  setText("fexp-summary-count", `${count} ingreso${count === 1 ? "" : "s"}`);
-  setText("fexp-summary-bruto", `${formatMoney(bruto)} bruto`);
-}
-
-function exportIngresosCSV() {
-  const data = exportarData();
-  if (!data.length) { alert("No hay ingresos en el periodo seleccionado."); return; }
-  const rows = [[
-    "Fecha", "Mes", "Tipo de pago", "Categoría", "Carrier",
-    "Descripción depósito", "Descripción transacción",
-    "Monto", "Pagado", "Ganancia", "# Payouts", "Notas",
-    "Creado por", "Archivo original"
-  ]];
-  for (const r of data) {
-    rows.push([
-      r.fecha ? formatFechaUS(r.fecha) : "",
-      r.mes || "",
-      r.tipoPago || "",
-      r.categoria || "",
-      r.carrier || "",
-      r.descripcionDeposito || "",
-      r.descripcionTransaccion || "",
-      r.monto ?? 0,
-      r.pagado ?? 0,
-      r.ganancia ?? 0,
-      Array.isArray(r.payouts) ? r.payouts.length : 0,
-      r.notas || "",
-      r.creadoPor || "",
-      r.archivoOriginalDriveUrl || ""
-    ]);
-  }
-  downloadCSV(`hero-finanzas-ingresos-${slugify(periodoLabel())}.csv`, rows);
-}
-
-function exportPayoutsCSV() {
-  const data = exportarData();
-  const rows = [[
-    "Fecha ingreso", "Mes", "Desc. depósito", "Categoría", "Carrier", "Monto ingreso",
-    "Tipo destinatario", "Destinatario", "Saldo (payout)", "Reporte file", "Email enviado a", "Fecha envío"
-  ]];
-  let count = 0;
-  for (const r of data) {
-    if (!Array.isArray(r.payouts) || !r.payouts.length) continue;
-    for (const p of r.payouts) {
-      rows.push([
-        r.fecha ? formatFechaUS(r.fecha) : "",
-        r.mes || "",
-        r.descripcionDeposito || "",
-        r.categoria || "",
-        r.carrier || "",
-        r.monto ?? 0,
-        TIPO_DEST_LABEL[p.tipo || "agencia"] || (p.tipo || "agencia"),
-        p.broker || "",
-        p.saldo ?? 0,
-        p.reporteFile || "",
-        p.emailSentTo || "",
-        p.emailSentAt ? formatFechaUS(String(p.emailSentAt).slice(0, 10)) : ""
-      ]);
-      count++;
-    }
-  }
-  if (count === 0) { alert("No hay payouts en el periodo seleccionado."); return; }
-  downloadCSV(`hero-finanzas-payouts-${slugify(periodoLabel())}.csv`, rows);
-}
-
 function slugify(s) {
   return String(s || "")
     .toLowerCase()
@@ -3125,163 +3628,12 @@ function slugify(s) {
     .replace(/^-+|-+$/g, "");
 }
 
-// ─── Exportar a Excel (.xlsx) — usa SheetJS cargado por CDN ───
 function ensureSheetJS() {
   if (typeof XLSX === "undefined") {
     alert("La librería para generar Excel (SheetJS) aún no cargó. Espera un segundo y vuelve a intentar.");
     return false;
   }
   return true;
-}
-
-function exportIngresosXLSX() {
-  if (!ensureSheetJS()) return;
-  const data = exportarData();
-  if (!data.length) { alert("No hay ingresos en el periodo seleccionado."); return; }
-  const aoa = [[
-    "Fecha", "Mes", "Tipo de pago", "Categoría", "Carrier",
-    "Descripción depósito", "Descripción transacción",
-    "Monto", "Pagado", "Ganancia", "# Payouts", "Notas",
-    "Creado por", "Archivo original"
-  ]];
-  for (const r of data) {
-    aoa.push([
-      r.fecha ? formatFechaUS(r.fecha) : "",
-      r.mes || "",
-      r.tipoPago || "",
-      r.categoria || "",
-      r.carrier || "",
-      r.descripcionDeposito || "",
-      r.descripcionTransaccion || "",
-      Number(r.monto) || 0,
-      Number(r.pagado) || 0,
-      Number(r.ganancia) || 0,
-      Array.isArray(r.payouts) ? r.payouts.length : 0,
-      r.notas || "",
-      r.creadoPor || "",
-      r.archivoOriginalDriveUrl || ""
-    ]);
-  }
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  // Ancho de columnas
-  ws["!cols"] = [
-    { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 20 },
-    { wch: 24 }, { wch: 26 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
-    { wch: 10 }, { wch: 30 }, { wch: 28 }, { wch: 40 }
-  ];
-  // Formato moneda en las columnas H, I, J (Monto, Pagado, Ganancia)
-  for (let i = 2; i <= aoa.length; i++) {
-    ["H", "I", "J"].forEach(col => {
-      const cell = ws[col + i];
-      if (cell) cell.z = '"$"#,##0.00';
-    });
-  }
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Ingresos");
-  XLSX.writeFile(wb, `hero-finanzas-ingresos-${slugify(periodoLabel())}.xlsx`);
-}
-
-function exportPayoutsXLSX() {
-  if (!ensureSheetJS()) return;
-  const data = exportarData();
-  const aoa = [[
-    "Fecha ingreso", "Mes", "Desc. depósito", "Categoría", "Carrier", "Monto ingreso",
-    "Tipo destinatario", "Destinatario", "Saldo (payout)", "Reporte file",
-    "Email enviado a", "Fecha envío"
-  ]];
-  let count = 0;
-  for (const r of data) {
-    if (!Array.isArray(r.payouts) || !r.payouts.length) continue;
-    for (const p of r.payouts) {
-      aoa.push([
-        r.fecha ? formatFechaUS(r.fecha) : "",
-        r.mes || "",
-        r.descripcionDeposito || "",
-        r.categoria || "",
-        r.carrier || "",
-        Number(r.monto) || 0,
-        TIPO_DEST_LABEL[p.tipo || "agencia"] || (p.tipo || "agencia"),
-        p.broker || "",
-        Number(p.saldo) || 0,
-        p.reporteFile || "",
-        p.emailSentTo || "",
-        p.emailSentAt ? formatFechaUS(String(p.emailSentAt).slice(0, 10)) : ""
-      ]);
-      count++;
-    }
-  }
-  if (count === 0) { alert("No hay payouts en el periodo seleccionado."); return; }
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws["!cols"] = [
-    { wch: 14 }, { wch: 10 }, { wch: 24 }, { wch: 12 }, { wch: 20 }, { wch: 14 },
-    { wch: 16 }, { wch: 26 }, { wch: 14 }, { wch: 40 }, { wch: 26 }, { wch: 12 }
-  ];
-  // Formato moneda en columnas F (Monto) e I (Saldo)
-  for (let i = 2; i <= aoa.length; i++) {
-    ["F", "I"].forEach(col => {
-      const cell = ws[col + i];
-      if (cell) cell.z = '"$"#,##0.00';
-    });
-  }
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Payouts");
-  XLSX.writeFile(wb, `hero-finanzas-payouts-${slugify(periodoLabel())}.xlsx`);
-}
-
-// ─── Exportar Egresos ─────────────────────────────
-function exportarEgresosData() {
-  return filterByPeriodo(egresosData, fexpState.periodo, fexpState.fromDate, fexpState.toDate);
-}
-
-function exportEgresosCSV() {
-  const data = exportarEgresosData();
-  if (!data.length) { alert("No hay egresos en el periodo seleccionado."); return; }
-  const rows = [[
-    "Fecha", "Mes", "Tipo de gasto", "Descripción", "Monto", "Notas", "Creado por"
-  ]];
-  for (const r of data) {
-    rows.push([
-      r.fecha ? formatFechaUS(r.fecha) : "",
-      r.mes || "",
-      r.tipoGasto || "",
-      r.descripcion || "",
-      r.monto ?? 0,
-      r.notas || "",
-      r.creadoPor || ""
-    ]);
-  }
-  downloadCSV(`hero-finanzas-egresos-${slugify(periodoLabel())}.csv`, rows);
-}
-
-function exportEgresosXLSX() {
-  if (!ensureSheetJS()) return;
-  const data = exportarEgresosData();
-  if (!data.length) { alert("No hay egresos en el periodo seleccionado."); return; }
-  const aoa = [[
-    "Fecha", "Mes", "Tipo de gasto", "Descripción", "Monto", "Notas", "Creado por"
-  ]];
-  for (const r of data) {
-    aoa.push([
-      r.fecha ? formatFechaUS(r.fecha) : "",
-      r.mes || "",
-      r.tipoGasto || "",
-      r.descripcion || "",
-      Number(r.monto) || 0,
-      r.notas || "",
-      r.creadoPor || ""
-    ]);
-  }
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws["!cols"] = [
-    { wch: 12 }, { wch: 10 }, { wch: 18 }, { wch: 38 }, { wch: 12 }, { wch: 30 }, { wch: 28 }
-  ];
-  for (let i = 2; i <= aoa.length; i++) {
-    const cell = ws["E" + i];
-    if (cell) cell.z = '"$"#,##0.00';
-  }
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Egresos");
-  XLSX.writeFile(wb, `hero-finanzas-egresos-${slugify(periodoLabel())}.xlsx`);
 }
 
 function csvEscape(v) {
