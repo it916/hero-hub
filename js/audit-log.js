@@ -76,6 +76,11 @@ export const ACTIONS = {
   FINANZAS_INGRESO_EDIT: "finanzas.ingreso.edit",
   FINANZAS_INGRESO_DELETE: "finanzas.ingreso.delete",
 
+  // Finanzas — Egresos
+  FINANZAS_EGRESO_ADD: "finanzas.egreso.add",
+  FINANZAS_EGRESO_EDIT: "finanzas.egreso.edit",
+  FINANZAS_EGRESO_DELETE: "finanzas.egreso.delete",
+
   // Finanzas — Envío de reportes por email a brokers
   FINANZAS_EMAIL_SEND: "finanzas.email.send"
 };
@@ -107,6 +112,9 @@ export const ACTION_LABELS = {
   "finanzas.ingreso.add": { label: "Ingreso registrado", icon: "arrow-down-circle", color: "#22a06b" },
   "finanzas.ingreso.edit": { label: "Ingreso editado", icon: "edit-3", color: "#06a3b6" },
   "finanzas.ingreso.delete": { label: "Ingreso eliminado", icon: "trash-2", color: "#c0392b" },
+  "finanzas.egreso.add": { label: "Egreso registrado", icon: "arrow-up-circle", color: "#c0392b" },
+  "finanzas.egreso.edit": { label: "Egreso editado", icon: "edit-3", color: "#06a3b6" },
+  "finanzas.egreso.delete": { label: "Egreso eliminado", icon: "trash-2", color: "#c0392b" },
   "finanzas.email.send": { label: "Reporte enviado al broker", icon: "send", color: "#06a3b6" }
 };
 

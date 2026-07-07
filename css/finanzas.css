@@ -682,11 +682,14 @@ table.fpr-table tfoot td {
    ───────────────────────────────────────────── */
 .fd-kpis {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
   margin-bottom: 20px;
 }
-@media (max-width: 900px) {
+@media (max-width: 1200px) {
+  .fd-kpis { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 700px) {
   .fd-kpis { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 480px) {

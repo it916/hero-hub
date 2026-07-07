@@ -44,6 +44,8 @@ document.addEventListener("DOMContentLoaded", () => {
   bindBrokersLazyInit();
   bindIngresosStaticHandlers();
   bindIngresosLazyInit();
+  bindEgresosStaticHandlers();
+  bindEgresosLazyInit();
   bindDashboardStaticHandlers();
   bindDashboardLazyInit();
   bindComparativasStaticHandlers();
@@ -1397,7 +1399,7 @@ function applyFiFilters() {
   updateIngresosSummary();
 }
 
-function matchesPeriodo(fecha, periodo) {
+function matchesPeriodo(fecha, periodo, fromDate = null, toDate = null) {
   if (!fecha) return false;
   const d = new Date(fecha + "T00:00:00");
   if (isNaN(d.getTime())) return false;
@@ -1411,8 +1413,12 @@ function matchesPeriodo(fecha, periodo) {
     return y === cY && m === targetMonth;
   }
   if (periodo === "custom") {
-    if (!fiFilter.fromDate || !fiFilter.toDate) return true;
-    return d >= fiFilter.fromDate && d <= fiFilter.toDate;
+    // Si el caller no pasó rango explícito, caemos al de fiFilter (compat con
+    // el filtro de Ingresos que ya lo pasa vía este fallback).
+    const from = fromDate || fiFilter.fromDate;
+    const to = toDate || fiFilter.toDate;
+    if (!from || !to) return true;
+    return d >= from && d <= to;
   }
   return true;
 }
@@ -1801,6 +1807,506 @@ async function sendIngresoEmail(ingreso, payoutIdx, broker) {
 
 
 // ═══════════════════════════════════════════════════════════
+// EGRESOS — CRUD Firestore + tabla + modal + catálogo de tipos
+// ═══════════════════════════════════════════════════════════
+const EGRESOS_COL = "finanzas-egresos";
+
+const TIPOS_GASTO_DEFAULT = [
+  "SERVICIO", "NÓMINA", "RENTA", "OFICINA",
+  "MARKETING", "TECNOLOGÍA", "PROFESIONAL", "GASTOS VARIOS"
+];
+let tiposGastoList = null;
+
+async function loadTiposGastoList() {
+  if (tiposGastoList) return tiposGastoList;
+  try {
+    const ref = doc(db, "finanzas-config", "tiposGasto");
+    const snap = await getDoc(ref);
+    if (snap.exists() && Array.isArray(snap.data().list)) {
+      tiposGastoList = snap.data().list;
+    } else {
+      tiposGastoList = [...TIPOS_GASTO_DEFAULT];
+      await setDoc(ref, { list: tiposGastoList });
+    }
+  } catch (e) {
+    console.warn("No se pudo cargar tiposGasto:", e.message);
+    tiposGastoList = [...TIPOS_GASTO_DEFAULT];
+  }
+  return tiposGastoList;
+}
+
+async function addTipoGastoToList(rawValue) {
+  const value = rawValue.trim().toUpperCase();
+  if (!value) throw new Error("El nombre no puede estar vacío.");
+  if (tiposGastoList.includes(value)) throw new Error(`"${value}" ya está en la lista.`);
+  tiposGastoList = [...tiposGastoList, value].sort((a, b) => a.localeCompare(b, "es"));
+  try {
+    await setDoc(doc(db, "finanzas-config", "tiposGasto"), { list: tiposGastoList });
+  } catch (e) {
+    tiposGastoList = tiposGastoList.filter(v => v !== value);
+    throw new Error("No se pudo guardar en Firestore: " + e.message);
+  }
+  return value;
+}
+
+let egresosData = [];
+let feTable = null;
+let egresosInited = false;
+const feFilter = { text: "", periodo: "all", tipo: "all", fromDate: null, toDate: null };
+let feCustomPickers = null;
+
+function bindEgresosStaticHandlers() {
+  const addBtn = document.getElementById("fe-add-btn");
+  if (addBtn && !addBtn.dataset.bound) {
+    addBtn.dataset.bound = "1";
+    addBtn.addEventListener("click", () => openEgresoModal(null));
+  }
+  const search = document.getElementById("fe-search");
+  if (search && !search.dataset.bound) {
+    search.dataset.bound = "1";
+    search.addEventListener("input", (e) => {
+      feFilter.text = e.target.value.toLowerCase().trim();
+      applyFeFilters();
+    });
+  }
+  ["periodo", "tipo"].forEach(key => {
+    const sel = document.getElementById(`fe-filter-${key}`);
+    if (sel && !sel.dataset.bound) {
+      sel.dataset.bound = "1";
+      sel.addEventListener("change", (e) => {
+        feFilter[key] = e.target.value;
+        if (key === "periodo") toggleFeCustomRange(e.target.value === "custom");
+        applyFeFilters();
+      });
+    }
+  });
+}
+
+function toggleFeCustomRange(show) {
+  const wrap = document.getElementById("fe-custom-range");
+  if (!wrap) return;
+  wrap.hidden = !show;
+  if (show) ensureFeCustomPickers();
+}
+
+function ensureFeCustomPickers() {
+  if (feCustomPickers) return;
+  const fromEl = document.getElementById("fe-date-from");
+  const toEl = document.getElementById("fe-date-to");
+  if (!fromEl || !toEl || typeof flatpickr === "undefined") return;
+  const today = new Date();
+  const yearStart = new Date(today.getFullYear(), 0, 1);
+  const fp1 = flatpickr(fromEl, {
+    locale: "es", dateFormat: "m/d/Y", defaultDate: yearStart,
+    onChange: ([d]) => { feFilter.fromDate = d ? startOfDay(d) : null; if (d && fp2) fp2.set("minDate", d); applyFeFilters(); }
+  });
+  const fp2 = flatpickr(toEl, {
+    locale: "es", dateFormat: "m/d/Y", defaultDate: today,
+    onChange: ([d]) => { feFilter.toDate = d ? endOfDay(d) : null; if (d && fp1) fp1.set("maxDate", d); applyFeFilters(); }
+  });
+  feCustomPickers = { fp1, fp2 };
+  feFilter.fromDate = startOfDay(yearStart);
+  feFilter.toDate = endOfDay(today);
+}
+
+function bindEgresosLazyInit() {
+  document.querySelectorAll('.admin-sidebar-link[data-tab="egresos"]').forEach(b => {
+    if (b.dataset.feBound) return;
+    b.dataset.feBound = "1";
+    b.addEventListener("click", () => {
+      if (!egresosInited) initEgresosPanel();
+    });
+  });
+}
+
+async function initEgresosPanel() {
+  if (egresosInited) return;
+  egresosInited = true;
+  try {
+    await loadTiposGastoList();
+    if (!feTable) initFeTable();
+    await loadEgresos();
+    feTable.setData(egresosData);
+    populateTipoGastoFilter();
+    updateEgresosSummary();
+  } catch (e) {
+    console.error("Error inicializando Egresos:", e);
+    egresosInited = false;
+    const msg = e?.code === "permission-denied" || /permission|insufficient/i.test(e?.message || "")
+      ? `Firestore rechazó la lectura de "${EGRESOS_COL}". Verifica las reglas en Firebase Console.`
+      : `No se pudo cargar Egresos:\n${e?.message || e}`;
+    alert(msg);
+  }
+  if (window.refreshIcons) window.refreshIcons();
+}
+
+async function loadEgresos() {
+  const q = query(collection(db, EGRESOS_COL), orderBy("fecha", "desc"));
+  const snap = await getDocs(q);
+  egresosData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+function populateTipoGastoFilter() {
+  const sel = document.getElementById("fe-filter-tipo");
+  if (!sel) return;
+  const current = sel.value;
+  const set = new Set();
+  (tiposGastoList || []).forEach(t => set.add(t));
+  egresosData.forEach(r => { if (r.tipoGasto) set.add(r.tipoGasto); });
+  const list = [...set].sort((a, b) => a.localeCompare(b, "es"));
+  sel.innerHTML = `<option value="all">Todos</option>` +
+    list.map(t => `<option value="${escapeHtmlAttr(t)}" ${t === current ? "selected" : ""}>${escapeHtml(t)}</option>`).join("");
+}
+
+function initFeTable() {
+  feTable = new Tabulator("#fe-table", {
+    index: "id",
+    data: [],
+    layout: "fitColumns",
+    height: "560px",
+    pagination: true,
+    paginationSize: 25,
+    paginationSizeSelector: [10, 25, 50, 100],
+    initialSort: [{ column: "fecha", dir: "desc" }],
+    placeholder: "Aún no hay egresos registrados. Agrega el primero con el botón “Nuevo egreso”.",
+    locale: "es",
+    langs: {
+      "es": {
+        "pagination": {
+          "first": "«", "first_title": "Primera",
+          "last": "»",  "last_title": "Última",
+          "prev": "‹",  "prev_title": "Anterior",
+          "next": "›",  "next_title": "Siguiente",
+          "page_size": "Por página",
+          "counter": { "showing": "Mostrando", "of": "de", "rows": "egresos", "pages": "páginas" }
+        }
+      }
+    },
+    columns: [
+      {
+        title: "Fecha", field: "fecha", width: 110, sorter: "string",
+        formatter: (cell) => cell.getValue() ? formatFechaUS(cell.getValue()) : `<span class="fc-empty">—</span>`
+      },
+      {
+        title: "Tipo de gasto", field: "tipoGasto", width: 160, sorter: "string",
+        formatter: (cell) => {
+          const v = cell.getValue();
+          return v ? `<span class="fi-carrier-badge">${escapeHtml(v)}</span>` : `<span class="fc-empty">—</span>`;
+        }
+      },
+      {
+        title: "Descripción", field: "descripcion", minWidth: 240, sorter: "string",
+        formatter: (cell) => {
+          const v = cell.getValue();
+          return v ? `<strong>${escapeHtml(v)}</strong>` : `<span class="fc-empty">—</span>`;
+        }
+      },
+      {
+        title: "Monto", field: "monto", width: 140, hozAlign: "right", headerHozAlign: "right", sorter: "number",
+        formatter: (cell) => `<span class="fi-cell-money">${formatMoney(cell.getValue())}</span>`
+      },
+      {
+        title: "Notas", field: "notas", minWidth: 180, sorter: "string",
+        formatter: (cell) => {
+          const v = cell.getValue();
+          return v ? `<div class="fc-notes-cell" title="${escapeHtmlAttr(v)}">${escapeHtml(v)}</div>` : `<span class="fc-empty">—</span>`;
+        }
+      },
+      {
+        title: "", field: "_actions", width: 90, hozAlign: "center", headerSort: false,
+        formatter: (cell) => {
+          const r = cell.getRow().getData();
+          return `<div class="fc-actions">
+            <button class="fc-act-btn fc-edit" data-id="${escapeHtmlAttr(r.id)}" title="Editar">✎</button>
+            <button class="fc-act-btn fc-del" data-id="${escapeHtmlAttr(r.id)}" title="Eliminar">✕</button>
+          </div>`;
+        }
+      }
+    ]
+  });
+
+  feTable.on("cellClick", (e, cell) => {
+    if (e.target.closest(".fc-actions")) return;
+    openEgresoModal(cell.getRow().getData());
+  });
+
+  const tableEl = document.getElementById("fe-table");
+  tableEl.addEventListener("click", (e) => {
+    const editBtn = e.target.closest(".fc-edit");
+    const delBtn = e.target.closest(".fc-del");
+    if (editBtn) { e.stopPropagation(); onEditEgreso(editBtn.dataset.id); }
+    else if (delBtn) { e.stopPropagation(); onDeleteEgreso(delBtn.dataset.id); }
+  });
+
+  feTable.on("dataFiltered", (_filters, rows) => {
+    const data = Array.isArray(rows) ? rows.map(r => r.getData()) : null;
+    updateEgresosSummary(data);
+  });
+  feTable.on("dataLoaded", () => updateEgresosSummary());
+}
+
+function applyFeFilters() {
+  if (!feTable) return;
+  feTable.setFilter((row) => {
+    if (feFilter.tipo !== "all" && row.tipoGasto !== feFilter.tipo) return false;
+    if (feFilter.periodo !== "all" && !matchesPeriodo(row.fecha, feFilter.periodo, feFilter.fromDate, feFilter.toDate)) return false;
+    if (feFilter.text) {
+      const hay = `${row.descripcion || ""} ${row.tipoGasto || ""} ${row.notas || ""}`.toLowerCase();
+      if (!hay.includes(feFilter.text)) return false;
+    }
+    return true;
+  });
+  updateEgresosSummary();
+}
+
+function updateEgresosSummary(data) {
+  const totalEl = document.getElementById("fe-sum-total");
+  const montoEl = document.getElementById("fe-sum-monto");
+  if (!totalEl || !feTable) return;
+  const visibleRows = Array.isArray(data) ? data : feTable.getData("active");
+  const total = visibleRows.length;
+  const monto = visibleRows.reduce((s, r) => s + (parseFloat(r.monto) || 0), 0);
+  totalEl.textContent = String(total);
+  montoEl.textContent = formatMoney(monto);
+}
+
+function onEditEgreso(id) {
+  const row = egresosData.find(r => r.id === id);
+  if (row) openEgresoModal(row);
+}
+
+async function onDeleteEgreso(id) {
+  const row = egresosData.find(r => r.id === id);
+  if (!row) return;
+  const label = `${formatFechaUS(row.fecha)} · ${row.descripcion || "?"} · ${formatMoney(row.monto)}`;
+  if (!confirm(`¿Eliminar este egreso?\n\n${label}\n\nEsta acción no se puede deshacer.`)) return;
+  try {
+    await deleteDoc(doc(db, EGRESOS_COL, id));
+  } catch (e) {
+    alert("Error al eliminar: " + e.message);
+    return;
+  }
+  logEvent(ACTIONS.FINANZAS_EGRESO_DELETE, row.fecha || id, {
+    monto: row.monto, tipoGasto: row.tipoGasto || null
+  });
+  egresosData = egresosData.filter(r => r.id !== id);
+  if (feTable) feTable.deleteRow(id);
+  updateEgresosSummary();
+  showFeStatus(`✓ Egreso eliminado`);
+}
+
+async function openEgresoModal(existing) {
+  const isEdit = !!existing;
+  await loadTiposGastoList();
+
+  const initialFecha = existing?.fecha || todayISO();
+  const initialTipo = existing?.tipoGasto || "";
+
+  const dialog = document.createElement("sl-dialog");
+  dialog.label = isEdit ? "Editar egreso" : "Nuevo egreso";
+  dialog.className = "fi-modal";
+  dialog.innerHTML = `
+    <div class="fc-form">
+      <div class="fi-section-title">Información básica</div>
+
+      <div class="fi-row-2">
+        <div class="fc-native-field">
+          <label for="fe-f-fecha" class="fc-native-label">
+            Fecha
+            <span class="fi-mes-pill" id="fe-mes-pill"></span>
+          </label>
+          <input type="date" id="fe-f-fecha" class="fc-native-date" value="${initialFecha}" required>
+        </div>
+        <sl-input
+          id="fe-f-monto"
+          label="Monto ($)"
+          type="number"
+          step="0.01"
+          min="0"
+          placeholder="0.00"
+          value="${existing?.monto != null ? existing.monto : ""}"
+          required>
+        </sl-input>
+      </div>
+
+      <div class="fc-native-field">
+        <label for="fe-f-tipoGasto" class="fc-native-label">Tipo de gasto</label>
+        <select id="fe-f-tipoGasto" class="fc-native-select" required>
+          <option value="">— Selecciona —</option>
+          ${tiposGastoList.map(t =>
+            `<option value="${escapeHtmlAttr(t)}" ${t === initialTipo ? "selected" : ""}>${escapeHtml(t)}</option>`
+          ).join("")}
+          <option value="__add_new__" class="fi-add-new-option">+ Agregar nuevo...</option>
+        </select>
+        <div id="fe-add-tipoGasto-wrap" class="fi-add-inline" style="display:none;">
+          <input type="text" id="fe-add-tipoGasto-input" class="fi-add-inline-input" placeholder="Ej. VIAJES" autocomplete="off">
+          <button type="button" id="fe-add-tipoGasto-save" class="fi-add-inline-save">Guardar</button>
+          <button type="button" id="fe-add-tipoGasto-cancel" class="fi-add-inline-cancel" title="Cancelar">✕</button>
+        </div>
+      </div>
+
+      <sl-input
+        id="fe-f-descripcion"
+        label="Descripción"
+        placeholder="Ej. Pago servicio de internet, nómina quincena..."
+        value="${escapeHtmlAttr(existing?.descripcion || "")}"
+        required
+        clearable>
+      </sl-input>
+
+      <sl-textarea
+        id="fe-f-notas"
+        label="Notas (opcional)"
+        placeholder="Observaciones internas, referencias..."
+        rows="2"
+        resize="auto"
+        value="${escapeHtmlAttr(existing?.notas || "")}">
+      </sl-textarea>
+    </div>
+
+    <sl-button slot="footer" id="fe-f-cancel" variant="default">Cancelar</sl-button>
+    <sl-button slot="footer" id="fe-f-save" variant="primary">
+      <i data-lucide="${isEdit ? "save" : "plus"}" slot="prefix" style="width:14px;height:14px;"></i>
+      ${isEdit ? "Guardar cambios" : "Registrar egreso"}
+    </sl-button>
+  `;
+  document.body.appendChild(dialog);
+  if (window.refreshIcons) window.refreshIcons();
+
+  const fechaInp = dialog.querySelector("#fe-f-fecha");
+  const mesPill = dialog.querySelector("#fe-mes-pill");
+  const tipoSel = dialog.querySelector("#fe-f-tipoGasto");
+  const montoInp = dialog.querySelector("#fe-f-monto");
+  const descInp = dialog.querySelector("#fe-f-descripcion");
+  const notasInp = dialog.querySelector("#fe-f-notas");
+
+  function updateMes() {
+    const mes = deriveMes(fechaInp.value);
+    mesPill.textContent = mes;
+    mesPill.style.display = mes ? "" : "none";
+  }
+  fechaInp.addEventListener("change", updateMes);
+  fechaInp.addEventListener("input", updateMes);
+  updateMes();
+
+  // "+ Agregar nuevo" tipoGasto
+  const addWrap = dialog.querySelector("#fe-add-tipoGasto-wrap");
+  const addInp = dialog.querySelector("#fe-add-tipoGasto-input");
+  const addSaveBtn = dialog.querySelector("#fe-add-tipoGasto-save");
+  const addCancelBtn = dialog.querySelector("#fe-add-tipoGasto-cancel");
+
+  function rebuildTipoGastoOptions(selectedValue) {
+    tipoSel.innerHTML = `
+      <option value="">— Selecciona —</option>
+      ${tiposGastoList.map(t =>
+        `<option value="${escapeHtmlAttr(t)}" ${t === selectedValue ? "selected" : ""}>${escapeHtml(t)}</option>`
+      ).join("")}
+      <option value="__add_new__" class="fi-add-new-option">+ Agregar nuevo...</option>
+    `;
+  }
+
+  tipoSel.addEventListener("change", () => {
+    if (tipoSel.value === "__add_new__") {
+      addWrap.style.display = "";
+      addInp.focus();
+      tipoSel.value = "";
+    }
+  });
+
+  async function commitNewTipoGasto() {
+    const raw = addInp.value;
+    if (!raw.trim()) { addInp.focus(); return; }
+    addSaveBtn.disabled = true;
+    try {
+      const added = await addTipoGastoToList(raw);
+      rebuildTipoGastoOptions(added);
+      addInp.value = "";
+      addWrap.style.display = "none";
+      populateTipoGastoFilter();
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      addSaveBtn.disabled = false;
+    }
+  }
+  addSaveBtn.addEventListener("click", commitNewTipoGasto);
+  addInp.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); commitNewTipoGasto(); }
+    if (e.key === "Escape") { addInp.value = ""; addWrap.style.display = "none"; }
+  });
+  addCancelBtn.addEventListener("click", () => {
+    addInp.value = "";
+    addWrap.style.display = "none";
+  });
+
+  dialog.addEventListener("sl-request-close", (e) => {
+    if (e.detail.source !== "close-button" && e.detail.source !== "keyboard") e.preventDefault();
+  });
+  dialog.addEventListener("sl-after-show", () => fechaInp.focus());
+  dialog.addEventListener("sl-after-hide", () => dialog.remove());
+  dialog.querySelector("#fe-f-cancel").addEventListener("click", () => dialog.hide());
+
+  dialog.querySelector("#fe-f-save").addEventListener("click", async () => {
+    const fecha = (fechaInp.value || "").trim();
+    const tipoGasto = (tipoSel.value || "").trim();
+    const monto = parseFloat(montoInp.value);
+    const descripcion = (descInp.value || "").trim();
+    const notas = (notasInp.value || "").trim();
+
+    if (!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) { alert("La fecha es obligatoria."); fechaInp.focus(); return; }
+    if (!tipoGasto) { alert("El tipo de gasto es obligatorio."); tipoSel.focus(); return; }
+    if (!isFinite(monto) || monto <= 0) { alert("El monto es obligatorio y debe ser mayor a 0."); montoInp.focus(); return; }
+    if (!descripcion) { alert("La descripción es obligatoria."); descInp.focus(); return; }
+
+    const mes = deriveMes(fecha);
+    const payload = {
+      fecha, mes, tipoGasto, monto, descripcion, notas,
+      actualizadoPor: currentUserEmail,
+      actualizadoEn: serverTimestamp()
+    };
+
+    try {
+      if (isEdit) {
+        await updateDoc(doc(db, EGRESOS_COL, existing.id), payload);
+        const idx = egresosData.findIndex(r => r.id === existing.id);
+        const updated = { ...egresosData[idx], ...payload };
+        if (idx >= 0) egresosData[idx] = updated;
+        if (feTable) feTable.updateRow(existing.id, updated);
+        logEvent(ACTIONS.FINANZAS_EGRESO_EDIT, fecha, { monto, tipoGasto });
+        showFeStatus(`✓ Egreso de ${formatFechaUS(fecha)} actualizado`);
+      } else {
+        payload.creadoPor = currentUserEmail;
+        payload.creadoEn = serverTimestamp();
+        const ref = await addDoc(collection(db, EGRESOS_COL), payload);
+        const newRow = { id: ref.id, ...payload };
+        egresosData.push(newRow);
+        if (feTable) feTable.addRow(newRow, true);
+        logEvent(ACTIONS.FINANZAS_EGRESO_ADD, fecha, { monto, tipoGasto });
+        showFeStatus(`✓ Egreso de ${formatFechaUS(fecha)} registrado · ${formatMoney(monto)}`);
+      }
+      updateEgresosSummary();
+      populateTipoGastoFilter();
+      dialog.hide();
+    } catch (e) {
+      alert("Error al guardar: " + e.message);
+    }
+  });
+
+  customElements.whenDefined("sl-dialog").then(() => dialog.show());
+}
+
+let feStatusTimeout = null;
+function showFeStatus(msg) {
+  const el = document.getElementById("fe-status");
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add("visible");
+  if (feStatusTimeout) clearTimeout(feStatusTimeout);
+  feStatusTimeout = setTimeout(() => el.classList.remove("visible"), 3000);
+}
+
+
+// ═══════════════════════════════════════════════════════════
 // DASHBOARD — KPIs + gráficos con Chart.js
 // ═══════════════════════════════════════════════════════════
 let fdInited = false;
@@ -1854,6 +2360,8 @@ async function initDashboardPanel() {
   fdInited = true;
   try {
     if (ingresosData.length === 0) await loadIngresos();
+    // Cargamos egresos también para el KPI de Neto real (no bloquea si falla)
+    if (egresosData.length === 0) { try { await loadEgresos(); } catch (_) {} }
     renderDashboard();
   } catch (e) {
     console.error("Error inicializando Dashboard:", e);
@@ -1932,17 +2440,26 @@ function ensureFdCustomPickers() {
 
 function renderDashboard() {
   const data = filterByPeriodo(ingresosData, fdState.periodo, fdState.fromDate, fdState.toDate);
+  const egresosPeriodo = filterByPeriodo(egresosData, fdState.periodo, fdState.fromDate, fdState.toDate);
 
   // KPIs
   const bruto = data.reduce((s, r) => s + (Number(r.monto) || 0), 0);
   const pagado = data.reduce((s, r) => s + (Number(r.pagado) || 0), 0);
   const ganancia = data.reduce((s, r) => s + (Number(r.ganancia) || 0), 0);
+  const egresosTotal = egresosPeriodo.reduce((s, r) => s + (Number(r.monto) || 0), 0);
+  const netoReal = ganancia - egresosTotal;
   const count = data.length;
   const withPayouts = data.filter(r => Array.isArray(r.payouts) && r.payouts.length > 0).length;
 
   setText("fd-kpi-bruto", formatMoney(bruto));
   setText("fd-kpi-pagado", formatMoney(pagado));
   setText("fd-kpi-ganancia", formatMoney(ganancia));
+  setText("fd-kpi-egresos", formatMoney(egresosTotal));
+  setText("fd-kpi-egresos-sub", `${egresosPeriodo.length} registrado${egresosPeriodo.length === 1 ? "" : "s"}`);
+  setText("fd-kpi-neto-real", formatMoney(netoReal));
+  const netoEl = document.getElementById("fd-kpi-neto-real");
+  if (netoEl) netoEl.classList.toggle("fi-cell-ganancia", true);
+  if (netoEl) netoEl.style.color = netoReal < 0 ? "#c0392b" : "";
   setText("fd-kpi-count", String(count));
   setText("fd-kpi-count-sub", `${withPayouts} con payouts`);
 
@@ -2437,6 +2954,16 @@ function bindExportarStaticHandlers() {
     xlsxPay.dataset.bound = "1";
     xlsxPay.addEventListener("click", exportPayoutsXLSX);
   }
+  const csvEgr = document.getElementById("fexp-csv-egresos");
+  if (csvEgr && !csvEgr.dataset.bound) {
+    csvEgr.dataset.bound = "1";
+    csvEgr.addEventListener("click", exportEgresosCSV);
+  }
+  const xlsxEgr = document.getElementById("fexp-xlsx-egresos");
+  if (xlsxEgr && !xlsxEgr.dataset.bound) {
+    xlsxEgr.dataset.bound = "1";
+    xlsxEgr.addEventListener("click", exportEgresosXLSX);
+  }
   const printBtn = document.getElementById("fexp-print-report");
   if (printBtn && !printBtn.dataset.bound) {
     printBtn.dataset.bound = "1";
@@ -2459,6 +2986,7 @@ async function initExportarPanel() {
   fexpInited = true;
   try {
     if (ingresosData.length === 0) await loadIngresos();
+    if (egresosData.length === 0) { try { await loadEgresos(); } catch (_) {} }
     updateExportarSummary();
   } catch (e) {
     console.error("Error inicializando Exportar:", e);
@@ -2698,6 +3226,62 @@ function exportPayoutsXLSX() {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Payouts");
   XLSX.writeFile(wb, `hero-finanzas-payouts-${slugify(periodoLabel())}.xlsx`);
+}
+
+// ─── Exportar Egresos ─────────────────────────────
+function exportarEgresosData() {
+  return filterByPeriodo(egresosData, fexpState.periodo, fexpState.fromDate, fexpState.toDate);
+}
+
+function exportEgresosCSV() {
+  const data = exportarEgresosData();
+  if (!data.length) { alert("No hay egresos en el periodo seleccionado."); return; }
+  const rows = [[
+    "Fecha", "Mes", "Tipo de gasto", "Descripción", "Monto", "Notas", "Creado por"
+  ]];
+  for (const r of data) {
+    rows.push([
+      r.fecha ? formatFechaUS(r.fecha) : "",
+      r.mes || "",
+      r.tipoGasto || "",
+      r.descripcion || "",
+      r.monto ?? 0,
+      r.notas || "",
+      r.creadoPor || ""
+    ]);
+  }
+  downloadCSV(`hero-finanzas-egresos-${slugify(periodoLabel())}.csv`, rows);
+}
+
+function exportEgresosXLSX() {
+  if (!ensureSheetJS()) return;
+  const data = exportarEgresosData();
+  if (!data.length) { alert("No hay egresos en el periodo seleccionado."); return; }
+  const aoa = [[
+    "Fecha", "Mes", "Tipo de gasto", "Descripción", "Monto", "Notas", "Creado por"
+  ]];
+  for (const r of data) {
+    aoa.push([
+      r.fecha ? formatFechaUS(r.fecha) : "",
+      r.mes || "",
+      r.tipoGasto || "",
+      r.descripcion || "",
+      Number(r.monto) || 0,
+      r.notas || "",
+      r.creadoPor || ""
+    ]);
+  }
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws["!cols"] = [
+    { wch: 12 }, { wch: 10 }, { wch: 18 }, { wch: 38 }, { wch: 12 }, { wch: 30 }, { wch: 28 }
+  ];
+  for (let i = 2; i <= aoa.length; i++) {
+    const cell = ws["E" + i];
+    if (cell) cell.z = '"$"#,##0.00';
+  }
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Egresos");
+  XLSX.writeFile(wb, `hero-finanzas-egresos-${slugify(periodoLabel())}.xlsx`);
 }
 
 function csvEscape(v) {

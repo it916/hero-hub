@@ -1,5 +1,25 @@
 [
   {
+    "id": "2026-07-07-finanzas-egresos",
+    "version": "v2.11.0",
+    "date": "2026-07-07",
+    "category": "feat",
+    "scope": "finanzas",
+    "audience": "team",
+    "title": "Finanzas · Módulo de Egresos y KPI de Neto Real",
+    "items": [
+      "Nueva sección 'Egresos' en el sidebar de Finanzas para registrar gastos operativos (servicios, nómina, renta, oficina, marketing, tecnología, profesional, etc.)",
+      "Cada egreso: fecha, tipo de gasto (catálogo editable con '+ Agregar nuevo'), descripción, monto y notas opcionales",
+      "Filtros por periodo (Todo · meses · Personalizado) y por tipo de gasto",
+      "Dashboard actualizado: pasó de 4 a 6 KPIs — Bruto · Pagado · Ganancia · Egresos · Neto Real (Ganancia − Egresos, destacado) · Ingresos",
+      "Neto real se pinta rojo cuando es negativo",
+      "Exportar Egresos en CSV y Excel — misma card que ingresos/payouts, con formato moneda automático",
+      "Todas las acciones sobre egresos quedan registradas en el audit-log (add/edit/delete)",
+      "Requiere agregar regla Firestore para la colección finanzas-egresos (isAdminOrFinanzas)",
+      "Bump v2.10.0 → v2.11.0"
+    ]
+  },
+  {
     "id": "2026-07-07-finanzas-fase2",
     "version": "v2.10.0",
     "date": "2026-07-07",
