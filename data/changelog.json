@@ -1,5 +1,25 @@
 [
   {
+    "id": "2026-07-07-finanzas-fase1",
+    "version": "v2.9.0",
+    "date": "2026-07-07",
+    "category": "feat",
+    "scope": "finanzas",
+    "audience": "team",
+    "title": "Finanzas · Fase 1: Carrier, tipo de destinatario y modal de ingreso rediseñado",
+    "items": [
+      "Nueva columna 'Carrier' en cada ingreso con catálogo editable — filtrable en la tabla y en el modal (con opción '+ Agregar nuevo')",
+      "Cada payout ahora distingue si el destinatario es Agencia o Broker/Agente (Family se paga a la agencia y ella distribuye)",
+      "El tab 'Brokers' pasó a llamarse 'Agencias' — la tabla ahora unifica agencias y brokers/agentes con badge de tipo y chips de filtro",
+      "Modal de agencia/broker con radios visuales de tipo y labels renombrados (Nombre, Email opcional, Teléfono opcional, Observaciones)",
+      "Modal de ingreso ahora abre en modo LECTURA por defecto: los campos están read-only y arriba a la derecha aparece un botón lápiz 'Editar' para modificarlo",
+      "Cada payout dentro del modal en modo lectura tiene su propio botón ✉ 'Enviar/Reenviar' — ya no hace falta cerrar el modal para enviar el reporte",
+      "Filtro 'Broker' renombrado a 'Destinatario' con opciones agrupadas por tipo (Agencias / Brokers/Agentes)",
+      "Exportar CSVs incluye ahora columnas Carrier, Tipo destinatario, Email enviado a y Fecha de envío",
+      "Historial: los 233 ingresos migrados y las agencias existentes se muestran como tipo 'agencia' por defecto (editable desde el modal)"
+    ]
+  },
+  {
     "id": "2026-07-07-contracting-hub",
     "version": "v2.8.0",
     "date": "2026-07-07",

@@ -545,7 +545,7 @@ const BROKERS_COL = "finanzas-brokers";
 let brokersData = [];        // [{ id, nombre, email, telefono, notas, ... }]
 let fbTable = null;
 let brokersInited = false;
-const fbFilter = { text: "" };
+const fbFilter = { text: "", tipo: "all" };
 
 
 function bindBrokersStaticHandlers() {
@@ -566,6 +566,18 @@ function bindBrokersStaticHandlers() {
       openBrokerModal(null);
     });
   }
+
+  // Chips de filtro por tipo (Todos · Agencias · Brokers/Agentes)
+  document.querySelectorAll('[data-fb-tipo]').forEach(chip => {
+    if (chip.dataset.bound) return;
+    chip.dataset.bound = "1";
+    chip.addEventListener("click", () => {
+      document.querySelectorAll('[data-fb-tipo]').forEach(c => c.classList.remove("active"));
+      chip.classList.add("active");
+      fbFilter.tipo = chip.dataset.fbTipo;
+      applyFbFilters();
+    });
+  });
 }
 
 function bindBrokersLazyInit() {
@@ -613,7 +625,7 @@ function initFbTable() {
     paginationSize: 25,
     paginationSizeSelector: [10, 25, 50, 100],
     initialSort: [{ column: "nombre", dir: "asc" }],
-    placeholder: "Aún no hay brokers. Agrega el primero con el botón “Nuevo broker”.",
+    placeholder: "Aún no hay agencias ni brokers. Agrega el primero con el botón “Nueva agencia/broker”.",
     locale: "es",
     langs: {
       "es": {
@@ -623,13 +635,24 @@ function initFbTable() {
           "prev": "‹",  "prev_title": "Anterior",
           "next": "›",  "next_title": "Siguiente",
           "page_size": "Por página",
-          "counter": { "showing": "Mostrando", "of": "de", "rows": "brokers", "pages": "páginas" }
+          "counter": { "showing": "Mostrando", "of": "de", "rows": "registros", "pages": "páginas" }
         }
       }
     },
     columns: [
       {
-        title: "Broker",
+        title: "Tipo",
+        field: "tipo",
+        width: 130,
+        sorter: "string",
+        formatter: (cell) => {
+          const v = cell.getValue() || "agencia";
+          const cls = v === "broker" ? "broker" : "agencia";
+          return `<span class="fb-tipo-badge fb-tipo-${cls}">${escapeHtml(TIPO_DEST_LABEL[v] || v)}</span>`;
+        }
+      },
+      {
+        title: "Nombre",
         field: "nombre",
         minWidth: 180,
         sorter: "string",
@@ -657,7 +680,7 @@ function initFbTable() {
         }
       },
       {
-        title: "Notas",
+        title: "Observaciones",
         field: "notas",
         minWidth: 200,
         sorter: "string",
@@ -698,6 +721,10 @@ function initFbTable() {
 function applyFbFilters() {
   if (!fbTable) return;
   fbTable.setFilter((row) => {
+    if (fbFilter.tipo !== "all") {
+      const t = row.tipo || "agencia";
+      if (t !== fbFilter.tipo) return false;
+    }
     if (fbFilter.text) {
       const haystack = `${row.nombre || ""} ${row.email || ""} ${row.telefono || ""} ${row.notas || ""}`.toLowerCase();
       if (!haystack.includes(fbFilter.text)) return false;
@@ -711,9 +738,8 @@ function updateBrokersTotal() {
   if (!el || !fbTable) return;
   const visible = fbTable.getDataCount("active");
   const total = brokersData.length;
-  el.textContent = visible === total
-    ? `${total} broker${total === 1 ? "" : "s"}`
-    : `${visible} de ${total}`;
+  const rotulo = (n) => `${n} registro${n === 1 ? "" : "s"}`;
+  el.textContent = visible === total ? rotulo(total) : `${visible} de ${total}`;
 }
 
 function onEditBroker(id) {
@@ -725,7 +751,8 @@ function onEditBroker(id) {
 async function onDeleteBroker(id) {
   const row = brokersData.find(r => r.id === id);
   if (!row) return;
-  if (!confirm(`¿Eliminar al broker "${row.nombre}"?\n\nEsta acción no se puede deshacer.`)) return;
+  const label = TIPO_DEST_LABEL[row.tipo || "agencia"];
+  if (!confirm(`¿Eliminar ${label.toLowerCase()} "${row.nombre}"?\n\nEsta acción no se puede deshacer.`)) return;
 
   try {
     await deleteDoc(doc(db, BROKERS_COL, id));
@@ -735,23 +762,40 @@ async function onDeleteBroker(id) {
   }
 
   logEvent(ACTIONS.FINANZAS_BROKER_DELETE, row.nombre || id, {
-    email: row.email || null
+    tipo: row.tipo || null, email: row.email || null
   });
 
   brokersData = brokersData.filter(r => r.id !== id);
   if (fbTable) fbTable.deleteRow(id);
   updateBrokersTotal();
-  showFbStatus(`✓ Broker ${row.nombre || "?"} eliminado`);
+  showFbStatus(`✓ ${label} ${row.nombre || "?"} eliminada`);
 }
 
 function openBrokerModal(existing) {
   const isEdit = !!existing;
+  const initialTipo = existing?.tipo || "agencia";
 
   const dialog = document.createElement("sl-dialog");
-  dialog.label = isEdit ? "Editar broker" : "Nuevo broker";
+  dialog.label = isEdit ? "Editar destinatario" : "Nuevo destinatario";
   dialog.className = "fc-modal";
   dialog.innerHTML = `
     <div class="fc-form">
+      <div class="fc-native-field">
+        <label class="fc-native-label">Tipo</label>
+        <div class="fb-tipo-radios">
+          <label class="fb-tipo-radio ${initialTipo === "agencia" ? "is-active" : ""}">
+            <input type="radio" name="fb-f-tipo" value="agencia" ${initialTipo === "agencia" ? "checked" : ""}>
+            <span>Agencia</span>
+            <small>Family paga a la agencia; luego se distribuye internamente.</small>
+          </label>
+          <label class="fb-tipo-radio ${initialTipo === "broker" ? "is-active" : ""}">
+            <input type="radio" name="fb-f-tipo" value="broker" ${initialTipo === "broker" ? "checked" : ""}>
+            <span>Broker / Agente</span>
+            <small>Individual — se paga directo al agente o broker.</small>
+          </label>
+        </div>
+      </div>
+
       <sl-input
         id="fb-f-nombre"
         label="Nombre"
@@ -764,18 +808,19 @@ function openBrokerModal(existing) {
 
       <sl-input
         id="fb-f-email"
-        label="Email"
+        label="Email (opcional)"
         type="email"
-        placeholder="contacto@broker.com (opcional)"
+        placeholder="contacto@ejemplo.com"
         value="${escapeHtmlAttr(existing?.email || "")}"
+        help-text="Si está presente, se usa por defecto al enviar reportes."
         autocomplete="off"
         clearable>
       </sl-input>
 
       <sl-input
         id="fb-f-telefono"
-        label="Teléfono"
-        placeholder="+1 555 1234 (opcional)"
+        label="Teléfono (opcional)"
+        placeholder="+1 555 1234"
         value="${escapeHtmlAttr(existing?.telefono || "")}"
         autocomplete="off"
         clearable>
@@ -783,8 +828,8 @@ function openBrokerModal(existing) {
 
       <sl-textarea
         id="fb-f-notas"
-        label="Notas"
-        placeholder="Observaciones, condiciones especiales, fecha de alta..."
+        label="Observaciones (opcional)"
+        placeholder="Ej. 'esta agencia genera siempre el 100% de lo que entra'..."
         rows="3"
         resize="auto"
         value="${escapeHtmlAttr(existing?.notas || "")}">
@@ -794,7 +839,7 @@ function openBrokerModal(existing) {
     <sl-button slot="footer" id="fb-f-cancel" variant="default">Cancelar</sl-button>
     <sl-button slot="footer" id="fb-f-save" variant="primary">
       <i data-lucide="${isEdit ? "save" : "plus"}" slot="prefix" style="width:14px;height:14px;"></i>
-      ${isEdit ? "Guardar cambios" : "Agregar broker"}
+      ${isEdit ? "Guardar cambios" : "Agregar"}
     </sl-button>
   `;
   document.body.appendChild(dialog);
@@ -804,6 +849,12 @@ function openBrokerModal(existing) {
   const emailInp = dialog.querySelector("#fb-f-email");
   const telInp = dialog.querySelector("#fb-f-telefono");
   const notasInp = dialog.querySelector("#fb-f-notas");
+  const tipoRadios = dialog.querySelectorAll('input[name="fb-f-tipo"]');
+
+  // Toggle visual del radio activo
+  tipoRadios.forEach(r => r.addEventListener("change", () => {
+    dialog.querySelectorAll(".fb-tipo-radio").forEach(l => l.classList.toggle("is-active", l.querySelector("input").checked));
+  }));
 
   dialog.addEventListener("sl-request-close", (e) => {
     if (e.detail.source !== "close-button" && e.detail.source !== "keyboard") {
@@ -821,8 +872,10 @@ function openBrokerModal(existing) {
     const email = (emailInp.value || "").trim();
     const telefono = (telInp.value || "").trim();
     const notas = (notasInp.value || "").trim();
+    const tipoChecked = dialog.querySelector('input[name="fb-f-tipo"]:checked');
+    const tipo = tipoChecked ? tipoChecked.value : "agencia";
 
-    if (!nombre) { alert("El nombre del broker es obligatorio."); nombreInp.focus(); return; }
+    if (!nombre) { alert("El nombre es obligatorio."); nombreInp.focus(); return; }
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       alert("El email no tiene un formato válido.");
       emailInp.focus(); return;
@@ -832,6 +885,7 @@ function openBrokerModal(existing) {
 
     const payload = {
       nombre: nombreNorm,
+      tipo,
       email,
       telefono,
       notas,
@@ -847,8 +901,8 @@ function openBrokerModal(existing) {
         if (idx >= 0) brokersData[idx] = updated;
         if (fbTable) fbTable.updateRow(existing.id, updated);
         logEvent(ACTIONS.FINANZAS_BROKER_EDIT, nombreNorm, {
-          email: email || null,
-          from: { nombre: existing.nombre, email: existing.email || null }
+          tipo, email: email || null,
+          from: { nombre: existing.nombre, tipo: existing.tipo || null, email: existing.email || null }
         });
         showFbStatus(`✓ ${nombreNorm} actualizado`);
       } else {
@@ -858,7 +912,7 @@ function openBrokerModal(existing) {
         const newRow = { id: ref.id, ...payload };
         brokersData.push(newRow);
         if (fbTable) fbTable.addRow(newRow);
-        logEvent(ACTIONS.FINANZAS_BROKER_ADD, nombreNorm, { email: email || null });
+        logEvent(ACTIONS.FINANZAS_BROKER_ADD, nombreNorm, { tipo, email: email || null });
         showFbStatus(`✓ ${nombreNorm} agregado`);
       }
       updateBrokersTotal();
@@ -890,6 +944,22 @@ const INGRESOS_COL = "finanzas-ingresos";
 const TIPOS_PAGO = ["LIFE", "SUPP", "ACA", "MEDICARE", "OTROS"];
 const CATEGORIAS = ["COMISSION", "OVERRIDES", "HERO"];
 const MESES_ABREV = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
+
+// Tipo de destinatario de un payout: agencia (paga a una agencia; Family) o broker (individual/agente)
+const TIPOS_DESTINATARIO = ["agencia", "broker"];
+const TIPO_DEST_LABEL = { agencia: "Agencia", broker: "Broker/Agente" };
+
+// Catálogo de carriers — editable desde el dropdown del modal de ingreso.
+// Se persiste en finanzas-config/carriers.list. El array de abajo es solo el seed.
+const CARRIERS_DEFAULT = [
+  "Aetna", "Aetna ACA", "Ambetter ACA", "Amerigroup", "Anthem Blue Cross",
+  "Cigna", "Ameritas", "AGA", "Careington", "CarePoint",
+  "Elevance", "FG Life", "Health Family", "Health Sun", "Humana",
+  "Loyal", "Manhattan Life", "Molina", "Mutual of Omaha", "National Life",
+  "Oscar", "Senior Life", "Signa", "Solis", "Standard Life",
+  "Sunshine Health", "United Health Care", "Wellcare"
+];
+let carriersList = null; // cache en memoria
 
 // Lista por defecto de "Descripción depósito" (los carriers).
 // Se guarda/lee de finanzas-config/descripciones; este array es solo
@@ -936,11 +1006,45 @@ async function addDescDepositoToList(rawValue) {
   return value;
 }
 
+// Carrier catalog — mismo patrón que descDepositoList.
+async function loadCarriersList() {
+  if (carriersList) return carriersList;
+  try {
+    const ref = doc(db, "finanzas-config", "carriers");
+    const snap = await getDoc(ref);
+    if (snap.exists() && Array.isArray(snap.data().list)) {
+      carriersList = snap.data().list;
+    } else {
+      carriersList = [...CARRIERS_DEFAULT];
+      await setDoc(ref, { list: carriersList });
+    }
+  } catch (e) {
+    console.warn("No se pudo cargar carriers:", e.message);
+    carriersList = [...CARRIERS_DEFAULT];
+  }
+  return carriersList;
+}
+
+async function addCarrierToList(rawValue) {
+  const value = rawValue.trim();
+  if (!value) throw new Error("El nombre no puede estar vacío.");
+  const dupCI = carriersList.some(c => c.toLowerCase() === value.toLowerCase());
+  if (dupCI) throw new Error(`"${value}" ya está en la lista.`);
+  carriersList = [...carriersList, value].sort((a, b) => a.localeCompare(b, "es"));
+  try {
+    await setDoc(doc(db, "finanzas-config", "carriers"), { list: carriersList });
+  } catch (e) {
+    carriersList = carriersList.filter(v => v !== value); // revertir
+    throw new Error("No se pudo guardar en Firestore: " + e.message);
+  }
+  return value;
+}
+
 // Estado de la Lista de Ingresos
 let ingresosData = [];
 let fiTable = null;
 let ingresosInited = false;
-const fiFilter = { text: "", periodo: "all", tipo: "all", categoria: "all", broker: "all", fromDate: null, toDate: null };
+const fiFilter = { text: "", periodo: "all", tipo: "all", categoria: "all", carrier: "all", broker: "all", fromDate: null, toDate: null };
 let fiCustomPickers = null; // { fp1, fp2 }
 
 function bindIngresosStaticHandlers() {
@@ -959,8 +1063,8 @@ function bindIngresosStaticHandlers() {
     });
   }
 
-  // Filtros dropdown — periodo, tipo, categoria, broker
-  ["periodo", "tipo", "categoria", "broker"].forEach(key => {
+  // Filtros dropdown — periodo, tipo, categoria, carrier, broker
+  ["periodo", "tipo", "categoria", "carrier", "broker"].forEach(key => {
     const sel = document.getElementById(`fi-filter-${key}`);
     if (sel && !sel.dataset.bound) {
       sel.dataset.bound = "1";
@@ -1031,14 +1135,16 @@ async function initIngresosPanel() {
   if (ingresosInited) return;
   ingresosInited = true;
   try {
-    // Cargar brokers en paralelo para poblar el filtro
+    // Cargar brokers/agencias y carriers en paralelo para poblar filtros
     if (brokersData.length === 0) {
       try { await loadBrokers(); } catch (_) {}
     }
+    try { await loadCarriersList(); } catch (_) {}
     if (!fiTable) initFiTable();
     await loadIngresos();
     fiTable.setData(ingresosData);
     populateBrokerFilter();
+    populateCarrierFilter();
     updateIngresosSummary();
   } catch (e) {
     console.error("Error inicializando Ingresos:", e);
@@ -1061,9 +1167,34 @@ function populateBrokerFilter() {
   const sel = document.getElementById("fi-filter-broker");
   if (!sel) return;
   const current = sel.value;
-  const names = brokersData.map(b => b.nombre).sort((a, b) => a.localeCompare(b, "es"));
+  // Agrupamos por tipo para que el destinatario sea navegable.
+  const agencias = brokersData.filter(b => (b.tipo || "agencia") === "agencia")
+    .map(b => b.nombre)
+    .sort((a, b) => a.localeCompare(b, "es"));
+  const brokers = brokersData.filter(b => b.tipo === "broker")
+    .map(b => b.nombre)
+    .sort((a, b) => a.localeCompare(b, "es"));
+  const optGroup = (label, arr) => arr.length
+    ? `<optgroup label="${escapeHtmlAttr(label)}">` + arr.map(n =>
+        `<option value="${escapeHtmlAttr(n)}" ${n === current ? "selected" : ""}>${escapeHtml(n)}</option>`
+      ).join("") + `</optgroup>`
+    : "";
   sel.innerHTML = `<option value="all">Todos</option>` +
-    names.map(n => `<option value="${escapeHtmlAttr(n)}" ${n === current ? "selected" : ""}>${escapeHtml(n)}</option>`).join("");
+    optGroup("Agencias", agencias) + optGroup("Brokers/Agentes", brokers);
+}
+
+function populateCarrierFilter() {
+  const sel = document.getElementById("fi-filter-carrier");
+  if (!sel) return;
+  const current = sel.value;
+  // Combina el catálogo con los carriers que aparezcan en los datos (por si hay algún legacy).
+  const set = new Set();
+  (carriersList || []).forEach(c => set.add(c));
+  ingresosData.forEach(r => { if (r.carrier) set.add(r.carrier); });
+  const list = [...set].sort((a, b) => a.localeCompare(b, "es"));
+  sel.innerHTML = `<option value="all">Todos</option>` +
+    `<option value="__none__" ${current === "__none__" ? "selected" : ""}>(Sin carrier)</option>` +
+    list.map(c => `<option value="${escapeHtmlAttr(c)}" ${c === current ? "selected" : ""}>${escapeHtml(c)}</option>`).join("");
 }
 
 function initFiTable() {
@@ -1109,6 +1240,16 @@ function initFiTable() {
         formatter: (cell) => {
           const v = cell.getValue();
           return v ? `<strong>${escapeHtml(v)}</strong>` : `<span class="fc-empty">—</span>`;
+        }
+      },
+      {
+        title: "Carrier",
+        field: "carrier",
+        width: 140,
+        sorter: "string",
+        formatter: (cell) => {
+          const v = cell.getValue();
+          return v ? `<span class="fi-carrier-badge">${escapeHtml(v)}</span>` : `<span class="fc-empty">—</span>`;
         }
       },
       {
@@ -1228,12 +1369,19 @@ function applyFiFilters() {
     if (fiFilter.tipo !== "all" && row.tipoPago !== fiFilter.tipo) return false;
     if (fiFilter.categoria !== "all" && row.categoria !== fiFilter.categoria) return false;
     if (fiFilter.periodo !== "all" && !matchesPeriodo(row.fecha, fiFilter.periodo)) return false;
+    if (fiFilter.carrier !== "all") {
+      if (fiFilter.carrier === "__none__") {
+        if (row.carrier) return false;
+      } else if (row.carrier !== fiFilter.carrier) {
+        return false;
+      }
+    }
     if (fiFilter.broker !== "all") {
       const hasBroker = Array.isArray(row.payouts) && row.payouts.some(p => p.broker === fiFilter.broker);
       if (!hasBroker) return false;
     }
     if (fiFilter.text) {
-      const hay = `${row.descripcionDeposito || ""} ${row.descripcionTransaccion || ""} ${row.notas || ""}`.toLowerCase();
+      const hay = `${row.descripcionDeposito || ""} ${row.descripcionTransaccion || ""} ${row.carrier || ""} ${row.notas || ""}`.toLowerCase();
       if (!hay.includes(fiFilter.text)) return false;
     }
     return true;
@@ -1364,8 +1512,9 @@ function looksLikeEmail(s) {
   return typeof s === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s.trim());
 }
 
-function openSingleEmailDialog(ingreso) {
-  const payout = ingreso.payouts[0];
+function openSingleEmailDialog(ingreso, payoutIdx = 0) {
+  const payout = ingreso.payouts[payoutIdx];
+  if (!payout) { showFiStatus("Payout no encontrado."); return; }
   const broker = brokersData.find(b => b.nombre === payout.broker) || { nombre: payout.broker || "", email: "" };
   const wasSent = !!payout.emailSentAt;
   const prefillEmail = broker.email || payout.emailSentTo || "";
@@ -1442,7 +1591,7 @@ function openSingleEmailDialog(ingreso) {
     statusEl.className = "fi-em-status";
     statusEl.textContent = "";
     try {
-      await sendIngresoEmail(ingreso, 0, { nombre: broker.nombre, email });
+      await sendIngresoEmail(ingreso, payoutIdx, { nombre: broker.nombre, email });
       statusEl.className = "fi-em-status success";
       statusEl.textContent = `✓ Reporte enviado a ${email}`;
       showFiStatus(`✓ Reporte enviado a ${email}`);
@@ -2365,17 +2514,18 @@ function exportIngresosCSV() {
   const data = exportarData();
   if (!data.length) { alert("No hay ingresos en el periodo seleccionado."); return; }
   const rows = [[
-    "Fecha", "Mes", "Tipo de pago", "Categoría",
+    "Fecha", "Mes", "Tipo de pago", "Categoría", "Carrier",
     "Descripción depósito", "Descripción transacción",
     "Monto", "Pagado", "Ganancia", "# Payouts", "Notas",
     "Creado por", "Archivo original"
   ]];
   for (const r of data) {
     rows.push([
-      r.fecha || "",
+      r.fecha ? formatFechaUS(r.fecha) : "",
       r.mes || "",
       r.tipoPago || "",
       r.categoria || "",
+      r.carrier || "",
       r.descripcionDeposito || "",
       r.descripcionTransaccion || "",
       r.monto ?? 0,
@@ -2393,22 +2543,26 @@ function exportIngresosCSV() {
 function exportPayoutsCSV() {
   const data = exportarData();
   const rows = [[
-    "Fecha ingreso", "Mes", "Desc. depósito", "Categoría", "Monto ingreso",
-    "Broker", "Saldo (payout)", "Reporte file"
+    "Fecha ingreso", "Mes", "Desc. depósito", "Categoría", "Carrier", "Monto ingreso",
+    "Tipo destinatario", "Destinatario", "Saldo (payout)", "Reporte file", "Email enviado a", "Fecha envío"
   ]];
   let count = 0;
   for (const r of data) {
     if (!Array.isArray(r.payouts) || !r.payouts.length) continue;
     for (const p of r.payouts) {
       rows.push([
-        r.fecha || "",
+        r.fecha ? formatFechaUS(r.fecha) : "",
         r.mes || "",
         r.descripcionDeposito || "",
         r.categoria || "",
+        r.carrier || "",
         r.monto ?? 0,
+        TIPO_DEST_LABEL[p.tipo || "agencia"] || (p.tipo || "agencia"),
         p.broker || "",
         p.saldo ?? 0,
-        p.reporteFile || ""
+        p.reporteFile || "",
+        p.emailSentTo || "",
+        p.emailSentAt ? formatFechaUS(String(p.emailSentAt).slice(0, 10)) : ""
       ]);
       count++;
     }
@@ -2526,25 +2680,45 @@ function generatePrintReport() {
   window.print();
 }
 
-async function openIngresoModal(existing) {
+async function openIngresoModal(existing, opts = {}) {
   const isEdit = !!existing;
+  // Modo por defecto: LECTURA al abrir un existente, EDICIÓN al crear uno nuevo.
+  let mode = isEdit ? (opts.mode || "view") : "edit";
 
-  // Asegura que los brokers estén cargados (los necesitamos para el dropdown)
+  // Asegura brokers/agencias + descripciones + carriers cargados
   if (brokersData.length === 0) {
     try { await loadBrokers(); } catch (e) { console.warn("No se pudieron cargar brokers:", e.message); }
   }
-  // Carga la lista de "Descripción depósito" (se seedea si no existe)
   await loadDescDepositoList();
+  await loadCarriersList();
 
   const initialFecha = existing?.fecha || todayISO();
   const initialTipoPago = existing?.tipoPago || "LIFE";
   const initialCategoria = existing?.categoria || "COMISSION";
+  const initialCarrier = existing?.carrier || "";
+  // Snapshot de payouts para poder cancelar edición y volver al original
+  const originalPayouts = isEdit && Array.isArray(existing.payouts)
+    ? existing.payouts.map(p => ({ ...p }))
+    : [];
 
   const dialog = document.createElement("sl-dialog");
-  dialog.label = isEdit ? "Editar ingreso" : "Nuevo ingreso";
-  dialog.className = "fi-modal";
+  dialog.className = "fi-modal fi-mode-" + mode;
+  dialog.dataset.mode = mode;
+  const setDialogLabel = () => {
+    dialog.label = mode === "view" ? "Detalle del ingreso" : (isEdit ? "Editar ingreso" : "Nuevo ingreso");
+  };
+  setDialogLabel();
+
   dialog.innerHTML = `
     <div class="fc-form">
+
+      <!-- Barra de acciones superior (solo visible en modo lectura) -->
+      <div class="fi-view-topbar" ${mode === "view" ? "" : "hidden"}>
+        <button type="button" class="fi-edit-btn" title="Editar este ingreso">
+          <i data-lucide="pencil" style="width:14px;height:14px;"></i>
+          Editar
+        </button>
+      </div>
 
       <div class="fi-section-title">Información básica</div>
 
@@ -2570,16 +2744,33 @@ async function openIngresoModal(existing) {
         </div>
       </div>
 
-      <sl-input
-        id="fi-f-monto"
-        label="Monto ($)"
-        type="number"
-        step="0.01"
-        min="0"
-        placeholder="0.00"
-        value="${existing?.monto != null ? existing.monto : ""}"
-        required>
-      </sl-input>
+      <div class="fi-row-2">
+        <div class="fc-native-field">
+          <label for="fi-f-carrier" class="fc-native-label">Carrier</label>
+          <select id="fi-f-carrier" class="fc-native-select">
+            <option value="">— Selecciona —</option>
+            ${carriersList.map(c =>
+              `<option value="${escapeHtmlAttr(c)}" ${c === initialCarrier ? "selected" : ""}>${escapeHtml(c)}</option>`
+            ).join("")}
+            <option value="__add_new__" class="fi-add-new-option">+ Agregar nuevo...</option>
+          </select>
+          <div id="fi-add-carrier-wrap" class="fi-add-inline" style="display:none;">
+            <input type="text" id="fi-add-carrier-input" class="fi-add-inline-input" placeholder="Ej. Blue Cross" autocomplete="off">
+            <button type="button" id="fi-add-carrier-save" class="fi-add-inline-save">Guardar</button>
+            <button type="button" id="fi-add-carrier-cancel" class="fi-add-inline-cancel" title="Cancelar">✕</button>
+          </div>
+        </div>
+        <sl-input
+          id="fi-f-monto"
+          label="Monto ($)"
+          type="number"
+          step="0.01"
+          min="0"
+          placeholder="0.00"
+          value="${existing?.monto != null ? existing.monto : ""}"
+          required>
+        </sl-input>
+      </div>
 
       <div class="fc-native-field">
         <label for="fi-f-descDeposito" class="fc-native-label">Descripción depósito</label>
@@ -2614,14 +2805,14 @@ async function openIngresoModal(existing) {
         clearable>
       </sl-input>
 
-      <div class="fi-section-title">Payouts a brokers</div>
+      <div class="fi-section-title">Payouts</div>
 
       <div id="fi-payouts-list" class="fi-payouts-list"></div>
       <p id="fi-payouts-empty" class="fi-payouts-empty" style="display:none;">
         Sin payouts. Si Hero retiene el 100% del depósito (categoría HERO), déjalo así.
       </p>
 
-      <button type="button" id="fi-add-payout" class="fi-add-payout-btn">
+      <button type="button" id="fi-add-payout" class="fi-add-payout-btn" ${mode === "view" ? "hidden" : ""}>
         <i data-lucide="plus" style="width:14px;height:14px;"></i>
         Agregar payout
       </button>
@@ -2650,8 +2841,10 @@ async function openIngresoModal(existing) {
 
     </div>
 
-    <sl-button slot="footer" id="fi-f-cancel" variant="default">Cancelar</sl-button>
-    <sl-button slot="footer" id="fi-f-save" variant="primary">
+    <!-- Footer: acciones cambian según modo -->
+    <sl-button slot="footer" class="fi-btn-close" variant="default" style="${mode === "edit" ? "display:none;" : ""}">Cerrar</sl-button>
+    <sl-button slot="footer" class="fi-btn-cancel-edit" variant="default" style="${mode === "view" ? "display:none;" : ""}">Cancelar</sl-button>
+    <sl-button slot="footer" class="fi-btn-save" variant="primary" style="${mode === "view" ? "display:none;" : ""}">
       <i data-lucide="${isEdit ? "save" : "plus"}" slot="prefix" style="width:14px;height:14px;"></i>
       ${isEdit ? "Guardar cambios" : "Registrar ingreso"}
     </sl-button>
@@ -2664,6 +2857,7 @@ async function openIngresoModal(existing) {
   const mesPill = dialog.querySelector("#fi-mes-pill");
   const tipoPagoSel = dialog.querySelector("#fi-f-tipopago");
   const categoriaSel = dialog.querySelector("#fi-f-categoria");
+  const carrierSel = dialog.querySelector("#fi-f-carrier");
   const montoInp = dialog.querySelector("#fi-f-monto");
   const descDepSel = dialog.querySelector("#fi-f-descDeposito");
   const descTransInp = dialog.querySelector("#fi-f-descTransaccion");
@@ -2688,8 +2882,8 @@ async function openIngresoModal(existing) {
   // ─── Cálculo de resumen (pagado + ganancia) ───
   function recalcSummary() {
     const monto = parseFloat(montoInp.value) || 0;
-    const saldos = Array.from(payoutsListEl.querySelectorAll(".fi-pf-saldo"))
-      .map(inp => parseFloat(inp.value) || 0);
+    const saldos = Array.from(payoutsListEl.querySelectorAll(".fi-pf-saldo, .fi-pf-saldo-view"))
+      .map(inp => parseFloat(inp.value || inp.dataset.value || 0) || 0);
     const pagado = saldos.reduce((s, v) => s + v, 0);
     const ganancia = monto - pagado;
     pagadoEl.textContent = formatMoney(pagado);
@@ -2699,20 +2893,40 @@ async function openIngresoModal(existing) {
   montoInp.addEventListener("sl-input", recalcSummary);
   montoInp.addEventListener("input", recalcSummary);
 
-  // ─── Renderiza una fila de payout ───
-  function addPayoutRow(payout) {
+  // ─── Helpers para render de destinatarios en dropdown (agrupados por tipo) ───
+  function destinatariosOptions(selected) {
+    const agencias = brokersData.filter(b => (b.tipo || "agencia") === "agencia")
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+    const brokers = brokersData.filter(b => b.tipo === "broker")
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+    const opt = (b) => `<option value="${escapeHtmlAttr(b.nombre)}" data-tipo="${b.tipo || "agencia"}" ${b.nombre === selected ? "selected" : ""}>${escapeHtml(b.nombre)}</option>`;
+    return `<option value="">— Selecciona —</option>` +
+      (agencias.length ? `<optgroup label="Agencias">${agencias.map(opt).join("")}</optgroup>` : "") +
+      (brokers.length ? `<optgroup label="Brokers/Agentes">${brokers.map(opt).join("")}</optgroup>` : "");
+  }
+
+  // ─── Renderiza una fila de payout (versión EDIT) ───
+  function addPayoutRowEdit(payout) {
     payoutsEmptyEl.style.display = "none";
 
+    const tipoInicial = payout?.tipo || "agencia";
     const row = document.createElement("div");
     row.className = "fi-payout-row";
     row.innerHTML = `
+      <div class="fi-payout-tipo">
+        <label class="fi-payout-tipo-radio ${tipoInicial === "agencia" ? "is-active" : ""}">
+          <input type="radio" name="fi-pf-tipo-${Date.now()}-${Math.random().toString(36).slice(2, 6)}" value="agencia" ${tipoInicial === "agencia" ? "checked" : ""} class="fi-pf-tipo">
+          <span>Agencia</span>
+        </label>
+        <label class="fi-payout-tipo-radio ${tipoInicial === "broker" ? "is-active" : ""}">
+          <input type="radio" value="broker" ${tipoInicial === "broker" ? "checked" : ""} class="fi-pf-tipo">
+          <span>Broker/Agente</span>
+        </label>
+      </div>
       <div class="fc-native-field">
-        <label class="fc-native-label">Broker</label>
+        <label class="fc-native-label">Destinatario</label>
         <select class="fc-native-select fi-pf-broker">
-          <option value="">— Selecciona —</option>
-          ${brokersData.map(b =>
-            `<option value="${escapeHtmlAttr(b.nombre)}" ${payout?.broker === b.nombre ? "selected" : ""}>${escapeHtml(b.nombre)}</option>`
-          ).join("")}
+          ${destinatariosOptions(payout?.broker)}
         </select>
       </div>
       <sl-input class="fi-pf-reporte" label="Reporte (URL)" placeholder="https://..." size="small" value="${escapeHtmlAttr(payout?.reporteFile || "")}"></sl-input>
@@ -2720,31 +2934,113 @@ async function openIngresoModal(existing) {
       <button type="button" class="fi-pf-remove" title="Quitar payout">✕</button>
     `;
 
+    // Radios en el mismo grupo (por si el name colisiona con otras rows)
+    const radioName = "fi-pf-tipo-" + Math.random().toString(36).slice(2, 10);
+    row.querySelectorAll('input[type="radio"].fi-pf-tipo').forEach(r => {
+      r.name = radioName;
+      r.addEventListener("change", () => {
+        row.querySelectorAll(".fi-payout-tipo-radio").forEach(l =>
+          l.classList.toggle("is-active", l.querySelector("input").checked)
+        );
+        // Al cambiar tipo, si el destinatario actual no corresponde al tipo, resetear
+        const brokerSel = row.querySelector(".fi-pf-broker");
+        const opt = brokerSel.selectedOptions[0];
+        const optTipo = opt?.dataset?.tipo;
+        const newTipo = r.value;
+        if (opt && opt.value && optTipo && optTipo !== newTipo) {
+          brokerSel.value = "";
+        }
+      });
+    });
+
     const saldoInp = row.querySelector(".fi-pf-saldo");
     saldoInp.addEventListener("sl-input", recalcSummary);
     saldoInp.addEventListener("input", recalcSummary);
 
-    const removeBtn = row.querySelector(".fi-pf-remove");
-    removeBtn.addEventListener("click", () => {
+    row.querySelector(".fi-pf-remove").addEventListener("click", () => {
       row.remove();
-      if (payoutsListEl.children.length === 0) {
-        payoutsEmptyEl.style.display = "";
-      }
+      if (payoutsListEl.children.length === 0) payoutsEmptyEl.style.display = "";
       recalcSummary();
     });
 
     payoutsListEl.appendChild(row);
-    recalcSummary();
   }
-  addPayoutBtn.addEventListener("click", () => addPayoutRow(null));
 
-  // Pre-llena payouts existentes (modo edición)
-  if (isEdit && Array.isArray(existing.payouts) && existing.payouts.length) {
-    existing.payouts.forEach(p => addPayoutRow(p));
-  } else {
-    payoutsEmptyEl.style.display = "";
+  // ─── Renderiza una fila de payout (versión VIEW / read-only con acción ✉) ───
+  function addPayoutRowView(payout, idx) {
+    payoutsEmptyEl.style.display = "none";
+
+    const tipo = payout?.tipo || "agencia";
+    const tipoClass = tipo === "broker" ? "broker" : "agencia";
+    const tipoLabel = TIPO_DEST_LABEL[tipo] || tipo;
+    const reporteVal = payout?.reporteFile || "";
+    const reporteHtml = reporteVal
+      ? (/^https?:\/\//i.test(reporteVal)
+          ? `<a href="${escapeHtmlAttr(reporteVal)}" target="_blank" rel="noopener" class="fc-link">🔗 Ver reporte</a>`
+          : escapeHtml(reporteVal))
+      : `<span class="fc-empty">—</span>`;
+    const sentTxt = payout?.emailSentAt
+      ? `<span class="fi-view-sent">Enviado · ${escapeHtml(formatFechaUS(String(payout.emailSentAt).slice(0, 10)))}</span>`
+      : `<span class="fi-view-sent-none">Sin enviar</span>`;
+    const emailBtnTitle = payout?.emailSentAt ? "Reenviar reporte" : "Enviar reporte por email";
+
+    const row = document.createElement("div");
+    row.className = "fi-payout-row-view";
+    row.dataset.idx = idx;
+    row.innerHTML = `
+      <div class="fi-view-payout-head">
+        <span class="fb-tipo-badge fb-tipo-${tipoClass}">${escapeHtml(tipoLabel)}</span>
+        <span class="fi-view-broker">${escapeHtml(payout?.broker || "(sin destinatario)")}</span>
+        <button type="button" class="fi-view-email-btn" title="${escapeHtmlAttr(emailBtnTitle)}" data-idx="${idx}">
+          <i data-lucide="mail" style="width:14px;height:14px;"></i>
+          <span>${payout?.emailSentAt ? "Reenviar" : "Enviar"}</span>
+        </button>
+      </div>
+      <div class="fi-view-payout-body">
+        <div class="fi-view-field"><span class="fi-view-label">Reporte:</span> ${reporteHtml}</div>
+        <div class="fi-view-field"><span class="fi-view-label">Saldo:</span> <span class="fi-pf-saldo-view" data-value="${payout?.saldo != null ? payout.saldo : 0}">${formatMoney(payout?.saldo)}</span></div>
+        <div class="fi-view-field"><span class="fi-view-label">Estado:</span> ${sentTxt}</div>
+      </div>
+    `;
+    payoutsListEl.appendChild(row);
   }
-  recalcSummary();
+
+  // ─── Renderiza todos los payouts según el modo actual ───
+  function renderPayouts(payouts) {
+    payoutsListEl.innerHTML = "";
+    if (!Array.isArray(payouts) || payouts.length === 0) {
+      payoutsEmptyEl.style.display = "";
+      recalcSummary();
+      if (window.refreshIcons) window.refreshIcons();
+      return;
+    }
+    payoutsEmptyEl.style.display = "none";
+    if (mode === "view") {
+      payouts.forEach((p, i) => addPayoutRowView(p, i));
+    } else {
+      payouts.forEach(p => addPayoutRowEdit(p));
+    }
+    recalcSummary();
+    if (window.refreshIcons) window.refreshIcons();
+  }
+
+  // ─── Recolecta los payouts editados desde el DOM ───
+  function collectPayoutsFromDom() {
+    return Array.from(payoutsListEl.querySelectorAll(".fi-payout-row")).map(r => {
+      const tipoInp = r.querySelector('input[type="radio"].fi-pf-tipo:checked');
+      const tipo = tipoInp ? tipoInp.value : "agencia";
+      const broker = (r.querySelector(".fi-pf-broker").value || "").trim();
+      const reporteFile = (r.querySelector(".fi-pf-reporte").value || "").trim();
+      const saldo = parseFloat(r.querySelector(".fi-pf-saldo").value);
+      // Preservar emailSentAt/emailSentTo si existían en el payout original (por índice)
+      return { tipo, broker, reporteFile, saldo };
+    });
+  }
+
+  addPayoutBtn.addEventListener("click", () => addPayoutRowEdit(null));
+
+  // Render inicial según modo
+  renderPayouts(originalPayouts);
 
   // ─── Dropdown "Descripción depósito" + "+ Agregar nuevo" ───
   const addWrap = dialog.querySelector("#fi-add-desc-deposito-wrap");
@@ -2767,7 +3063,7 @@ async function openIngresoModal(existing) {
     if (descDepSel.value === "__add_new__") {
       addWrap.style.display = "";
       addInp.focus();
-      descDepSel.value = ""; // reset mientras escribe
+      descDepSel.value = "";
     }
   });
 
@@ -2796,6 +3092,133 @@ async function openIngresoModal(existing) {
     addWrap.style.display = "none";
   });
 
+  // ─── Dropdown "Carrier" + "+ Agregar nuevo" (mismo patrón) ───
+  const carrierAddWrap = dialog.querySelector("#fi-add-carrier-wrap");
+  const carrierAddInp = dialog.querySelector("#fi-add-carrier-input");
+  const carrierAddSave = dialog.querySelector("#fi-add-carrier-save");
+  const carrierAddCancel = dialog.querySelector("#fi-add-carrier-cancel");
+
+  function rebuildCarrierOptions(selectedValue) {
+    const current = carrierSel.value;
+    carrierSel.innerHTML = `
+      <option value="">— Selecciona —</option>
+      ${carriersList.map(c =>
+        `<option value="${escapeHtmlAttr(c)}" ${c === (selectedValue || current) ? "selected" : ""}>${escapeHtml(c)}</option>`
+      ).join("")}
+      <option value="__add_new__" class="fi-add-new-option">+ Agregar nuevo...</option>
+    `;
+  }
+
+  carrierSel.addEventListener("change", () => {
+    if (carrierSel.value === "__add_new__") {
+      carrierAddWrap.style.display = "";
+      carrierAddInp.focus();
+      carrierSel.value = "";
+    }
+  });
+
+  async function commitNewCarrier() {
+    const raw = carrierAddInp.value;
+    if (!raw.trim()) { carrierAddInp.focus(); return; }
+    carrierAddSave.disabled = true;
+    try {
+      const added = await addCarrierToList(raw);
+      rebuildCarrierOptions(added);
+      carrierAddInp.value = "";
+      carrierAddWrap.style.display = "none";
+      // Refresca el filtro de la tabla también
+      populateCarrierFilter();
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      carrierAddSave.disabled = false;
+    }
+  }
+  carrierAddSave.addEventListener("click", commitNewCarrier);
+  carrierAddInp.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); commitNewCarrier(); }
+    if (e.key === "Escape") { carrierAddInp.value = ""; carrierAddWrap.style.display = "none"; }
+  });
+  carrierAddCancel.addEventListener("click", () => {
+    carrierAddInp.value = "";
+    carrierAddWrap.style.display = "none";
+  });
+
+  // ─── Toggle read-only / editable en los inputs principales ───
+  function applyReadOnlyState() {
+    const readOnly = (mode === "view");
+    // Shoelace inputs / textarea
+    dialog.querySelectorAll('sl-input, sl-textarea').forEach(el => {
+      if (readOnly) el.setAttribute("readonly", "");
+      else el.removeAttribute("readonly");
+    });
+    // Native controls
+    [fechaInp, tipoPagoSel, categoriaSel, carrierSel, descDepSel].forEach(el => {
+      if (el) el.disabled = readOnly;
+    });
+    // Añadir "+ Agregar nuevo" solo tiene sentido editando
+    if (readOnly) {
+      carrierAddWrap.style.display = "none";
+      addWrap.style.display = "none";
+    }
+  }
+
+  // ─── Alterna entre modos view <-> edit ───
+  function applyMode(newMode) {
+    if (newMode !== "view" && newMode !== "edit") return;
+    mode = newMode;
+    dialog.dataset.mode = mode;
+    dialog.className = "fi-modal fi-mode-" + mode;
+    setDialogLabel();
+
+    // Barra superior (Editar) solo en view
+    const topbar = dialog.querySelector(".fi-view-topbar");
+    if (topbar) topbar.hidden = (mode !== "view");
+    // Botón agregar payout solo en edit
+    addPayoutBtn.hidden = (mode !== "edit");
+    // Footer: usar style.display para que Shoelace lo respete
+    const setBtnVisible = (sel, visible) => {
+      const el = dialog.querySelector(sel);
+      if (el) el.style.display = visible ? "" : "none";
+    };
+    setBtnVisible(".fi-btn-close", mode === "view");
+    setBtnVisible(".fi-btn-cancel-edit", mode === "edit");
+    setBtnVisible(".fi-btn-save", mode === "edit");
+
+    applyReadOnlyState();
+    // Re-render payouts en el modo apropiado (usa snapshot original)
+    renderPayouts(originalPayouts);
+  }
+
+  // Estado inicial de readonly
+  applyReadOnlyState();
+
+  // ─── Botón lápiz "Editar" → cambia a modo edit ───
+  const editBtn = dialog.querySelector(".fi-edit-btn");
+  if (editBtn) editBtn.addEventListener("click", () => applyMode("edit"));
+
+  // ─── Botón "Cerrar" (modo view) → cierra el modal ───
+  dialog.querySelector(".fi-btn-close").addEventListener("click", () => dialog.hide());
+
+  // ─── Botón "Cancelar" (modo edit) → si isEdit vuelve a view, si no cierra ───
+  dialog.querySelector(".fi-btn-cancel-edit").addEventListener("click", () => {
+    if (isEdit) applyMode("view");
+    else dialog.hide();
+  });
+
+  // ─── Botón ✉ en cada payout (modo view) → abre diálogo de envío ───
+  payoutsListEl.addEventListener("click", (e) => {
+    const btn = e.target.closest(".fi-view-email-btn");
+    if (!btn || mode !== "view") return;
+    const idx = Number(btn.dataset.idx);
+    if (isNaN(idx)) return;
+    // Aseguramos que ingreso.id + payouts estén en el objeto actual
+    const ingRef = isEdit
+      ? (ingresosData.find(r => r.id === existing.id) || existing)
+      : existing;
+    openSingleEmailDialog(ingRef, idx);
+  });
+
   // ─── Cerrar solo con X o Escape ───
   dialog.addEventListener("sl-request-close", (e) => {
     if (e.detail.source !== "close-button" && e.detail.source !== "keyboard") {
@@ -2804,17 +3227,16 @@ async function openIngresoModal(existing) {
   });
   dialog.addEventListener("sl-after-show", () => {
     if (window.refreshIcons) window.refreshIcons();
-    fechaInp.focus();
+    if (mode === "edit") fechaInp.focus();
   });
   dialog.addEventListener("sl-after-hide", () => dialog.remove());
 
-  dialog.querySelector("#fi-f-cancel").addEventListener("click", () => dialog.hide());
-
-  // ─── Guardar ───
-  dialog.querySelector("#fi-f-save").addEventListener("click", async () => {
+  // ─── Guardar (solo aplica en modo edit) ───
+  dialog.querySelector(".fi-btn-save").addEventListener("click", async () => {
     const fecha = (fechaInp.value || "").trim();
     const tipoPago = tipoPagoSel.value;
     const categoria = categoriaSel.value;
+    const carrier = (carrierSel.value || "").trim();
     const monto = parseFloat(montoInp.value);
     const descDep = (descDepSel.value || "").trim();
     const descTrans = (descTransInp.value || "").trim();
@@ -2830,10 +3252,13 @@ async function openIngresoModal(existing) {
       alert("El monto es obligatorio y debe ser ≥ 0."); montoInp.focus(); return;
     }
 
-    // Recolectar payouts
+    // Recolectar payouts editados + preservar emailSentAt de los originales (por índice)
     const payoutRows = Array.from(payoutsListEl.querySelectorAll(".fi-payout-row"));
     const payouts = [];
-    for (const r of payoutRows) {
+    for (let i = 0; i < payoutRows.length; i++) {
+      const r = payoutRows[i];
+      const tipoInp = r.querySelector('input[type="radio"].fi-pf-tipo:checked');
+      const tipo = tipoInp ? tipoInp.value : "agencia";
       const brokerSel = r.querySelector(".fi-pf-broker");
       const reporteInp = r.querySelector(".fi-pf-reporte");
       const saldoInp = r.querySelector(".fi-pf-saldo");
@@ -2841,10 +3266,15 @@ async function openIngresoModal(existing) {
       const reporteFile = (reporteInp.value || "").trim();
       const saldo = parseFloat(saldoInp.value);
 
-      if (!broker) { alert("Cada payout debe tener un broker seleccionado."); brokerSel.focus(); return; }
+      if (!broker) { alert("Cada payout debe tener un destinatario seleccionado."); brokerSel.focus(); return; }
       if (!isFinite(saldo) || saldo < 0) { alert(`Saldo inválido para ${broker}.`); saldoInp.focus(); return; }
 
-      payouts.push({ broker, reporteFile, saldo });
+      const payoutObj = { tipo, broker, reporteFile, saldo };
+      // Preservar flags de envío del original en la misma posición si existían
+      const orig = originalPayouts[i];
+      if (orig && orig.emailSentAt) payoutObj.emailSentAt = orig.emailSentAt;
+      if (orig && orig.emailSentTo) payoutObj.emailSentTo = orig.emailSentTo;
+      payouts.push(payoutObj);
     }
 
     const pagado = payouts.reduce((s, p) => s + (p.saldo || 0), 0);
@@ -2856,6 +3286,7 @@ async function openIngresoModal(existing) {
       mes,
       tipoPago,
       categoria,
+      carrier,
       monto,
       descripcionDeposito: descDep,
       descripcionTransaccion: descTrans,
@@ -2876,7 +3307,7 @@ async function openIngresoModal(existing) {
         if (idx >= 0) ingresosData[idx] = updated;
         if (fiTable) fiTable.updateRow(existing.id, updated);
         logEvent(ACTIONS.FINANZAS_INGRESO_EDIT, fecha, {
-          monto, pagado, ganancia, tipoPago, categoria, payoutCount: payouts.length
+          monto, pagado, ganancia, tipoPago, categoria, carrier, payoutCount: payouts.length
         });
         showFiStatus(`✓ Ingreso de ${formatFechaUS(fecha)} actualizado`);
       } else {
@@ -2885,9 +3316,9 @@ async function openIngresoModal(existing) {
         const ref = await addDoc(collection(db, INGRESOS_COL), payload);
         const newRow = { id: ref.id, ...payload };
         ingresosData.push(newRow);
-        if (fiTable) fiTable.addRow(newRow, true); // true = al inicio (fecha desc)
+        if (fiTable) fiTable.addRow(newRow, true);
         logEvent(ACTIONS.FINANZAS_INGRESO_ADD, fecha, {
-          monto, pagado, ganancia, tipoPago, categoria, payoutCount: payouts.length
+          monto, pagado, ganancia, tipoPago, categoria, carrier, payoutCount: payouts.length
         });
         showFiStatus(`✓ Ingreso de ${formatFechaUS(fecha)} registrado · Ganancia ${formatMoney(ganancia)}`);
       }

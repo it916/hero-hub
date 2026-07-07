@@ -108,7 +108,7 @@
           </button>
           <button type="button" class="admin-sidebar-link" data-tab="brokers">
             <i data-lucide="users-round"></i>
-            <span>Brokers</span>
+            <span>Agencias</span>
           </button>
         </div>
 
@@ -282,7 +282,13 @@
             </select>
           </div>
           <div class="fi-filter-group">
-            <label for="fi-filter-broker">Broker</label>
+            <label for="fi-filter-carrier">Carrier</label>
+            <select id="fi-filter-carrier" class="fi-filter-select">
+              <option value="all">Todos</option>
+            </select>
+          </div>
+          <div class="fi-filter-group">
+            <label for="fi-filter-broker">Destinatario</label>
             <select id="fi-filter-broker" class="fi-filter-select">
               <option value="all">Todos</option>
             </select>
@@ -352,13 +358,13 @@
       <section class="admin-section" id="tab-brokers" style="display:none;">
         <div class="ad-toolbar">
           <div>
-            <h2 style="margin:0;">🤝 Brokers</h2>
-            <p class="admin-note" style="margin:4px 0 0;">Receptores de payouts (ENSURE, FRIENDS, KHAN, etc.). El email se usa al enviar reportes.</p>
+            <h2 style="margin:0;">🤝 Agencias</h2>
+            <p class="admin-note" style="margin:4px 0 0;">Receptores de payouts — agencias (Family paga a la agencia) o brokers/agentes individuales. El email se usa al enviar reportes.</p>
           </div>
           <div class="ad-toolbar-actions">
             <sl-button variant="primary" size="medium" id="fb-add-btn">
               <i data-lucide="plus" slot="prefix" style="width:14px;height:14px;"></i>
-              Nuevo broker
+              Nueva agencia/broker
             </sl-button>
           </div>
         </div>
@@ -368,7 +374,13 @@
             <i data-lucide="search" class="search-icon"></i>
             <input type="text" id="fb-search" placeholder="Buscar por nombre o email...">
           </div>
-          <span class="fc-total" id="fb-total">0 brokers</span>
+          <span class="fc-total" id="fb-total">0 registros</span>
+        </div>
+
+        <div class="fc-filter-row">
+          <button type="button" class="fc-filter-chip active" data-fb-tipo="all">Todos</button>
+          <button type="button" class="fc-filter-chip" data-fb-tipo="agencia">Agencias</button>
+          <button type="button" class="fc-filter-chip" data-fb-tipo="broker">Brokers/Agentes</button>
         </div>
 
         <div id="fb-table"></div>
@@ -464,7 +476,7 @@
           <div class="fexp-card">
             <div class="fexp-icon"><i data-lucide="users"></i></div>
             <h3>Detalle de payouts (CSV)</h3>
-            <p>Una fila por payout, expandiendo cada ingreso. Incluye broker, reporte file y saldo. Útil para reconciliar pagos.</p>
+            <p>Una fila por payout, expandiendo cada ingreso. Incluye destinatario (agencia/broker), reporte file y saldo. Útil para reconciliar pagos.</p>
             <sl-button id="fexp-csv-payouts" variant="primary">
               <i data-lucide="download" slot="prefix" style="width:14px;height:14px;"></i>
               Descargar CSV
@@ -488,7 +500,7 @@
   </div><!-- /.admin-shell -->
 
   <footer class="hero-footer">
-    <span>HERO HUB · FINANZAS v2.8.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+    <span>HERO HUB · FINANZAS v2.9.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
   </footer>
 
 </div><!-- /#finanzas-panel -->
@@ -503,7 +515,7 @@
     dashboard: 'Dashboard',
     ingresos: 'Ingresos',
     comisiones: 'Tabla de Comisiones',
-    brokers: 'Brokers',
+    brokers: 'Agencias',
     comparativas: 'Comparativas',
     exportar: 'Exportar'
   };
