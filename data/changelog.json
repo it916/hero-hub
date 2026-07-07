@@ -1,5 +1,23 @@
 [
   {
+    "id": "2026-07-07-contracting-hub",
+    "version": "v2.8.0",
+    "date": "2026-07-07",
+    "category": "feat",
+    "scope": "contracting",
+    "audience": "team",
+    "title": "Nueva guía: Contracting con Carriers (prueba interna)",
+    "items": [
+      "Nueva página contracting.html accesible desde Guías con procedimientos paso a paso por carrier: cómo iniciar contracting, transfers, EFT changes, demographic changes, add non-resident state, assignment of commissions y AOC changes",
+      "Prueba inicial con 4 carriers de muestra (Aetna, Aetna ACA, Ambetter ACA, Anthem Blue Cross y Amerigroup) — escalable a los ~55 carriers restantes en próximas iteraciones",
+      "Layout de dos columnas: sidebar sticky con lista de carriers y contenido principal con carrier cards y sub-secciones colapsables",
+      "Toggle ES/EN en la esquina superior (arranca en español) — la preferencia se recuerda entre visitas",
+      "Contenido adaptado a Hero: referencias a AGA reemplazadas por Hero Insurance USA, contactos apuntan a María Lo Monaco (contractingsupport@heroinsuranceusa.com)",
+      "Visible para los roles admin, interno, finanzas e IT. Agentes no ven esta guía (no gestionan contracting directamente)",
+      "Tile destacado en Guías con banner degradado en cyan Hero anunciando la novedad"
+    ]
+  },
+  {
     "id": "2026-07-06-mi-asistencia-amplia",
     "version": "v2.7.0",
     "date": "2026-07-06",

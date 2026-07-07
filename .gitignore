@@ -3,3 +3,10 @@
 # Datos financieros reales — usados solo para migración local, no para el repo
 INGRESOS 2026.csv
 INGRESOS 2026.xlsx
+
+# Fuente original de la guía de contracting (AGA) — ya se extrajo lo necesario
+# a data/contracting.json y las imágenes a images/contracting/.
+# El HTML pesa 1.3 MB y la carpeta de assets otros 7 MB con trackers de terceros.
+Contracting Information A through L - Applied General Agency, LLC.html
+Contracting Information A through L - Applied General Agency, LLC_files/
+scratch_parse_contracting.js

@@ -6,19 +6,27 @@
 <link rel="icon" type="image/png" href="icons/favicon-hero.png">
 <link rel="apple-touch-icon" href="icons/favicon-hero.png">
 <meta name="theme-color" content="#06a3b6">
-<title>Agencias — Hero Hub</title>
+<title>Contracting con Carriers — Hero Hub</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
 <script type="module" src="js/user-menu.js"></script>
-<link rel="stylesheet" href="css/agencias.css">
 <script defer src="https://unpkg.com/lucide@0.474.0"></script>
 <script defer src="js/topbar-dropdown.js"></script>
 </head>
 <body>
 <script>try{var t=localStorage.getItem("hero-theme");if(t)document.body.dataset.theme=t;}catch(e){}</script>
 <script>try{var r=localStorage.getItem("hero-user-role");if(r){document.body.classList.add("skip-loading","role-"+r);}}catch(e){}</script>
+
+<noscript>
+  <div style="position:fixed;inset:0;background:#062a33;color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font-family:system-ui,sans-serif;z-index:99999;">
+    <div>
+      <h1 style="margin:0 0 12px;">Hero Hub requiere JavaScript</h1>
+      <p style="margin:0;opacity:.85;">Activa JavaScript en tu navegador para acceder al Hero Hub.</p>
+    </div>
+  </div>
+</noscript>
 
 <div id="loading" class="login-container"><div class="login-card"><p>Verificando acceso...</p></div></div>
 
@@ -46,7 +54,7 @@
           </button>
           <div class="nav-dropdown" role="menu">
             <a href="portales.html" class="nav-link" role="menuitem"><i data-lucide="shield"></i><span>Portales</span></a>
-            <a href="agencias.html" class="nav-link active" role="menuitem"><i data-lucide="network"></i><span>Agencias</span></a>
+            <a href="agencias.html" class="nav-link" role="menuitem"><i data-lucide="network"></i><span>Agencias</span></a>
             <a href="directorio.html" class="nav-link" role="menuitem"><i data-lucide="book-user"></i><span>Directorio</span></a>
           </div>
         </div>
@@ -57,7 +65,7 @@
             <i data-lucide="chevron-down" class="nav-group-arrow"></i>
           </button>
           <div class="nav-dropdown" role="menu">
-            <a href="guias.html" class="nav-link" role="menuitem"><i data-lucide="book-open"></i><span>Guías</span></a>
+            <a href="guias.html" class="nav-link active" role="menuitem"><i data-lucide="book-open"></i><span>Guías</span></a>
             <a href="politicas.html" class="nav-link" role="menuitem"><i data-lucide="scroll-text"></i><span>Políticas</span></a>
             <a href="onboarding.html" class="nav-link" role="menuitem"><i data-lucide="rocket"></i><span>Onboarding</span></a>
             <a href="reuniones.html" class="nav-link" role="menuitem"><i data-lucide="presentation"></i><span>Reuniones</span></a>
@@ -107,128 +115,33 @@
   <main class="page">
 
     <section class="page-header">
-      <div class="page-kicker">• Hero Insurance USA •</div>
-      <h1 class="page-title">Organigrama de Agencias</h1>
-      <p class="page-sub">Estructura completa: agencias, agentes a cargo y brokers</p>
-      <div class="ag-header-actions">
-        <button id="ag-btn-new" class="ag-btn-new" style="display:none;">
-          <i data-lucide="plus"></i><span>Nueva agencia</span>
-        </button>
-      </div>
+      <div class="page-kicker" id="ctr-kicker">• Prueba interna · Adaptado a Hero •</div>
+      <h1 class="page-title" id="ctr-title">Contracting con Carriers (A–L)</h1>
+      <p class="page-sub" id="ctr-subtitle">Procedimientos por carrier — contracting, transfers, EFT changes, demographic y más</p>
     </section>
 
-    <!-- Stats cards -->
-    <section class="ag-stats">
-      <div class="ag-stat">
-        <div class="ag-stat-value" id="ag-stat-total">—</div>
-        <div class="ag-stat-label">Agencias</div>
-      </div>
-      <div class="ag-stat">
-        <div class="ag-stat-value" id="ag-stat-aic">—</div>
-        <div class="ag-stat-label">Agentes a cargo</div>
-      </div>
-      <div class="ag-stat">
-        <div class="ag-stat-value" id="ag-stat-brokers">—</div>
-        <div class="ag-stat-label">Brokers</div>
-      </div>
-      <div class="ag-stat">
-        <div class="ag-stat-value" id="ag-stat-updated">—</div>
-        <div class="ag-stat-label">Actualizado</div>
-      </div>
-    </section>
-
-    <!-- Toolbar -->
-    <section class="ag-toolbar">
-      <div class="search-wrap">
-        <i data-lucide="search" class="search-icon"></i>
-        <input type="text" id="ag-search" placeholder="Buscar agencia, AIC o broker...">
-      </div>
-      <div class="ag-view-tabs">
-        <button class="ag-view-tab active" data-view="list" title="Vista lista">
-          <i data-lucide="list-tree"></i><span>Lista</span>
-        </button>
-        <button class="ag-view-tab" data-view="org" title="Organigrama">
-          <i data-lucide="git-branch"></i><span>Organigrama</span>
-        </button>
-      </div>
-    </section>
-
-    <!-- Filtros por grupo -->
-    <section class="filter-row" id="ag-filter-row">
-      <div class="filter-chip active" data-group="all">Todos</div>
-      <div class="filter-chip" data-group="hero">
-        <span class="filter-dot dot-hero"></span>
-        Bajo HERO
-      </div>
-      <div class="filter-chip" data-group="friends">
-        <span class="filter-dot dot-friends"></span>
-        Bajo FRIENDS
-      </div>
-      <div class="filter-chip" data-group="pending">
-        <span class="filter-dot dot-pending"></span>
-        Pendientes
-      </div>
-    </section>
-
-    <!-- Filtros por planes -->
-    <section class="filter-row ag-plan-filter-row" id="ag-plan-filter-row">
-      <span class="ag-plan-filter-label">Planes:</span>
-      <div class="filter-chip ag-plan-chip" data-plan="MEDICARE">
-        <span class="ag-plan-dot ag-plan-dot-medicare"></span>
-        MEDICARE
-      </div>
-      <div class="filter-chip ag-plan-chip" data-plan="ACA">
-        <span class="ag-plan-dot ag-plan-dot-aca"></span>
-        ACA
-      </div>
-      <div class="filter-chip ag-plan-chip" data-plan="SUPLEMENTARIOS">
-        <span class="ag-plan-dot ag-plan-dot-supp"></span>
-        SUPLEMENTARIOS
-      </div>
-      <div class="filter-chip ag-plan-chip" data-plan="VIDA">
-        <span class="ag-plan-dot ag-plan-dot-vida"></span>
-        VIDA
-      </div>
-      <button class="ag-plan-clear" id="ag-plan-clear" style="display:none;">
-        <i data-lucide="x"></i><span>Limpiar</span>
-      </button>
-
-      <!-- Sync bar (solo modo Sheet): empujado a la derecha vía margin-left:auto -->
-      <div id="ag-sync-bar" class="ag-sync-bar" style="display:none;">
-        <span id="ag-last-update" class="ag-last-update">—</span>
-        <button id="ag-btn-refresh" class="ag-btn-sync" title="Re-leer datos del Sheet">
-          <i data-lucide="refresh-cw"></i><span>Actualizar</span>
-        </button>
-      </div>
-    </section>
-
-    <!-- Vista LISTA (jerarquía colapsable) -->
-    <div id="ag-view-list" class="ag-view active">
-      <div id="ag-tree" class="ag-tree">
-        <p class="loading">Cargando agencias...</p>
+    <div class="ctr-toolbar">
+      <div class="ctr-lang-toggle" role="group" aria-label="Idioma">
+        <button type="button" class="ctr-lang-btn is-active" data-lang="es" aria-pressed="true">Español</button>
+        <button type="button" class="ctr-lang-btn" data-lang="en" aria-pressed="false">English</button>
       </div>
     </div>
 
-    <!-- Vista ORGANIGRAMA (árbol vertical SVG) -->
-    <div id="ag-view-org" class="ag-view" style="display:none;">
-      <div class="ag-org-controls">
-        <button class="ag-org-btn" id="ag-zoom-out" title="Alejar">
-          <i data-lucide="minus"></i>
-        </button>
-        <span class="ag-zoom-level" id="ag-zoom-level">100%</span>
-        <button class="ag-org-btn" id="ag-zoom-in" title="Acercar">
-          <i data-lucide="plus"></i>
-        </button>
-        <div class="ag-org-divider"></div>
-        <button class="ag-org-btn" id="ag-zoom-fit" title="Ajustar a pantalla">
-          <i data-lucide="maximize-2"></i>
-          <span>Ajustar</span>
-        </button>
-      </div>
-      <div class="ag-org-canvas-wrap" id="ag-org-canvas-wrap">
-        <div class="ag-org-canvas" id="ag-org-canvas">
-          <p class="loading">Cargando organigrama...</p>
-        </div>
+    <div class="ctr-disclaimer">
+      <i data-lucide="info"></i>
+      <div id="ctr-disclaimer-text"></div>
+    </div>
+
+    <div class="ctr-layout">
+      <aside class="ctr-sidebar" id="ctr-sidebar">
+        <div class="ctr-sidebar-title" id="ctr-sidebar-title">Carriers</div>
+        <nav id="ctr-nav" class="ctr-nav">
+          <p class="ctr-loading-sm" id="ctr-nav-loading">Cargando…</p>
+        </nav>
+      </aside>
+
+      <div class="ctr-content" id="ctr-content">
+        <p class="ctr-loading" id="ctr-content-loading">Cargando procedimientos…</p>
       </div>
     </div>
 
@@ -250,7 +163,7 @@
 </script>
 <script type="module" src="js/firebase-config.js"></script>
 <script type="module" src="js/page-guard.js"></script>
-<script type="module" src="js/agencias.js"></script>
+<script type="module" src="js/contracting.js"></script>
 <script type="module" src="js/tracker.js"></script>
 </body>
 </html>

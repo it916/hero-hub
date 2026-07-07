@@ -21,18 +21,18 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-
 export const ROLES = {
   admin: {
     label: "Administrador",
-    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones", "changelog", "admin", "finanzas", "finanzas-manual", "it-console", "mi-perfil"],
+    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones", "changelog", "admin", "finanzas", "finanzas-manual", "it-console", "mi-perfil", "contracting"],
     isAdmin: true
   },
   interno: {
     label: "Equipo interno",
-    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones", "changelog", "mi-perfil"],
+    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones", "changelog", "mi-perfil", "contracting"],
     isAdmin: false
   },
   finanzas: {
     label: "Finanzas",
     // Misma visibilidad que "interno" + la página de Finanzas y su manual. Sin acceso a admin/grabaciones/onboarding.
-    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "reuniones", "changelog", "finanzas", "finanzas-manual", "mi-perfil"],
+    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "reuniones", "changelog", "finanzas", "finanzas-manual", "mi-perfil", "contracting"],
     isAdmin: false
   },
   it: {
@@ -40,7 +40,7 @@ export const ROLES = {
     // Misma visibilidad que "interno" + la IT Console. Sin acceso a admin/finanzas.
     // it@ está en LEGACY_ADMIN_EMAILS y entra como admin — este rol es para
     // futuros asistentes de IT o cuentas de servicio que necesiten la consola.
-    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "reuniones", "changelog", "it-console", "mi-perfil"],
+    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "reuniones", "changelog", "it-console", "mi-perfil", "contracting"],
     isAdmin: false
   },
   agente: {
