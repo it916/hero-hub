@@ -1,5 +1,19 @@
 [
   {
+    "id": "2026-07-08-finanzas-cleanup-migracion",
+    "version": "v2.12.1",
+    "date": "2026-07-08",
+    "category": "refactor",
+    "scope": "finanzas",
+    "audience": "admin",
+    "title": "Finanzas · Cleanup del script temporal de migración de carriers",
+    "items": [
+      "Eliminada la función `migrarCarriersHistoricos` y su exposición en `window.__migrarCarriersHistoricos` de js/finanzas.js — ya cumplió su propósito de poblar el campo `carrier` en los 233 ingresos históricos",
+      "Se retiran también las reglas de matcheo (`CARRIER_MATCH_RULES`) y el helper `matchCarrier`, que solo eran usados por esa migración",
+      "Bump v2.12.0 → v2.12.1"
+    ]
+  },
+  {
     "id": "2026-07-07-exportar-wizard",
     "version": "v2.12.0",
     "date": "2026-07-07",
