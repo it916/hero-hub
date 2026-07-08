@@ -1,5 +1,20 @@
 [
   {
+    "id": "2026-07-08-mi-perfil-loader-asistencia",
+    "version": "v2.12.2",
+    "date": "2026-07-08",
+    "category": "fix",
+    "scope": "mi-perfil",
+    "audience": "team",
+    "title": "Mi perfil · El loader de 'Mi asistencia' no desaparecía tras cargar los datos",
+    "items": [
+      "En la sección 'Mi asistencia' de mi-perfil.html el mensaje 'Cargando tu asistencia…' seguía visible incluso cuando los KPIs, gráficos y la tabla ya se habían renderizado correctamente",
+      "Causa: la clase `.mp-att-loading` en styles.css definía `display: flex`, que ganaba en especificidad sobre el atributo HTML `hidden` (por defecto `display: none`)",
+      "Fix: agregada la regla `.mp-att-loading[hidden] { display: none; }` para respetar el atributo `hidden` cuando el JS lo activa",
+      "Bump v2.12.1 → v2.12.2"
+    ]
+  },
+  {
     "id": "2026-07-08-finanzas-cleanup-migracion",
     "version": "v2.12.1",
     "date": "2026-07-08",

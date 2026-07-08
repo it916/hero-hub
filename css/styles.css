@@ -8680,6 +8680,7 @@ body.role-it    .access-tile.at-it-console { display: flex; }
   font-size: 14px;
 }
 [data-theme="dark"] .mp-att-loading { color: rgba(226, 232, 240, 0.6); }
+.mp-att-loading[hidden] { display: none; }
 .mp-att-spinner {
   width: 20px; height: 20px;
   border: 2.5px solid rgba(6, 163, 182, 0.25);
