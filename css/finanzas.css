@@ -680,60 +680,113 @@ table.fpr-table tfoot td {
 /* ─────────────────────────────────────────────
    Dashboard de Finanzas — KPIs + charts
    ───────────────────────────────────────────── */
-.fd-kpis {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 12px;
-  margin-bottom: 20px;
+/* Hero KPI — Neto Real, protagonista arriba del dashboard */
+.fd-hero-kpi {
+  background: linear-gradient(135deg, var(--cyan), var(--cyan-2));
+  border: 1px solid var(--cyan);
+  border-radius: 16px;
+  padding: 26px 30px;
+  color: #fff;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
-@media (max-width: 1200px) {
-  .fd-kpis { grid-template-columns: repeat(3, 1fr); }
+.fd-hero-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.88);
+}
+.fd-hero-value {
+  font-family: var(--mono, "JetBrains Mono", monospace);
+  font-size: 44px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: #fff;
+}
+.fd-hero-value.negative {
+  color: #fee2e2;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.15);
+}
+.fd-hero-sub {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.82);
+  font-weight: 500;
 }
 @media (max-width: 700px) {
-  .fd-kpis { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 480px) {
-  .fd-kpis { grid-template-columns: 1fr; }
+  .fd-hero-kpi { padding: 20px 22px; }
+  .fd-hero-value { font-size: 34px; }
 }
 
-.fd-kpi {
+/* Strip de métricas de apoyo */
+.fd-metric-strip {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
   background: var(--card, #fff);
   border: 1px solid var(--border, #e8e8e8);
   border-radius: 14px;
-  padding: 16px 18px;
+  padding: 14px 4px;
   box-shadow: var(--shadow-sm);
+  margin-bottom: 20px;
 }
-.fd-kpi-highlight {
-  background: linear-gradient(135deg, var(--cyan), var(--cyan-2));
-  border-color: var(--cyan);
-  color: #fff;
+.fd-metric {
+  padding: 4px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  border-right: 1px solid var(--border, #e8e8e8);
+  min-width: 0;
 }
-.fd-kpi-label {
+.fd-metric:last-child { border-right: none; }
+.fd-metric-label {
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.7px;
   text-transform: uppercase;
   color: var(--muted, #64748b);
-  margin-bottom: 8px;
 }
-.fd-kpi-highlight .fd-kpi-label { color: rgba(255,255,255,.85); }
-.fd-kpi-value {
+.fd-metric-value {
   font-family: var(--mono, "JetBrains Mono", monospace);
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--text, #1a1a1a);
-  line-height: 1.1;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.fd-kpi-highlight .fd-kpi-value { color: #fff; }
-.fd-kpi-sub {
-  font-size: 11.5px;
-  color: var(--muted);
-  margin-top: 6px;
+.fd-metric-sub {
+  font-size: 11px;
+  color: var(--muted, #64748b);
   font-weight: 500;
+  margin-top: 2px;
 }
-.fd-kpi-highlight .fd-kpi-sub { color: rgba(255,255,255,.75); }
-body[data-theme="dark"] .fd-kpi { background: var(--card); border-color: var(--border); }
+body[data-theme="dark"] .fd-metric-strip {
+  background: var(--card);
+  border-color: var(--border);
+}
+body[data-theme="dark"] .fd-metric { border-right-color: var(--border); }
+
+@media (max-width: 1000px) {
+  .fd-metric-strip { grid-template-columns: repeat(3, 1fr); }
+  .fd-metric:nth-child(3) { border-right: none; }
+  .fd-metric:nth-child(4),
+  .fd-metric:nth-child(5) { border-top: 1px solid var(--border, #e8e8e8); margin-top: 8px; padding-top: 12px; }
+  body[data-theme="dark"] .fd-metric:nth-child(4),
+  body[data-theme="dark"] .fd-metric:nth-child(5) { border-top-color: var(--border); }
+}
+@media (max-width: 560px) {
+  .fd-metric-strip { grid-template-columns: repeat(2, 1fr); }
+  .fd-metric { border-right: 1px solid var(--border, #e8e8e8); }
+  .fd-metric:nth-child(2n) { border-right: none; }
+  .fd-metric:nth-child(n+3) { border-top: 1px solid var(--border, #e8e8e8); margin-top: 8px; padding-top: 12px; }
+}
 
 .fd-charts-row {
   display: grid;

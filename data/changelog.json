@@ -1,5 +1,22 @@
 [
   {
+    "id": "2026-07-08-finanzas-dashboard-hero-kpi",
+    "version": "v2.13.0",
+    "date": "2026-07-08",
+    "category": "feat",
+    "scope": "finanzas",
+    "audience": "admin",
+    "title": "Finanzas · Dashboard rediseñado con Hero KPI + strip de métricas",
+    "items": [
+      "Los 6 KPIs del Dashboard estaban todos con el mismo peso visual y se sentía saturado",
+      "Ahora el 'Neto Real' es el protagonista arriba: card grande con gradiente cyan y valor de 44px, con el subtítulo 'Ganancia menos egresos del periodo'",
+      "Las 5 métricas de apoyo (Bruto, Pagado, Ganancia, Egresos, Ingresos) quedan en una strip compacta debajo, separadas por divisores verticales sutiles",
+      "Responsive: 5 columnas → 3 columnas en pantallas <1000px → 2 columnas en móviles",
+      "Cuando el Neto Real es negativo se pinta en rojo suave (#fee2e2) que contrasta con el gradiente cyan sin chocar",
+      "Bump v2.12.3 → v2.13.0"
+    ]
+  },
+  {
     "id": "2026-07-08-finanzas-ingresos-page-info",
     "version": "v2.12.3",
     "date": "2026-07-08",

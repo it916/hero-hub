@@ -2481,8 +2481,7 @@ function renderDashboard() {
   setText("fd-kpi-egresos-sub", `${egresosPeriodo.length} registrado${egresosPeriodo.length === 1 ? "" : "s"}`);
   setText("fd-kpi-neto-real", formatMoney(netoReal));
   const netoEl = document.getElementById("fd-kpi-neto-real");
-  if (netoEl) netoEl.classList.toggle("fi-cell-ganancia", true);
-  if (netoEl) netoEl.style.color = netoReal < 0 ? "#c0392b" : "";
+  if (netoEl) netoEl.classList.toggle("negative", netoReal < 0);
   setText("fd-kpi-count", String(count));
   setText("fd-kpi-count-sub", `${withPayouts} con payouts`);
 
