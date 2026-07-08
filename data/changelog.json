@@ -1,5 +1,22 @@
 [
   {
+    "id": "2026-07-08-design-system-refactor",
+    "version": "v2.14.0",
+    "date": "2026-07-08",
+    "category": "feat",
+    "scope": "hub",
+    "audience": "admin",
+    "title": "Hub · Refactor del Design System",
+    "items": [
+      "Documento oficial del Design System publicado en docs/design-system.md (tokens, componentes, convenciones, checklist)",
+      "Sistema global de toasts (heroToast) disponible en las 16 páginas del Hub: heroToast.success/error/info/neutral con auto-dismiss y variantes",
+      "Nueva escala de spacing tokenizada en :root — --s-1..8 (4/8/12/16/20/24/32/40) lista para usar en módulos nuevos",
+      "Modo oscuro cubierto en 5 gaps de agencias.css (border del tree, tabs de vista, hint del canvas, nodos on_hold)",
+      "Accesibilidad: regla global @media (prefers-reduced-motion: reduce) que respeta la preferencia del usuario de reducir animaciones (WCAG 2.3.3)",
+      "Bump v2.13.1 → v2.14.0"
+    ]
+  },
+  {
     "id": "2026-07-08-finanzas-dashboard-border-fix",
     "version": "v2.13.1",
     "date": "2026-07-08",
