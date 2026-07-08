@@ -1,5 +1,20 @@
 [
   {
+    "id": "2026-07-08-finanzas-dashboard-border-fix",
+    "version": "v2.13.1",
+    "date": "2026-07-08",
+    "category": "fix",
+    "scope": "finanzas",
+    "audience": "admin",
+    "title": "Finanzas · Fix divisor huérfano en el strip de métricas en móvil",
+    "items": [
+      "En pantallas ≤560px, la strip pasa a 2 columnas y la 5ta métrica queda sola en su fila",
+      "El divisor vertical derecho se mostraba igual bajo la 5ta métrica, sin nada a la derecha que separar",
+      "Se ajustó la regla para que `:last-child` también quite el `border-right` dentro del media query",
+      "Bump v2.13.0 → v2.13.1"
+    ]
+  },
+  {
     "id": "2026-07-08-finanzas-dashboard-hero-kpi",
     "version": "v2.13.0",
     "date": "2026-07-08",

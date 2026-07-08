@@ -784,7 +784,8 @@ body[data-theme="dark"] .fd-metric { border-right-color: var(--border); }
 @media (max-width: 560px) {
   .fd-metric-strip { grid-template-columns: repeat(2, 1fr); }
   .fd-metric { border-right: 1px solid var(--border, #e8e8e8); }
-  .fd-metric:nth-child(2n) { border-right: none; }
+  .fd-metric:nth-child(2n),
+  .fd-metric:last-child { border-right: none; }
   .fd-metric:nth-child(n+3) { border-top: 1px solid var(--border, #e8e8e8); margin-top: 8px; padding-top: 12px; }
 }
 
