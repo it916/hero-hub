@@ -1367,8 +1367,10 @@ function initFiTable() {
   fiTable.on("dataFiltered", (_filters, rows) => {
     const data = Array.isArray(rows) ? rows.map(r => r.getData()) : null;
     updateIngresosSummary(data);
+    updateIngresosPageInfo(data);
   });
-  fiTable.on("dataLoaded", () => updateIngresosSummary());
+  fiTable.on("dataLoaded", () => { updateIngresosSummary(); updateIngresosPageInfo(); });
+  fiTable.on("pageLoaded", () => updateIngresosPageInfo());
 }
 
 // ─── Filtros ──────────────────────────────
@@ -1397,6 +1399,7 @@ function applyFiFilters() {
   });
   // Actualizar summary de inmediato — dataFiltered puede llegar tarde en el primer cambio
   updateIngresosSummary();
+  updateIngresosPageInfo();
 }
 
 function matchesPeriodo(fecha, periodo, fromDate = null, toDate = null) {
@@ -1454,6 +1457,26 @@ function updateIngresosSummary(data) {
   pagadoEl.textContent = formatMoney(pagado);
   gananciaEl.textContent = formatMoney(ganancia);
   gananciaEl.classList.toggle("negative", ganancia < 0);
+}
+
+function updateIngresosPageInfo(data) {
+  const infoEl = document.getElementById("fi-page-info");
+  if (!infoEl || !fiTable) return;
+
+  const visibleRows = Array.isArray(data) ? data : fiTable.getData("active");
+  const total = visibleRows.length;
+  const pageSize = (typeof fiTable.getPageSize === "function" ? fiTable.getPageSize() : 25) || 25;
+  const currentPage = (typeof fiTable.getPage === "function" ? fiTable.getPage() : 1) || 1;
+  const maxPage = (typeof fiTable.getPageMax === "function" ? fiTable.getPageMax() : 1) || 1;
+
+  if (total === 0 || maxPage <= 1) {
+    infoEl.hidden = true;
+    return;
+  }
+  const start = (currentPage - 1) * pageSize + 1;
+  const end = Math.min(currentPage * pageSize, total);
+  infoEl.textContent = `Mostrando ${start}–${end} de ${total} · Página ${currentPage} de ${maxPage}`;
+  infoEl.hidden = false;
 }
 
 // ─── Edit / Delete ────────────────────────

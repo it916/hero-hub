@@ -903,6 +903,15 @@ body[data-theme="dark"] .fi-summary-bar {
 body[data-theme="dark"] .fi-sum-value { color: var(--text); }
 body[data-theme="dark"] .fi-sum-value.fi-sum-ganancia { color: #3dbccc; }
 
+/* Indicador de paginación arriba de la tabla de Ingresos */
+.fi-page-info {
+  font-size: 12px;
+  color: rgba(15, 23, 42, 0.55);
+  margin: 6px 0 4px;
+  padding-left: 4px;
+}
+body[data-theme="dark"] .fi-page-info { color: rgba(226, 232, 240, 0.6); }
+
 /* Celdas custom de la tabla de Ingresos */
 .fi-cell-money {
   font-family: var(--mono, "JetBrains Mono", monospace);

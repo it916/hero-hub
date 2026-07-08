@@ -1,5 +1,21 @@
 [
   {
+    "id": "2026-07-08-finanzas-ingresos-page-info",
+    "version": "v2.12.3",
+    "date": "2026-07-08",
+    "category": "feat",
+    "scope": "finanzas",
+    "audience": "admin",
+    "title": "Finanzas · Contador de paginación arriba de la tabla de Ingresos",
+    "items": [
+      "Nueva línea de contexto arriba de la tabla del tab Ingresos: 'Mostrando X–Y de Total · Página N de M'",
+      "Se actualiza en tiempo real al cambiar de página, filtrar o cargar datos nuevos",
+      "Se oculta automáticamente cuando hay 1 sola página o 0 resultados para no distraer",
+      "Motivación: evitar que se pierda de vista que hay más registros más allá de la primera página (la barra de paginación de Tabulator abajo era fácil de pasar por alto)",
+      "Bump v2.12.2 → v2.12.3"
+    ]
+  },
+  {
     "id": "2026-07-08-mi-perfil-loader-asistencia",
     "version": "v2.12.2",
     "date": "2026-07-08",
