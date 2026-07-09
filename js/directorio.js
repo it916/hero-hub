@@ -226,9 +226,17 @@ function renderDirectory() {
       e.stopPropagation();
       const id = btn.dataset.id;
       const c = contacts.find(x => x.id === id);
-      if (!c || !confirm(`¿Eliminar contacto "${c.name || c.company}"?`)) return;
+      if (!c) return;
+      const ok = await heroConfirm({
+        title: "Eliminar contacto",
+        message: `¿Eliminar contacto "${c.name || c.company}"?`,
+        confirmLabel: "Eliminar",
+        variant: "danger"
+      });
+      if (!ok) return;
       contacts = contacts.filter(x => x.id !== id);
       await setDoc(doc(db, "shared", "directorio"), { contacts });
+      heroToast.success(`Contacto "${c.name || c.company}" eliminado`);
 
       // Log de auditoría
       logEvent(ACTIONS.CONTACT_DELETE, c.name || c.company || "—", {
@@ -351,8 +359,8 @@ function openContactModal(idx) {
   dialog.querySelector("#c-save").addEventListener("click", async () => {
     const company = (dialog.querySelector("#c-company").value || "").trim();
     if (!company) {
-      alert("Empresa es obligatoria");
       dialog.querySelector("#c-company").focus();
+      heroToast.error("Empresa es obligatoria");
       return;
     }
     const products = Array.from(dialog.querySelectorAll('input[name="c-product"]:checked')).map(i => i.value);
@@ -382,8 +390,9 @@ function openContactModal(idx) {
       );
       dialog.hide();
       renderDirectory();
+      heroToast.success(editing ? `"${nuevo.name || nuevo.company}" actualizado` : `"${nuevo.name || nuevo.company}" agregado`);
     } catch (e) {
-      alert("Error: " + e.message);
+      heroToast.error("No se pudo guardar: " + e.message);
     }
   });
 

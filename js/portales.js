@@ -334,7 +334,7 @@ function fallbackCopy(text, btn) {
   ta.style.cssText = 'position:fixed;opacity:0;';
   document.body.appendChild(ta);
   ta.select();
-  try { document.execCommand('copy'); indicate(btn); } catch(e) { alert('No se pudo copiar'); }
+  try { document.execCommand('copy'); indicate(btn); } catch(e) { heroToast.error('No se pudo copiar'); }
   document.body.removeChild(ta);
 }
 function indicate(btn) {
@@ -394,8 +394,8 @@ function openCarrierModal(scope, idx) {
   dialog.querySelector('#cr-save').addEventListener("click", async () => {
     const nombre = (dialog.querySelector('#cr-nombre').value || "").trim();
     if (!nombre) {
-      alert("El nombre del portal es obligatorio");
       dialog.querySelector('#cr-nombre').focus();
+      heroToast.error("El nombre del portal es obligatorio");
       return;
     }
     const nuevo = {
@@ -419,6 +419,7 @@ function openCarrierModal(scope, idx) {
         );
         dialog.hide();
         renderTeam();
+        heroToast.success(editing ? `Portal "${nombre}" actualizado` : `Portal "${nombre}" agregado`);
       } else {
         if (editing) personalData[idx] = nuevo;
         else personalData.push(nuevo);
@@ -426,9 +427,10 @@ function openCarrierModal(scope, idx) {
         await updateDoc(doc(db, "users", auth.currentUser.email), { carriers: personalData });
         dialog.hide();
         renderPersonal();
+        heroToast.success(editing ? `Portal "${nombre}" actualizado` : `Portal "${nombre}" agregado`);
       }
     } catch (e) {
-      alert("Error guardando: " + e.message);
+      heroToast.error("Error guardando: " + e.message);
     }
   });
 
@@ -442,7 +444,13 @@ function openCarrierModal(scope, idx) {
 async function deleteCarrier(scope, idx) {
   const list = scope === 'team' ? teamData[currentAccount] : personalData;
   const p = list[idx];
-  if (!confirm(`¿Eliminar portal "${p.nombre}"?`)) return;
+  const ok = await heroConfirm({
+    title: "Eliminar portal",
+    message: `¿Eliminar portal "${p.nombre}"?`,
+    confirmLabel: "Eliminar",
+    variant: "danger"
+  });
+  if (!ok) return;
   try {
     if (scope === 'team') {
       teamData[currentAccount].splice(idx, 1);
@@ -457,7 +465,8 @@ async function deleteCarrier(scope, idx) {
       await updateDoc(doc(db, "users", auth.currentUser.email), { carriers: personalData });
       renderPersonal();
     }
+    heroToast.success(`Portal "${p.nombre}" eliminado`);
   } catch (e) {
-    alert("Error: " + e.message);
+    heroToast.error("No se pudo eliminar: " + e.message);
   }
 }

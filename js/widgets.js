@@ -116,12 +116,19 @@ function renderArsenal() {
   container.querySelectorAll('.tool-add-card').forEach(b => b.addEventListener('click', () => openAddToolModal(b.dataset.group)));
   container.querySelectorAll('.tool-delete-btn').forEach(b => b.addEventListener('click', async (e) => {
     e.preventDefault(); e.stopPropagation();
-    if (!confirm("¿Eliminar este acceso?")) return;
+    const ok = await heroConfirm({
+      title: "Eliminar acceso",
+      message: "¿Eliminar este acceso del arsenal?",
+      confirmLabel: "Eliminar",
+      variant: "danger"
+    });
+    if (!ok) return;
     const arsenal = (currentUserData.arsenal && Object.keys(currentUserData.arsenal).length) ? currentUserData.arsenal : JSON.parse(JSON.stringify(ARSENAL_DEFAULT));
     arsenal[b.dataset.group].splice(parseInt(b.dataset.idx), 1);
     currentUserData.arsenal = arsenal;
     await saveUserField({ arsenal });
     renderArsenal();
+    heroToast.success("Acceso eliminado");
     if (window.refreshIcons) window.refreshIcons();
   }));
 }
@@ -153,7 +160,11 @@ function openAddToolModal(group) {
     const url = (dialog.querySelector("#t-url").value || "").trim();
     const icon = (dialog.querySelector("#t-icon").value || "").trim()
       || "https://cdn-icons-png.flaticon.com/512/1006/1006771.png";
-    if (!label || !url) { alert("Nombre y URL requeridos"); return; }
+    if (!label || !url) {
+      dialog.querySelector(!label ? "#t-label" : "#t-url").focus();
+      heroToast.error("Nombre y URL son requeridos");
+      return;
+    }
 
     const arsenal = (currentUserData.arsenal && Object.keys(currentUserData.arsenal).length)
       ? currentUserData.arsenal
@@ -164,6 +175,7 @@ function openAddToolModal(group) {
     await saveUserField({ arsenal });
     dialog.hide();
     renderArsenal();
+    heroToast.success(`"${label}" agregado al arsenal`);
     if (window.refreshIcons) window.refreshIcons();
   });
 
@@ -393,11 +405,18 @@ function renderPlaylist() {
   list.querySelectorAll('.pl-del').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      if (!confirm("¿Eliminar esta frase?")) return;
+      const ok = await heroConfirm({
+        title: "Eliminar frase",
+        message: "¿Eliminar esta frase de la playlist?",
+        confirmLabel: "Eliminar",
+        variant: "danger"
+      });
+      if (!ok) return;
       SHARED_DATA.messages = SHARED_DATA.messages.filter(x => x.id !== btn.dataset.id);
       await setDoc(doc(db, "shared", "messages"), { items: SHARED_DATA.messages });
       if (msgIdx >= SHARED_DATA.messages.length) msgIdx = Math.max(0, SHARED_DATA.messages.length-1);
       renderMessageWidget();
+      heroToast.success("Frase eliminada");
     });
   });
 }
@@ -441,8 +460,16 @@ function wireMsgForm() {
 async function publishMsg() {
   const nombre = document.getElementById('msgNombre').value.trim();
   const frase = document.getElementById('msgFrase').value.trim();
-  if (!nombre) { alert("Ingresa tu nombre"); return; }
-  if (frase.length < 10) { alert("La frase debe tener al menos 10 caracteres"); return; }
+  if (!nombre) {
+    document.getElementById('msgNombre').focus();
+    heroToast.error("Ingresa tu nombre");
+    return;
+  }
+  if (frase.length < 10) {
+    document.getElementById('msgFrase').focus();
+    heroToast.error("La frase debe tener al menos 10 caracteres");
+    return;
+  }
   const btn = document.getElementById('msgPubBtn');
   btn.disabled = true;
   try {
@@ -453,16 +480,24 @@ async function publishMsg() {
     document.getElementById('msgChar').textContent = '0/200';
     msgIdx = SHARED_DATA.messages.length - 1;
     renderMessageWidget();
-  } catch (e) { alert("Error al publicar: " + e.message); }
+    heroToast.success("Frase publicada");
+  } catch (e) { heroToast.error("No se pudo publicar: " + e.message); }
   finally { btn.disabled = false; }
 }
 async function deleteCurrent() {
   if (!isAdmin || !SHARED_DATA.messages.length) return;
-  if (!confirm("¿Eliminar esta frase?")) return;
+  const ok = await heroConfirm({
+    title: "Eliminar frase",
+    message: "¿Eliminar la frase actual de la playlist?",
+    confirmLabel: "Eliminar",
+    variant: "danger"
+  });
+  if (!ok) return;
   SHARED_DATA.messages.splice(msgIdx, 1);
   await setDoc(doc(db, "shared", "messages"), { items: SHARED_DATA.messages });
   if (msgIdx >= SHARED_DATA.messages.length) msgIdx = Math.max(0, SHARED_DATA.messages.length-1);
   renderMessageWidget();
+  heroToast.success("Frase eliminada");
 }
 
 async function saveUserField(fields) {

@@ -81,7 +81,7 @@ function renderHonorees() {
 
 document.getElementById("sp-add-honoree").addEventListener("click", () => {
   if (!Array.isArray(spotlightData.honorees)) spotlightData.honorees = [];
-  if (spotlightData.honorees.length >= 3) { alert("Máximo 3 honorees"); return; }
+  if (spotlightData.honorees.length >= 3) { heroToast.error("Máximo 3 honorees"); return; }
   spotlightData.honorees.push({ name: "", role: "" });
   renderHonorees();
 });
@@ -102,7 +102,7 @@ document.getElementById("sp-save").addEventListener("click", async () => {
       hasImage: !!spotlightData.imageUrl,
       hasMessage: !!spotlightData.message
     });
-  } catch (e) { alert("Error: " + e.message); }
+  } catch (e) { heroToast.error("No se pudo guardar: " + e.message); }
 });
 
 // ══ MENSAJES ══
@@ -123,7 +123,13 @@ async function loadMessages() {
     `).join('');
     list.querySelectorAll('[data-del]').forEach(btn => {
       btn.addEventListener('click', async () => {
-        if (!confirm("¿Eliminar este mensaje?")) return;
+        const ok = await heroConfirm({
+          title: "Eliminar mensaje",
+          message: "¿Eliminar este mensaje de la playlist?",
+          confirmLabel: "Eliminar",
+          variant: "danger"
+        });
+        if (!ok) return;
         const idx = parseInt(btn.dataset.del);
         const deletedMsg = items[idx];
         items.splice(idx, 1);
@@ -286,7 +292,13 @@ function renderChart(dailyCounts) {
 document.getElementById("mt-refresh").addEventListener("click", () => window.loadMetrics());
 
 document.getElementById("mt-cleanup").addEventListener("click", async () => {
-  if (!confirm("¿Eliminar eventos con más de 90 días? Esta acción no se puede deshacer.")) return;
+  const ok = await heroConfirm({
+    title: "Limpiar eventos antiguos",
+    message: "¿Eliminar eventos con más de 90 días? Esta acción no se puede deshacer.",
+    confirmLabel: "Eliminar",
+    variant: "danger"
+  });
+  if (!ok) return;
   const ninetyDaysAgo = new Date();
   ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
   try {
@@ -294,10 +306,10 @@ document.getElementById("mt-cleanup").addEventListener("click", async () => {
     const snap = await getDocs(q);
     let count = 0;
     for (const d of snap.docs) { await deleteDoc(d.ref); count++; }
-    alert(`✓ ${count} eventos antiguos eliminados`);
+    heroToast.success(`${count} eventos antiguos eliminados`);
     window.loadMetrics();
   } catch (e) {
-    alert("Error: " + e.message);
+    heroToast.error("No se pudo limpiar: " + e.message);
   }
 });
 

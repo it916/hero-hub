@@ -188,7 +188,7 @@ async function initComisionesPanel() {
         `Agrega esta regla en Firebase Console → Firestore → Rules:\n\n` +
         `match /${COMISIONES_COL}/{doc} {\n  allow read, write: if request.auth != null && request.auth.token.email.matches(".*@heroinsuranceusa.com");\n}`
       : `No se pudo cargar la Tabla de Comisiones:\n${e?.message || e}`;
-    alert(msg);
+    heroToast.error(msg, { duration: 6000 });
   }
   if (window.refreshIcons) window.refreshIcons();
 }
@@ -342,12 +342,18 @@ async function onDeleteComision(id) {
   const row = comisionesData.find(r => r.id === id);
   if (!row) return;
   const label = `${row.carrier || "(sin carrier)"} · ${row.tipoOrigen || ""}${row.agente ? " · " + row.agente : ""}`;
-  if (!confirm(`¿Eliminar esta fila?\n\n${label}\n\nEsta acción no se puede deshacer.`)) return;
+  const ok = await heroConfirm({
+    title: "Eliminar fila",
+    message: `¿Eliminar esta fila? ${label}. Esta acción no se puede deshacer.`,
+    confirmLabel: "Eliminar",
+    variant: "danger"
+  });
+  if (!ok) return;
 
   try {
     await deleteDoc(doc(db, COMISIONES_COL, id));
   } catch (e) {
-    alert("Error al eliminar: " + e.message);
+    heroToast.error("No se pudo eliminar: " + e.message);
     return;
   }
 
@@ -476,15 +482,16 @@ function openComisionModal(existing) {
     const tasaPctRaw = (tasaInp.value || "").trim();
     const notas = (notasInp.value || "").trim();
 
-    if (!carrier) { alert("El carrier es obligatorio."); carrierInp.focus(); return; }
-    if (!TIPOS_ORIGEN.includes(tipoOrigen)) { alert("Tipo de origen inválido."); return; }
-    if (!tasaPctRaw) { alert("La tasa es obligatoria."); tasaInp.focus(); return; }
+    if (!carrier) { carrierInp.focus(); heroToast.error("El carrier es obligatorio."); return; }
+    if (!TIPOS_ORIGEN.includes(tipoOrigen)) { heroToast.error("Tipo de origen inválido."); return; }
+    if (!tasaPctRaw) { tasaInp.focus(); heroToast.error("La tasa es obligatoria."); return; }
 
     const tasaPct = Number(tasaPctRaw);
-    if (!isFinite(tasaPct) || tasaPct < 0) { alert("La tasa debe ser un número ≥ 0."); tasaInp.focus(); return; }
+    if (!isFinite(tasaPct) || tasaPct < 0) { tasaInp.focus(); heroToast.error("La tasa debe ser un número ≥ 0."); return; }
     if (tipoOrigen === "AGENTES" && !agente) {
-      alert("Cuando el origen es AGENTES, el nombre del agente es obligatorio.");
-      agenteInp.focus(); return;
+      agenteInp.focus();
+      heroToast.error("Cuando el origen es AGENTES, el nombre del agente es obligatorio.");
+      return;
     }
 
     const tasaDecimal = Math.round((tasaPct / 100) * 100000) / 100000;
@@ -527,7 +534,7 @@ function openComisionModal(existing) {
       updateTotal();
       dialog.hide();
     } catch (e) {
-      alert("Error al guardar: " + e.message);
+      heroToast.error("No se pudo guardar: " + e.message);
     }
   });
 
@@ -608,7 +615,7 @@ async function initBrokersPanel() {
     const msg = e?.code === "permission-denied" || /permission|insufficient/i.test(e?.message || "")
       ? `Firestore rechazó la lectura de la colección "${BROKERS_COL}". Verifica las reglas en Firebase Console.`
       : `No se pudo cargar Brokers:\n${e?.message || e}`;
-    alert(msg);
+    heroToast.error(msg, { duration: 6000 });
   }
   if (window.refreshIcons) window.refreshIcons();
 }
@@ -756,12 +763,18 @@ async function onDeleteBroker(id) {
   const row = brokersData.find(r => r.id === id);
   if (!row) return;
   const label = TIPO_DEST_LABEL[row.tipo || "agencia"];
-  if (!confirm(`¿Eliminar ${label.toLowerCase()} "${row.nombre}"?\n\nEsta acción no se puede deshacer.`)) return;
+  const ok = await heroConfirm({
+    title: `Eliminar ${label.toLowerCase()}`,
+    message: `¿Eliminar ${label.toLowerCase()} "${row.nombre}"? Esta acción no se puede deshacer.`,
+    confirmLabel: "Eliminar",
+    variant: "danger"
+  });
+  if (!ok) return;
 
   try {
     await deleteDoc(doc(db, BROKERS_COL, id));
   } catch (e) {
-    alert("Error al eliminar: " + e.message);
+    heroToast.error("No se pudo eliminar: " + e.message);
     return;
   }
 
@@ -879,10 +892,11 @@ function openBrokerModal(existing) {
     const tipoChecked = dialog.querySelector('input[name="fb-f-tipo"]:checked');
     const tipo = tipoChecked ? tipoChecked.value : "agencia";
 
-    if (!nombre) { alert("El nombre es obligatorio."); nombreInp.focus(); return; }
+    if (!nombre) { nombreInp.focus(); heroToast.error("El nombre es obligatorio."); return; }
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      alert("El email no tiene un formato válido.");
-      emailInp.focus(); return;
+      emailInp.focus();
+      heroToast.error("El email no tiene un formato válido.");
+      return;
     }
 
     const nombreNorm = nombre.toUpperCase();
@@ -922,7 +936,7 @@ function openBrokerModal(existing) {
       updateBrokersTotal();
       dialog.hide();
     } catch (e) {
-      alert("Error al guardar: " + e.message);
+      heroToast.error("No se pudo guardar: " + e.message);
     }
   });
 
@@ -1156,7 +1170,7 @@ async function initIngresosPanel() {
     const msg = e?.code === "permission-denied" || /permission|insufficient/i.test(e?.message || "")
       ? `Firestore rechazó la lectura de "${INGRESOS_COL}". Verifica las reglas en Firebase Console.`
       : `No se pudo cargar la Lista de Ingresos:\n${e?.message || e}`;
-    alert(msg);
+    heroToast.error(msg, { duration: 6000 });
   }
   if (window.refreshIcons) window.refreshIcons();
 }
@@ -1491,12 +1505,18 @@ async function onDeleteIngreso(id) {
   if (!row) return;
   const fechaTxt = row.fecha ? formatFechaUS(row.fecha) : "?";
   const label = `${fechaTxt} · ${row.descripcionDeposito || "?"} · ${formatMoney(row.monto)}`;
-  if (!confirm(`¿Eliminar este ingreso?\n\n${label}\n\nEsta acción no se puede deshacer.`)) return;
+  const ok = await heroConfirm({
+    title: "Eliminar ingreso",
+    message: `¿Eliminar este ingreso? ${label}. Esta acción no se puede deshacer.`,
+    confirmLabel: "Eliminar",
+    variant: "danger"
+  });
+  if (!ok) return;
 
   try {
     await deleteDoc(doc(db, INGRESOS_COL, id));
   } catch (e) {
-    alert("Error al eliminar: " + e.message);
+    heroToast.error("No se pudo eliminar: " + e.message);
     return;
   }
 
@@ -1958,7 +1978,7 @@ async function initEgresosPanel() {
     const msg = e?.code === "permission-denied" || /permission|insufficient/i.test(e?.message || "")
       ? `Firestore rechazó la lectura de "${EGRESOS_COL}". Verifica las reglas en Firebase Console.`
       : `No se pudo cargar Egresos:\n${e?.message || e}`;
-    alert(msg);
+    heroToast.error(msg, { duration: 6000 });
   }
   if (window.refreshIcons) window.refreshIcons();
 }
@@ -2102,11 +2122,17 @@ async function onDeleteEgreso(id) {
   const row = egresosData.find(r => r.id === id);
   if (!row) return;
   const label = `${formatFechaUS(row.fecha)} · ${row.descripcion || "?"} · ${formatMoney(row.monto)}`;
-  if (!confirm(`¿Eliminar este egreso?\n\n${label}\n\nEsta acción no se puede deshacer.`)) return;
+  const ok = await heroConfirm({
+    title: "Eliminar egreso",
+    message: `¿Eliminar este egreso? ${label}. Esta acción no se puede deshacer.`,
+    confirmLabel: "Eliminar",
+    variant: "danger"
+  });
+  if (!ok) return;
   try {
     await deleteDoc(doc(db, EGRESOS_COL, id));
   } catch (e) {
-    alert("Error al eliminar: " + e.message);
+    heroToast.error("No se pudo eliminar: " + e.message);
     return;
   }
   logEvent(ACTIONS.FINANZAS_EGRESO_DELETE, row.fecha || id, {
@@ -2247,7 +2273,7 @@ async function openEgresoModal(existing) {
       addWrap.style.display = "none";
       populateTipoGastoFilter();
     } catch (e) {
-      alert(e.message);
+      heroToast.error(e.message);
     } finally {
       addSaveBtn.disabled = false;
     }
@@ -2276,10 +2302,10 @@ async function openEgresoModal(existing) {
     const descripcion = (descInp.value || "").trim();
     const notas = (notasInp.value || "").trim();
 
-    if (!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) { alert("La fecha es obligatoria."); fechaInp.focus(); return; }
-    if (!tipoGasto) { alert("El tipo de gasto es obligatorio."); tipoSel.focus(); return; }
-    if (!isFinite(monto) || monto <= 0) { alert("El monto es obligatorio y debe ser mayor a 0."); montoInp.focus(); return; }
-    if (!descripcion) { alert("La descripción es obligatoria."); descInp.focus(); return; }
+    if (!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) { fechaInp.focus(); heroToast.error("La fecha es obligatoria."); return; }
+    if (!tipoGasto) { tipoSel.focus(); heroToast.error("El tipo de gasto es obligatorio."); return; }
+    if (!isFinite(monto) || monto <= 0) { montoInp.focus(); heroToast.error("El monto es obligatorio y debe ser mayor a 0."); return; }
+    if (!descripcion) { descInp.focus(); heroToast.error("La descripción es obligatoria."); return; }
 
     const mes = deriveMes(fecha);
     const payload = {
@@ -2311,7 +2337,7 @@ async function openEgresoModal(existing) {
       populateTipoGastoFilter();
       dialog.hide();
     } catch (e) {
-      alert("Error al guardar: " + e.message);
+      heroToast.error("No se pudo guardar: " + e.message);
     }
   });
 
@@ -2362,7 +2388,7 @@ function bindDashboardStaticHandlers() {
         if (fiTable) { fiTable.setData(ingresosData); updateIngresosSummary(); }
         renderDashboard();
       } catch (e) {
-        alert("Error al actualizar: " + e.message);
+        heroToast.error("No se pudo actualizar: " + e.message);
       }
     });
   }
@@ -2392,7 +2418,7 @@ async function initDashboardPanel() {
     const msg = e?.code === "permission-denied" || /permission|insufficient/i.test(e?.message || "")
       ? `Firestore rechazó la lectura de "${INGRESOS_COL}". Verifica las reglas.`
       : `No se pudo cargar el Dashboard:\n${e?.message || e}`;
-    alert(msg);
+    heroToast.error(msg, { duration: 6000 });
   }
 }
 
@@ -2765,7 +2791,7 @@ async function initComparativasPanel() {
   } catch (e) {
     console.error("Error inicializando Comparativas:", e);
     fcompInited = false;
-    alert(`No se pudo cargar Comparativas:\n${e?.message || e}`);
+    heroToast.error(`No se pudo cargar Comparativas: ${e?.message || e}`, { duration: 6000 });
   }
 }
 
@@ -3240,7 +3266,7 @@ async function initExportarPanel() {
   } catch (e) {
     console.error("Error inicializando Exportar:", e);
     fexpInited = false;
-    alert(`No se pudo cargar Exportar:\n${e?.message || e}`);
+    heroToast.error(`No se pudo cargar Exportar: ${e?.message || e}`, { duration: 6000 });
   }
 }
 
@@ -3584,9 +3610,9 @@ function exportarData() {
 // ─── Descarga ─────────────────────────────────────────────
 function doExport() {
   const rows = getFilteredData();
-  if (rows.length === 0) { alert("No hay registros que coincidan con los filtros."); return; }
+  if (rows.length === 0) { heroToast.info("No hay registros que coincidan con los filtros."); return; }
   const activeCols = FEXP_COL_DEFS[fexpState.dataset].filter(c => fexpState.columns.has(c.id));
-  if (activeCols.length === 0) { alert("Selecciona al menos una columna."); return; }
+  if (activeCols.length === 0) { heroToast.error("Selecciona al menos una columna."); return; }
 
   const header = activeCols.map(c => c.label);
   const body = rows.map(r => activeCols.map(c => c.get(r)));
@@ -3652,7 +3678,7 @@ function slugify(s) {
 
 function ensureSheetJS() {
   if (typeof XLSX === "undefined") {
-    alert("La librería para generar Excel (SheetJS) aún no cargó. Espera un segundo y vuelve a intentar.");
+    heroToast.info("La librería para generar Excel (SheetJS) aún no cargó. Espera un segundo y vuelve a intentar.", { duration: 5000 });
     return false;
   }
   return true;
@@ -3679,7 +3705,7 @@ function downloadCSV(filename, rows) {
 
 function generatePrintReport() {
   const data = exportarData();
-  if (!data.length) { alert("No hay ingresos en el periodo seleccionado."); return; }
+  if (!data.length) { heroToast.info("No hay ingresos en el periodo seleccionado."); return; }
 
   // Aggregate por mes
   const byMonth = {};
@@ -4159,7 +4185,7 @@ async function openIngresoModal(existing, opts = {}) {
       addInp.value = "";
       addWrap.style.display = "none";
     } catch (e) {
-      alert(e.message);
+      heroToast.error(e.message);
     } finally {
       addSaveBtn.disabled = false;
     }
@@ -4211,7 +4237,7 @@ async function openIngresoModal(existing, opts = {}) {
       // Refresca el filtro de la tabla también
       populateCarrierFilter();
     } catch (e) {
-      alert(e.message);
+      heroToast.error(e.message);
     } finally {
       carrierAddSave.disabled = false;
     }
@@ -4326,12 +4352,16 @@ async function openIngresoModal(existing, opts = {}) {
     const notas = (notasInp.value || "").trim();
 
     if (!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-      alert("La fecha es obligatoria."); fechaInp.focus(); return;
+      fechaInp.focus();
+      heroToast.error("La fecha es obligatoria.");
+      return;
     }
-    if (!TIPOS_PAGO.includes(tipoPago)) { alert("Tipo de pago inválido."); return; }
-    if (!CATEGORIAS.includes(categoria)) { alert("Categoría inválida."); return; }
+    if (!TIPOS_PAGO.includes(tipoPago)) { heroToast.error("Tipo de pago inválido."); return; }
+    if (!CATEGORIAS.includes(categoria)) { heroToast.error("Categoría inválida."); return; }
     if (!isFinite(monto) || monto < 0) {
-      alert("El monto es obligatorio y debe ser ≥ 0."); montoInp.focus(); return;
+      montoInp.focus();
+      heroToast.error("El monto es obligatorio y debe ser ≥ 0.");
+      return;
     }
 
     // Recolectar payouts editados + preservar emailSentAt de los originales (por índice)
@@ -4348,8 +4378,8 @@ async function openIngresoModal(existing, opts = {}) {
       const reporteFile = (reporteInp.value || "").trim();
       const saldo = parseFloat(saldoInp.value);
 
-      if (!broker) { alert("Cada payout debe tener un destinatario seleccionado."); brokerSel.focus(); return; }
-      if (!isFinite(saldo) || saldo < 0) { alert(`Saldo inválido para ${broker}.`); saldoInp.focus(); return; }
+      if (!broker) { brokerSel.focus(); heroToast.error("Cada payout debe tener un destinatario seleccionado."); return; }
+      if (!isFinite(saldo) || saldo < 0) { saldoInp.focus(); heroToast.error(`Saldo inválido para ${broker}.`); return; }
 
       const payoutObj = { tipo, broker, reporteFile, saldo };
       // Preservar flags de envío del original en la misma posición si existían
@@ -4407,7 +4437,7 @@ async function openIngresoModal(existing, opts = {}) {
       updateIngresosSummary();
       dialog.hide();
     } catch (e) {
-      alert("Error al guardar: " + e.message);
+      heroToast.error("No se pudo guardar: " + e.message);
     }
   });
 
@@ -4790,7 +4820,13 @@ async function applyIngresosImport() {
     return;
   }
   const nuevos = fimpState.ingresosDiff.nuevos;
-  if (!confirm(`Confirma importar ${nuevos.length} nuevos ingresos a Firestore. Esta acción no se puede deshacer.`)) return;
+  const okImport = await heroConfirm({
+    title: "Importar ingresos",
+    message: `¿Confirmas importar ${nuevos.length} nuevos ingresos a Firestore? Esta acción no se puede deshacer.`,
+    confirmLabel: "Importar",
+    variant: "primary"
+  });
+  if (!okImport) return;
 
   applyBtn.disabled = true;
   statusEl.textContent = `Importando ${nuevos.length} ingresos...`;
@@ -5012,7 +5048,13 @@ async function applyUrlsImport() {
     return;
   }
   const matched = fimpState.urlsDiff.matched;
-  if (!confirm(`Confirma actualizar ${matched.length} URLs en Firestore. Esto puede sobreescribir URLs previas.`)) return;
+  const okUrls = await heroConfirm({
+    title: "Actualizar URLs",
+    message: `¿Confirmas actualizar ${matched.length} URLs en Firestore? Esto puede sobreescribir URLs previas.`,
+    confirmLabel: "Actualizar",
+    variant: "warning"
+  });
+  if (!okUrls) return;
 
   applyBtn.disabled = true;
   statusEl.textContent = `Aplicando ${matched.length} URLs...`;

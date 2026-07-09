@@ -385,13 +385,20 @@ function openBioEditModal(idx) {
   dialog.querySelector("#bio-cancel").addEventListener("click", () => dialog.hide());
 
   dialog.querySelector("#bio-clear").addEventListener("click", async () => {
-    if (!confirm("¿Limpiar todos los campos? Se mostrarán los textos genéricos automáticos.")) return;
+    const ok = await heroConfirm({
+      title: "Restablecer ficha",
+      message: "¿Limpiar todos los campos? Se mostrarán los textos genéricos automáticos.",
+      confirmLabel: "Restablecer",
+      variant: "warning"
+    });
+    if (!ok) return;
     members[idx].bio = null;
     try {
       await setDoc(doc(db, "shared", "team"), { members });
       dialog.hide();
       openProfile(idx);
-    } catch (e) { alert("Error: " + e.message); }
+      heroToast.info("Ficha restablecida a genéricos");
+    } catch (e) { heroToast.error("No se pudo restablecer: " + e.message); }
   });
 
   dialog.querySelector("#bio-save").addEventListener("click", async () => {
@@ -408,7 +415,8 @@ function openBioEditModal(idx) {
       await setDoc(doc(db, "shared", "team"), { members });
       dialog.hide();
       openProfile(idx);
-    } catch (e) { alert("Error: " + e.message); }
+      heroToast.success("Ficha actualizada");
+    } catch (e) { heroToast.error("No se pudo guardar: " + e.message); }
   });
 
   // Shoelace lazy-registra el custom element en el primer uso; sin esto
@@ -509,8 +517,8 @@ function openMemberModal(idx) {
       bio: editing ? (members[idx].bio || null) : null,
     };
     if (!nuevo.name) {
-      alert("Nombre requerido");
       dialog.querySelector("#m-name").focus();
+      heroToast.error("El nombre es requerido");
       return;
     }
 
@@ -521,7 +529,8 @@ function openMemberModal(idx) {
       await setDoc(doc(db, "shared", "team"), { members });
       dialog.hide();
       renderGrid();
-    } catch (e) { alert("Error guardando: " + e.message); }
+      heroToast.success(editing ? "Cambios guardados" : `${nuevo.name} agregado al equipo`);
+    } catch (e) { heroToast.error("Error guardando: " + e.message); }
   });
 
   // Shoelace lazy-registra el custom element en el primer uso; sin esto
@@ -531,10 +540,17 @@ function openMemberModal(idx) {
 
 async function deleteMember(idx) {
   const m = members[idx];
-  if (!confirm(`¿Eliminar a ${m.name}?`)) return;
+  const ok = await heroConfirm({
+    title: "Eliminar miembro",
+    message: `¿Eliminar a ${m.name}? Esta acción no se puede deshacer.`,
+    confirmLabel: "Eliminar",
+    variant: "danger"
+  });
+  if (!ok) return;
   members.splice(idx, 1);
   try {
     await setDoc(doc(db, "shared", "team"), { members });
     renderGrid();
-  } catch (e) { alert("Error: " + e.message); }
+    heroToast.success(`${m.name} eliminado`);
+  } catch (e) { heroToast.error("No se pudo eliminar: " + e.message); }
 }

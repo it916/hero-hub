@@ -122,16 +122,28 @@ export function openBirthdayCardModal(person, currentUser) {
   // Guardar
   modal.querySelector("#bc-save").addEventListener('click', async () => {
     const msg = textarea.value.trim();
-    if (msg.length < 5) { alert("El mensaje debe tener al menos 5 caracteres"); return; }
+    if (msg.length < 5) {
+      textarea.focus();
+      heroToast.error("El mensaje debe tener al menos 5 caracteres");
+      return;
+    }
     await saveMessage(person, currentUser, msg);
     await loadAndRenderCard(person, currentUser, modal);
+    heroToast.success("Felicitación guardada");
   });
 
   // Borrar mi mensaje
   modal.querySelector("#bc-delete").addEventListener('click', async () => {
-    if (!confirm("¿Borrar tu mensaje?")) return;
+    const ok = await heroConfirm({
+      title: "Borrar felicitación",
+      message: "¿Borrar tu mensaje de esta tarjeta?",
+      confirmLabel: "Borrar",
+      variant: "danger"
+    });
+    if (!ok) return;
     await deleteMessage(person, currentUser);
     await loadAndRenderCard(person, currentUser, modal);
+    heroToast.success("Mensaje borrado");
   });
 }
 
@@ -237,7 +249,7 @@ export async function saveMessage(person, currentUser, messageText) {
 
     await setDoc(ref, data);
   } catch (e) {
-    alert("Error guardando: " + e.message);
+    heroToast.error("No se pudo guardar: " + e.message);
   }
 }
 
@@ -251,7 +263,7 @@ async function deleteMessage(person, currentUser) {
     data.messages = (data.messages || []).filter(m => m.fromEmail !== currentUser.email);
     await setDoc(ref, data);
   } catch (e) {
-    alert("Error borrando: " + e.message);
+    heroToast.error("No se pudo borrar: " + e.message);
   }
 }
 

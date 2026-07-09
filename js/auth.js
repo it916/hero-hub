@@ -126,7 +126,7 @@ function wireBirthdayButton() {
     // Determinar al cumpleañero próximo (el mismo que muestra el banner)
     const person = findNextBirthday();
     if (!person) {
-      alert("No hay cumpleaños próximos registrados.");
+      heroToast.info("No hay cumpleaños próximos registrados.");
       return;
     }
     openBirthdayCardModal(person, currentUser);
@@ -364,7 +364,7 @@ async function reactToMessage(emoji, idx) {
     await updateDoc(doc(db, "shared", "messages"), { items });
     renderReactions(items[idx]);
   } catch (e) {
-    alert("Error guardando reacción: " + e.message);
+    heroToast.error("No se pudo guardar la reacción: " + e.message);
   }
 }
 

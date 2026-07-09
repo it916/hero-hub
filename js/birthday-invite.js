@@ -223,7 +223,7 @@ function showInviteModal(person, bd, days, currentUser, cardId) {
     } catch (e) {
       publish.disabled = false;
       publish.textContent = "Publicar felicitación";
-      alert("No se pudo guardar la felicitación: " + e.message);
+      heroToast.error("No se pudo guardar la felicitación: " + e.message);
     }
   });
 }

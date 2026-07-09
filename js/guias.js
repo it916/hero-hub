@@ -108,12 +108,19 @@ function renderGuias() {
       if (btn.classList.contains('edit')) openGuiaModal(idx);
       else {
         const g = guias[idx];
-        if (!confirm(`¿Eliminar guía "${g.title}"?`)) return;
+        const ok = await heroConfirm({
+          title: "Eliminar guía",
+          message: `¿Eliminar guía "${g.title}"?`,
+          confirmLabel: "Eliminar",
+          variant: "danger"
+        });
+        if (!ok) return;
         guias.splice(idx, 1);
         try {
           await setDoc(doc(db, "shared", "guias"), { items: guias });
           renderGuias();
-        } catch (err) { alert("Error: " + err.message); }
+          heroToast.success(`Guía "${g.title}" eliminada`);
+        } catch (err) { heroToast.error("No se pudo eliminar: " + err.message); }
       }
     });
   });
@@ -158,8 +165,16 @@ function openGuiaModal(idx) {
   dialog.querySelector("#g-save").addEventListener("click", async () => {
     const title = (dialog.querySelector("#g-title").value || "").trim();
     const url = (dialog.querySelector("#g-url").value || "").trim();
-    if (!title) { alert("El título es obligatorio"); dialog.querySelector("#g-title").focus(); return; }
-    if (!url) { alert("La URL es obligatoria"); dialog.querySelector("#g-url").focus(); return; }
+    if (!title) {
+      dialog.querySelector("#g-title").focus();
+      heroToast.error("El título es obligatorio");
+      return;
+    }
+    if (!url) {
+      dialog.querySelector("#g-url").focus();
+      heroToast.error("La URL es obligatoria");
+      return;
+    }
 
     const nueva = {
       emoji: (dialog.querySelector("#g-emoji").value || "").trim() || '📘',
@@ -177,7 +192,8 @@ function openGuiaModal(idx) {
       await setDoc(doc(db, "shared", "guias"), { items: guias });
       dialog.hide();
       renderGuias();
-    } catch (e) { alert("Error: " + e.message); }
+      heroToast.success(editing ? `Guía "${title}" actualizada` : `Guía "${title}" agregada`);
+    } catch (e) { heroToast.error("No se pudo guardar: " + e.message); }
   });
 
   // Shoelace lazy-registra el custom element en el primer uso; sin esto

@@ -293,14 +293,20 @@ function wireHandlers() {
   if (cleanupBtn && !cleanupBtn.dataset.bound) {
     cleanupBtn.dataset.bound = "1";
     cleanupBtn.addEventListener("click", async () => {
-      if (!confirm("¿Eliminar eventos con más de 1 año de antigüedad?\n\nEsta acción no se puede deshacer.")) return;
+      const ok = await heroConfirm({
+        title: "Limpiar eventos antiguos",
+        message: "¿Eliminar eventos con más de 1 año de antigüedad? Esta acción no se puede deshacer.",
+        confirmLabel: "Eliminar",
+        variant: "danger"
+      });
+      if (!ok) return;
       cleanupBtn.disabled = true;
       try {
         const deleted = await cleanupOldEvents(365);
-        alert(`✓ ${deleted} eventos antiguos eliminados`);
+        heroToast.success(`${deleted} eventos antiguos eliminados`);
         await loadEvents();
       } catch (e) {
-        alert("Error: " + e.message);
+        heroToast.error("No se pudo limpiar: " + e.message);
       } finally {
         cleanupBtn.disabled = false;
       }

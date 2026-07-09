@@ -91,7 +91,7 @@ async function saveUsersToFirestore() {
     await setDoc(doc(db, "shared", "roles"), { users: usersData });
     return true;
   } catch (e) {
-    alert("Error al guardar: " + e.message);
+    heroToast.error("Error al guardar: " + e.message);
     return false;
   }
 }
@@ -289,15 +289,21 @@ async function onChangeRole(e) {
   const newLabel = ROLES[newRole]?.label || newRole;
 
   if (email === currentAdminEmail && newRole !== "admin") {
-    const confirmed = confirm(
-      `⚠️ Estás cambiando tu propio rol de "${oldLabel}" a "${newLabel}".\n\n` +
-      `Si guardas este cambio, perderás acceso al panel de admin al recargar la página.\n\n` +
-      `¿Continuar?`
-    );
+    const confirmed = await heroConfirm({
+      title: "Cambiar tu propio rol",
+      message: `Estás cambiando tu propio rol de "${oldLabel}" a "${newLabel}". Si guardas este cambio, perderás acceso al panel de admin al recargar la página.`,
+      confirmLabel: "Continuar",
+      variant: "warning"
+    });
     if (!confirmed) { select.value = oldRole; return; }
   } else {
     const displayName = findTeamMember(email)?.name || email.split("@")[0];
-    const confirmed = confirm(`¿Cambiar a ${displayName} de "${oldLabel}" a "${newLabel}"?`);
+    const confirmed = await heroConfirm({
+      title: "Cambiar rol",
+      message: `¿Cambiar a ${displayName} de "${oldLabel}" a "${newLabel}"?`,
+      confirmLabel: "Cambiar",
+      variant: "primary"
+    });
     if (!confirmed) { select.value = oldRole; return; }
   }
 
@@ -324,14 +330,20 @@ async function onDeleteUser(e) {
   const email = e.currentTarget.dataset.email;
 
   if (PROTECTED_EMAILS.includes(email)) {
-    alert("Este usuario está protegido y no puede eliminarse.");
+    heroToast.error("Este usuario está protegido y no puede eliminarse.");
     return;
   }
   if (email === currentAdminEmail) {
-    alert("No puedes eliminarte a ti mismo. Pídele a otro admin que lo haga.");
+    heroToast.error("No puedes eliminarte a ti mismo. Pídele a otro admin que lo haga.");
     return;
   }
-  if (!confirm(`¿Eliminar a ${email} del sistema de roles?\n\nPerderá acceso al Hero Hub inmediatamente.`)) return;
+  const ok2 = await heroConfirm({
+    title: "Eliminar usuario",
+    message: `¿Eliminar a ${email} del sistema de roles? Perderá acceso al Hero Hub inmediatamente.`,
+    confirmLabel: "Eliminar",
+    variant: "danger"
+  });
+  if (!ok2) return;
 
   const oldRole = usersData[email]?.role;
   delete usersData[email];
@@ -461,17 +473,17 @@ function openAddUserModal() {
     const role = roleSel.value;
 
     if (!email) {
-      alert("El email es obligatorio");
       emailInp.focus();
+      heroToast.error("El email es obligatorio");
       return;
     }
     if (!/^[^\s@]+@heroinsuranceusa\.com$/.test(email)) {
-      alert("El email debe terminar en @heroinsuranceusa.com");
       emailInp.focus();
+      heroToast.error("El email debe terminar en @heroinsuranceusa.com");
       return;
     }
     if (usersData[email]) {
-      alert(`El usuario ${email} ya existe con rol "${ROLES[usersData[email].role]?.label || usersData[email].role}".\n\nSi quieres cambiar su rol, hazlo directamente desde la tabla.`);
+      heroToast.error(`El usuario ${email} ya existe con rol "${ROLES[usersData[email].role]?.label || usersData[email].role}". Cámbialo desde la tabla.`);
       return;
     }
 

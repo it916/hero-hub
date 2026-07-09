@@ -1177,7 +1177,7 @@ function openAgencyModal(agencyId, group) {
 
   if (!isNew) {
     agency = findAgency(agencyId, group);
-    if (!agency) { alert("No se encontró la agencia."); return; }
+    if (!agency) { heroToast.error("No se encontró la agencia."); return; }
   } else {
     agency = { id: "", name: "", kind: "normal", aic: [], brokers: [] };
     originalGroup = "hero";
@@ -1352,7 +1352,8 @@ function openAgencyModal(agencyId, group) {
       .map(inp => inp.value);
 
     if (!name) {
-      alert("El nombre es obligatorio.");
+      overlay.querySelector("#ag-f-name").focus();
+      heroToast.error("El nombre es obligatorio.");
       return;
     }
 
@@ -1371,9 +1372,10 @@ function openAgencyModal(agencyId, group) {
       }
       close();
       await loadData();
+      heroToast.success(isNew ? `Agencia "${name}" creada` : "Cambios guardados");
     } catch (e) {
       console.error(e);
-      alert("Error al guardar: " + e.message);
+      heroToast.error("Error al guardar: " + e.message);
       saveBtn.disabled = false;
       saveBtn.textContent = isNew ? "Crear agencia" : "Guardar cambios";
     }
@@ -1470,7 +1472,7 @@ async function updateAgency(agencyId, originalGroup, input) {
 
 async function deleteAgency(agencyId, group) {
   const agency = findAgency(agencyId, group);
-  if (!agency) { alert("Agencia no encontrada."); return; }
+  if (!agency) { heroToast.error("Agencia no encontrada."); return; }
 
   // Verificar si tiene hijos
   const children = getChildren(agencyId, group);
@@ -1485,7 +1487,7 @@ async function deleteAgency(agencyId, group) {
   );
   if (typed === null) return;
   if (typed.trim() !== agency.name) {
-    alert("El nombre no coincide. Eliminación cancelada.");
+    heroToast.error("El nombre no coincide. Eliminación cancelada.");
     return;
   }
 
@@ -1510,9 +1512,10 @@ async function deleteAgency(agencyId, group) {
     });
 
     await loadData();
+    heroToast.success(`Agencia "${agency.name}" eliminada`);
   } catch (e) {
     console.error(e);
-    alert("Error al eliminar: " + e.message);
+    heroToast.error("No se pudo eliminar: " + e.message);
   }
 }
 

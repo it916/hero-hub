@@ -275,8 +275,16 @@ function openAbsenceModal(triggerBtn) {
     const reasonEl = dialog.querySelector("#att-abs-reason");
     const reason = (reasonEl.value || "").trim();
 
-    if (!dateInput) { alert("Selecciona el día de ausencia."); return; }
-    if (!reason) { alert("Escribe un motivo breve."); reasonEl.focus(); return; }
+    if (!dateInput) {
+      dialog.querySelector("#att-abs-date").focus();
+      heroToast.error("Selecciona el día de ausencia.");
+      return;
+    }
+    if (!reason) {
+      reasonEl.focus();
+      heroToast.error("Escribe un motivo breve.");
+      return;
+    }
 
     const [y, m, d] = dateInput.split("-");
     const absenceDate = `${m}/${d}/${y}`;

@@ -276,8 +276,9 @@ function wireBioEditor() {
       view.hidden = false;
       editBtn.hidden = false;
       renderBio();
+      heroToast.success("Biografía actualizada");
     } catch (e) {
-      alert("No se pudo guardar la bio: " + e.message);
+      heroToast.error("No se pudo guardar la bio: " + e.message);
     } finally {
       save.disabled = false;
       save.textContent = "Guardar";
