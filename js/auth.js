@@ -11,6 +11,29 @@ import { getFreshGooglePhotoURL } from "./user-photo.js";
 
 const ALLOWED_DOMAIN = "heroinsuranceusa.com";
 
+// ══════════════════════════════════════════════
+// Google Calendar access token — publicado en sessionStorage y como event
+// para que js/calendar-widget.js pueda consumirlo sin acoplarse a auth.js.
+// ══════════════════════════════════════════════
+const GCAL_TOKEN_KEY = "hero-gcal-token";
+const GCAL_TOKEN_TTL_MS = 55 * 60 * 1000; // 55 min (Google emite ~1h, dejamos margen)
+
+function publishGoogleAccessToken(userCredential, userEmail) {
+  try {
+    const credential = GoogleAuthProvider.credentialFromResult(userCredential);
+    if (!credential || !credential.accessToken) return;
+    const payload = {
+      accessToken: credential.accessToken,
+      expiresAt: Date.now() + GCAL_TOKEN_TTL_MS,
+      email: userEmail,
+    };
+    sessionStorage.setItem(GCAL_TOKEN_KEY, JSON.stringify(payload));
+    window.dispatchEvent(new CustomEvent("hero-gcal-token-ready", { detail: payload }));
+  } catch (e) {
+    console.warn("[auth] No se pudo publicar el token de Google Calendar:", e.message);
+  }
+}
+
 let currentUser = null;
 let currentUserRole = null;  // Objeto { role, definition } del sistema de roles
 let isAdmin = false;
@@ -108,7 +131,10 @@ async function showDashboard() {
 
 document.getElementById("btn-login")?.addEventListener("click", async () => {
   try {
-    await signInWithPopup(auth, new GoogleAuthProvider());
+    const provider = new GoogleAuthProvider();
+    provider.addScope("https://www.googleapis.com/auth/calendar.readonly");
+    const result = await signInWithPopup(auth, provider);
+    publishGoogleAccessToken(result, result.user.email);
   } catch (e) {
     document.getElementById("login-error").textContent = "Error: " + e.message;
   }
