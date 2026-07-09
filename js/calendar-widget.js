@@ -22,6 +22,17 @@
   const IN_15_MIN_THRESHOLD_MS = 15 * 60 * 1000;
 
   // ══════════════════════════════════════════════
+  // Firebase Auth cargado dinámicamente (para evitar tener que hacer del
+  // widget un módulo ES6; se carga con <script defer>)
+  // ══════════════════════════════════════════════
+  let _firebaseAuthModule = null;
+  async function loadFirebaseAuth() {
+    if (_firebaseAuthModule) return _firebaseAuthModule;
+    _firebaseAuthModule = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js");
+    return _firebaseAuthModule;
+  }
+
+  // ══════════════════════════════════════════════
   // Estado del módulo
   // ══════════════════════════════════════════════
   let refreshTimer = null;
@@ -256,12 +267,40 @@
   }
 
   // ══════════════════════════════════════════════
-  // Token con refresh silencioso (placeholder — completado en Task 4)
+  // Refresh silencioso del token vía Firebase Auth
   // ══════════════════════════════════════════════
+  async function refreshTokenSilently(hintEmail) {
+    try {
+      const { GoogleAuthProvider, signInWithPopup, getAuth } = await loadFirebaseAuth();
+      const auth = getAuth();
+      if (!auth.currentUser) return null;
+      const provider = new GoogleAuthProvider();
+      provider.addScope("https://www.googleapis.com/auth/calendar.readonly");
+      provider.setCustomParameters({
+        login_hint: hintEmail || auth.currentUser.email,
+        prompt: "none",
+      });
+      const result = await signInWithPopup(auth, provider);
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (!credential || !credential.accessToken) return null;
+      const payload = {
+        accessToken: credential.accessToken,
+        expiresAt: Date.now() + 55 * 60 * 1000,
+        email: result.user.email,
+      };
+      sessionStorage.setItem(GCAL_TOKEN_KEY, JSON.stringify(payload));
+      return payload;
+    } catch (e) {
+      console.warn("[gcal-widget] refresh silencioso falló:", e.message);
+      return null;
+    }
+  }
+
   async function getFreshToken() {
     const t = readToken();
     if (tokenIsValid(t)) return t;
-    return null;
+    const fresh = await refreshTokenSilently(t ? t.email : null);
+    return fresh || null;
   }
 
   // ══════════════════════════════════════════════
@@ -296,9 +335,111 @@
     }
   }
 
-  // Stubs temporales — Task 4 los implementa
-  function renderMeetings(_processed) { renderEmpty(); }
-  function handleReconnectClick() { console.warn("Reconnect click — implementado en Task 4"); }
+  // ══════════════════════════════════════════════
+  // Formato de hora
+  // ══════════════════════════════════════════════
+  function fmtTime(ms) {
+    return new Intl.DateTimeFormat("en-US", {
+      hour: "numeric", minute: "2-digit", hour12: true,
+    }).format(new Date(ms));
+  }
+
+  // ══════════════════════════════════════════════
+  // Render de meetings (createElement puro)
+  // ══════════════════════════════════════════════
+  function badgeNode(badge) {
+    if (!badge) return null;
+    const cls = `gcal-badge gcal-badge-${badge.type}`;
+    return el("span", { class: cls, text: badge.label });
+  }
+
+  function joinBtnNode(item) {
+    if (item.joinLink) {
+      const a = el("a", {
+        class: "gcal-join-btn",
+        href: item.joinLink,
+        target: "_blank",
+        rel: "noopener",
+        ariaLabel: `Unirme al meeting «${item.title}» a las ${fmtTime(item.startMs)}`,
+      }, iconEl("video"), el("span", { text: "Unirme" }));
+      return a;
+    }
+    return el("span", { class: "gcal-nolink", ariaLabel: "Sin link disponible", text: "Sin link" });
+  }
+
+  function itemNode(item) {
+    const titleRow = el("div", { class: "gcal-title-row" },
+      el("span", { class: "gcal-item-title", text: item.title }),
+      badgeNode(item.badge)
+    );
+    const body = el("div", { class: "gcal-body" }, titleRow);
+    const time = el("div", { class: "gcal-time mono", text: fmtTime(item.startMs) });
+    const actions = el("div", { class: "gcal-actions" }, joinBtnNode(item));
+    const row = el("div", { class: "gcal-item", role: "listitem" }, time, body, actions);
+    row.setAttribute("data-id", item.id);
+    return row;
+  }
+
+  function groupBlockNode(label, list) {
+    if (!list.length) return null;
+    const rows = el("div", { class: "gcal-list", role: "list" });
+    for (const item of list) rows.appendChild(itemNode(item));
+    return el("div", { class: "gcal-group" },
+      el("div", { class: "gcal-group-label", text: label }),
+      rows
+    );
+  }
+
+  function moreLinkNode() {
+    return el("a", {
+      class: "gcal-more",
+      href: "https://calendar.google.com",
+      target: "_blank",
+      rel: "noopener",
+    }, el("span", { text: "Ver más en Google Calendar " }), iconEl("external-link"));
+  }
+
+  function renderMeetings(processed) {
+    const { items, hasMore } = processed;
+    const hoy = items.filter(i => i.dayGroup === "hoy");
+    const manana = items.filter(i => i.dayGroup === "mañana");
+
+    const nodes = [headerEl()];
+    const gHoy = groupBlockNode("Hoy", hoy);
+    if (gHoy) nodes.push(gHoy);
+    const gManana = groupBlockNode("Mañana", manana);
+    if (gManana) nodes.push(gManana);
+    if (hasMore) nodes.push(moreLinkNode());
+
+    renderInto(...nodes);
+  }
+
+  // ══════════════════════════════════════════════
+  // Handler del botón "Reconectar" (popup completo)
+  // ══════════════════════════════════════════════
+  async function handleReconnectClick() {
+    try {
+      const { GoogleAuthProvider, signInWithPopup, getAuth } = await loadFirebaseAuth();
+      const auth = getAuth();
+      if (!auth.currentUser) return;
+      const provider = new GoogleAuthProvider();
+      provider.addScope("https://www.googleapis.com/auth/calendar.readonly");
+      provider.setCustomParameters({ login_hint: auth.currentUser.email });
+      const result = await signInWithPopup(auth, provider);
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (credential && credential.accessToken) {
+        const payload = {
+          accessToken: credential.accessToken,
+          expiresAt: Date.now() + 55 * 60 * 1000,
+          email: result.user.email,
+        };
+        sessionStorage.setItem(GCAL_TOKEN_KEY, JSON.stringify(payload));
+        await refresh({ force: true });
+      }
+    } catch (e) {
+      console.warn("[gcal-widget] reconectar falló:", e.message);
+    }
+  }
 
   // ══════════════════════════════════════════════
   // Bootstrap (implementado en Task 5)
