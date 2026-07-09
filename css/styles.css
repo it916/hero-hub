@@ -9909,3 +9909,10 @@ body[data-theme="dark"] .gcal-nolink {
 }
 body[data-theme="dark"] .gcal-badge-proximo { color: var(--teal-darker, #062a33); }
 body[data-theme="dark"] .gcal-retry-btn:hover { background: rgba(255,255,255,.05); }
+body[data-theme="dark"] .gcal-skel-row {
+  background: linear-gradient(90deg,
+    rgba(255,255,255,.03) 0%,
+    rgba(255,255,255,.10) 50%,
+    rgba(255,255,255,.03) 100%);
+  background-size: 200% 100%;
+}

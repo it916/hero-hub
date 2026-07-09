@@ -77,6 +77,7 @@
       if (opts.role) node.setAttribute("role", opts.role);
       if (opts.type) node.type = opts.type;
       if (opts.ariaLabel) node.setAttribute("aria-label", opts.ariaLabel);
+      if (opts.title) node.title = opts.title;
     }
     for (const child of children) {
       if (child == null) continue;
@@ -369,7 +370,7 @@
 
   function itemNode(item) {
     const titleRow = el("div", { class: "gcal-title-row" },
-      el("span", { class: "gcal-item-title", text: item.title }),
+      el("span", { class: "gcal-item-title", text: item.title, title: item.title }),
       badgeNode(item.badge)
     );
     const body = el("div", { class: "gcal-body" }, titleRow);
