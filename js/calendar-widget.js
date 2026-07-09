@@ -442,8 +442,32 @@
   }
 
   // ══════════════════════════════════════════════
-  // Bootstrap (implementado en Task 5)
+  // Bootstrap
   // ══════════════════════════════════════════════
+  function installRefreshTriggers() {
+    if (refreshTimer) clearInterval(refreshTimer);
+    refreshTimer = setInterval(() => refresh(), REFRESH_INTERVAL_MS);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState !== "visible") return;
+      if (Date.now() - lastFetchAt > MIN_REFRESH_ON_FOCUS_MS) refresh();
+    });
+  }
+
+  function init() {
+    if (!getContainer()) return;
+    installRefreshTriggers();
+    refresh();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+
+  // Si el token llega DESPUÉS del init (por login fresh en la misma página),
+  // volver a renderizar.
+  window.addEventListener("hero-gcal-token-ready", () => refresh({ force: true }));
 
   window._gcalWidget = { refresh };
 })();
