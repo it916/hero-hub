@@ -151,10 +151,154 @@
   }
 
   // ══════════════════════════════════════════════
-  // Stubs (implementados en tasks siguientes)
+  // Fetch a Google Calendar API v3
   // ══════════════════════════════════════════════
-  async function refresh(_opts) { /* Task 3 */ }
-  function handleReconnectClick() { /* Task 4 */ }
+  async function fetchMeetings(accessToken) {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    const endOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2, 0, 0, 0);
+    const params = new URLSearchParams({
+      timeMin: startOfToday.toISOString(),
+      timeMax: endOfTomorrow.toISOString(),
+      singleEvents: "true",
+      orderBy: "startTime",
+      maxResults: "20",
+    });
+    const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?${params.toString()}`;
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if (res.status === 401 || res.status === 403) {
+      const err = new Error("auth-required");
+      err.status = res.status;
+      throw err;
+    }
+    if (!res.ok) throw new Error(`Calendar API ${res.status}`);
+    const data = await res.json();
+    return data.items || [];
+  }
+
+  // ══════════════════════════════════════════════
+  // Detección del link "Unirme"
+  // ══════════════════════════════════════════════
+  const CONF_URL_REGEX = /https?:\/\/(?:[a-z0-9-]+\.)?(?:zoom\.us|meet\.google\.com|teams\.microsoft\.com|teams\.live\.com|whereby\.com|gather\.town)\/[^\s"<)]+/i;
+  const ANY_URL_REGEX = /https?:\/\/[^\s"<)]+/i;
+
+  function pickJoinLink(event) {
+    if (event.hangoutLink) return event.hangoutLink;
+    const ep = (event.conferenceData && event.conferenceData.entryPoints) || [];
+    const videoEp = ep.find(e => e.entryPointType === "video");
+    if (videoEp && videoEp.uri) return videoEp.uri;
+    if (event.location) {
+      const m = event.location.match(CONF_URL_REGEX) || event.location.match(ANY_URL_REGEX);
+      if (m) return m[0];
+    }
+    if (event.description) {
+      const m = event.description.match(CONF_URL_REGEX);
+      if (m) return m[0];
+    }
+    return null;
+  }
+
+  // ══════════════════════════════════════════════
+  // Post-procesamiento
+  // ══════════════════════════════════════════════
+  function processEvents(rawEvents) {
+    const now = Date.now();
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const startOfTomorrow = new Date(startOfToday);
+    startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+    const endOfTomorrow = new Date(startOfTomorrow);
+    endOfTomorrow.setDate(endOfTomorrow.getDate() + 1);
+
+    const items = [];
+    for (const ev of rawEvents) {
+      if (ev.status === "cancelled") continue;
+      if (ev.eventType === "outOfOffice" || ev.eventType === "focusTime") continue;
+      if (!ev.start || !ev.start.dateTime) continue; // all-day
+      const attendees = ev.attendees || [];
+      const self = attendees.find(a => a.self);
+      if (self && self.responseStatus === "declined") continue;
+
+      const startMs = new Date(ev.start.dateTime).getTime();
+      const endMs = ev.end && ev.end.dateTime
+        ? new Date(ev.end.dateTime).getTime()
+        : startMs + 30 * 60 * 1000;
+      if (endMs < now) continue;
+
+      const startDate = new Date(startMs);
+      let dayGroup;
+      if (startDate >= startOfToday && startDate < startOfTomorrow) dayGroup = "hoy";
+      else if (startDate >= startOfTomorrow && startDate < endOfTomorrow) dayGroup = "mañana";
+      else continue;
+
+      let badge = null;
+      if (startMs <= now && now <= endMs) {
+        badge = { type: "en-curso", label: "En curso" };
+      } else if (startMs > now && (startMs - now) <= IN_15_MIN_THRESHOLD_MS) {
+        const minsLeft = Math.max(1, Math.round((startMs - now) / 60000));
+        badge = { type: "proximo", label: `En ${minsLeft} min` };
+      }
+
+      items.push({
+        id: ev.id,
+        title: ev.summary || "(Sin título)",
+        startMs,
+        endMs,
+        dayGroup,
+        joinLink: pickJoinLink(ev),
+        badge,
+      });
+    }
+
+    const limited = items.slice(0, MAX_ITEMS);
+    const hasMore = items.length > MAX_ITEMS;
+    return { items: limited, hasMore };
+  }
+
+  // ══════════════════════════════════════════════
+  // Token con refresh silencioso (placeholder — completado en Task 4)
+  // ══════════════════════════════════════════════
+  async function getFreshToken() {
+    const t = readToken();
+    if (tokenIsValid(t)) return t;
+    return null;
+  }
+
+  // ══════════════════════════════════════════════
+  // Refresh principal
+  // ══════════════════════════════════════════════
+  async function refresh(opts = {}) {
+    const container = getContainer();
+    if (!container) return;
+
+    const token = await getFreshToken();
+    if (!token) {
+      renderReconnect();
+      return;
+    }
+
+    if (!cachedEvents || opts.force) renderLoading();
+
+    try {
+      const raw = await fetchMeetings(token.accessToken);
+      const processed = processEvents(raw);
+      cachedEvents = processed;
+      lastFetchAt = Date.now();
+      if (processed.items.length === 0) renderEmpty();
+      else renderMeetings(processed);
+    } catch (e) {
+      if (e.message === "auth-required") {
+        renderReconnect(e.status === 403 ? "no-permission" : undefined);
+      } else {
+        console.warn("[gcal-widget] fetch falló:", e.message);
+        renderError();
+      }
+    }
+  }
+
+  // Stubs temporales — Task 4 los implementa
+  function renderMeetings(_processed) { renderEmpty(); }
+  function handleReconnectClick() { console.warn("Reconnect click — implementado en Task 4"); }
 
   // ══════════════════════════════════════════════
   // Bootstrap (implementado en Task 5)
