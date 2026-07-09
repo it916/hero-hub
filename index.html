@@ -24,6 +24,7 @@
 <script defer src="js/topbar-dropdown.js"></script>
 <script defer src="js/toast.js"></script>
 <script defer src="js/hero-confirm.js"></script>
+<script defer src="js/calendar-widget.js"></script>
 
 <!-- Flatpickr · date picker para el modal de Ausencia -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -229,7 +230,9 @@
     <div class="connector"></div>
 
     <!-- ══ MI ASISTENCIA — Registro diario de jornada, break, corte de luz y ausencias ══ -->
-    <section class="section fade-in" id="sec-asistencia">
+    <section class="section fade-in section-dual" id="sec-asistencia-meetings">
+      <div class="section-dual-grid">
+        <div class="section-dual-col" id="sec-asistencia">
       <div class="section-label"><span class="kicker-dot"></span>Mi asistencia</div>
       <div class="attendance-panel">
 
@@ -290,6 +293,15 @@
           <div class="att-feedback" id="attendanceStatus"></div>
         </div>
 
+      </div>
+        </div>
+
+        <div class="section-dual-col" id="sec-gcal">
+          <div class="section-label"><span class="kicker-dot"></span>Próximos meetings</div>
+          <div class="gcal-panel" id="gcal-widget">
+            <!-- Contenido renderizado por js/calendar-widget.js -->
+          </div>
+        </div>
       </div>
     </section>
 
