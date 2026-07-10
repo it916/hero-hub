@@ -1,5 +1,23 @@
 [
   {
+    "id": "2026-07-10-finanzas-import-modificados",
+    "version": "v2.17.0",
+    "date": "2026-07-10",
+    "category": "feat",
+    "scope": "finanzas",
+    "audience": "admin",
+    "title": "Finanzas · El import de Excel ahora detecta filas modificadas (no solo nuevas)",
+    "items": [
+      "Antes: el import solo detectaba filas nuevas (por fecha + descripción de depósito + monto). Si el Excel actualizaba otros campos de filas ya existentes, esos cambios se descartaban en silencio",
+      "Ahora: el diff clasifica en 3 categorías — Nuevos (se crean), Modificados (se actualizan) y Sin cambios (se ignoran)",
+      "Preview muestra qué campos cambian en cada fila modificada, con valor anterior tachado en gris y valor nuevo en verde",
+      "Campos comparados: tipo de pago, categoría, descripción de transacción, notas y payouts. Los campos que el Excel no puede setear (carrier, URL del archivo original) se preservan intactos",
+      "Payouts: merge inteligente. Excel manda para el saldo. Si un payout ya tiene URL de Drive en Firestore (viene del import de URLs), esa URL se preserva. Broker y tipo asignados manualmente también se preservan",
+      "El apply corre en 2 fases: primero crea los nuevos, después actualiza los modificados en batches de 400. El status muestra progreso de ambas fases",
+      "Bump v2.16.0 → v2.17.0"
+    ]
+  },
+  {
     "id": "2026-07-10-hqcc-banner",
     "version": "v2.16.0",
     "date": "2026-07-10",

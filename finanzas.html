@@ -814,6 +814,13 @@
           </div>
         </div>
 
+        <div class="fimp-tip">
+          <i data-lucide="info"></i>
+          <div>
+            <strong>Antes de importar:</strong> quita los filtros y filas ocultas del Excel (Datos → Borrar filtros o <code>Ctrl+Shift+L</code>). El parser procesa <strong>todas las filas del sheet</strong>, no solo las visibles — si tienes un filtro activo puedes estar procesando más filas de las que crees.
+          </div>
+        </div>
+
         <div class="fimp-grid">
 
           <!-- Card A: Importar ingresos -->
@@ -822,7 +829,7 @@
               <div class="fimp-icon"><i data-lucide="database"></i></div>
               <div>
                 <h3>1. Importar ingresos</h3>
-                <p class="fimp-sub">Espera <code>INGRESOS 2026.xlsx</code> con una hoja por mes (ENE 2026, FEB 2026, ...). Solo se insertan los que <strong>no existan</strong> en Firestore (match por fecha + descripción depósito + monto).</p>
+                <p class="fimp-sub">Espera <code>INGRESOS 2026.xlsx</code> con una hoja por mes (ENE 2026, FEB 2026, ...). Match por fecha + descripción depósito + monto. Se crean los <strong>nuevos</strong> y se actualizan los <strong>existentes</strong> cuya info haya cambiado en el Excel (tipo pago, categoría, descripción, notas o payouts).</p>
               </div>
             </div>
 
@@ -839,7 +846,7 @@
             <div class="fimp-actions">
               <sl-button id="fimp-ingresos-apply" variant="primary" disabled>
                 <i data-lucide="upload-cloud" slot="prefix" style="width:14px;height:14px;"></i>
-                Importar nuevos
+                Aplicar cambios
               </sl-button>
             </div>
 
@@ -884,7 +891,7 @@
   </div><!-- /.admin-shell -->
 
   <footer class="hero-footer">
-    <span>HERO HUB · FINANZAS v2.12.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+    <span>HERO HUB · FINANZAS v2.17.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
   </footer>
 
 </div><!-- /#finanzas-panel -->

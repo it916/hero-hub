@@ -4535,7 +4535,7 @@ const MESES_TO_NUM = {
 
 const fimpState = {
   ingresosParsed: null,    // Array de ingresos normalizados desde el Excel
-  ingresosDiff: null,      // { nuevos: [...], existentes: [...], sinMatch: [...] }
+  ingresosDiff: null,      // { nuevos: [...], modificados: [{parsed, fsIngreso, diffs}], sinCambios: [...] }
   urlsParsed: null,        // Array de URLs {mes, id, fecha, tipo, nombre, url}
   urlsDiff: null           // { matched: [...], huerfanos: [...] }
 };
@@ -4619,6 +4619,79 @@ function normalizeDescDep(s) {
 
 function ingresoKey(fecha, descDep, monto) {
   return `${fecha}|${normalizeDescDep(descDep)}|${(Math.round(monto * 100) / 100).toFixed(2)}`;
+}
+
+// Normaliza un array de payouts para comparación (ignora broker/tipo que el Excel no
+// puede saber, y compara reporteFile solo si NO es una URL — las URLs vienen del otro
+// import y no deben perderse cuando el Excel dice el nombre de archivo original).
+function payoutsFingerprint(payouts) {
+  if (!Array.isArray(payouts)) return "";
+  return payouts
+    .map(p => {
+      const saldo = (Math.round(Number(p?.saldo || 0) * 100) / 100).toFixed(2);
+      const ref = String(p?.reporteFile || "").trim();
+      // Si el reporteFile actual es URL (http), lo dejamos aparte y solo comparamos el saldo.
+      const refKey = /^https?:\/\//i.test(ref) ? "<URL>" : ref.toLowerCase();
+      return `${saldo}|${refKey}`;
+    })
+    .join(";");
+}
+
+// Compara una fila parseada del Excel contra su equivalente en Firestore. Devuelve
+// { hasChanges, diffs: [{ campo, actual, nuevo }] }. Solo compara campos que el
+// Excel de INGRESOS puede setear — carrier y archivoOriginalDriveUrl NO están en
+// ese Excel y no se tocan (vienen del import de URLs o del modal manual).
+function compareIngreso(excel, fs) {
+  const diffs = [];
+  const check = (campo, actual, nuevo) => {
+    const a = String(actual == null ? "" : actual).trim();
+    const n = String(nuevo == null ? "" : nuevo).trim();
+    if (a !== n) diffs.push({ campo, actual: a, nuevo: n });
+  };
+  check("tipoPago", fs.tipoPago, excel.tipoPago);
+  check("categoria", fs.categoria, excel.categoria);
+  check("descripcionTransaccion", fs.descripcionTransaccion, excel.descripcionTransaccion);
+  check("notas", fs.notas, excel.notas);
+
+  const fpFs = payoutsFingerprint(fs.payouts);
+  const fpEx = payoutsFingerprint(excel.payouts);
+  if (fpFs !== fpEx) {
+    const nFs = Array.isArray(fs.payouts) ? fs.payouts.length : 0;
+    const nEx = Array.isArray(excel.payouts) ? excel.payouts.length : 0;
+    diffs.push({
+      campo: "payouts",
+      actual: `${nFs} payout(s)`,
+      nuevo: `${nEx} payout(s)`
+    });
+  }
+  return { hasChanges: diffs.length > 0, diffs };
+}
+
+// Merge inteligente de payouts entre Excel (fuente) y Firestore (existente).
+// Preserva `broker`, `tipo` y las URLs de `reporteFile` de Firestore (esas
+// URLs vienen del import de URLs; el Excel de ingresos solo tiene nombres de
+// archivo). Toma `saldo` y `reporteFile` (si no era URL) del Excel.
+function mergePayouts(excelPayouts, fsPayouts) {
+  const out = [];
+  const ex = Array.isArray(excelPayouts) ? excelPayouts : [];
+  const fs = Array.isArray(fsPayouts) ? fsPayouts : [];
+  const len = Math.max(ex.length, fs.length);
+  for (let i = 0; i < len; i++) {
+    const e = ex[i];
+    const f = fs[i];
+    if (!e && f) { out.push({ ...f }); continue; } // Firestore extra — preservar
+    if (e && !f) { out.push({ ...e }); continue; } // Excel extra — agregar
+    if (!e && !f) continue;
+    // Ambos existen: Excel manda para saldo; reporteFile preserva URL si aplica
+    const fsRefIsUrl = /^https?:\/\//i.test(String(f.reporteFile || ""));
+    out.push({
+      tipo: f.tipo || e.tipo || "agencia",
+      broker: f.broker || e.broker || "",
+      reporteFile: fsRefIsUrl ? f.reporteFile : e.reporteFile,
+      saldo: e.saldo
+    });
+  }
+  return out;
 }
 
 function inferMesFromSheetName(name) {
@@ -4716,6 +4789,115 @@ function parseIngresosWorkbook(wb) {
   return results;
 }
 
+// ─── Render del preview de import de ingresos (DOM API pura) ─────
+function renderIngresosImportPreview(root, data) {
+  const { parsed, nuevos, modificados, sinCambios } = data;
+  const CAMPO_LABEL = {
+    tipoPago: "Tipo pago",
+    categoria: "Categoría",
+    descripcionTransaccion: "Desc. transacción",
+    notas: "Notas",
+    payouts: "Payouts"
+  };
+  const shortenTxt = (s, n = 32) => {
+    const t = String(s || "").trim();
+    return t.length > n ? t.slice(0, n - 1) + "…" : t;
+  };
+  const el = (tag, cls, txt) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (txt != null) n.textContent = txt;
+    return n;
+  };
+  const stat = (label, value, valueClass) => {
+    const wrap = el("div", "fimp-stat");
+    wrap.appendChild(el("div", "fimp-stat-label", label));
+    wrap.appendChild(el("div", "fimp-stat-value" + (valueClass ? " " + valueClass : ""), String(value)));
+    return wrap;
+  };
+
+  root.hidden = false;
+  while (root.firstChild) root.removeChild(root.firstChild);
+
+  root.appendChild(el("div", "fimp-preview-title", "Resumen"));
+
+  const stats = el("div", "fimp-preview-stats");
+  stats.appendChild(stat("Total en Excel", parsed.length, "neu"));
+  stats.appendChild(stat("Sin cambios", sinCambios.length));
+  stats.appendChild(stat("Modificados", modificados.length, "warn"));
+  stats.appendChild(stat("Nuevos a importar", nuevos.length, "pos"));
+  root.appendChild(stats);
+
+  const buildTable = (headers) => {
+    const t = document.createElement("table");
+    const thead = document.createElement("thead");
+    const trh = document.createElement("tr");
+    for (const h of headers) trh.appendChild(el("th", null, h));
+    thead.appendChild(trh);
+    t.appendChild(thead);
+    t.appendChild(document.createElement("tbody"));
+    return t;
+  };
+
+  if (nuevos.length) {
+    const det = el("div", "fimp-preview-details");
+    det.appendChild(el("div", "fimp-preview-subtitle", "Nuevos (se crearán)"));
+    const table = buildTable(["Mes", "Fecha", "Desc. depósito", "Monto"]);
+    const tbody = table.querySelector("tbody");
+    for (const n of nuevos.slice(0, 30)) {
+      const tr = document.createElement("tr");
+      tr.appendChild(el("td", null, n.excelMes));
+      tr.appendChild(el("td", null, formatFechaUS(n.fecha)));
+      tr.appendChild(el("td", null, n.descripcionDeposito));
+      tr.appendChild(el("td", null, formatMoney(n.monto)));
+      tbody.appendChild(tr);
+    }
+    det.appendChild(table);
+    if (nuevos.length > 30) {
+      const p = el("p", "fimp-preview-hint", `Mostrando 30 de ${nuevos.length}. El resto se importa igual.`);
+      det.appendChild(p);
+    }
+    root.appendChild(det);
+  }
+
+  if (modificados.length) {
+    const det = el("div", "fimp-preview-details");
+    det.appendChild(el("div", "fimp-preview-subtitle", "Modificados (se actualizarán)"));
+    const table = buildTable(["Fecha", "Desc. depósito", "Campos que cambian"]);
+    const tbody = table.querySelector("tbody");
+    for (const m of modificados.slice(0, 30)) {
+      const tr = document.createElement("tr");
+      tr.appendChild(el("td", null, formatFechaUS(m.parsed.fecha)));
+      tr.appendChild(el("td", null, m.parsed.descripcionDeposito));
+      const tdDiffs = document.createElement("td");
+      for (const d of m.diffs) {
+        const line = el("div", "fimp-diff-line");
+        const strong = el("strong", null, (CAMPO_LABEL[d.campo] || d.campo) + ": ");
+        const before = el("span", "fimp-diff-before", shortenTxt(d.actual) || "—");
+        const arrow = document.createTextNode(" → ");
+        const after = el("span", "fimp-diff-after", shortenTxt(d.nuevo) || "—");
+        line.appendChild(strong);
+        line.appendChild(before);
+        line.appendChild(arrow);
+        line.appendChild(after);
+        tdDiffs.appendChild(line);
+      }
+      tr.appendChild(tdDiffs);
+      tbody.appendChild(tr);
+    }
+    det.appendChild(table);
+    if (modificados.length > 30) {
+      const p = el("p", "fimp-preview-hint", `Mostrando 30 de ${modificados.length}. El resto se actualiza igual.`);
+      det.appendChild(p);
+    }
+    root.appendChild(det);
+  }
+
+  if (!nuevos.length && !modificados.length) {
+    root.appendChild(el("p", "fimp-preview-empty", "Todo el Excel ya está en Firestore sin cambios. Nada que importar."));
+  }
+}
+
 // ─── Handler: subir Excel de ingresos ─────────────────────
 async function handleIngresosFile(file) {
   const nameEl = document.getElementById("fimp-ingresos-filename");
@@ -4745,64 +4927,30 @@ async function handleIngresosFile(file) {
       return;
     }
 
-    // Diff con Firestore
-    const firestoreKeys = new Set(ingresosData.map(r =>
-      ingresoKey(r.fecha, r.descripcionDeposito, r.monto)
-    ));
+    // Diff con Firestore — 3 categorías: nuevos, modificados y sin cambios
+    const firestoreByKey = new Map();
+    for (const r of ingresosData) {
+      firestoreByKey.set(ingresoKey(r.fecha, r.descripcionDeposito, r.monto), r);
+    }
     const nuevos = [];
-    const existentes = [];
+    const modificados = []; // { parsed, fsIngreso, diffs }
+    const sinCambios = [];
     for (const p of parsed) {
       const k = ingresoKey(p.fecha, p.descripcionDeposito, p.monto);
-      if (firestoreKeys.has(k)) existentes.push(p);
-      else nuevos.push(p);
+      const fs = firestoreByKey.get(k);
+      if (!fs) { nuevos.push(p); continue; }
+      const cmp = compareIngreso(p, fs);
+      if (cmp.hasChanges) modificados.push({ parsed: p, fsIngreso: fs, diffs: cmp.diffs });
+      else sinCambios.push(p);
     }
 
     fimpState.ingresosParsed = parsed;
-    fimpState.ingresosDiff = { nuevos, existentes };
+    fimpState.ingresosDiff = { nuevos, modificados, sinCambios };
 
-    // Preview
-    const byMes = {};
-    nuevos.forEach(n => { byMes[n.excelMes] = (byMes[n.excelMes] || 0) + 1; });
-    const mesesLista = Object.keys(byMes).sort();
-
-    previewEl.hidden = false;
-    previewEl.innerHTML = `
-      <div class="fimp-preview-title">Resumen</div>
-      <div class="fimp-preview-stats">
-        <div class="fimp-stat">
-          <div class="fimp-stat-label">Total en Excel</div>
-          <div class="fimp-stat-value neu">${parsed.length}</div>
-        </div>
-        <div class="fimp-stat">
-          <div class="fimp-stat-label">Ya en Firestore</div>
-          <div class="fimp-stat-value">${existentes.length}</div>
-        </div>
-        <div class="fimp-stat">
-          <div class="fimp-stat-label">Nuevos a importar</div>
-          <div class="fimp-stat-value pos">${nuevos.length}</div>
-        </div>
-      </div>
-      ${nuevos.length ? `
-        <div class="fimp-preview-details">
-          <table>
-            <thead><tr><th>Mes</th><th>Fecha</th><th>Desc. depósito</th><th>Monto</th></tr></thead>
-            <tbody>
-              ${nuevos.slice(0, 30).map(n => `
-                <tr>
-                  <td>${escapeHtml(n.excelMes)}</td>
-                  <td>${escapeHtml(formatFechaUS(n.fecha))}</td>
-                  <td>${escapeHtml(n.descripcionDeposito)}</td>
-                  <td>${formatMoney(n.monto)}</td>
-                </tr>
-              `).join("")}
-            </tbody>
-          </table>
-          ${nuevos.length > 30 ? `<p style="margin:8px 0 0;font-size:11.5px;color:rgba(15,23,42,0.5);">Mostrando 30 de ${nuevos.length}. El resto se importa igual.</p>` : ""}
-        </div>
-      ` : `<p style="margin:12px 0 0;font-size:13px;">Todo el Excel ya está en Firestore. Nada que importar.</p>`}
-    `;
-
-    applyBtn.disabled = nuevos.length === 0;
+    // Render del preview con DOM API — evita inyección de HTML en descripciones
+    // del Excel (que en la práctica escapamos igual, pero el approach es más seguro).
+    renderIngresosImportPreview(previewEl, { parsed, nuevos, modificados, sinCambios });
+    applyBtn.disabled = (nuevos.length + modificados.length) === 0;
     statusEl.textContent = "";
   } catch (e) {
     statusEl.textContent = "✕ Error: " + (e?.message || e);
@@ -4811,33 +4959,42 @@ async function handleIngresosFile(file) {
   }
 }
 
-// ─── Apply: importar los nuevos ────────────────────────────
+// ─── Apply: importar nuevos + actualizar modificados ────────
 async function applyIngresosImport() {
   const statusEl = document.getElementById("fimp-ingresos-status");
   const applyBtn = document.getElementById("fimp-ingresos-apply");
-  if (!fimpState.ingresosDiff || !fimpState.ingresosDiff.nuevos.length) {
-    statusEl.textContent = "No hay nuevos ingresos para importar.";
+  if (!fimpState.ingresosDiff) {
+    statusEl.textContent = "No hay ingresos parseados.";
     return;
   }
-  const nuevos = fimpState.ingresosDiff.nuevos;
+  const { nuevos = [], modificados = [] } = fimpState.ingresosDiff;
+  if (!nuevos.length && !modificados.length) {
+    statusEl.textContent = "Nada que importar ni actualizar.";
+    return;
+  }
+
+  const partes = [];
+  if (nuevos.length) partes.push(`crear ${nuevos.length} nuevos`);
+  if (modificados.length) partes.push(`actualizar ${modificados.length} existentes`);
   const okImport = await heroConfirm({
     title: "Importar ingresos",
-    message: `¿Confirmas importar ${nuevos.length} nuevos ingresos a Firestore? Esta acción no se puede deshacer.`,
-    confirmLabel: "Importar",
-    variant: "primary"
+    message: `¿Confirmas ${partes.join(" y ")}? Esta acción no se puede deshacer.`,
+    confirmLabel: "Aplicar",
+    variant: modificados.length ? "warning" : "primary"
   });
   if (!okImport) return;
 
   applyBtn.disabled = true;
-  statusEl.textContent = `Importando ${nuevos.length} ingresos...`;
   statusEl.className = "fimp-status";
 
   const BATCH_SIZE = 400;
   let inserted = 0;
+  let updated = 0;
+
   try {
+    // ── Fase 1: crear los nuevos ──
     for (let i = 0; i < nuevos.length; i += BATCH_SIZE) {
       const chunk = nuevos.slice(i, i + BATCH_SIZE);
-      // Firestore no permite batch.add — se usan doc + set con IDs autogenerados
       const batch = writeBatch(db);
       const newDocs = [];
       for (const p of chunk) {
@@ -4866,7 +5023,6 @@ async function applyIngresosImport() {
         newDocs.push({ id: docRef.id, ...payload, creadoEn: new Date(), actualizadoEn: new Date() });
       }
       await batch.commit();
-      // Sync local
       for (const nd of newDocs) {
         ingresosData.push(nd);
         if (fiTable) { try { fiTable.addRow(nd); } catch (_) {} }
@@ -4875,19 +5031,63 @@ async function applyIngresosImport() {
         });
       }
       inserted += chunk.length;
-      statusEl.textContent = `Insertado ${inserted} de ${nuevos.length}...`;
+      statusEl.textContent = `Creados ${inserted} de ${nuevos.length}...`;
     }
-    statusEl.textContent = `✓ Importados ${inserted} ingresos correctamente.`;
+
+    // ── Fase 2: actualizar los modificados ──
+    for (let i = 0; i < modificados.length; i += BATCH_SIZE) {
+      const chunk = modificados.slice(i, i + BATCH_SIZE);
+      const batch = writeBatch(db);
+      const updates = [];
+      for (const m of chunk) {
+        const p = m.parsed;
+        const mergedPayouts = mergePayouts(p.payouts, m.fsIngreso.payouts);
+        const pagado = mergedPayouts.reduce((s, x) => s + Number(x.saldo || 0), 0);
+        const ganancia = p.monto - pagado;
+        const patch = {
+          tipoPago: p.tipoPago,
+          categoria: p.categoria,
+          descripcionTransaccion: p.descripcionTransaccion,
+          notas: p.notas || "",
+          payouts: mergedPayouts,
+          pagado,
+          ganancia,
+          actualizadoPor: currentUserEmail,
+          actualizadoEn: serverTimestamp()
+        };
+        batch.update(doc(db, INGRESOS_COL, m.fsIngreso.id), patch);
+        updates.push({ id: m.fsIngreso.id, patch, fecha: m.fsIngreso.fecha, diffs: m.diffs });
+      }
+      await batch.commit();
+      for (const u of updates) {
+        const idx = ingresosData.findIndex(r => r.id === u.id);
+        if (idx >= 0) {
+          Object.assign(ingresosData[idx], u.patch, { actualizadoEn: new Date() });
+          if (fiTable) { try { fiTable.updateRow(u.id, u.patch); } catch (_) {} }
+        }
+        logEvent(ACTIONS.FINANZAS_INGRESO_EDIT, u.fecha, {
+          origen: "import-excel",
+          campos: u.diffs.map(d => d.campo)
+        });
+      }
+      updated += chunk.length;
+      statusEl.textContent = `Actualizados ${updated} de ${modificados.length}...`;
+    }
+
+    // ── Cierre ──
+    const resumen = [];
+    if (inserted) resumen.push(`${inserted} creados`);
+    if (updated) resumen.push(`${updated} actualizados`);
+    statusEl.textContent = `✓ Import completado: ${resumen.join(" · ")}.`;
     statusEl.className = "fimp-status success";
     updateIngresosSummary();
     populateCarrierFilter();
-    // Refresca el preview marcando 0 nuevos
     document.getElementById("fimp-ingresos-preview").hidden = true;
     document.getElementById("fimp-ingresos-filename").textContent = "Seleccionar archivo…";
     document.getElementById("fimp-ingresos-file").value = "";
     fimpState.ingresosDiff = null;
   } catch (e) {
-    statusEl.textContent = `✕ Falló al insertar (${inserted}/${nuevos.length}): ${e.message}`;
+    statusEl.textContent = `✕ Falló (creados ${inserted}, actualizados ${updated}): ${e.message}`;
     statusEl.className = "fimp-status error";
     console.error(e);
   } finally {
