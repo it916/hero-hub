@@ -1,5 +1,48 @@
 [
   {
+    "id": "2026-07-10-hqcc-banner",
+    "version": "v2.16.0",
+    "date": "2026-07-10",
+    "category": "feat",
+    "scope": "hub",
+    "audience": "all",
+    "title": "Hub · HQ Command Center — banner unificado del dashboard",
+    "items": [
+      "Nuevo banner 'HQ Command Center' que integra saludo, clima, fecha/hora, oficina virtual, asistencia y próximo meeting en un solo bloque",
+      "Ribbon superior: avatar con anillo cyan, saludo dinámico según hora del día ('Buenos días/tardes/noches, [nombre]!'), y fecha/hora con la hora protagonista en mono grande con gradiente cyan",
+      "Tile 'Oficina Virtual': CTA directa a Gather Town con acento cyan",
+      "Tile 'Mi Asistencia' compacto: Entrada, Salida y un botón toggle de Break — los 3 en una sola fila",
+      "Tile 'Próximo meeting': próximo evento del Google Calendar con badge dinámico ('En 15 min' / 'En curso' / 'Hoy' / 'Mañana'), hora, título y botón directo para unirse",
+      "Panel 'Mi asistencia' del dashboard limpio: se quitaron los grupos 'Corte de luz' y 'Ausencia' que ya no se usan a diario",
+      "'Reportar ausencia' se movió a Mi perfil → sección 'Mi asistencia' (arriba a la derecha, junto al selector de periodo)",
+      "Módulo 'Calendario' renombrado a 'Calendario de Entrenamientos' para dejar claro qué es",
+      "Nuevo módulo de acceso 'Solicitud de correos' (antes vivía como hub-card en el cuartel general)",
+      "Sección 'Tu cuartel general' simplificada: se eliminaron las 4 hub-cards grandes (Equipo, Portales, Solicitud de correos, Reuniones) que casi no se usaban. La sección ahora se llama 'Arsenal del héroe' y contiene solo los accesos directos administrados desde admin.html",
+      "Eliminada la sección 'Búsqueda web' del dashboard (el input de Google que redirigía a nueva pestaña)",
+      "La sección aparte de meetings desaparece — todo vive en el banner",
+      "Fix: el token del calendario ahora persiste en localStorage en vez de sessionStorage — deja de abrirse la ventanita de autorización cada vez que abres el Hub en pestaña nueva o reabres el navegador",
+      "Bump v2.15.0 → v2.16.0"
+    ]
+  },
+  {
+    "id": "2026-07-09-calendar-widget",
+    "version": "v2.15.0",
+    "date": "2026-07-09",
+    "category": "feat",
+    "scope": "hub",
+    "audience": "all",
+    "title": "Hub · Widget de meetings de Google Calendar en el dashboard",
+    "items": [
+      "Nueva sección en el dashboard: 'Próximos meetings' junto a 'Mi asistencia' en un grid de 2 columnas",
+      "Consume Google Calendar API con el scope calendar.readonly (agregado al login flow de auth.js)",
+      "Muestra meetings de hoy y mañana agrupados, con hora, título, badge dinámico ('En 15 min' / 'En curso') y botón para unirse al link real (Zoom, Meet, Teams, etc.)",
+      "Refresh automático cada 5 min + al recuperar foco de pestaña",
+      "Estados: loading (shimmer), ready, empty ('Sin meetings próximos ✨'), reconnect (permiso vencido) y error con reintento",
+      "Refresh silencioso del token via signInWithPopup con prompt=none — el usuario casi no ve el reconnect",
+      "Bump v2.14.0 → v2.15.0"
+    ]
+  },
+  {
     "id": "2026-07-08-design-system-refactor",
     "version": "v2.14.0",
     "date": "2026-07-08",

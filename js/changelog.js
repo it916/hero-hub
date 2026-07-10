@@ -31,6 +31,19 @@ const CATEGORY_ICONS = {
 let allEntries = [];
 let activeCategory = "all";
 
+// Compara dos strings semver "vX.Y.Z" — devuelve negativo si a > b (a va antes en desc).
+// Robusto ante entradas mal formadas (usa 0 como fallback para segmentos ausentes).
+function compareVersionsDesc(a, b) {
+  const pa = String(a).replace(/^v/, "").split(".").map(n => parseInt(n, 10) || 0);
+  const pb = String(b).replace(/^v/, "").split(".").map(n => parseInt(n, 10) || 0);
+  const len = Math.max(pa.length, pb.length);
+  for (let i = 0; i < len; i++) {
+    const na = pa[i] || 0, nb = pb[i] || 0;
+    if (na !== nb) return nb - na; // desc: mayor primero
+  }
+  return 0;
+}
+
 onAuthStateChanged(auth, async (user) => {
   if (!user) return; // page-guard ya redirige
 
@@ -84,8 +97,12 @@ async function loadChangelog() {
     return;
   }
 
-  // Asegurar orden descendente por fecha (la más reciente arriba)
-  allEntries.sort((a, b) => (a.date < b.date ? 1 : -1));
+  // Orden descendente por fecha; tiebreaker: versión semver descendente
+  // (para que dentro del mismo día el v2.13.1 salga antes que v2.13.0, etc.)
+  allEntries.sort((a, b) => {
+    if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+    return compareVersionsDesc(a.version, b.version);
+  });
 
   renderEntries();
   wireFilters();
