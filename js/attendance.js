@@ -40,10 +40,19 @@ function statusFeedbackEl() { return document.getElementById("attendanceStatus")
 
 function setFeedback(text, kind) {
   const el = statusFeedbackEl();
-  if (!el) return;
-  el.textContent = text;
-  el.classList.remove("ok", "err");
-  if (kind) el.classList.add(kind);
+  if (el) {
+    el.textContent = text;
+    el.classList.remove("ok", "err");
+    if (kind) el.classList.add(kind);
+    return;
+  }
+  // Fallback: si la página no tiene el status bar (ej. mi-perfil.html),
+  // usamos toasts para que el usuario vea confirmación.
+  if (typeof heroToast !== "undefined") {
+    if (kind === "ok") heroToast.success(text);
+    else if (kind === "err") heroToast.error(text);
+    // Los mensajes en progreso ("Registrando…") se omiten como toast — muy ruidoso.
+  }
 }
 
 function formatTime(d) {
@@ -196,6 +205,7 @@ async function recordAttendance(type, btn, extras = {}) {
     setFeedback(`✓ ${type} registrada a las ${formatTime(now)}`, "ok");
     saveLast(type, payload.timestamp, extras);
     refreshStatusFromStorage();
+    if (window.hqccSyncBreak) window.hqccSyncBreak();
   } catch (e) {
     console.error("attendance:", e);
     setFeedback("✗ No se pudo registrar. Reintenta.", "err");
@@ -299,6 +309,43 @@ function openAbsenceModal(triggerBtn) {
   customElements.whenDefined("sl-dialog").then(() => dialog.show());
 }
 
+// ── Break toggle del HQCC ──────────────────────────────────────────
+// En el banner HQ Command Center, el break tiene un solo botón visible
+// (#hqcc-break) que hace de proxy a los dos ocultos (#hqcc-break-in /
+// #hqcc-break-out) — que ya están cableados por data-att-type arriba.
+// El label se sincroniza leyendo el último evento de localStorage.
+function initHqccBreakToggle() {
+  const btn = document.getElementById("hqcc-break");
+  if (!btn) return;
+  const label = btn.querySelector(".hqcc-break-label");
+
+  const onBreakNow = () => {
+    const last = readLast();
+    if (!last) return false;
+    if (last.type !== "Inicio Break") return false;
+    return isSameLocalDay(last.timestamp, new Date().toISOString());
+  };
+
+  const sync = () => {
+    const on = onBreakNow();
+    btn.classList.toggle("on", on);
+    // Labels cortos porque el botón vive en un grid de 3 columnas junto a Entrada/Salida.
+    if (label) label.textContent = on ? "Volver" : "Break";
+  };
+
+  btn.addEventListener("click", () => {
+    const proxyId = onBreakNow() ? "hqcc-break-out" : "hqcc-break-in";
+    const proxy = document.getElementById(proxyId);
+    if (proxy) proxy.click();
+    // Le damos un tick para que recordAttendance guarde en localStorage antes de releer
+    setTimeout(sync, 80);
+  });
+
+  window.addEventListener("storage", sync);
+  window.hqccSyncBreak = sync;
+  sync();
+}
+
 // ── Init ───────────────────────────────────────────────────────────
 function init() {
   // Botones genéricos: data-att-type indica qué tipo registrar
@@ -316,6 +363,7 @@ function init() {
     });
   }
 
+  initHqccBreakToggle();
   refreshStatusFromStorage();
 }
 

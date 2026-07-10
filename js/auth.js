@@ -27,7 +27,7 @@ function publishGoogleAccessToken(userCredential, userEmail) {
       expiresAt: Date.now() + GCAL_TOKEN_TTL_MS,
       email: userEmail,
     };
-    sessionStorage.setItem(GCAL_TOKEN_KEY, JSON.stringify(payload));
+    localStorage.setItem(GCAL_TOKEN_KEY, JSON.stringify(payload));
     window.dispatchEvent(new CustomEvent("hero-gcal-token-ready", { detail: payload }));
   } catch (e) {
     console.warn("[auth] No se pudo publicar el token de Google Calendar:", e.message);
@@ -178,89 +178,62 @@ function findNextBirthday() {
   return withDates.length ? withDates[0].m : null;
 }
 
-// ══ HERO COVER ══
+// ══ HQ COMMAND CENTER (banner del dashboard) ══
 function getFirstName(user) {
   if (user.displayName) return user.displayName.split(" ")[0];
   return user.email.split("@")[0].split(".")[0].charAt(0).toUpperCase() + user.email.split("@")[0].split(".")[0].slice(1);
 }
 
-function getDayKicker() {
-  const day = new Date().getDay();
-  const kickers = [
-    "Domingo · Recargando superpoderes",
-    "Lunes · A activar misiones",
-    "Martes · Construyendo momentum",
-    "Miércoles · Mitad de la misión",
-    "Jueves · Empuje final semanal",
-    "Viernes · Cerrando con gloria",
-    "Sábado · Descansa, héroe"
-  ];
-  return kickers[day];
-}
-
-function getDaySub() {
-  const day = new Date().getDay();
-  const subs = [
-    "Un nuevo día para hacer la diferencia.",
-    "Cada llamada es una oportunidad de impactar una vida.",
-    "El equipo está contigo. Dale con todo.",
-    "Ya pasamos la mitad. El impulso es nuestro.",
-    "Un día más cerca de lograrlo. Vamos.",
-    "Terminemos la semana con el pie firme.",
-    "Descansar también es parte de la misión."
-  ];
-  return subs[day];
+function getSalutation() {
+  const h = new Date().getHours();
+  if (h < 12) return "¡Buenos días";
+  if (h < 19) return "¡Buenas tardes";
+  return "¡Buenas noches";
 }
 
 function initHeroCover() {
   const greetNameEl = document.getElementById("greet-name");
-  const heroKickerEl = document.getElementById("hero-kicker");
-  const heroSubEl = document.getElementById("hero-sub");
-  const heroIssueEl = document.getElementById("hero-issue");
-  const metaDateEl = document.getElementById("meta-date");
-
   if (greetNameEl) greetNameEl.textContent = getFirstName(currentUser);
-  if (heroKickerEl) heroKickerEl.textContent = getDayKicker();
-  if (heroSubEl) heroSubEl.textContent = getDaySub();
 
-  const start = new Date(new Date().getFullYear(), 0, 1);
-  const diff = Math.floor((new Date() - start) / (1000 * 60 * 60 * 24)) + 1;
-  if (heroIssueEl) heroIssueEl.textContent = `VOL. II · EDICIÓN Nº ${diff}`;
+  const salutationEl = document.getElementById("greet-salutation");
+  if (salutationEl) salutationEl.textContent = getSalutation();
 
-  const now = new Date();
-  const dateStr = now.toLocaleDateString("es-ES", { weekday:"long", day:"2-digit", month:"short" });
-  if (metaDateEl) metaDateEl.textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+  // Sync del avatar del ribbon con la foto del topbar (que se pobla en initAuth).
+  const topAv = document.getElementById("user-avatar");
+  const hqAv = document.getElementById("hqcc-avatar");
+  if (topAv && hqAv) {
+    const sync = () => {
+      const src = topAv.src;
+      if (src && !src.endsWith("/") && !src.startsWith("data:")) hqAv.src = src;
+    };
+    new MutationObserver(sync).observe(topAv, { attributes:true, attributeFilter:["src"] });
+    sync();
+  }
 
-  updateClock();
-  setInterval(updateClock, 60000);
-  loadWeather();
+  updateDateTime();
+  setInterval(updateDateTime, 30000);
 }
 
-function updateClock() {
-  const el = document.getElementById("meta-time");
-  if (!el) return;
+function updateDateTime() {
+  const dateEl = document.getElementById("hqcc-date");
+  const timeEl = document.getElementById("hqcc-time");
+  if (!dateEl && !timeEl) return;
+
+  const dias = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+  const meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
   const now = new Date();
   const h = now.getHours();
   const m = now.getMinutes();
   const ampm = h >= 12 ? "PM" : "AM";
   const h12 = h % 12 || 12;
-  el.textContent = `${h12}:${m.toString().padStart(2,"0")} ${ampm}`;
-}
 
-async function loadWeather() {
-  const iconEl = document.getElementById("meta-weather-icon");
-  const tempEl = document.getElementById("meta-weather");
-  if (!iconEl || !tempEl) return;
-  try {
-    const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=25.7617&longitude=-80.1918&current=temperature_2m,weather_code&temperature_unit=fahrenheit");
-    const data = await res.json();
-    const t = Math.round(data.current.temperature_2m);
-    const code = data.current.weather_code;
-    const icons = {0:"☀️",1:"🌤️",2:"⛅",3:"☁️",45:"🌫️",48:"🌫️",51:"🌦️",53:"🌦️",55:"🌦️",61:"🌧️",63:"🌧️",65:"⛈️",71:"🌨️",73:"🌨️",75:"❄️",80:"🌧️",81:"🌧️",82:"⛈️",95:"⛈️"};
-    iconEl.textContent = icons[code] || "⛅";
-    tempEl.textContent = `${t}°F`;
-  } catch (e) {
-    tempEl.textContent = "—";
+  if (dateEl) {
+    const larga = `${dias[now.getDay()]}, ${now.getDate()} de ${meses[now.getMonth()]} de ${now.getFullYear()}`;
+    dateEl.textContent = larga;
+    dateEl.title = larga;
+  }
+  if (timeEl) {
+    timeEl.textContent = `${h12}:${m.toString().padStart(2,"0")} ${ampm}`;
   }
 }
 

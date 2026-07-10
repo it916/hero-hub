@@ -26,12 +26,7 @@
 <script defer src="js/hero-confirm.js"></script>
 <script defer src="js/calendar-widget.js"></script>
 
-<!-- Flatpickr · date picker para el modal de Ausencia -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
-
-<!-- Shoelace · component library (modal Ausencia y futuros componentes) -->
+<!-- Shoelace · component library (modal "Agregar acceso" del arsenal) -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css">
 <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/shoelace-autoloader.js"></script>
 </head>
@@ -157,175 +152,82 @@
 
   <main class="page">
 
-    <!-- ══ HERO BANNER GRANDE — COMIC COVER ══ -->
-    <section class="hero-cover fade-in">
-      <div class="hero-cover-bg">
-        <div class="hero-rays"></div>
-        <div class="hero-waves">
-          <div class="wave w1"></div>
-          <div class="wave w2"></div>
-          <div class="wave w3"></div>
-        </div>
-        <div class="hero-stars">
-          <span class="star s1">✦</span>
-          <span class="star s2">✧</span>
-          <span class="star s3">✦</span>
-          <span class="star s4">★</span>
-          <span class="star s5">✧</span>
-          <span class="star s6">✦</span>
-        </div>
-        <!-- Energy bolts -->
-        <div class="hero-bolt bolt1"></div>
-        <div class="hero-bolt bolt2"></div>
-      </div>
+    <!-- ══ HQ COMMAND CENTER — banner unificado (saludo · clima · fecha/hora · oficina · asistencia · próximo meeting) ══ -->
+    <section class="hqcc fade-in">
+      <div class="hqcc-grid"></div>
+      <span class="hqcc-spark s1">✦</span>
+      <span class="hqcc-spark s2">★</span>
 
-      <div class="hero-cover-content">
-        <div class="hero-cover-top">
-          <span class="hero-status-badge"><span class="live-dot"></span>HÉROE EN LÍNEA</span>
-          <span class="hero-issue" id="hero-issue">VOL. II · EDICIÓN DIARIA</span>
-        </div>
+      <div class="hqcc-inner">
 
-        <div class="hero-cover-center">
-          <!-- Avatar heroico -->
-          <div class="hero-avatar-zone" id="hero-avatar-zone">
-            <div class="hero-av-energy"></div>
-            <div class="hero-av-ring"></div>
-            <img class="hero-av-photo" id="hero-av-photo" src="" alt="">
-            <div class="hero-av-rank">⭐</div>
+        <!-- Ribbon: identidad + clima + fecha/hora -->
+        <div class="hqcc-ribbon">
+          <div class="hqcc-id">
+            <div class="hqcc-avatar-ring">
+              <img id="hqcc-avatar" class="hqcc-avatar" src="" alt="Foto de perfil">
+            </div>
+            <h1 class="hqcc-greet"><span id="greet-salutation">¡Hola</span>, <span class="name" id="greet-name">Héroe</span><span class="punct">!</span></h1>
           </div>
 
-          <!-- Texto principal -->
-          <div class="hero-cover-main">
-            <div class="hero-cover-kicker" id="hero-kicker">—</div>
-            <h1 class="hero-cover-title">
-              <span class="greet-word">¡Bienvenido,</span>
-              <span class="greet-name" id="greet-name">Héroe</span>
-              <span class="greet-punct">!</span>
-            </h1>
-            <p class="hero-cover-sub" id="hero-sub">—</p>
+          <div class="hqcc-meta">
+            <div class="hqcc-datetime">
+              <div class="hqcc-time-big" id="hqcc-time">—</div>
+              <div class="hqcc-date-small" id="hqcc-date" title="—">—</div>
+            </div>
           </div>
         </div>
 
-        <!-- Fila inferior: meta (izquierda) + CTA Oficina Virtual (derecha) -->
-        <div class="hero-cover-bottom">
-          <div class="hero-cover-meta">
-            <div class="hmeta-chip"><i data-lucide="calendar-days"></i><span id="meta-date">—</span></div>
-            <div class="hmeta-chip mono"><i data-lucide="clock"></i><span id="meta-time">—</span></div>
-            <div class="hmeta-chip"><i data-lucide="map-pin"></i><span>Miami, FL</span></div>
-            <div class="hmeta-chip weather-chip"><span id="meta-weather-icon">⛅</span><span id="meta-weather">—</span></div>
+        <!-- Módulos -->
+        <div class="hqcc-modules">
+
+          <!-- Oficina Virtual -->
+          <a class="hqcc-tile office" href="https://app.v2.gather.town/app/hero-insurance-usa-2e9e375c-6dcb-40c4-b607-d0791d5dfb78" target="_blank" rel="noopener">
+            <span class="hqcc-office-glow"></span>
+            <span class="hqcc-office-spk">✦</span>
+            <span class="hqcc-office-ico"><i data-lucide="building-2"></i></span>
+            <div class="hqcc-office-body">
+              <div class="hqcc-office-eyebrow">Oficina Virtual</div>
+              <div class="hqcc-office-title">Entra al cuartel</div>
+              <div class="hqcc-office-sub">Gather Town · el equipo te espera</div>
+            </div>
+            <span class="hqcc-office-cta">Entrar <i data-lucide="arrow-right"></i></span>
+          </a>
+
+          <!-- Mi Asistencia -->
+          <div class="hqcc-tile">
+            <div class="hqcc-tile-kicker"><i data-lucide="clock"></i>Mi Asistencia</div>
+            <div class="hqcc-att-grid">
+              <button type="button" class="hqcc-att-btn entrada att-btn att-entrada" data-att-type="Entrada"><i data-lucide="log-in"></i>Entrada</button>
+              <button type="button" class="hqcc-att-btn salida att-btn att-salida" data-att-type="Salida"><i data-lucide="log-out"></i>Salida</button>
+              <!-- Break: proxy de los dos ocultos (que attendance.js ya cablea por data-att-type) -->
+              <button type="button" id="hqcc-break" class="hqcc-break-btn"><i data-lucide="coffee"></i><span class="hqcc-break-label">Break</span></button>
+            </div>
+            <button type="button" id="hqcc-break-in" data-att-type="Inicio Break" style="display:none"></button>
+            <button type="button" id="hqcc-break-out" data-att-type="Fin Break" style="display:none"></button>
+
+            <div class="hqcc-status">
+              <div class="hqcc-status-row"><span class="hqcc-status-label">Estado</span><span class="hqcc-status-value" id="attStatusValue">— sin registro hoy —</span></div>
+              <div class="hqcc-status-row last"><span class="hqcc-status-label">Último</span><span class="hqcc-status-value" id="attLastValue">—</span></div>
+              <div class="hqcc-att-feedback att-feedback" id="attendanceStatus"></div>
+            </div>
           </div>
 
-          <div class="hero-cover-cta">
-            <a class="hero-cta-btn gather" href="https://app.v2.gather.town/app/hero-insurance-usa-2e9e375c-6dcb-40c4-b607-d0791d5dfb78" target="_blank" rel="noopener">
-              <span class="hero-cta-glow"></span>
-              <i data-lucide="building" class="hero-cta-icon"></i>
-              <span class="hero-cta-label">Entrar a Oficina Virtual</span>
-              <i data-lucide="arrow-right" class="hero-cta-arrow"></i>
-            </a>
+          <!-- Próximo meeting — alimentado por js/calendar-widget.js -->
+          <div class="hqcc-tile" id="hqcc-meet-tile" data-state="loading">
+            <div class="hqcc-meet-head">
+              <div class="hqcc-tile-kicker"><i data-lucide="calendar-days"></i>Próximo meeting</div>
+              <span class="hqcc-badge" id="hqcc-meet-badge" hidden></span>
+            </div>
+            <div class="hqcc-meet-time"><span class="h" id="hqcc-meet-time-h">—</span><span class="m" id="hqcc-meet-time-m"></span></div>
+            <div>
+              <div class="hqcc-meet-title" id="hqcc-meet-title">Cargando…</div>
+              <div class="hqcc-meet-next" id="hqcc-meet-next"></div>
+            </div>
+            <a class="hqcc-join" id="hqcc-meet-join" href="https://calendar.google.com" target="_blank" rel="noopener"><i data-lucide="video"></i><span>Unirme</span></a>
           </div>
-        </div>
-      </div>
-    </section>
 
-    <div class="connector"></div>
-
-    <!-- ══ MI ASISTENCIA — Registro diario de jornada, break, corte de luz y ausencias ══ -->
-    <section class="section fade-in section-dual" id="sec-asistencia-meetings">
-      <div class="section-dual-grid">
-        <div class="section-dual-col" id="sec-asistencia">
-      <div class="section-label"><span class="kicker-dot"></span>Mi asistencia</div>
-      <div class="attendance-panel">
-
-        <div class="att-group att-g-jornada">
-          <div class="att-group-title"><i data-lucide="clock"></i><span>Jornada</span></div>
-          <div class="att-group-buttons">
-            <button class="att-btn att-entrada" data-att-type="Entrada" type="button">
-              <i data-lucide="log-in"></i><span>Entrada</span>
-            </button>
-            <button class="att-btn att-salida" data-att-type="Salida" type="button">
-              <i data-lucide="log-out"></i><span>Salida</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="att-group att-g-break">
-          <div class="att-group-title"><i data-lucide="coffee"></i><span>Break</span></div>
-          <div class="att-group-buttons">
-            <button class="att-btn att-break-start" data-att-type="Inicio Break" type="button">
-              <i data-lucide="pause"></i><span>Iniciar break</span>
-            </button>
-            <button class="att-btn att-break-end" data-att-type="Fin Break" type="button">
-              <i data-lucide="play"></i><span>Volver del break</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="att-group att-g-luz">
-          <div class="att-group-title"><i data-lucide="zap-off"></i><span>Corte de luz</span></div>
-          <div class="att-group-buttons">
-            <button class="att-btn att-luz-off" data-att-type="Corte Luz Inicio" type="button">
-              <i data-lucide="zap-off"></i><span>Se fue la luz</span>
-            </button>
-            <button class="att-btn att-luz-on" data-att-type="Corte Luz Fin" type="button">
-              <i data-lucide="zap"></i><span>Volvió la luz</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="att-group att-g-ausencia">
-          <div class="att-group-title"><i data-lucide="calendar-x"></i><span>Ausencia</span></div>
-          <div class="att-group-buttons">
-            <button class="att-btn att-ausencia" id="btnAusencia" type="button">
-              <i data-lucide="file-text"></i><span>Reportar ausencia</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="att-status-bar">
-          <div class="att-status-row">
-            <span class="att-status-label">Estado:</span>
-            <span class="att-status-value" id="attStatusValue">— sin registro hoy —</span>
-          </div>
-          <div class="att-status-row att-status-last">
-            <span class="att-status-label">Último registro:</span>
-            <span class="att-status-value" id="attLastValue">—</span>
-          </div>
-          <div class="att-feedback" id="attendanceStatus"></div>
-        </div>
-
-      </div>
-        </div>
-
-        <div class="section-dual-col" id="sec-gcal">
-          <div class="section-label"><span class="kicker-dot"></span>Próximos meetings</div>
-          <div class="gcal-panel" id="gcal-widget">
-            <!-- Contenido renderizado por js/calendar-widget.js -->
-          </div>
         </div>
       </div>
-    </section>
-
-    <div class="connector"></div>
-
-    <!-- ══ BÚSQUEDA WEB — Input que redirige a google.com en nueva pestaña ══ -->
-    <section class="section fade-in" id="sec-web-search">
-      <div class="section-label"><span class="kicker-dot"></span>Búsqueda web</div>
-      <form class="gws-card" id="gws-form" role="search">
-        <div class="gws-title">
-          <i data-lucide="search"></i>
-          <span>Buscar en Google</span>
-        </div>
-        <div class="gws-input-row">
-          <div class="gws-input-wrap">
-            <i data-lucide="search" class="gws-input-icon"></i>
-            <input type="search" id="gws-input" class="gws-input"
-                   placeholder="Escribe tu búsqueda…" autocomplete="off" required
-                   aria-label="Buscar en Google">
-          </div>
-          <button type="submit" class="gws-btn">Buscar</button>
-        </div>
-        <div class="gws-note">Los resultados se abrirán en una nueva pestaña</div>
-      </form>
     </section>
 
     <div class="connector"></div>
@@ -362,116 +264,27 @@
         <button type="button" class="access-tile at-calendario" id="access-calendar-btn">
           <div class="access-icon"><i data-lucide="calendar-days"></i></div>
           <div class="access-content">
-            <div class="access-name">Calendario</div>
+            <div class="access-name">Calendario de Entrenamientos</div>
             <div class="access-roles">todos los roles</div>
           </div>
         </button>
+
+        <a href="https://it916.github.io/alta-agentes/" target="_blank" rel="noopener" class="access-tile at-correos">
+          <div class="access-icon"><i data-lucide="mail-plus"></i></div>
+          <div class="access-content">
+            <div class="access-name">Solicitud de correos</div>
+            <div class="access-roles">todos los roles</div>
+          </div>
+        </a>
       </div>
     </section>
 
     <div class="connector"></div>
 
-    <!-- ══ CUARTEL GENERAL — Recursos del Hub + Arsenal del Héroe ══ -->
+    <!-- ══ ARSENAL DEL HÉROE — Accesos directos administrados desde admin.html ══ -->
     <section class="section fade-in">
-      <div class="section-label"><span class="kicker-dot"></span>Tu cuartel general</div>
+      <div class="section-label"><span class="kicker-dot"></span>Arsenal del héroe</div>
 
-      <div class="subsection-label">Recursos del Hub</div>
-      <div class="hub-cards">
-
-        <!-- CARD 1: EQUIPO (con avatares dinámicos) -->
-        <a href="equipo.html" class="hub-card hc-team">
-          <div class="hc-halftone"></div>
-          <div class="hc-stripe"></div>
-          <div class="hc-content">
-            <div class="hc-icon-wrap">
-              <div class="hc-icon"><i data-lucide="shield"></i></div>
-              <div class="hc-burst">★</div>
-            </div>
-            <div class="hc-label">EQUIPO</div>
-            <div class="hc-title">Conoce a los héroes</div>
-            <div class="hc-desc">Fichas, superpoderes y orígenes de cada miembro del equipo.</div>
-            <div class="hc-team-stack" id="hc-team-stack">
-              <span class="hc-loading">Cargando héroes…</span>
-            </div>
-            <div class="hc-cta">
-              <span>Entrar al equipo</span>
-              <i data-lucide="arrow-right"></i>
-            </div>
-          </div>
-        </a>
-
-        <!-- CARD: PORTALES (oculta por defecto, visible solo para rol "agente") -->
-        <a href="portales.html" class="hub-card hc-portales">
-          <div class="hc-halftone"></div>
-          <div class="hc-stripe"></div>
-          <div class="hc-content">
-            <div class="hc-icon-wrap">
-              <div class="hc-icon"><i data-lucide="key-round"></i></div>
-              <div class="hc-burst">⚡</div>
-            </div>
-            <div class="hc-label">PORTALES</div>
-            <div class="hc-title">Tus accesos</div>
-            <div class="hc-desc">Credenciales y portales de carriers en un solo lugar — listos para que arranques tu día.</div>
-            <div class="hc-feature">
-              <i data-lucide="shield-check"></i>
-              <span>Acceso rápido y seguro</span>
-            </div>
-            <div class="hc-cta">
-              <span>Abrir portales</span>
-              <i data-lucide="arrow-right"></i>
-            </div>
-          </div>
-        </a>
-
-        <!-- CARD 5: ALTA / BAJA DE CORREOS -->
-        <a href="https://it916.github.io/alta-agentes/" target="_blank" rel="noopener" class="hub-card hc-alta">
-          <div class="hc-halftone"></div>
-          <div class="hc-stripe"></div>
-          <div class="hc-content">
-            <div class="hc-icon-wrap">
-              <div class="hc-icon"><i data-lucide="user-plus"></i></div>
-              <div class="hc-burst">✦</div>
-            </div>
-            <div class="hc-label">ALTA / BAJA</div>
-            <div class="hc-title">Solicitud de correos</div>
-            <div class="hc-desc">Activa o desactiva el correo corporativo de un héroe. Formulario rápido para IT.</div>
-            <div class="hc-feature">
-              <i data-lucide="mail-plus"></i>
-              <span>Trámite ágil</span>
-            </div>
-            <div class="hc-cta">
-              <span>Solicitar</span>
-              <i data-lucide="arrow-right"></i>
-            </div>
-          </div>
-        </a>
-
-        <!-- CARD 6: REUNIONES DIARIAS -->
-        <a href="reuniones.html" class="hub-card hc-reuniones">
-          <div class="hc-halftone"></div>
-          <div class="hc-stripe"></div>
-          <div class="hc-content">
-            <div class="hc-icon-wrap">
-              <div class="hc-icon"><i data-lucide="presentation"></i></div>
-              <div class="hc-burst">◆</div>
-            </div>
-            <div class="hc-label">REUNIONES</div>
-            <div class="hc-title">Daily meetings al día</div>
-            <div class="hc-desc">Resúmenes automáticos de cada reunión diaria del equipo, sincronizados con Fathom.</div>
-            <div class="hc-feature">
-              <i data-lucide="bot"></i>
-              <span>Resumen IA en español</span>
-            </div>
-            <div class="hc-cta">
-              <span>Ver reuniones</span>
-              <i data-lucide="arrow-right"></i>
-            </div>
-          </div>
-        </a>
-
-      </div>
-
-      <div class="subsection-label">Tus accesos rápidos</div>
       <div class="card-shell">
         <div class="tools-header-row">
           <div class="tools-title">Accesos directos</div>
@@ -660,7 +473,7 @@
   </div>
 
   <footer class="hero-footer">
-    <span>HERO HUB · v2.15.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+    <span>HERO HUB · v2.16.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
   </footer>
 </div>
 
@@ -681,20 +494,6 @@
     const nav = document.getElementById("topbar-nav");
     if (menuBtn && nav) {
       menuBtn.addEventListener("click", () => nav.classList.toggle("open"));
-    }
-
-    // Búsqueda web: redirige a google.com en nueva pestaña.
-    const gwsForm = document.getElementById("gws-form");
-    const gwsInput = document.getElementById("gws-input");
-    if (gwsForm && gwsInput) {
-      gwsForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const q = (gwsInput.value || "").trim();
-        if (!q) return;
-        window.open("https://www.google.com/search?q=" + encodeURIComponent(q), "_blank", "noopener");
-        gwsInput.value = "";
-        gwsInput.blur();
-      });
     }
 
     // ── Activar Misión: animación cinemática (GSAP + confetti + Web Audio) + redirect ──
@@ -1002,18 +801,6 @@
         }, "-=0.55");
       });
     }
-    // Sync avatars with user avatar
-    const userAv = document.getElementById("user-avatar");
-    if (userAv) {
-      const syncAll = () => {
-        const src = userAv.src;
-        if (!src || src === "" || src.endsWith("/") || src.startsWith("data:")) return;
-        const targets = ["hero-av-photo"];
-        targets.forEach(id => { const el = document.getElementById(id); if (el) el.src = src; });
-      };
-      new MutationObserver(syncAll).observe(userAv, { attributes: true, attributeFilter: ["src"] });
-      syncAll();
-    }
   });
 </script>
 <script type="module" src="js/firebase-config.js"></script>
@@ -1021,48 +808,6 @@
 <script type="module" src="js/tracker.js"></script>
 <script type="module" src="js/attendance.js"></script>
 <script type="module" src="js/changelog-banner.js"></script>
-<script type="module">
-  // ══ Hub Card "Equipo": cargar avatares dinámicos ══
-  import { db } from "./js/firebase-config.js";
-  import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-  async function loadTeamStack() {
-    const stack = document.getElementById("hc-team-stack");
-    if (!stack) return;
-    try {
-      const snap = await getDoc(doc(db, "shared", "team"));
-      if (!snap.exists()) { stack.innerHTML = ""; return; }
-      const members = snap.data().members || [];
-      const total = members.length;
-      // Tomar 5 al azar para mostrar
-      const shown = [...members].sort(() => Math.random() - 0.5).slice(0, 5);
-      const remaining = Math.max(0, total - shown.length);
-
-      const avs = shown.map(m => {
-        const photo = m.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.name || '?')}&background=06a3b6&color=fff&size=64`;
-        return `<img class="hc-av" src="${photo}" alt="${(m.name || '').replace(/"/g,'&quot;')}" title="${(m.name || '').replace(/"/g,'&quot;')}" loading="lazy">`;
-      }).join("");
-
-      stack.innerHTML = `
-        ${avs}
-        ${remaining > 0 ? `<span class="hc-av hc-av-more">+${remaining}</span>` : ''}
-        <span class="hc-team-count">${total} héroes</span>
-      `;
-    } catch (e) {
-      console.warn("No se pudo cargar el equipo:", e.message);
-      stack.innerHTML = "";
-    }
-  }
-
-  // Esperar a que auth confirme el usuario antes de leer Firestore
-  // (Firestore rules requieren autenticación)
-  import { auth } from "./js/firebase-config.js";
-  import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-  onAuthStateChanged(auth, (user) => {
-    if (user) loadTeamStack();
-  });
-</script>
-
 <script>
   // ══ Modal Entrenamientos: Calendario vs Grabaciones ══
   (function () {

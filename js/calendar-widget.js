@@ -1,29 +1,32 @@
 /**
- * Hero Hub — Widget de meetings de Google Calendar
+ * Hero Hub — Widget del "Próximo meeting" del banner HQ Command Center.
  *
- * Consume el access token publicado por js/auth.js (via sessionStorage +
+ * Consume el access token publicado por js/auth.js (via localStorage +
  * evento "hero-gcal-token-ready"), hace fetch a Google Calendar API v3
- * para hoy+mañana, y renderiza el widget en el contenedor #gcal-widget.
+ * para hoy+mañana, y alimenta los slots del tile #hqcc-meet-tile del banner:
+ *   #hqcc-meet-badge     · "En 15 min" / "En curso" / "Hoy" / "Mañana"
+ *   #hqcc-meet-time-h    · hora del próximo meeting ("10:00")
+ *   #hqcc-meet-time-m    · AM/PM
+ *   #hqcc-meet-title     · título del meeting
+ *   #hqcc-meet-next      · "Luego · [hora] · [título]" del siguiente evento
+ *   #hqcc-meet-join      · href del link para unirse
  *
- * Todo el render usa createElement + textContent (no template strings HTML).
- *
- * Estados: loading | ready | empty | reconnect | error
- * Refresh: cada 5 min + al recuperar foco de pestaña
+ * Estados (leídos por CSS vía data-state en #hqcc-meet-tile):
+ *   loading | ready | empty | reconnect | error
+ * Refresh: cada 5 min + al recuperar foco de pestaña.
  */
 (function () {
   // ══════════════════════════════════════════════
   // Configuración
   // ══════════════════════════════════════════════
   const GCAL_TOKEN_KEY = "hero-gcal-token";
-  const CONTAINER_ID = "gcal-widget";
+  const TILE_ID = "hqcc-meet-tile";
   const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
   const MIN_REFRESH_ON_FOCUS_MS = 60 * 1000;
-  const MAX_ITEMS = 6;
   const IN_15_MIN_THRESHOLD_MS = 15 * 60 * 1000;
 
   // ══════════════════════════════════════════════
-  // Firebase Auth cargado dinámicamente (para evitar tener que hacer del
-  // widget un módulo ES6; se carga con <script defer>)
+  // Firebase Auth cargado dinámicamente
   // ══════════════════════════════════════════════
   let _firebaseAuthModule = null;
   async function loadFirebaseAuth() {
@@ -44,7 +47,7 @@
   // ══════════════════════════════════════════════
   function readToken() {
     try {
-      const raw = sessionStorage.getItem(GCAL_TOKEN_KEY);
+      const raw = localStorage.getItem(GCAL_TOKEN_KEY);
       if (!raw) return null;
       return JSON.parse(raw);
     } catch { return null; }
@@ -55,111 +58,105 @@
   }
 
   // ══════════════════════════════════════════════
-  // DOM helpers (createElement + textContent, sin string HTML)
+  // Acceso al tile
   // ══════════════════════════════════════════════
-  function getContainer() {
-    return document.getElementById(CONTAINER_ID);
+  function getTile() { return document.getElementById(TILE_ID); }
+  function $(id) { return document.getElementById(id); }
+
+  function setState(state) {
+    const tile = getTile();
+    if (tile) tile.dataset.state = state;
   }
 
-  function clearContainer(c) {
-    while (c.firstChild) c.removeChild(c.firstChild);
-  }
-
-  function el(tag, opts, ...children) {
-    const node = document.createElement(tag);
-    if (opts) {
-      if (opts.class) node.className = opts.class;
-      if (opts.text) node.textContent = opts.text;
-      if (opts.id) node.id = opts.id;
-      if (opts.href) node.href = opts.href;
-      if (opts.target) node.target = opts.target;
-      if (opts.rel) node.rel = opts.rel;
-      if (opts.role) node.setAttribute("role", opts.role);
-      if (opts.type) node.type = opts.type;
-      if (opts.ariaLabel) node.setAttribute("aria-label", opts.ariaLabel);
-      if (opts.title) node.title = opts.title;
-    }
-    for (const child of children) {
-      if (child == null) continue;
-      if (typeof child === "string") node.appendChild(document.createTextNode(child));
-      else node.appendChild(child);
-    }
-    return node;
-  }
-
-  function iconEl(name) {
+  function setJoin({ href, label, iconName, onclick }) {
+    const join = $("hqcc-meet-join");
+    if (!join) return;
+    join.href = href || "#";
+    join.onclick = onclick || null;
+    join.target = onclick ? "" : "_blank";
+    join.rel = onclick ? "" : "noopener";
+    // Reemplaza el ícono (lucide reemplaza el <i> por <svg>, así que recreamos el <i>)
+    while (join.firstChild) join.removeChild(join.firstChild);
     const i = document.createElement("i");
-    i.setAttribute("data-lucide", name);
-    return i;
+    i.setAttribute("data-lucide", iconName || "video");
+    const span = document.createElement("span");
+    span.textContent = label || "Unirme";
+    join.appendChild(i);
+    join.appendChild(span);
   }
 
-  function headerEl() {
-    return el("div", { class: "gcal-header" },
-      el("div", { class: "gcal-title" },
-        iconEl("calendar-days"),
-        el("span", { text: "Próximos meetings" })
-      )
-    );
+  function setBadge(text) {
+    const b = $("hqcc-meet-badge");
+    if (!b) return;
+    if (!text) { b.hidden = true; b.textContent = ""; return; }
+    b.hidden = false;
+    b.textContent = text;
   }
 
-  function renderInto(...nodes) {
-    const c = getContainer();
-    if (!c) return;
-    clearContainer(c);
-    for (const n of nodes) c.appendChild(n);
+  function setTime(h, m) {
+    const eh = $("hqcc-meet-time-h");
+    const em = $("hqcc-meet-time-m");
+    if (eh) eh.textContent = h || "—";
+    if (em) em.textContent = m || "";
+  }
+
+  function setTitle(txt) { const el = $("hqcc-meet-title"); if (el) el.textContent = txt || ""; }
+  function setNext(txt)  { const el = $("hqcc-meet-next");  if (el) el.textContent = txt || ""; }
+
+  function refreshIcons() {
     if (window.refreshIcons) window.refreshIcons();
   }
 
   // ══════════════════════════════════════════════
-  // Renderizadores de estados vacíos
+  // Renderizadores de estados
   // ══════════════════════════════════════════════
   function renderLoading() {
-    const skel = el("div", { class: "gcal-skeleton" },
-      el("div", { class: "gcal-skel-row" }),
-      el("div", { class: "gcal-skel-row" }),
-      el("div", { class: "gcal-skel-row" })
-    );
-    renderInto(headerEl(), skel);
+    setState("loading");
+    setBadge(null);
+    setTime("—", "");
+    setTitle("Cargando…");
+    setNext("");
+    setJoin({ href: "https://calendar.google.com", label: "Unirme", iconName: "video" });
+    refreshIcons();
   }
 
   function renderEmpty() {
-    const empty = el("div", { class: "gcal-empty" },
-      el("div", { class: "gcal-empty-icon" }, iconEl("calendar-check")),
-      el("div", { class: "gcal-empty-title", text: "Sin meetings próximos ✨" }),
-      el("div", { class: "gcal-empty-sub", text: "Disfruta el día libre en tu agenda." })
-    );
-    renderInto(headerEl(), empty);
+    setState("empty");
+    setBadge(null);
+    setTitle("Sin meetings próximos ✨");
+    setNext("");
+    setJoin({ href: "https://calendar.google.com", label: "Abrir calendario", iconName: "external-link" });
+    refreshIcons();
   }
 
   function renderReconnect(reason) {
-    const msg = reason === "no-permission"
+    setState("reconnect");
+    setBadge(null);
+    setTitle(reason === "no-permission"
       ? "El Hub necesita permiso para leer tu Google Calendar."
-      : "Necesitas reconectar Google Calendar para ver tus meetings.";
-    const btn = el("button", { class: "gcal-reconnect-btn", id: "gcal-reconnect-btn", type: "button" },
-      iconEl("refresh-cw"),
-      el("span", { text: "Reconectar" })
-    );
-    btn.addEventListener("click", handleReconnectClick);
-    const block = el("div", { class: "gcal-reconnect" },
-      el("div", { class: "gcal-reconnect-icon" }, iconEl("alert-triangle")),
-      el("div", { class: "gcal-reconnect-msg", text: msg }),
-      btn
-    );
-    renderInto(headerEl(), block);
+      : "Reconecta Google Calendar para ver tus meetings.");
+    setNext("");
+    setJoin({
+      href: "#",
+      label: "Reconectar",
+      iconName: "refresh-cw",
+      onclick: (e) => { e.preventDefault(); handleReconnectClick(); },
+    });
+    refreshIcons();
   }
 
   function renderError() {
-    const btn = el("button", { class: "gcal-retry-btn", id: "gcal-retry-btn", type: "button" },
-      iconEl("refresh-cw"),
-      el("span", { text: "Reintentar" })
-    );
-    btn.addEventListener("click", () => refresh({ force: true }));
-    const block = el("div", { class: "gcal-error" },
-      el("div", { class: "gcal-error-icon" }, iconEl("wifi-off")),
-      el("div", { class: "gcal-error-msg", text: "No pudimos cargar tu calendar." }),
-      btn
-    );
-    renderInto(headerEl(), block);
+    setState("error");
+    setBadge(null);
+    setTitle("No pudimos cargar tus meetings.");
+    setNext("");
+    setJoin({
+      href: "#",
+      label: "Reintentar",
+      iconName: "refresh-cw",
+      onclick: (e) => { e.preventDefault(); refresh({ force: true }); },
+    });
+    refreshIcons();
   }
 
   // ══════════════════════════════════════════════
@@ -211,7 +208,7 @@
   }
 
   // ══════════════════════════════════════════════
-  // Post-procesamiento
+  // Post-procesamiento — devuelve lista ordenada de items futuros o en curso
   // ══════════════════════════════════════════════
   function processEvents(rawEvents) {
     const now = Date.now();
@@ -226,7 +223,7 @@
     for (const ev of rawEvents) {
       if (ev.status === "cancelled") continue;
       if (ev.eventType === "outOfOffice" || ev.eventType === "focusTime") continue;
-      if (!ev.start || !ev.start.dateTime) continue; // all-day
+      if (!ev.start || !ev.start.dateTime) continue;
       const attendees = ev.attendees || [];
       const self = attendees.find(a => a.self);
       if (self && self.responseStatus === "declined") continue;
@@ -243,14 +240,6 @@
       else if (startDate >= startOfTomorrow && startDate < endOfTomorrow) dayGroup = "mañana";
       else continue;
 
-      let badge = null;
-      if (startMs <= now && now <= endMs) {
-        badge = { type: "en-curso", label: "En curso" };
-      } else if (startMs > now && (startMs - now) <= IN_15_MIN_THRESHOLD_MS) {
-        const minsLeft = Math.max(1, Math.round((startMs - now) / 60000));
-        badge = { type: "proximo", label: `En ${minsLeft} min` };
-      }
-
       items.push({
         id: ev.id,
         title: ev.summary || "(Sin título)",
@@ -258,17 +247,72 @@
         endMs,
         dayGroup,
         joinLink: pickJoinLink(ev),
-        badge,
       });
     }
-
-    const limited = items.slice(0, MAX_ITEMS);
-    const hasMore = items.length > MAX_ITEMS;
-    return { items: limited, hasMore };
+    return items;
   }
 
   // ══════════════════════════════════════════════
-  // Refresh silencioso del token vía Firebase Auth
+  // Formato y badge del próximo meeting
+  // ══════════════════════════════════════════════
+  function fmtHM(ms) {
+    // Devuelve { h: "10:00", m: "AM" } para el layout del tile.
+    const d = new Date(ms);
+    const parts = new Intl.DateTimeFormat("en-US", {
+      hour: "numeric", minute: "2-digit", hour12: true,
+    }).formatToParts(d);
+    let h = "", m = "";
+    for (const p of parts) {
+      if (p.type === "hour" || p.type === "literal" || p.type === "minute") h += p.value;
+      else if (p.type === "dayPeriod") m = p.value.toUpperCase();
+    }
+    return { h: h.trim(), m };
+  }
+
+  function badgeFor(item) {
+    const now = Date.now();
+    if (item.startMs <= now && now <= item.endMs) return "En curso";
+    if (item.startMs > now && (item.startMs - now) <= IN_15_MIN_THRESHOLD_MS) {
+      const mins = Math.max(1, Math.round((item.startMs - now) / 60000));
+      return `En ${mins} min`;
+    }
+    return item.dayGroup === "mañana" ? "Mañana" : "Hoy";
+  }
+
+  // ══════════════════════════════════════════════
+  // Render del próximo meeting
+  // ══════════════════════════════════════════════
+  function renderMeetings(items) {
+    if (!items.length) { renderEmpty(); return; }
+
+    const next = items[0];
+    const follow = items[1] || null;
+
+    setState("ready");
+    setBadge(badgeFor(next));
+
+    const t = fmtHM(next.startMs);
+    setTime(t.h, t.m);
+    setTitle(next.title);
+
+    if (follow) {
+      const ft = fmtHM(follow.startMs);
+      const prefix = follow.dayGroup === "mañana" ? "Mañana" : "Luego";
+      setNext(`${prefix} · ${ft.h} ${ft.m} · ${follow.title}`);
+    } else {
+      setNext(next.dayGroup === "mañana" ? "Mañana en tu agenda" : "Único evento de hoy");
+    }
+
+    if (next.joinLink) {
+      setJoin({ href: next.joinLink, label: "Unirme", iconName: "video" });
+    } else {
+      setJoin({ href: "https://calendar.google.com", label: "Ver en Calendar", iconName: "external-link" });
+    }
+    refreshIcons();
+  }
+
+  // ══════════════════════════════════════════════
+  // Refresh silencioso del token
   // ══════════════════════════════════════════════
   async function refreshTokenSilently(hintEmail) {
     try {
@@ -289,10 +333,10 @@
         expiresAt: Date.now() + 55 * 60 * 1000,
         email: result.user.email,
       };
-      sessionStorage.setItem(GCAL_TOKEN_KEY, JSON.stringify(payload));
+      localStorage.setItem(GCAL_TOKEN_KEY, JSON.stringify(payload));
       return payload;
     } catch (e) {
-      console.warn("[gcal-widget] refresh silencioso falló:", e.message);
+      console.warn("[calendar-widget] refresh silencioso falló:", e.message);
       return null;
     }
   }
@@ -308,14 +352,10 @@
   // Refresh principal
   // ══════════════════════════════════════════════
   async function refresh(opts = {}) {
-    const container = getContainer();
-    if (!container) return;
+    if (!getTile()) return;
 
     const token = await getFreshToken();
-    if (!token) {
-      renderReconnect();
-      return;
-    }
+    if (!token) { renderReconnect(); return; }
 
     if (!cachedEvents || opts.force) renderLoading();
 
@@ -324,95 +364,15 @@
       const processed = processEvents(raw);
       cachedEvents = processed;
       lastFetchAt = Date.now();
-      if (processed.items.length === 0) renderEmpty();
-      else renderMeetings(processed);
+      renderMeetings(processed);
     } catch (e) {
       if (e.message === "auth-required") {
         renderReconnect(e.status === 403 ? "no-permission" : undefined);
       } else {
-        console.warn("[gcal-widget] fetch falló:", e.message);
+        console.warn("[calendar-widget] fetch falló:", e.message);
         renderError();
       }
     }
-  }
-
-  // ══════════════════════════════════════════════
-  // Formato de hora
-  // ══════════════════════════════════════════════
-  function fmtTime(ms) {
-    return new Intl.DateTimeFormat("en-US", {
-      hour: "numeric", minute: "2-digit", hour12: true,
-    }).format(new Date(ms));
-  }
-
-  // ══════════════════════════════════════════════
-  // Render de meetings (createElement puro)
-  // ══════════════════════════════════════════════
-  function badgeNode(badge) {
-    if (!badge) return null;
-    const cls = `gcal-badge gcal-badge-${badge.type}`;
-    return el("span", { class: cls, text: badge.label });
-  }
-
-  function joinBtnNode(item) {
-    if (item.joinLink) {
-      const a = el("a", {
-        class: "gcal-join-btn",
-        href: item.joinLink,
-        target: "_blank",
-        rel: "noopener",
-        ariaLabel: `Unirme al meeting «${item.title}» a las ${fmtTime(item.startMs)}`,
-      }, iconEl("video"), el("span", { text: "Unirme" }));
-      return a;
-    }
-    return el("span", { class: "gcal-nolink", ariaLabel: "Sin link disponible", text: "Sin link" });
-  }
-
-  function itemNode(item) {
-    const titleRow = el("div", { class: "gcal-title-row" },
-      el("span", { class: "gcal-item-title", text: item.title, title: item.title }),
-      badgeNode(item.badge)
-    );
-    const body = el("div", { class: "gcal-body" }, titleRow);
-    const time = el("div", { class: "gcal-time mono", text: fmtTime(item.startMs) });
-    const actions = el("div", { class: "gcal-actions" }, joinBtnNode(item));
-    const row = el("div", { class: "gcal-item", role: "listitem" }, time, body, actions);
-    row.setAttribute("data-id", item.id);
-    return row;
-  }
-
-  function groupBlockNode(label, list) {
-    if (!list.length) return null;
-    const rows = el("div", { class: "gcal-list", role: "list" });
-    for (const item of list) rows.appendChild(itemNode(item));
-    return el("div", { class: "gcal-group" },
-      el("div", { class: "gcal-group-label", text: label }),
-      rows
-    );
-  }
-
-  function moreLinkNode() {
-    return el("a", {
-      class: "gcal-more",
-      href: "https://calendar.google.com",
-      target: "_blank",
-      rel: "noopener",
-    }, el("span", { text: "Ver más en Google Calendar " }), iconEl("external-link"));
-  }
-
-  function renderMeetings(processed) {
-    const { items, hasMore } = processed;
-    const hoy = items.filter(i => i.dayGroup === "hoy");
-    const manana = items.filter(i => i.dayGroup === "mañana");
-
-    const nodes = [headerEl()];
-    const gHoy = groupBlockNode("Hoy", hoy);
-    if (gHoy) nodes.push(gHoy);
-    const gManana = groupBlockNode("Mañana", manana);
-    if (gManana) nodes.push(gManana);
-    if (hasMore) nodes.push(moreLinkNode());
-
-    renderInto(...nodes);
   }
 
   // ══════════════════════════════════════════════
@@ -434,11 +394,11 @@
           expiresAt: Date.now() + 55 * 60 * 1000,
           email: result.user.email,
         };
-        sessionStorage.setItem(GCAL_TOKEN_KEY, JSON.stringify(payload));
+        localStorage.setItem(GCAL_TOKEN_KEY, JSON.stringify(payload));
         await refresh({ force: true });
       }
     } catch (e) {
-      console.warn("[gcal-widget] reconectar falló:", e.message);
+      console.warn("[calendar-widget] reconectar falló:", e.message);
     }
   }
 
@@ -455,7 +415,7 @@
   }
 
   function init() {
-    if (!getContainer()) return;
+    if (!getTile()) return;
     installRefreshTriggers();
     refresh();
   }

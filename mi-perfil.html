@@ -12,10 +12,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
 
-<!-- Flatpickr · date pickers para el rango personalizado de asistencia -->
+<!-- Flatpickr · date pickers para el rango personalizado de asistencia y el modal de Ausencia -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+
+<!-- Shoelace · component library (modal Ausencia) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css">
+<script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/shoelace-autoloader.js"></script>
 
 <!-- Chart.js · gráficos de la sección Mi asistencia -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
@@ -24,6 +28,7 @@
 <script defer src="https://unpkg.com/lucide@0.474.0"></script>
 <script defer src="js/topbar-dropdown.js"></script>
 <script defer src="js/toast.js"></script>
+<script type="module" src="js/attendance.js"></script>
 </head>
 <body>
 <script>try{var t=localStorage.getItem("hero-theme");if(t)document.body.dataset.theme=t;}catch(e){}</script>
@@ -184,6 +189,11 @@
           <span>Mi asistencia</span>
         </div>
         <div class="mp-att-toolbar">
+          <button class="mp-att-btn-report" id="btnAusencia" type="button">
+            <i data-lucide="calendar-x"></i>
+            <span>Reportar ausencia</span>
+          </button>
+          <div class="mp-att-toolbar-divider" aria-hidden="true"></div>
           <label class="mp-att-period-lbl" for="mp-att-period">Periodo:</label>
           <select class="mp-att-select" id="mp-att-period">
             <option value="month">Mes actual</option>
@@ -270,7 +280,7 @@
   </main>
 
   <footer class="hero-footer">
-    <span>HERO HUB · v2.15.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+    <span>HERO HUB · v2.16.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
   </footer>
 </div>
 
