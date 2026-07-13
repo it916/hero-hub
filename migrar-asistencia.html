@@ -199,13 +199,16 @@
 <script type="module" src="js/page-guard.js"></script>
 <script type="module" src="js/migrar-asistencia.js"></script>
 <script type="module" src="js/user-menu.js"></script>
-<script>
+<script type="module">
+  // type="module" garantiza que este script corra DESPUES de los modulos
+  // de arriba (todos son deferred y se ejecutan en orden DOM), por lo
+  // que window.HeroHubContext ya existe cuando llegamos aca.
+  window.refreshIcons = () => { if (window.lucide) lucide.createIcons(); };
   window.HeroHubContext.readyPromise.then(() => {
     document.getElementById("loading").style.display = "none";
     document.getElementById("content").style.display = "block";
     if (window.lucide) lucide.createIcons();
   });
-  window.refreshIcons = () => { if (window.lucide) lucide.createIcons(); };
 </script>
 </body>
 </html>
