@@ -1,5 +1,21 @@
 [
   {
+    "id": "2026-07-13-asistencia-falso-error",
+    "version": "v2.17.1",
+    "date": "2026-07-13",
+    "category": "fix",
+    "scope": "asistencia",
+    "audience": "all",
+    "title": "Asistencia · Fix del mensaje falso 'No se pudo registrar' cuando sí se registraba",
+    "items": [
+      "Los botones de Mi Asistencia (Entrada, Salida, Break) a veces mostraban 'No se pudo registrar. Reintenta.' aunque la fila SÍ quedaba guardada en el Google Sheet",
+      "Causa: Apps Script responde con un redirect 302 sin headers CORS. El navegador intentaba seguirlo, la lectura fallaba por CORS y el fetch lanzaba excepción — pero el appendRow ya se había ejecutado del lado de Apps Script",
+      "Fix: el POST ahora usa mode:'no-cors' (fire-and-forget). El registro llega igual, y la UI ya no muestra un falso error",
+      "Fix menor: el toggle de Break en el banner HQ Command Center llamaba a una función inexistente (readLast) — corregido a loadLast; el botón 'Volver del break' ahora funciona correctamente",
+      "Bump v2.17.0 → v2.17.1"
+    ]
+  },
+  {
     "id": "2026-07-10-finanzas-import-modificados",
     "version": "v2.17.0",
     "date": "2026-07-10",

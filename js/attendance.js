@@ -172,14 +172,16 @@ function refreshStatusFromStorage() {
 
 // ── POST al Apps Script ────────────────────────────────────────────
 async function postToSheet(payload) {
-  // Sin Content-Type custom → evita CORS pre-flight con Apps Script.
-  // El body llega a Apps Script como e.postData.contents (string).
-  const resp = await fetch(APPS_SCRIPT_URL, {
+  // Apps Script responde con 302 redirect a script.googleusercontent.com sin headers
+  // CORS. En modo CORS (default), seguir ese redirect lanza excepción aunque el
+  // appendRow ya se ejecutó → falso "No se pudo registrar". mode:"no-cors" hace
+  // fire-and-forget: el POST llega y doPost corre, pero el response queda opaco y no
+  // podemos leer status. El body llega a Apps Script como e.postData.contents (string).
+  await fetch(APPS_SCRIPT_URL, {
     method: "POST",
+    mode: "no-cors",
     body: JSON.stringify(payload),
-    redirect: "follow"
   });
-  if (!resp.ok) throw new Error("HTTP " + resp.status);
 }
 
 async function recordAttendance(type, btn, extras = {}) {
@@ -320,7 +322,7 @@ function initHqccBreakToggle() {
   const label = btn.querySelector(".hqcc-break-label");
 
   const onBreakNow = () => {
-    const last = readLast();
+    const last = loadLast();
     if (!last) return false;
     if (last.type !== "Inicio Break") return false;
     return isSameLocalDay(last.timestamp, new Date().toISOString());
