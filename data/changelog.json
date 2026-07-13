@@ -1,5 +1,24 @@
 [
   {
+    "id": "2026-07-13-asistencia-firestore",
+    "version": "v2.18.0",
+    "date": "2026-07-13",
+    "category": "feat",
+    "scope": "asistencia",
+    "audience": "admin",
+    "title": "Asistencia · Migración de Google Sheets a Firestore",
+    "items": [
+      "El sistema de asistencia estaba llegando a los 1000 registros en el Google Sheet y el dashboard admin se iba a poner cada vez más lento (el Apps Script bajaba todo el Sheet en cada carga)",
+      "Migramos toda la data (registros históricos) a la colección 'attendance' de Firestore, misma base que usa audit-log, finanzas y roles",
+      "Los botones de Mi Asistencia (Entrada, Salida, Break, etc.) siguen funcionando exactamente igual desde el punto de vista del usuario — solo cambió a dónde se guardan los datos",
+      "Dashboard admin: por default ahora carga solo los últimos 30 días (mucho más rápido que antes) + nuevo botón 'Histórico completo' cuando HR necesite ver data más vieja",
+      "Vista 'Mi Asistencia' en Mi perfil: cada usuario ahora ve todos sus eventos históricos, filtrados server-side (solo trae los suyos)",
+      "El Google Sheet queda como respaldo histórico read-only. El Apps Script sigue vivo pero ya no recibe escrituras nuevas",
+      "Nueva página admin-only /migrar-asistencia.html usada una única vez para migrar los ~1000 registros históricos (idempotente vía docIds determinísticos). Se puede borrar del repo en una limpieza futura",
+      "Bump v2.17.1 → v2.18.0"
+    ]
+  },
+  {
     "id": "2026-07-13-asistencia-falso-error",
     "version": "v2.17.1",
     "date": "2026-07-13",
