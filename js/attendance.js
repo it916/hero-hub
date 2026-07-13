@@ -2,22 +2,24 @@
 // Hero Hub · Registro de Asistencia
 // ═══════════════════════════════════════════
 // Cablea los botones de la sección "Mi Asistencia" (index.html) con
-// un endpoint de Google Apps Script que escribe en un Sheet.
+// la colección `attendance` de Firestore (a través de attendance-store.js).
 //
 // Tipos registrados:
 //   Entrada · Salida · Inicio Break · Fin Break
 //   Corte Luz Inicio · Corte Luz Fin · Ausencia
 //
 // El último evento se guarda en localStorage para mostrar el estado
-// actual al recargar la página (sin hacer GET al Sheet).
+// actual al recargar la página (sin hacer read a Firestore).
 //
-// Apps Script: ver bloque al final de este archivo para el código y
-// los pasos de despliegue.
+// Historia: hasta v2.17.1 este módulo escribía a un Google Sheet vía
+// Apps Script. En v2.18.0 migramos a Firestore por escalabilidad —
+// el Sheet había pasado los 1000 registros y el doGet se estaba
+// volviendo lento.
 // ═══════════════════════════════════════════
 
 import { auth } from "./firebase-config.js";
+import { writeAttendance } from "./attendance-store.js";
 
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxgZulYURxNjprHfvXuj82HHveHtNueg1J6SYkRPzqh8AjYSduzN9RkK-n5-1zO1N3F/exec";
 const STORAGE_KEY = "hh-attendance-last";
 const TICK_MS = 30_000;
 
@@ -170,42 +172,26 @@ function refreshStatusFromStorage() {
   elLast.textContent = `${last.type} · ${formatDateLong(d)} · ${formatTime(d)}`;
 }
 
-// ── POST al Apps Script ────────────────────────────────────────────
-async function postToSheet(payload) {
-  // Apps Script responde con 302 redirect a script.googleusercontent.com sin headers
-  // CORS. En modo CORS (default), seguir ese redirect lanza excepción aunque el
-  // appendRow ya se ejecutó → falso "No se pudo registrar". mode:"no-cors" hace
-  // fire-and-forget: el POST llega y doPost corre, pero el response queda opaco y no
-  // podemos leer status. El body llega a Apps Script como e.postData.contents (string).
-  await fetch(APPS_SCRIPT_URL, {
-    method: "POST",
-    mode: "no-cors",
-    body: JSON.stringify(payload),
-  });
-}
-
+// ── Registro del evento (Firestore) ────────────────────────────────
 async function recordAttendance(type, btn, extras = {}) {
   const user = auth.currentUser;
   if (!user) { setFeedback("Sesión expirada. Recarga la página.", "err"); return; }
-  if (!APPS_SCRIPT_URL) { setFeedback("⚠ Endpoint no configurado", "err"); return; }
 
   btn.classList.add("is-loading");
   btn.disabled = true;
   setFeedback(`Registrando ${type.toLowerCase()}…`);
 
   const now = new Date();
-  const payload = {
-    email: user.email,
-    name: user.displayName || user.email.split("@")[0],
-    type,
-    timestamp: now.toISOString(),
-    ...extras, // absenceDate, reason para ausencias
-  };
 
   try {
-    await postToSheet(payload);
+    await writeAttendance({
+      type,
+      timestamp: now,
+      absenceDate: extras.absenceDate,
+      reason: extras.reason,
+    });
     setFeedback(`✓ ${type} registrada a las ${formatTime(now)}`, "ok");
-    saveLast(type, payload.timestamp, extras);
+    saveLast(type, now.toISOString(), extras);
     refreshStatusFromStorage();
     if (window.hqccSyncBreak) window.hqccSyncBreak();
   } catch (e) {
