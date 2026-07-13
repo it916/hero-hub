@@ -141,11 +141,15 @@
                 <i data-lucide="refresh-cw" slot="prefix" style="width:14px;height:14px;"></i>
                 Actualizar
               </sl-button>
+              <sl-button id="ad-load-history" variant="default" size="medium" title="Trae toda la historia. Sin esto, se cargan solo los ultimos 30 dias.">
+                <i data-lucide="history" slot="prefix" style="width:14px;height:14px;"></i>
+                Historico completo
+              </sl-button>
               <span class="ad-pill ad-pill-mono"><span id="ad-last-update">—</span></span>
             </div>
           </div>
 
-          <div id="ad-loading" class="ad-loading">Cargando datos del Sheet…</div>
+          <div id="ad-loading" class="ad-loading">Cargando datos de asistencia…</div>
           <div id="ad-error" class="ad-error" style="display:none;"></div>
 
           <div id="ad-content" style="display:none;">

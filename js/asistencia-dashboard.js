@@ -1,8 +1,8 @@
 // ═══════════════════════════════════════════
 // Hero Hub · Dashboard de Asistencia
 // ═══════════════════════════════════════════
-// Lee los registros del Sheet de Asistencia vía GET al Apps Script,
-// agrega los datos en memoria y renderiza:
+// Lee los registros de la colección `attendance` de Firestore (desde
+// v2.18.0), agrega los datos en memoria y renderiza:
 //   - 4 contadores de estado actual
 //   - Lista de equipo en vivo
 //   - Donut de distribución (Chart.js)
@@ -31,6 +31,12 @@ import {
 let allEvents = [];
 const charts = {};
 
+// Por default traemos solo los ultimos 30 dias para minimizar reads a
+// Firestore (free tier = 50k reads/dia). El boton "Historico completo"
+// levanta este flag y hace un refetch sin filtro de fecha.
+const DEFAULT_LOOKBACK_DAYS = 30;
+let historyLoaded = false;
+
 function escapeHtml(s) {
   return (s == null ? "" : String(s)).replace(/[&<>"']/g, c => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
@@ -43,29 +49,44 @@ let handlersBound = false;
 export async function initAsistenciaDashboard() {
   if (!handlersBound) {
     const refreshBtn = document.getElementById("ad-refresh");
+    const historyBtn = document.getElementById("ad-load-history");
     const periodSel = document.getElementById("ad-period");
-    if (refreshBtn) refreshBtn.addEventListener("click", () => fetchAndRender());
+    if (refreshBtn) refreshBtn.addEventListener("click", () => fetchAndRender({ loadHistory: historyLoaded }));
+    if (historyBtn) historyBtn.addEventListener("click", () => fetchAndRender({ loadHistory: true }));
     if (periodSel) periodSel.addEventListener("change", renderAll);
     wirePersonModal();
     handlersBound = true;
   }
-  await fetchAndRender();
+  await fetchAndRender({ loadHistory: false });
 }
 
 // ── Fetch & render ─────────────────────────────────────────────────
-async function fetchAndRender() {
+async function fetchAndRender({ loadHistory = false } = {}) {
   const loading = document.getElementById("ad-loading");
   const errorEl = document.getElementById("ad-error");
   const content = document.getElementById("ad-content");
+  const historyBtn = document.getElementById("ad-load-history");
   loading.style.display = "block";
   errorEl.style.display = "none";
   content.style.display = "none";
 
   try {
-    allEvents = await fetchAttendanceEvents();
+    // Sin loadHistory: solo ultimos 30 dias (default). Con loadHistory:
+    // sin filtro de fecha (trae todo, mas costoso).
+    const opts = loadHistory ? {} : { from: daysAgo(DEFAULT_LOOKBACK_DAYS) };
+    allEvents = await fetchAttendanceEvents(opts);
+    historyLoaded = loadHistory;
 
+    if (historyBtn) {
+      historyBtn.textContent = loadHistory
+        ? `Historico cargado (${allEvents.length})`
+        : "Historico completo";
+      historyBtn.disabled = loadHistory;
+    }
+
+    const suffix = loadHistory ? " · historico completo" : ` · ultimos ${DEFAULT_LOOKBACK_DAYS} dias`;
     document.getElementById("ad-last-update").textContent =
-      "Actualizado " + new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+      "Actualizado " + new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) + suffix;
 
     renderAll();
     loading.style.display = "none";
@@ -74,12 +95,34 @@ async function fetchAndRender() {
     console.error("asistencia-dashboard:", e);
     loading.style.display = "none";
     errorEl.style.display = "block";
-    errorEl.innerHTML = `
-      <div class="ad-error-icon"><i data-lucide="alert-triangle"></i></div>
-      <div class="ad-error-text">No pudimos cargar la data del Sheet.</div>
-      <div class="ad-error-detail">${escapeHtml(e.message)}<br>Verifica que el Apps Script tenga <code>doGet</code> y esté redeployed con nueva versión.</div>`;
+    renderErrorMessage(errorEl, e.message);
     if (window.refreshIcons) window.refreshIcons();
   }
+}
+
+function daysAgo(n) {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function renderErrorMessage(container, detail) {
+  container.replaceChildren();
+  const iconWrap = document.createElement("div");
+  iconWrap.className = "ad-error-icon";
+  const icon = document.createElement("i");
+  icon.setAttribute("data-lucide", "alert-triangle");
+  iconWrap.appendChild(icon);
+  const text = document.createElement("div");
+  text.className = "ad-error-text";
+  text.textContent = "No pudimos cargar los datos de asistencia.";
+  const detailEl = document.createElement("div");
+  detailEl.className = "ad-error-detail";
+  detailEl.textContent = detail || "Verifica tu conexion y las reglas de Firestore.";
+  container.appendChild(iconWrap);
+  container.appendChild(text);
+  container.appendChild(detailEl);
 }
 
 // ── Cálculos: horas trabajadas (state machine) ─────────────────────

@@ -3,13 +3,16 @@
 // ═══════════════════════════════════════════
 // Extraído de asistencia-dashboard.js para poder reutilizarlo
 // también en mi-perfil.html. Contiene:
-//   - Parseo de eventos del Sheet
+//   - Parseo de eventos de asistencia (Firestore)
 //   - Cálculo de stats por persona en un rango (computePersonStats)
 //   - Resolución de periodos predefinidos (computePeriod)
 //   - Render de los 3 charts (línea, donut, barras) que usan tanto
 //     el modal admin como la vista personal.
+//
+// Fuente de datos: colección `attendance` de Firestore (desde v2.18.0).
+// Historia: hasta v2.17.1 leíamos de un Google Sheet vía Apps Script.
 
-export const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxgZulYURxNjprHfvXuj82HHveHtNueg1J6SYkRPzqh8AjYSduzN9RkK-n5-1zO1N3F/exec";
+import { fetchAttendance } from "./attendance-store.js";
 
 export const STATUS_META = {
   "trabajando":   { label: "Trabajando", color: "#10b981", icon: "check-circle-2" },
@@ -305,13 +308,22 @@ export function computeCurrentStateByPerson(events, today) {
   return result.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-// ── Fetch al Sheet ───────────────────────────────────────────────
-export async function fetchAttendanceEvents() {
-  const resp = await fetch(APPS_SCRIPT_URL, { method: "GET", redirect: "follow" });
-  if (!resp.ok) throw new Error("HTTP " + resp.status);
-  const json = await resp.json();
-  if (!json.ok) throw new Error(json.error || "Respuesta inválida del Apps Script");
-  return json.data || [];
+// ── Fetch de eventos (Firestore) ─────────────────────────────────
+// Delega al store; se mantiene el mismo formato de salida
+// { fecha, hora, email, nombre, tipo, fechaObjetivo, motivo } para
+// no tocar el resto del motor de stats.
+//
+// Filtros opcionales:
+//   - from:  Date — solo eventos desde esa fecha
+//   - to:    Date — solo eventos hasta esa fecha
+//   - email: string — solo eventos de un usuario específico
+//
+// Sin filtros trae toda la colección. Con la colección creciendo por
+// año, evita llamar sin filtros — el free tier de Firestore es 50k
+// reads/día. Para el dashboard admin, usar rango. Para mi-perfil,
+// filtrar por email.
+export async function fetchAttendanceEvents(opts = {}) {
+  return await fetchAttendance(opts);
 }
 
 // ═══════════════════════════════════════════════════════════════

@@ -316,7 +316,9 @@ async function loadAttendance() {
   content.hidden = true;
 
   try {
-    allEvents = await fetchAttendanceEvents();
+    // Trae solo los eventos del usuario actual — evita bajar toda la coleccion.
+    // El filtro por rango se sigue haciendo client-side sobre estos eventos.
+    allEvents = await fetchAttendanceEvents({ email: currentUser.email });
     loading.hidden = true;
     content.hidden = false;
     renderAttendance();
