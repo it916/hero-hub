@@ -1,5 +1,22 @@
 [
   {
+    "id": "2026-07-13-changelog-paginacion",
+    "version": "v2.18.3",
+    "date": "2026-07-13",
+    "category": "refactor",
+    "scope": "changelog",
+    "audience": "all",
+    "title": "Changelog · Paginación + colapso de versiones antiguas",
+    "items": [
+      "La página de changelog venía creciendo mucho (47 entradas hoy) y se estaba volviendo un scroll infinito",
+      "Ahora las 3 versiones más recientes aparecen expandidas por default; las anteriores se muestran colapsadas (solo pill de versión + resumen + flecha)",
+      "Click en el header de una versión colapsada para verla completa",
+      "Nuevo paginador al pie: 10 versiones por página, con navegación numerada y flechas anterior/siguiente. Al cambiar de página hace scroll suave al inicio",
+      "Los filtros por categoría (Nuevo, Arreglos, Mejoras…) resetean a la página 1 automáticamente",
+      "Bump v2.18.2 → v2.18.3"
+    ]
+  },
+  {
     "id": "2026-07-13-gcal-gis-migration",
     "version": "v2.18.2",
     "date": "2026-07-13",
