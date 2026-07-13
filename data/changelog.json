@@ -1,5 +1,24 @@
 [
   {
+    "id": "2026-07-13-equipo-modal-unificado",
+    "version": "v2.18.1",
+    "date": "2026-07-13",
+    "category": "feat",
+    "scope": "equipo",
+    "audience": "admin",
+    "title": "Equipo · Modal de edición rediseñado + uploader de foto directo al repo",
+    "items": [
+      "Se unificaron los dos modales de edición del equipo (datos generales + ficha del héroe) en uno solo — antes había ambigüedad porque los dos botones ✎ (uno en la tarjeta, otro en el perfil grande) abrían modales distintos",
+      "Foto del miembro: nuevo uploader con avatar grande + click/drag&drop. Al guardar sube directo al repo (images/team/{slug}.{ext}) vía la GitHub API — ya no hay que agregar la foto manualmente",
+      "El uploader valida tipo (JPG/PNG/WebP) y peso (< 2MB) antes de subir. Muestra preview inmediato antes de commitear",
+      "País: input de texto libre con autocompletado (Venezuela, Cuba, España, etc.) — antes era un dropdown fijo de 5 países. Ahora se puede agregar cualquier origen",
+      "Se eliminó el campo 'Origen' de la ficha del héroe — era redundante con el país (que ya autopobla el origen narrativo con la bandera del país)",
+      "Fix: los <sl-select> del modal (país, mes, día del cumpleaños) cerraban el dialog al hacer una selección (bug de Shoelace). Reemplazados por <select> y <input> nativos con la misma estética",
+      "El campo 'birthdate' de Erick que motivó la migración ahora se puede editar sin que el modal se cierre",
+      "Bump v2.18.0 → v2.18.1"
+    ]
+  },
+  {
     "id": "2026-07-13-asistencia-firestore",
     "version": "v2.18.0",
     "date": "2026-07-13",

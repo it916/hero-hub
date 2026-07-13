@@ -38,6 +38,111 @@ const MONTHS = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV
 const EXCLUDED_NAMES = ['Luis Ernesto Gutiérrez'];
 const normName = s => (s || '').toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
 
+// Paises sugeridos en el <datalist> del modal de miembro. No es exhaustiva,
+// pero cubre los origenes actuales del equipo + resto de LatAm + España/US.
+const COUNTRIES_SUGGESTED = [
+  "Venezuela", "Cuba", "Colombia", "Chile", "Honduras", "Estados Unidos",
+  "Argentina", "México", "España", "Perú", "Ecuador", "Uruguay",
+  "Costa Rica", "Panamá", "República Dominicana", "Guatemala", "Nicaragua",
+  "El Salvador", "Bolivia", "Paraguay", "Puerto Rico", "Brasil"
+];
+
+// ═══════════════════════════════════════════
+// Uploader de foto → GitHub API
+// ═══════════════════════════════════════════
+// El token vive en Firestore (shared/config.githubToken), leible solo por
+// it@heroinsuranceusa.com (regla Firestore). Sube la foto al repo, hace
+// commit, y devuelve el path relativo con cache-buster.
+const GH_REPO_OWNER = "it916";
+const GH_REPO_NAME = "hero-hub";
+
+function slugifyName(name) {
+  const clean = (name || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "") // quitar acentos
+    .replace(/[^a-z0-9\s]/g, "") // solo letras/digitos/espacios
+    .trim();
+  const parts = clean.split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "miembro-" + Date.now();
+  if (parts.length === 1) return parts[0];
+  // Convención del proyecto: primer nombre + segunda palabra del nombre
+  // completo (que en LatAm suele ser el primer apellido para nombres cortos,
+  // o segundo nombre para nombres compuestos — no es perfecto pero coincide
+  // con las 17 fotos actuales).
+  return `${parts[0]}-${parts[1]}`;
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      // dataURL viene como "data:image/jpeg;base64,XXXX"; nos quedamos con XXXX.
+      const result = reader.result.split(",")[1];
+      resolve(result);
+    };
+    reader.onerror = () => reject(new Error("No se pudo leer el archivo"));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function getGithubToken() {
+  const snap = await getDoc(doc(db, "shared", "config"));
+  if (!snap.exists() || !snap.data().githubToken) {
+    throw new Error("Token de GitHub no configurado en Firestore shared/config.githubToken");
+  }
+  return snap.data().githubToken;
+}
+
+async function uploadPhotoToGitHub(file, slug) {
+  const token = await getGithubToken();
+
+  const ext = file.type === "image/png" ? "png"
+            : file.type === "image/webp" ? "webp"
+            : "jpg";
+  const path = `images/team/${slug}.${ext}`;
+  const apiUrl = `https://api.github.com/repos/${GH_REPO_OWNER}/${GH_REPO_NAME}/contents/${path}`;
+
+  // 1) Si el archivo ya existe, GitHub exige el SHA para hacer overwrite.
+  let sha = null;
+  const existingResp = await fetch(apiUrl, {
+    headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" }
+  });
+  if (existingResp.ok) {
+    const existing = await existingResp.json();
+    sha = existing.sha;
+  } else if (existingResp.status !== 404) {
+    const errText = await existingResp.text();
+    throw new Error(`GitHub API ${existingResp.status}: ${errText.slice(0, 200)}`);
+  }
+
+  // 2) Encode + PUT
+  const base64 = await fileToBase64(file);
+  const body = {
+    message: `feat(equipo): foto de ${slug}`,
+    content: base64,
+    branch: "main",
+  };
+  if (sha) body.sha = sha;
+
+  const uploadResp = await fetch(apiUrl, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/vnd.github+json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!uploadResp.ok) {
+    const errText = await uploadResp.text();
+    throw new Error(`GitHub API ${uploadResp.status}: ${errText.slice(0, 200)}`);
+  }
+
+  // 3) Cache-buster para que el navegador cargue la nueva foto tras redeploy.
+  return `${path}?v=${Date.now()}`;
+}
+
 // ═══ GENERADOR DE BIOS HEROICAS GENÉRICAS ═══
 function generateHeroicBio(person) {
   const role = (person.role || '').toLowerCase();
@@ -183,9 +288,12 @@ function wireHandlers() {
     if (e.key === "Escape") closeProfile();
   });
 
-  // Admin: editar ficha
+  // Admin: editar miembro (modal unificado: datos generales + ficha del heroe).
+  // El perfil grande queda abierto por detras del modal; openMemberModal
+  // detecta que veniamos del perfil (mediante currentProfileIdx) y refresca
+  // el perfil despues del save para reflejar los cambios.
   document.getElementById("hp-edit-btn").addEventListener("click", () => {
-    if (currentProfileIdx !== null) openBioEditModal(currentProfileIdx);
+    if (currentProfileIdx !== null) openMemberModal(currentProfileIdx);
   });
 }
 
@@ -223,8 +331,8 @@ function buildCard(person, idx) {
 
   const adminActions = isAdmin ? `
     <div class="card-admin-actions">
-      <button class="card-adm-btn edit" data-idx="${realIdx}" title="Editar datos">✎</button>
-      <button class="card-adm-btn del" data-idx="${realIdx}" title="Eliminar">×</button>
+      <button class="card-adm-btn edit" data-idx="${realIdx}" title="Editar miembro"><i data-lucide="edit-3"></i></button>
+      <button class="card-adm-btn del" data-idx="${realIdx}" title="Eliminar"><i data-lucide="x"></i></button>
     </div>` : '';
 
   card.innerHTML = `
@@ -323,112 +431,23 @@ function closeProfile() {
   currentProfileIdx = null;
 }
 
-// ═══ MODAL: Editar Bio (admin) ═══
-function openBioEditModal(idx) {
-  const p = members[idx];
-  if (!p) return;
-  const bio = p.bio || {};
-  const generic = generateHeroicBio(p);
-
-  const esc = (s) => (s == null ? "" : String(s)).replace(/"/g, "&quot;").replace(/&/g, "&amp;");
-
-  const dialog = document.createElement("sl-dialog");
-  dialog.label = `✦ Editar ficha · ${p.name}`;
-  dialog.className = "bio-edit-dialog";
-  dialog.innerHTML = `
-    <div class="bio-form">
-      <p class="bio-note">Los campos vacíos mostrarán el texto genérico automático.</p>
-
-      <sl-input id="bio-identidad" label="🛡️ Identidad secreta (rol)"
-        value="${esc(bio.identidad || '')}"
-        placeholder="${esc(generic.identidad)}"
-        clearable></sl-input>
-
-      <sl-input id="bio-origen" label="📍 Origen (dónde nació)"
-        value="${esc(bio.origen || '')}"
-        placeholder="${esc(generic.origen)}"
-        clearable></sl-input>
-
-      <sl-textarea id="bio-superpoder" label="⚡ Superpoder"
-        rows="2" resize="vertical"
-        placeholder="${esc(generic.superpoder)}"></sl-textarea>
-
-      <sl-input id="bio-union" label="📅 Se unió al equipo"
-        value="${esc(bio.union || '')}"
-        placeholder="Ej: Marzo 2024"
-        clearable></sl-input>
-
-      <sl-textarea id="bio-frase" label="✦ Frase icónica"
-        rows="2" resize="vertical"
-        placeholder="${esc(generic.frase)}"></sl-textarea>
-    </div>
-
-    <sl-button slot="footer" id="bio-cancel" variant="default">Cancelar</sl-button>
-    <sl-button slot="footer" id="bio-clear" variant="warning" outline>
-      <i data-lucide="refresh-cw" slot="prefix" style="width:14px;height:14px;"></i>
-      Usar genéricos
-    </sl-button>
-    <sl-button slot="footer" id="bio-save" variant="primary">
-      <i data-lucide="save" slot="prefix" style="width:14px;height:14px;"></i>
-      Guardar ficha
-    </sl-button>
-  `;
-  document.body.appendChild(dialog);
-  if (window.refreshIcons) window.refreshIcons();
-
-  // Los textareas no aceptan value como atributo bien; los seteamos por property
-  dialog.querySelector("#bio-superpoder").value = bio.superpoder || "";
-  dialog.querySelector("#bio-frase").value = bio.frase || "";
-
-  dialog.addEventListener("sl-after-hide", () => dialog.remove());
-
-  dialog.querySelector("#bio-cancel").addEventListener("click", () => dialog.hide());
-
-  dialog.querySelector("#bio-clear").addEventListener("click", async () => {
-    const ok = await heroConfirm({
-      title: "Restablecer ficha",
-      message: "¿Limpiar todos los campos? Se mostrarán los textos genéricos automáticos.",
-      confirmLabel: "Restablecer",
-      variant: "warning"
-    });
-    if (!ok) return;
-    members[idx].bio = null;
-    try {
-      await setDoc(doc(db, "shared", "team"), { members });
-      dialog.hide();
-      openProfile(idx);
-      heroToast.info("Ficha restablecida a genéricos");
-    } catch (e) { heroToast.error("No se pudo restablecer: " + e.message); }
-  });
-
-  dialog.querySelector("#bio-save").addEventListener("click", async () => {
-    const nuevo = {
-      identidad: (dialog.querySelector("#bio-identidad").value || "").trim(),
-      origen: (dialog.querySelector("#bio-origen").value || "").trim(),
-      superpoder: (dialog.querySelector("#bio-superpoder").value || "").trim(),
-      union: (dialog.querySelector("#bio-union").value || "").trim(),
-      frase: (dialog.querySelector("#bio-frase").value || "").trim(),
-    };
-    const allEmpty = Object.values(nuevo).every(v => !v);
-    members[idx].bio = allEmpty ? null : nuevo;
-    try {
-      await setDoc(doc(db, "shared", "team"), { members });
-      dialog.hide();
-      openProfile(idx);
-      heroToast.success("Ficha actualizada");
-    } catch (e) { heroToast.error("No se pudo guardar: " + e.message); }
-  });
-
-  // Shoelace lazy-registra el custom element en el primer uso; sin esto
-  // el primer click no abre el modal (hay que clickear dos veces).
-  customElements.whenDefined("sl-dialog").then(() => dialog.show());
-}
-
-// ═══ MODAL: Editar datos generales (admin) ═══
+// ═══ MODAL: Editar miembro (admin) — unificado en v2.18.1 ═══
+// Este modal edita AMBAS cosas en un solo lugar: datos generales
+// (nombre, rol, foto, país, cumpleaños, contactos) + ficha del héroe
+// (identidad, origen, superpoder, unión, frase). Antes eran dos modales
+// separados (openMemberModal + openBioEditModal) accesibles desde botones
+// distintos, lo que resultaba confuso.
 function openMemberModal(idx) {
   const editing = idx !== null && idx >= 0;
-  const m = editing ? members[idx] : { name:'', role:'', email:[''], phone:[''], country:'Venezuela', photo:'', birthdate:'' };
+  const m = editing ? members[idx] : { name:'', role:'', email:[''], phone:[''], country:'Venezuela', photo:'', birthdate:'', bio:null };
   const [bm, bd] = (m.birthdate || '').split('-');
+  const bio = m.bio || {};
+  // Los placeholders de la ficha se calculan solo si el miembro existe
+  // (necesitamos country, role, name para generarlos).
+  const generic = editing ? generateHeroicBio(m) : { identidad:'', origen:'', superpoder:'', frase:'' };
+  // Recordamos si el modal fue abierto desde el perfil grande, para
+  // reabrirlo despues de guardar (o cancelar).
+  const cameFromProfile = editing && (currentProfileIdx === idx);
 
   const esc = (s) => (s == null ? "" : String(s)).replace(/"/g, "&quot;").replace(/&/g, "&amp;");
 
@@ -437,34 +456,51 @@ function openMemberModal(idx) {
   dialog.className = "member-edit-dialog";
   dialog.innerHTML = `
     <div class="member-form">
+      <!-- Uploader de foto (avatar circular + click/drop) -->
+      <div class="member-photo-uploader" id="m-photo-uploader">
+        <div class="member-photo-avatar">
+          <img id="m-photo-img" alt="Foto del miembro"
+               src="${esc(m.photo || '')}"
+               onerror="this.style.opacity='.3';this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2394a3b8%22 stroke-width=%221.5%22><circle cx=%2212%22 cy=%228%22 r=%224%22/><path d=%22M4 20c0-4 4-6 8-6s8 2 8 6%22/></svg>'"/>
+          <div class="member-photo-overlay">
+            <i data-lucide="camera"></i>
+            <span>Cambiar foto</span>
+          </div>
+        </div>
+        <input type="file" id="m-photo-file" accept="image/jpeg,image/png,image/webp" hidden>
+        <div class="member-photo-caption">
+          <span id="m-photo-caption-text">Click o arrastra una imagen · máx 2 MB · JPG/PNG/WebP</span>
+        </div>
+      </div>
+
       <sl-input id="m-name" label="Nombre completo"
         value="${esc(m.name || '')}" maxlength="60" required clearable></sl-input>
 
       <sl-input id="m-role" label="Rol / Cargo"
         value="${esc(m.role || '')}" maxlength="60" clearable></sl-input>
 
-      <sl-input id="m-photo" label="URL de foto" type="url"
-        value="${esc(m.photo || '')}" placeholder="https://..." clearable></sl-input>
-
-      <sl-select id="m-country" label="País" hoist>
-        <sl-option value="Venezuela">🇻🇪 Venezuela</sl-option>
-        <sl-option value="Cuba">🇨🇺 Cuba</sl-option>
-        <sl-option value="Colombia">🇨🇴 Colombia</sl-option>
-        <sl-option value="Chile">🇨🇱 Chile</sl-option>
-        <sl-option value="Estados Unidos">🇺🇸 Estados Unidos</sl-option>
-      </sl-select>
+      <label class="m-native-field">
+        <span class="m-native-label">País</span>
+        <input id="m-country" type="text" class="m-native-input"
+          value="${esc(m.country || '')}" maxlength="40"
+          list="m-country-suggestions"
+          placeholder="Ej: Venezuela, España, Colombia…" autocomplete="off">
+        <datalist id="m-country-suggestions">
+          ${COUNTRIES_SUGGESTED.map(c => `<option value="${esc(c)}"></option>`).join('')}
+        </datalist>
+      </label>
 
       <div class="member-bday">
         <label class="member-bday-label">🎂 Cumpleaños</label>
         <div class="member-bday-row">
-          <sl-select id="m-bmonth" placeholder="Mes" hoist>
-            <sl-option value="">—</sl-option>
-            ${MONTHS.map((x, i) => `<sl-option value="${String(i+1).padStart(2,'0')}">${x}</sl-option>`).join('')}
-          </sl-select>
-          <sl-select id="m-bday" placeholder="Día" hoist>
-            <sl-option value="">—</sl-option>
-            ${Array.from({length:31}, (_, i) => i+1).map(d => `<sl-option value="${String(d).padStart(2,'0')}">${d}</sl-option>`).join('')}
-          </sl-select>
+          <select id="m-bmonth" class="m-native-select">
+            <option value="">— Mes —</option>
+            ${MONTHS.map((x, i) => `<option value="${String(i+1).padStart(2,'0')}">${x}</option>`).join('')}
+          </select>
+          <select id="m-bday" class="m-native-select">
+            <option value="">— Día —</option>
+            ${Array.from({length:31}, (_, i) => i+1).map(d => `<option value="${String(d).padStart(2,'0')}">${d}</option>`).join('')}
+          </select>
         </div>
       </div>
 
@@ -474,6 +510,36 @@ function openMemberModal(idx) {
 
       <sl-textarea id="m-phones" label="Teléfonos (uno por línea)"
         rows="2" resize="vertical"></sl-textarea>
+
+      ${editing ? `
+      <div class="member-form-divider">
+        <span class="member-form-divider-label">✦ Ficha del héroe · opcional</span>
+        <button type="button" id="bio-clear" class="member-form-divider-btn">
+          <i data-lucide="refresh-cw" style="width:12px;height:12px;"></i>
+          Restablecer a genéricos
+        </button>
+      </div>
+
+      <sl-input id="bio-identidad" label="🛡️ Identidad narrativa (rol heróico)"
+        value="${esc(bio.identidad || '')}"
+        placeholder="${esc(generic.identidad || '')}"
+        clearable></sl-input>
+
+      <sl-textarea id="bio-superpoder" label="⚡ Superpoder"
+        rows="2" resize="vertical"
+        placeholder="${esc(generic.superpoder || '')}"></sl-textarea>
+
+      <sl-input id="bio-union" label="📅 Se unió al equipo"
+        value="${esc(bio.union || '')}"
+        placeholder="Ej: Marzo 2024"
+        clearable></sl-input>
+
+      <sl-textarea id="bio-frase" label="✦ Frase icónica"
+        rows="2" resize="vertical"
+        placeholder="${esc(generic.frase || '')}"></sl-textarea>
+      ` : `
+      <p class="member-form-hint">Después de crear al miembro podrás editar su <strong>ficha del héroe</strong> (identidad, origen, superpoder, frase) desde el mismo modal.</p>
+      `}
     </div>
 
     <sl-button slot="footer" id="m-cancel" variant="default">Cancelar</sl-button>
@@ -489,48 +555,177 @@ function openMemberModal(idx) {
   dialog.querySelector("#m-emails").value = (m.email || []).join("\n");
   dialog.querySelector("#m-phones").value = (m.phone || []).join("\n");
 
-  // sl-select: setear value por property tras el upgrade
-  customElements.whenDefined("sl-select").then(() => {
-    const sel = (id, v) => { const el = dialog.querySelector(id); if (el) el.value = v || ""; };
-    sel("#m-country", m.country || "Venezuela");
-    sel("#m-bmonth", bm || "");
-    sel("#m-bday", bd || "");
+  // <select> nativos del cumpleaños — se pueden setear directo.
+  // Antes eran <sl-select> pero cerraban el sl-dialog al hacer una seleccion
+  // (bug conocido de Shoelace).
+  dialog.querySelector("#m-bmonth").value = bm || "";
+  dialog.querySelector("#m-bday").value = bd || "";
+
+  // Bio: setear los textareas por property (los sl-textarea no aceptan value
+  // como atributo). Solo si estamos editando; en 'nuevo miembro' no hay bio.
+  if (editing) {
+    dialog.querySelector("#bio-superpoder").value = bio.superpoder || "";
+    dialog.querySelector("#bio-frase").value = bio.frase || "";
+  }
+
+  // ── Uploader de foto ─────────────────────────────────────────────
+  // Al seleccionar una imagen (click o drop), guardamos el File en
+  // pendingPhotoFile y mostramos preview. El upload real ocurre al
+  // hacer "Guardar cambios" — asi si el usuario cancela, no subimos nada.
+  let pendingPhotoFile = null;
+  const uploaderEl = dialog.querySelector("#m-photo-uploader");
+  const photoImgEl = dialog.querySelector("#m-photo-img");
+  const photoFileInput = dialog.querySelector("#m-photo-file");
+  const photoCaptionEl = dialog.querySelector("#m-photo-caption-text");
+
+  const handlePhotoFile = (file) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      heroToast.error("Solo imágenes (JPG, PNG, WebP).");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      heroToast.error("La imagen debe pesar menos de 2 MB.");
+      return;
+    }
+    pendingPhotoFile = file;
+    const reader = new FileReader();
+    reader.onload = () => {
+      photoImgEl.src = reader.result;
+      photoImgEl.style.opacity = "1";
+    };
+    reader.readAsDataURL(file);
+    photoCaptionEl.textContent = `${file.name} · listo para subir al guardar`;
+    uploaderEl.classList.add("has-pending");
+  };
+
+  uploaderEl.addEventListener("click", (e) => {
+    // Evitar reabrir el picker si el click nace del input mismo.
+    if (e.target === photoFileInput) return;
+    photoFileInput.click();
+  });
+  photoFileInput.addEventListener("change", (e) => {
+    handlePhotoFile(e.target.files && e.target.files[0]);
+  });
+  uploaderEl.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    uploaderEl.classList.add("dragging");
+  });
+  uploaderEl.addEventListener("dragleave", () => uploaderEl.classList.remove("dragging"));
+  uploaderEl.addEventListener("drop", (e) => {
+    e.preventDefault();
+    uploaderEl.classList.remove("dragging");
+    handlePhotoFile(e.dataTransfer.files && e.dataTransfer.files[0]);
   });
 
-  dialog.addEventListener("sl-after-hide", () => dialog.remove());
+  // Bandera para saber si el usuario ya restablecio la ficha en esta
+  // sesion del modal. Si es true, al guardar persistimos bio=null.
+  let bioCleared = false;
+
+  dialog.addEventListener("sl-after-hide", () => {
+    dialog.remove();
+    // Si veniamos del perfil grande y no salimos por save, reabrir perfil.
+    if (cameFromProfile && !dialog._savedFlag) openProfile(idx);
+  });
 
   dialog.querySelector("#m-cancel").addEventListener("click", () => dialog.hide());
 
+  // Restablecer la ficha del héroe (no toca los datos generales).
+  if (editing) {
+    dialog.querySelector("#bio-clear").addEventListener("click", async () => {
+      const ok = await heroConfirm({
+        title: "Restablecer ficha",
+        message: "¿Limpiar todos los campos de la ficha del héroe? Se mostrarán los textos genéricos automáticos.",
+        confirmLabel: "Restablecer",
+        variant: "warning"
+      });
+      if (!ok) return;
+      dialog.querySelector("#bio-identidad").value = "";
+      dialog.querySelector("#bio-origen").value = "";
+      dialog.querySelector("#bio-superpoder").value = "";
+      dialog.querySelector("#bio-union").value = "";
+      dialog.querySelector("#bio-frase").value = "";
+      bioCleared = true;
+      heroToast.info("Ficha restablecida. Haz clic en 'Guardar cambios' para confirmar.");
+    });
+  }
+
   dialog.querySelector("#m-save").addEventListener("click", async () => {
+    const saveBtn = dialog.querySelector("#m-save");
+    const originalLabel = saveBtn.textContent;
     const bmo = dialog.querySelector("#m-bmonth").value || "";
     const bdy = dialog.querySelector("#m-bday").value || "";
     const birthdate = (bmo && bdy) ? `${bmo}-${bdy}` : null;
 
-    const nuevo = {
-      name: (dialog.querySelector("#m-name").value || "").trim(),
-      role: (dialog.querySelector("#m-role").value || "").trim(),
-      photo: (dialog.querySelector("#m-photo").value || "").trim(),
-      country: dialog.querySelector("#m-country").value || "Venezuela",
-      email: (dialog.querySelector("#m-emails").value || "").split("\n").map(x => x.trim()).filter(Boolean),
-      phone: (dialog.querySelector("#m-phones").value || "").split("\n").map(x => x.trim()).filter(Boolean),
-      birthdate,
-      bio: editing ? (members[idx].bio || null) : null,
-    };
-    if (!nuevo.name) {
+    // Recomponer la bio a partir del modal si estamos editando.
+    // Nota v2.18.1: el campo 'origen' se removio del modal — se autopobla
+    // desde person.country via generateHeroicBio, asi que no lo persistimos.
+    let newBio = null;
+    if (editing) {
+      const bioFields = {
+        identidad: (dialog.querySelector("#bio-identidad").value || "").trim(),
+        superpoder: (dialog.querySelector("#bio-superpoder").value || "").trim(),
+        union: (dialog.querySelector("#bio-union").value || "").trim(),
+        frase: (dialog.querySelector("#bio-frase").value || "").trim(),
+      };
+      const allEmpty = Object.values(bioFields).every(v => !v);
+      newBio = (allEmpty || bioCleared) ? null : bioFields;
+    }
+
+    const name = (dialog.querySelector("#m-name").value || "").trim();
+    if (!name) {
       dialog.querySelector("#m-name").focus();
       heroToast.error("El nombre es requerido");
       return;
     }
+
+    // Subir la foto si hay una pendiente. Ocurre ANTES del setDoc para
+    // que si falla el upload no persistamos referencia a un archivo inexistente.
+    let photoPath = (m.photo || "").trim();
+    if (pendingPhotoFile) {
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Subiendo foto…";
+      try {
+        const slug = slugifyName(name);
+        photoPath = await uploadPhotoToGitHub(pendingPhotoFile, slug);
+        heroToast.info("Foto subida al repo. Será visible en 1-3 min tras el redeploy de GitHub Pages.");
+      } catch (e) {
+        console.error("[upload photo]", e);
+        heroToast.error("Error subiendo foto: " + e.message);
+        saveBtn.disabled = false;
+        saveBtn.textContent = originalLabel;
+        return;
+      }
+      saveBtn.textContent = "Guardando…";
+    }
+
+    const nuevo = {
+      name,
+      role: (dialog.querySelector("#m-role").value || "").trim(),
+      photo: photoPath,
+      country: (dialog.querySelector("#m-country").value || "").trim(),
+      email: (dialog.querySelector("#m-emails").value || "").split("\n").map(x => x.trim()).filter(Boolean),
+      phone: (dialog.querySelector("#m-phones").value || "").split("\n").map(x => x.trim()).filter(Boolean),
+      birthdate,
+      bio: newBio,
+    };
 
     if (editing) members[idx] = nuevo;
     else members.push(nuevo);
 
     try {
       await setDoc(doc(db, "shared", "team"), { members });
+      dialog._savedFlag = true;
       dialog.hide();
       renderGrid();
       heroToast.success(editing ? "Cambios guardados" : `${nuevo.name} agregado al equipo`);
-    } catch (e) { heroToast.error("Error guardando: " + e.message); }
+      // Si veniamos del perfil grande, reabrirlo con la data actualizada.
+      if (cameFromProfile) openProfile(idx);
+    } catch (e) {
+      heroToast.error("Error guardando: " + e.message);
+      saveBtn.disabled = false;
+      saveBtn.textContent = originalLabel;
+    }
   });
 
   // Shoelace lazy-registra el custom element en el primer uso; sin esto

@@ -746,6 +746,7 @@ body[data-theme="dark"] .hero-topbar { background:rgba(15,42,51,.92); }
   transition:all .15s;
 }
 .card-adm-btn:hover { transform:scale(1.1); }
+.card-adm-btn svg { width:15px; height:15px; }
 .card-adm-btn.del { color:var(--rose); }
 .card-adm-btn.del:hover { background:var(--rose); color:#fff; }
 .card-adm-btn.edit:hover { background:var(--cyan); color:#fff; }
@@ -3297,7 +3298,10 @@ body[data-theme="dark"] .att-break-end:hover {
 .bio-edit-dialog::part(panel),
 .member-edit-dialog::part(panel) {
   border-radius:16px;
-  max-width:540px;
+  max-width:560px;
+}
+.member-edit-dialog::part(body) {
+  padding:20px 24px;
 }
 .bio-edit-dialog::part(header),
 .member-edit-dialog::part(header) {
@@ -3319,6 +3323,77 @@ body[data-theme="dark"] .att-break-end:hover {
 .bio-form, .member-form {
   display:flex; flex-direction:column; gap:14px;
 }
+
+/* ═══ Uploader de foto en el modal de miembro ═══ */
+.member-photo-uploader {
+  display:flex; flex-direction:column; align-items:center;
+  gap:10px;
+  padding:16px;
+  border:2px dashed var(--border, #d8dee6);
+  border-radius:14px;
+  background:#f8fafc;
+  cursor:pointer;
+  transition:all .18s;
+  margin-bottom:6px;
+}
+.member-photo-uploader:hover {
+  border-color:var(--cyan, #06a3b6);
+  background:rgba(6,163,182,.04);
+}
+.member-photo-uploader.dragging {
+  border-color:var(--cyan, #06a3b6);
+  background:rgba(6,163,182,.10);
+  transform:scale(1.01);
+}
+.member-photo-uploader.has-pending {
+  border-color:var(--cyan, #06a3b6);
+  border-style:solid;
+  background:rgba(6,163,182,.06);
+}
+.member-photo-avatar {
+  position:relative;
+  width:120px; height:120px;
+  border-radius:50%;
+  overflow:hidden;
+  background:#e2e8f0;
+  box-shadow:0 4px 14px rgba(6,42,51,.15);
+  transition:transform .18s;
+}
+.member-photo-uploader:hover .member-photo-avatar { transform:scale(1.04); }
+.member-photo-avatar img {
+  width:100%; height:100%;
+  object-fit:cover;
+  display:block;
+}
+.member-photo-overlay {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:4px;
+  background:rgba(6,42,51,.65);
+  color:#fff;
+  opacity:0;
+  transition:opacity .18s;
+  font-size:11px; font-weight:700;
+  letter-spacing:.5px;
+  text-transform:uppercase;
+}
+.member-photo-overlay svg { width:22px; height:22px; }
+.member-photo-uploader:hover .member-photo-overlay,
+.member-photo-uploader.dragging .member-photo-overlay { opacity:1; }
+.member-photo-caption {
+  font-size:11.5px; color:var(--muted, #64748b);
+  text-align:center;
+  max-width:90%;
+}
+body[data-theme="dark"] .member-photo-uploader {
+  background:rgba(255,255,255,.03);
+  border-color:#264452;
+}
+body[data-theme="dark"] .member-photo-uploader:hover {
+  border-color:var(--cyan, #06a3b6);
+  background:rgba(6,163,182,.10);
+}
+body[data-theme="dark"] .member-photo-avatar { background:#1e3a4a; }
 .bio-note {
   margin:0;
   padding:10px 12px;
@@ -3340,6 +3415,95 @@ body[data-theme="dark"] .att-break-end:hover {
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:10px;
+}
+
+/* <select> nativo dentro del modal de miembro. Usado en vez de
+   <sl-select> porque Shoelace tiene un bug: seleccionar una opcion
+   dentro de un sl-dialog cierra el dialog. Copiamos la estetica de
+   sl-input para que se vea coherente al lado del resto de campos. */
+.m-native-field {
+  display:block;
+}
+.m-native-label {
+  display:block;
+  font-size:11px; font-weight:700;
+  letter-spacing:1.5px; text-transform:uppercase;
+  color:var(--muted);
+  margin:0 0 6px;
+}
+.member-form .m-native-select,
+.member-form .m-native-input {
+  width:100%;
+  padding:8px 12px;
+  font-family:var(--sans, "Inter", sans-serif);
+  font-size:14px;
+  color:var(--text, #062a33);
+  background:#fff;
+  border:1px solid var(--border, #d8dee6);
+  border-radius:6px;
+  transition:border-color .15s;
+  box-sizing:border-box;
+}
+.member-form .m-native-select { cursor:pointer; }
+.member-form .m-native-select:hover,
+.member-form .m-native-input:hover { border-color:#9aa6b5; }
+.member-form .m-native-select:focus,
+.member-form .m-native-input:focus {
+  outline:none;
+  border-color:var(--cyan, #06a3b6);
+  box-shadow:0 0 0 3px rgba(6,163,182,.18);
+}
+body[data-theme="dark"] .member-form .m-native-select,
+body[data-theme="dark"] .member-form .m-native-input {
+  background:#0f2530;
+  color:#e6f0f4;
+  border-color:#264452;
+}
+body[data-theme="dark"] .member-form .m-native-select:hover,
+body[data-theme="dark"] .member-form .m-native-input:hover { border-color:#3a5a6e; }
+
+/* Divider entre "Datos generales" y "Ficha del heroe" en el modal unificado */
+.member-form-divider {
+  display:flex; align-items:center; justify-content:space-between;
+  gap:10px;
+  margin:8px 0 -4px;
+  padding:10px 0 0;
+  border-top:1px dashed var(--border, #d8dee6);
+}
+.member-form-divider-label {
+  font-size:12px; font-weight:700;
+  letter-spacing:.8px;
+  color:var(--cyan, #06a3b6);
+  text-transform:uppercase;
+}
+.member-form-divider-btn {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:5px 10px;
+  font-family:inherit; font-size:11px; font-weight:600;
+  color:var(--muted, #64748b);
+  background:transparent;
+  border:1px solid var(--border, #d8dee6);
+  border-radius:6px;
+  cursor:pointer;
+  transition:all .15s;
+}
+.member-form-divider-btn:hover {
+  color:#c0392b;
+  border-color:#c0392b;
+  background:rgba(192,57,43,.06);
+}
+.member-form-hint {
+  margin:8px 0 0;
+  padding:10px 12px;
+  background:rgba(6,163,182,.08);
+  border-left:3px solid var(--cyan, #06a3b6);
+  border-radius:6px;
+  font-size:12.5px; color:var(--muted, #64748b);
+}
+body[data-theme="dark"] .member-form-divider { border-top-color:#264452; }
+body[data-theme="dark"] .member-form-hint {
+  background:rgba(6,163,182,.14);
+  color:#a8c5cf;
 }
 
 /* ═══════════════════════════════════════════
