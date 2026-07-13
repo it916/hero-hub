@@ -26,13 +26,79 @@
   const IN_15_MIN_THRESHOLD_MS = 15 * 60 * 1000;
 
   // ══════════════════════════════════════════════
-  // Firebase Auth cargado dinámicamente
+  // Google Identity Services (GIS)
+  // Reemplaza el flujo viejo con firebase Auth signInWithPopup para el
+  // refresh silencioso del token. GIS usa un iframe oculto en vez de
+  // popup — cero ventanas visibles cuando el usuario ya dio consent.
+  // El login inicial sigue pasando por Firebase Auth (js/auth.js);
+  // GIS solo maneja renovaciones y reconexiones posteriores.
   // ══════════════════════════════════════════════
-  let _firebaseAuthModule = null;
-  async function loadFirebaseAuth() {
-    if (_firebaseAuthModule) return _firebaseAuthModule;
-    _firebaseAuthModule = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js");
-    return _firebaseAuthModule;
+  const GCAL_CLIENT_ID = "1062942956307-ke4ibd6p9j6pcc190ek6ffjc4pt6log6.apps.googleusercontent.com";
+  const GCAL_SCOPE = "https://www.googleapis.com/auth/calendar.readonly";
+
+  // GIS carga desde <script src="https://accounts.google.com/gsi/client">
+  // como async defer — puede no estar lista cuando llamemos. Esta promesa
+  // espera hasta que window.google.accounts.oauth2 exista.
+  let _gisReadyPromise = null;
+  function waitForGis() {
+    if (_gisReadyPromise) return _gisReadyPromise;
+    _gisReadyPromise = new Promise((resolve) => {
+      const isReady = () => !!(window.google && window.google.accounts && window.google.accounts.oauth2);
+      if (isReady()) { resolve(true); return; }
+      const startedAt = Date.now();
+      const check = setInterval(() => {
+        if (isReady()) { clearInterval(check); resolve(true); return; }
+        // Timeout: si GIS no cargó en 10s, dar por perdido y caer al fallback.
+        if (Date.now() - startedAt > 10_000) { clearInterval(check); resolve(false); }
+      }, 100);
+    });
+    return _gisReadyPromise;
+  }
+
+  // Solicita un access token de Google Calendar via GIS.
+  // silent=true → iframe oculto (usa el consent previo del usuario).
+  // silent=false → consent screen visible (para el flujo "Reconectar").
+  async function requestGisToken({ hintEmail, silent }) {
+    const ready = await waitForGis();
+    if (!ready) {
+      console.warn("[calendar-widget] GIS no cargó a tiempo");
+      return null;
+    }
+    return new Promise((resolve) => {
+      try {
+        const client = window.google.accounts.oauth2.initTokenClient({
+          client_id: GCAL_CLIENT_ID,
+          scope: GCAL_SCOPE,
+          hint: hintEmail || undefined,
+          prompt: silent ? "" : "consent",
+          callback: (response) => {
+            if (response && response.error) {
+              console.warn("[calendar-widget] GIS error:", response.error);
+              resolve(null);
+              return;
+            }
+            if (!response || !response.access_token) { resolve(null); return; }
+            const ttlSec = Number(response.expires_in) || 3600;
+            const payload = {
+              accessToken: response.access_token,
+              // Restamos 5 min de margen para renovar antes de expirar
+              expiresAt: Date.now() + (ttlSec - 300) * 1000,
+              email: hintEmail || null,
+            };
+            localStorage.setItem(GCAL_TOKEN_KEY, JSON.stringify(payload));
+            resolve(payload);
+          },
+          error_callback: (err) => {
+            console.warn("[calendar-widget] GIS error_callback:", err && err.type);
+            resolve(null);
+          },
+        });
+        client.requestAccessToken();
+      } catch (e) {
+        console.warn("[calendar-widget] initTokenClient falló:", e.message);
+        resolve(null);
+      }
+    });
   }
 
   // ══════════════════════════════════════════════
@@ -312,33 +378,10 @@
   }
 
   // ══════════════════════════════════════════════
-  // Refresh silencioso del token
+  // Refresh silencioso del token (via GIS iframe, sin popup)
   // ══════════════════════════════════════════════
   async function refreshTokenSilently(hintEmail) {
-    try {
-      const { GoogleAuthProvider, signInWithPopup, getAuth } = await loadFirebaseAuth();
-      const auth = getAuth();
-      if (!auth.currentUser) return null;
-      const provider = new GoogleAuthProvider();
-      provider.addScope("https://www.googleapis.com/auth/calendar.readonly");
-      provider.setCustomParameters({
-        login_hint: hintEmail || auth.currentUser.email,
-        prompt: "none",
-      });
-      const result = await signInWithPopup(auth, provider);
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      if (!credential || !credential.accessToken) return null;
-      const payload = {
-        accessToken: credential.accessToken,
-        expiresAt: Date.now() + 55 * 60 * 1000,
-        email: result.user.email,
-      };
-      localStorage.setItem(GCAL_TOKEN_KEY, JSON.stringify(payload));
-      return payload;
-    } catch (e) {
-      console.warn("[calendar-widget] refresh silencioso falló:", e.message);
-      return null;
-    }
+    return await requestGisToken({ hintEmail, silent: true });
   }
 
   async function getFreshToken() {
@@ -376,30 +419,15 @@
   }
 
   // ══════════════════════════════════════════════
-  // Handler del botón "Reconectar" (popup completo)
+  // Handler del botón "Reconectar" (consent screen visible via GIS)
   // ══════════════════════════════════════════════
   async function handleReconnectClick() {
-    try {
-      const { GoogleAuthProvider, signInWithPopup, getAuth } = await loadFirebaseAuth();
-      const auth = getAuth();
-      if (!auth.currentUser) return;
-      const provider = new GoogleAuthProvider();
-      provider.addScope("https://www.googleapis.com/auth/calendar.readonly");
-      provider.setCustomParameters({ login_hint: auth.currentUser.email });
-      const result = await signInWithPopup(auth, provider);
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      if (credential && credential.accessToken) {
-        const payload = {
-          accessToken: credential.accessToken,
-          expiresAt: Date.now() + 55 * 60 * 1000,
-          email: result.user.email,
-        };
-        localStorage.setItem(GCAL_TOKEN_KEY, JSON.stringify(payload));
-        await refresh({ force: true });
-      }
-    } catch (e) {
-      console.warn("[calendar-widget] reconectar falló:", e.message);
-    }
+    // Intentar leer el email del token viejo o del user actual para dar hint.
+    // Si no hay auth.currentUser, GIS pide seleccionar cuenta igual.
+    const lastToken = readToken();
+    const hintEmail = lastToken?.email || null;
+    const fresh = await requestGisToken({ hintEmail, silent: false });
+    if (fresh) await refresh({ force: true });
   }
 
   // ══════════════════════════════════════════════

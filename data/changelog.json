@@ -1,5 +1,22 @@
 [
   {
+    "id": "2026-07-13-gcal-gis-migration",
+    "version": "v2.18.2",
+    "date": "2026-07-13",
+    "category": "fix",
+    "scope": "hub",
+    "audience": "all",
+    "title": "Hub · Adiós al popup recurrente 'Reconectar con Google Calendar'",
+    "items": [
+      "El widget 'Próximo meeting' del banner HQ Command Center a veces pedía reconectar la cuenta con Google Calendar cada cierto tiempo — molestaba tener que autorizar de nuevo cada 55 min de uso continuo (más aún al abrir el Hub en pestañas nuevas o después de cambiar de red)",
+      "Causa: Firebase Auth signInWithPopup con prompt:'none' abre una ventana visible ~200-500ms, aunque sea 'silenciosa'. Es una limitación de la librería, no del código",
+      "Fix: migramos el refresh del token de Firebase Auth a Google Identity Services (GIS). GIS usa un iframe oculto en vez de popup — cero ventanas visibles cuando ya diste consent al inicio del día",
+      "El login inicial sigue pasando por Firebase Auth (como siempre); GIS solo maneja las renovaciones silenciosas posteriores",
+      "El botón 'Reconectar' del widget también migró a GIS — el consent screen ahora es más rápido y consistente",
+      "Bump v2.18.1 → v2.18.2"
+    ]
+  },
+  {
     "id": "2026-07-13-equipo-modal-unificado",
     "version": "v2.18.1",
     "date": "2026-07-13",
