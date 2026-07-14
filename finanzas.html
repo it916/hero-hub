@@ -101,10 +101,6 @@
             <i data-lucide="arrow-down-circle"></i>
             <span>Ingresos</span>
           </button>
-          <button type="button" class="admin-sidebar-link" data-tab="egresos">
-            <i data-lucide="arrow-up-circle"></i>
-            <span>Egresos</span>
-          </button>
         </div>
 
         <div class="admin-sidebar-group">
@@ -193,9 +189,9 @@
         </div>
 
         <div class="fd-hero-kpi">
-          <div class="fd-hero-label">Neto real</div>
-          <div class="fd-hero-value" id="fd-kpi-neto-real">$0.00</div>
-          <div class="fd-hero-sub">Ganancia menos egresos del periodo</div>
+          <div class="fd-hero-label">Ganancia Hero</div>
+          <div class="fd-hero-value" id="fd-kpi-ganancia">$0.00</div>
+          <div class="fd-hero-sub">Bruto menos pagado a brokers en el periodo</div>
         </div>
 
         <div class="fd-metric-strip">
@@ -206,15 +202,6 @@
           <div class="fd-metric">
             <div class="fd-metric-label">Pagado a brokers</div>
             <div class="fd-metric-value" id="fd-kpi-pagado">$0.00</div>
-          </div>
-          <div class="fd-metric">
-            <div class="fd-metric-label">Ganancia Hero</div>
-            <div class="fd-metric-value" id="fd-kpi-ganancia">$0.00</div>
-          </div>
-          <div class="fd-metric">
-            <div class="fd-metric-label">Egresos</div>
-            <div class="fd-metric-value" id="fd-kpi-egresos">$0.00</div>
-            <div class="fd-metric-sub" id="fd-kpi-egresos-sub">0 registrados</div>
           </div>
           <div class="fd-metric">
             <div class="fd-metric-label">Ingresos</div>
@@ -345,73 +332,6 @@
         <div id="fi-table"></div>
 
         <div class="fc-status" id="fi-status"></div>
-      </section>
-
-      <!-- ══════════════════════════════════════════════ -->
-      <!-- SECCIÓN EGRESOS                                -->
-      <!-- ══════════════════════════════════════════════ -->
-      <section class="admin-section" id="tab-egresos" style="display:none;">
-        <div class="ad-toolbar">
-          <div>
-            <h2 style="margin:0;">📤 Egresos</h2>
-            <p class="admin-note" style="margin:4px 0 0;">Gastos operativos de Hero. Se restan del bruto para reflejar el saldo real del banco.</p>
-          </div>
-          <div class="ad-toolbar-actions">
-            <sl-button variant="primary" size="medium" id="fe-add-btn">
-              <i data-lucide="plus" slot="prefix" style="width:14px;height:14px;"></i>
-              Nuevo egreso
-            </sl-button>
-          </div>
-        </div>
-
-        <div class="fc-toolbar">
-          <div class="search-wrap">
-            <i data-lucide="search" class="search-icon"></i>
-            <input type="text" id="fe-search" placeholder="Buscar descripción o notas...">
-          </div>
-        </div>
-
-        <div class="fi-filters-row">
-          <div class="fi-filter-group">
-            <label for="fe-filter-periodo">Periodo</label>
-            <select id="fe-filter-periodo" class="fi-filter-select">
-              <option value="all" selected>Todo</option>
-              <option value="m-01">Enero</option>
-              <option value="m-02">Febrero</option>
-              <option value="m-03">Marzo</option>
-              <option value="m-04">Abril</option>
-              <option value="m-05">Mayo</option>
-              <option value="m-06">Junio</option>
-              <option value="m-07">Julio</option>
-              <option value="m-08">Agosto</option>
-              <option value="m-09">Septiembre</option>
-              <option value="m-10">Octubre</option>
-              <option value="m-11">Noviembre</option>
-              <option value="m-12">Diciembre</option>
-              <option value="custom">Personalizado…</option>
-            </select>
-            <div id="fe-custom-range" class="fi-custom-range" hidden>
-              <input type="text" id="fe-date-from" class="fi-custom-input" placeholder="Desde" autocomplete="off">
-              <span class="fi-custom-sep">→</span>
-              <input type="text" id="fe-date-to" class="fi-custom-input" placeholder="Hasta" autocomplete="off">
-            </div>
-          </div>
-          <div class="fi-filter-group">
-            <label for="fe-filter-tipo">Tipo de gasto</label>
-            <select id="fe-filter-tipo" class="fi-filter-select">
-              <option value="all">Todos</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="fi-summary-bar" id="fe-summary-bar">
-          <div class="fi-sum-item"><span class="fi-sum-label">Total</span> <span class="fi-sum-value" id="fe-sum-total">0</span></div>
-          <div class="fi-sum-item"><span class="fi-sum-label">Egresos</span> <span class="fi-sum-value" id="fe-sum-monto">$0.00</span></div>
-        </div>
-
-        <div id="fe-table"></div>
-
-        <div class="fc-status" id="fe-status"></div>
       </section>
 
       <!-- ══════════════════════════════════════════════ -->
@@ -603,14 +523,6 @@
                     <div class="fexp-radio-sub">Una fila por payout, con el ingreso al que pertenece</div>
                   </div>
                 </label>
-                <label class="fexp-radio" data-dataset="egresos">
-                  <input type="radio" name="fexp-dataset" value="egresos">
-                  <i data-lucide="arrow-up-circle"></i>
-                  <div>
-                    <div class="fexp-radio-title">Egresos</div>
-                    <div class="fexp-radio-sub">Una fila por gasto operativo</div>
-                  </div>
-                </label>
               </div>
             </div>
 
@@ -646,17 +558,15 @@
               </div>
             </div>
 
-            <!-- Paso 3: Tipo de pago + Categoría (o Tipo de gasto si Egresos) -->
+            <!-- Paso 3: Tipo de pago + Categoría -->
             <div class="fexp-panel" data-step="3" hidden>
               <div class="fexp-panel-header">
                 <div class="fexp-panel-num">Paso 3 de 7</div>
-                <h3 class="fexp-panel-title" data-scope="ingresos payouts">Tipo de pago y categoría</h3>
-                <h3 class="fexp-panel-title" data-scope="egresos" hidden>Tipo de gasto</h3>
-                <p class="fexp-panel-hint" data-scope="ingresos payouts">Filtra por LIFE/SUPP/ACA/… y por COMISSION/OVERRIDES/HERO. Los chips marcados se incluyen.</p>
-                <p class="fexp-panel-hint" data-scope="egresos" hidden>Filtra por categoría de gasto (nómina, renta, servicios, …).</p>
+                <h3 class="fexp-panel-title">Tipo de pago y categoría</h3>
+                <p class="fexp-panel-hint">Filtra por LIFE/SUPP/ACA/… y por COMISSION/OVERRIDES/HERO. Los chips marcados se incluyen.</p>
               </div>
 
-              <div class="fexp-field" data-scope="ingresos payouts">
+              <div class="fexp-field">
                 <label class="fexp-field-label">
                   Tipo de pago
                   <button type="button" class="fexp-chip-all" data-target="fexp-chips-tipoPago">Marcar todos</button>
@@ -664,20 +574,12 @@
                 <div class="fexp-chips" id="fexp-chips-tipoPago"></div>
               </div>
 
-              <div class="fexp-field" data-scope="ingresos payouts">
+              <div class="fexp-field">
                 <label class="fexp-field-label">
                   Categoría
                   <button type="button" class="fexp-chip-all" data-target="fexp-chips-categoria">Marcar todos</button>
                 </label>
                 <div class="fexp-chips" id="fexp-chips-categoria"></div>
-              </div>
-
-              <div class="fexp-field" data-scope="egresos">
-                <label class="fexp-field-label">
-                  Tipo de gasto
-                  <button type="button" class="fexp-chip-all" data-target="fexp-chips-tipoGasto">Marcar todos</button>
-                </label>
-                <div class="fexp-chips" id="fexp-chips-tipoGasto"></div>
               </div>
             </div>
 
@@ -891,7 +793,7 @@
   </div><!-- /.admin-shell -->
 
   <footer class="hero-footer">
-    <span>HERO HUB · FINANZAS v2.18.3</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+    <span>HERO HUB · FINANZAS v2.19.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
   </footer>
 
 </div><!-- /#finanzas-panel -->
@@ -905,7 +807,6 @@
   const FIN_TAB_TITLES = {
     dashboard: 'Dashboard',
     ingresos: 'Ingresos',
-    egresos: 'Egresos',
     comisiones: 'Tabla de Comisiones',
     brokers: 'Agencias',
     comparativas: 'Comparativas',
