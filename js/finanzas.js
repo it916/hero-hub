@@ -2133,23 +2133,927 @@ async function nextNumeroReporte() {
   return `RP-${currentYear}-${String(seq).padStart(3, "0")}`;
 }
 
-// ─── Handlers de acciones (placeholders skeleton) ──────────
-// El wizard completo y las acciones view/edit/delete llegan en el próximo
-// commit — de momento avisamos al usuario para que sepa que está en construcción.
-async function openReporteWizard(_existing) {
-  heroToast.info("El wizard de generación de reportes llega en el próximo bump. Skeleton listo, wizard en construcción.", { duration: 4500 });
+// ─── Wizard "Nuevo reporte" / "Editar borrador" ────────────
+// 5 pasos: destinatario → periodo → ingresos a incluir → detalles pago → preview.
+// El estado del wizard vive en un objeto local a la función; al guardar se
+// vuelca a Firestore como doc en REPORTES_COL con estado "borrador" (o el
+// que corresponda tras las acciones posteriores).
+async function openReporteWizard(existing) {
+  const isEdit = !!existing;
+  if (isEdit && existing.estado !== "borrador") {
+    heroToast.info("Solo los reportes en Borrador se pueden editar.");
+    return;
+  }
+
+  // Asegurar catálogo de destinatarios cargado
+  if (brokersData.length === 0) {
+    try { await loadBrokers(); } catch (_) {}
+  }
+  // Asegurar ingresos cargados (para auto-detección de payouts)
+  if (ingresosData.length === 0) {
+    try { await loadIngresos(); } catch (_) {}
+  }
+
+  const state = {
+    step: 1,
+    destinatarioId: existing?.destinatarioId || "",
+    destinatarioTipo: existing?.destinatarioTipo || "",
+    destinatarioNombre: existing?.destinatarioNombre || "",
+    periodoDesde: existing?.periodo?.desde || `${new Date().getFullYear()}-01-01`,
+    periodoHasta: existing?.periodo?.hasta || todayISO(),
+    ingresosSeleccionados: existing?.ingresos ? existing.ingresos.map(i => i.ingresoId) : [],
+    ingresosCandidatos: [],
+    metodoPago: existing?.metodoPago || "",
+    referenciaPago: existing?.referenciaPago || "",
+    fechaPago: existing?.fechaPago || "",
+    notas: existing?.notas || ""
+  };
+
+  const dialog = document.createElement("sl-dialog");
+  dialog.label = isEdit ? `Editar reporte ${existing.numeroReporte || ""}` : "Nuevo reporte de pago";
+  dialog.className = "fr-wizard-dialog";
+  dialog.style.setProperty("--width", "900px");
+  dialog.innerHTML = `
+    <div class="fr-wizard">
+      <div class="fr-progress" id="fr-wz-progress">
+        <div class="fr-progress-step is-active" data-step="1"><span class="num">1</span><span class="label">Destinatario</span></div>
+        <div class="fr-progress-conn"></div>
+        <div class="fr-progress-step" data-step="2"><span class="num">2</span><span class="label">Periodo</span></div>
+        <div class="fr-progress-conn"></div>
+        <div class="fr-progress-step" data-step="3"><span class="num">3</span><span class="label">Ingresos</span></div>
+        <div class="fr-progress-conn"></div>
+        <div class="fr-progress-step" data-step="4"><span class="num">4</span><span class="label">Pago</span></div>
+        <div class="fr-progress-conn"></div>
+        <div class="fr-progress-step" data-step="5"><span class="num">5</span><span class="label">Preview</span></div>
+      </div>
+
+      <div class="fr-panels">
+        <!-- Paso 1: Destinatario -->
+        <div class="fr-panel is-active" data-step="1">
+          <h3 class="fr-panel-title">¿A quién le vas a pagar?</h3>
+          <p class="fr-panel-hint">Elige la agencia o el broker/agente que va a recibir este pago consolidado.</p>
+          <div class="fc-native-field">
+            <label for="fr-wz-destinatario" class="fc-native-label">Destinatario</label>
+            <select id="fr-wz-destinatario" class="fc-native-select" required>
+              <option value="">— Selecciona —</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Paso 2: Periodo -->
+        <div class="fr-panel" data-step="2" hidden>
+          <h3 class="fr-panel-title">¿Qué periodo incluye?</h3>
+          <p class="fr-panel-hint">Rango de fechas de los ingresos a consolidar en este reporte.</p>
+          <div class="fi-row-2">
+            <div class="fc-native-field">
+              <label for="fr-wz-desde" class="fc-native-label">Desde</label>
+              <input type="date" id="fr-wz-desde" class="fc-native-date" required>
+            </div>
+            <div class="fc-native-field">
+              <label for="fr-wz-hasta" class="fc-native-label">Hasta</label>
+              <input type="date" id="fr-wz-hasta" class="fc-native-date" required>
+            </div>
+          </div>
+        </div>
+
+        <!-- Paso 3: Ingresos -->
+        <div class="fr-panel" data-step="3" hidden>
+          <h3 class="fr-panel-title">Ingresos a incluir</h3>
+          <p class="fr-panel-hint">Se detectaron automáticamente los ingresos con payout al destinatario dentro del periodo. Desmarca los que no correspondan.</p>
+          <div class="fr-wz-ingresos-summary" id="fr-wz-ingresos-summary"></div>
+          <div class="fr-wz-ingresos-list" id="fr-wz-ingresos-list"></div>
+        </div>
+
+        <!-- Paso 4: Detalles del pago -->
+        <div class="fr-panel" data-step="4" hidden>
+          <h3 class="fr-panel-title">Detalles del pago</h3>
+          <p class="fr-panel-hint">Opcional. Si aún no se hizo el pago, puedes dejar estos campos vacíos y guardar como borrador.</p>
+          <div class="fi-row-2">
+            <div class="fc-native-field">
+              <label for="fr-wz-metodo" class="fc-native-label">Método de pago</label>
+              <select id="fr-wz-metodo" class="fc-native-select">
+                <option value="">— Ninguno —</option>
+                <option value="cheque">Cheque</option>
+                <option value="transferencia">Transferencia (ACH/Wire)</option>
+                <option value="efectivo">Efectivo</option>
+                <option value="otro">Otro</option>
+              </select>
+            </div>
+            <div class="fc-native-field">
+              <label for="fr-wz-fecha-pago" class="fc-native-label">Fecha del pago</label>
+              <input type="date" id="fr-wz-fecha-pago" class="fc-native-date">
+            </div>
+          </div>
+          <div class="fc-native-field">
+            <label for="fr-wz-referencia" class="fc-native-label"># Cheque / referencia</label>
+            <input type="text" id="fr-wz-referencia" class="fc-native-date" placeholder="Ej. 1234 · ACH #789 · Zelle ref">
+          </div>
+          <sl-textarea id="fr-wz-notas" label="Notas (opcional)" rows="2" resize="auto"></sl-textarea>
+        </div>
+
+        <!-- Paso 5: Preview -->
+        <div class="fr-panel" data-step="5" hidden>
+          <h3 class="fr-panel-title">Vista previa del reporte</h3>
+          <p class="fr-panel-hint">Así se verá el reporte una vez guardado. Confirma o vuelve atrás para ajustar.</p>
+          <div class="fr-wz-preview" id="fr-wz-preview"></div>
+        </div>
+      </div>
+
+      <div class="fr-wz-nav">
+        <sl-button id="fr-wz-back" variant="default" disabled>
+          <i data-lucide="arrow-left" slot="prefix" style="width:14px;height:14px;"></i>
+          Atrás
+        </sl-button>
+        <sl-button id="fr-wz-next" variant="primary">
+          Siguiente
+          <i data-lucide="arrow-right" slot="suffix" style="width:14px;height:14px;"></i>
+        </sl-button>
+        <sl-button id="fr-wz-save" variant="primary" hidden>
+          <i data-lucide="save" slot="prefix" style="width:14px;height:14px;"></i>
+          ${isEdit ? "Guardar cambios" : "Guardar borrador"}
+        </sl-button>
+      </div>
+    </div>
+
+    <sl-button slot="footer" id="fr-wz-cancel" variant="default">Cancelar</sl-button>
+  `;
+  document.body.appendChild(dialog);
+  if (window.refreshIcons) window.refreshIcons();
+
+  // Poblar el selector de destinatarios agrupado
+  const selDest = dialog.querySelector("#fr-wz-destinatario");
+  const agencias = brokersData.filter(b => (b.tipo || "agencia") === "agencia")
+    .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || "", "es"));
+  const brokers = brokersData.filter(b => b.tipo === "broker")
+    .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || "", "es"));
+  const buildOpts = (label, arr) => {
+    if (arr.length === 0) return "";
+    return `<optgroup label="${label}">` +
+      arr.map(b => `<option value="${escapeHtmlAttr(b.id)}" data-tipo="${escapeHtmlAttr(b.tipo || "agencia")}" ${b.id === state.destinatarioId ? "selected" : ""}>${escapeHtml(b.nombre)}</option>`).join("") +
+      `</optgroup>`;
+  };
+  selDest.insertAdjacentHTML("beforeend", buildOpts("Agencias", agencias) + buildOpts("Brokers/Agentes", brokers));
+
+  // Precarga de campos step 2/4
+  dialog.querySelector("#fr-wz-desde").value = state.periodoDesde;
+  dialog.querySelector("#fr-wz-hasta").value = state.periodoHasta;
+  dialog.querySelector("#fr-wz-metodo").value = state.metodoPago;
+  dialog.querySelector("#fr-wz-fecha-pago").value = state.fechaPago;
+  dialog.querySelector("#fr-wz-referencia").value = state.referenciaPago;
+  dialog.querySelector("#fr-wz-notas").value = state.notas;
+
+  // Listeners
+  selDest.addEventListener("change", (e) => {
+    const opt = e.target.selectedOptions[0];
+    state.destinatarioId = e.target.value;
+    state.destinatarioTipo = opt?.dataset.tipo || "";
+    state.destinatarioNombre = opt?.textContent?.trim() || "";
+  });
+  dialog.querySelector("#fr-wz-desde").addEventListener("change", (e) => { state.periodoDesde = e.target.value; });
+  dialog.querySelector("#fr-wz-hasta").addEventListener("change", (e) => { state.periodoHasta = e.target.value; });
+  dialog.querySelector("#fr-wz-metodo").addEventListener("change", (e) => { state.metodoPago = e.target.value; });
+  dialog.querySelector("#fr-wz-fecha-pago").addEventListener("change", (e) => { state.fechaPago = e.target.value; });
+  dialog.querySelector("#fr-wz-referencia").addEventListener("input", (e) => { state.referenciaPago = e.target.value; });
+  dialog.querySelector("#fr-wz-notas").addEventListener("sl-input", (e) => { state.notas = e.target.value; });
+
+  const btnNext = dialog.querySelector("#fr-wz-next");
+  const btnBack = dialog.querySelector("#fr-wz-back");
+  const btnSave = dialog.querySelector("#fr-wz-save");
+  const btnCancel = dialog.querySelector("#fr-wz-cancel");
+
+  function gotoStep(n) {
+    state.step = Math.max(1, Math.min(5, n));
+    dialog.querySelectorAll(".fr-panel").forEach(p => {
+      const s = Number(p.dataset.step);
+      p.hidden = s !== state.step;
+      p.classList.toggle("is-active", s === state.step);
+    });
+    dialog.querySelectorAll(".fr-progress-step").forEach(el => {
+      const s = Number(el.dataset.step);
+      el.classList.toggle("is-active", s === state.step);
+      el.classList.toggle("is-done", s < state.step);
+    });
+    btnBack.disabled = state.step === 1;
+    btnNext.hidden = state.step === 5;
+    btnSave.hidden = state.step !== 5;
+
+    if (state.step === 3) renderIngresosStep();
+    if (state.step === 5) renderPreviewStep();
+  }
+
+  function renderIngresosStep() {
+    const listEl = dialog.querySelector("#fr-wz-ingresos-list");
+    const summaryEl = dialog.querySelector("#fr-wz-ingresos-summary");
+    const candidates = detectPayoutsForReporte(state);
+    state.ingresosCandidatos = candidates;
+
+    if (candidates.length === 0) {
+      listEl.textContent = "";
+      const empty = document.createElement("div");
+      empty.className = "fr-wz-empty";
+      empty.textContent = "No se encontraron ingresos con payout a este destinatario en el periodo elegido.";
+      listEl.appendChild(empty);
+      summaryEl.textContent = "";
+      return;
+    }
+
+    // Si no había selección previa, marcar todos por default
+    if (state.ingresosSeleccionados.length === 0) {
+      state.ingresosSeleccionados = candidates.map(c => c.ingresoId);
+    }
+
+    listEl.textContent = "";
+    candidates.forEach(c => {
+      const row = document.createElement("label");
+      row.className = "fr-wz-ing-row";
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.value = c.ingresoId;
+      cb.checked = state.ingresosSeleccionados.includes(c.ingresoId);
+      cb.addEventListener("change", () => {
+        if (cb.checked) {
+          if (!state.ingresosSeleccionados.includes(c.ingresoId)) state.ingresosSeleccionados.push(c.ingresoId);
+        } else {
+          state.ingresosSeleccionados = state.ingresosSeleccionados.filter(x => x !== c.ingresoId);
+        }
+        updateIngresosSummary();
+      });
+      row.appendChild(cb);
+
+      const info = document.createElement("div");
+      info.className = "fr-wz-ing-info";
+      const line1 = document.createElement("div");
+      line1.className = "fr-wz-ing-line1";
+      const date = document.createElement("strong");
+      date.textContent = formatFechaUS(c.fecha);
+      line1.appendChild(date);
+      const sep = document.createElement("span");
+      sep.className = "fr-wz-sep";
+      sep.textContent = " · ";
+      line1.appendChild(sep);
+      const carrier = document.createElement("span");
+      carrier.className = "fi-carrier-badge";
+      carrier.textContent = c.carrier || "—";
+      line1.appendChild(carrier);
+      info.appendChild(line1);
+
+      const line2 = document.createElement("div");
+      line2.className = "fr-wz-ing-line2";
+      line2.textContent = c.descripcionDeposito || "";
+      info.appendChild(line2);
+      row.appendChild(info);
+
+      const amt = document.createElement("div");
+      amt.className = "fr-wz-ing-amt";
+      amt.textContent = formatMoney(c.montoPayout);
+      row.appendChild(amt);
+
+      listEl.appendChild(row);
+    });
+
+    updateIngresosSummary();
+
+    function updateIngresosSummary() {
+      const selected = state.ingresosCandidatos.filter(c => state.ingresosSeleccionados.includes(c.ingresoId));
+      const total = selected.reduce((s, c) => s + (Number(c.montoPayout) || 0), 0);
+      summaryEl.textContent = "";
+      const chip1 = document.createElement("span");
+      chip1.className = "fr-wz-chip";
+      chip1.textContent = `${selected.length} de ${state.ingresosCandidatos.length} ingresos`;
+      const chip2 = document.createElement("span");
+      chip2.className = "fr-wz-chip fr-wz-chip-total";
+      chip2.textContent = `Total: ${formatMoney(total)}`;
+      summaryEl.appendChild(chip1);
+      summaryEl.appendChild(chip2);
+    }
+  }
+
+  function renderPreviewStep() {
+    const previewEl = dialog.querySelector("#fr-wz-preview");
+    const reporte = buildReporteFromState(state, existing);
+    previewEl.textContent = "";
+    const container = document.createElement("div");
+    container.className = "fr-report";
+    renderReporteFormattedInto(container, reporte);
+    previewEl.appendChild(container);
+  }
+
+  btnBack.addEventListener("click", () => gotoStep(state.step - 1));
+  btnNext.addEventListener("click", () => {
+    if (state.step === 1 && !state.destinatarioId) {
+      heroToast.error("Selecciona un destinatario.");
+      return;
+    }
+    if (state.step === 2) {
+      if (!state.periodoDesde || !state.periodoHasta) {
+        heroToast.error("Ambas fechas son obligatorias.");
+        return;
+      }
+      if (state.periodoDesde > state.periodoHasta) {
+        heroToast.error("La fecha 'desde' debe ser anterior o igual a 'hasta'.");
+        return;
+      }
+    }
+    if (state.step === 3) {
+      const selectedCount = state.ingresosCandidatos.filter(c => state.ingresosSeleccionados.includes(c.ingresoId)).length;
+      if (selectedCount === 0) {
+        heroToast.error("Selecciona al menos un ingreso.");
+        return;
+      }
+    }
+    gotoStep(state.step + 1);
+  });
+
+  btnSave.addEventListener("click", async () => {
+    btnSave.loading = true;
+    try {
+      await saveReporte(state, existing);
+      dialog.hide();
+      await reloadReportesAfterChange();
+      heroToast.success(isEdit ? "Reporte actualizado" : "Reporte guardado como borrador");
+    } catch (e) {
+      console.error(e);
+      heroToast.error("No se pudo guardar: " + (e.message || e));
+    } finally {
+      btnSave.loading = false;
+    }
+  });
+
+  btnCancel.addEventListener("click", () => dialog.hide());
+  dialog.addEventListener("sl-request-close", (e) => {
+    if (e.detail.source !== "close-button" && e.detail.source !== "keyboard") e.preventDefault();
+  });
+  dialog.addEventListener("sl-after-hide", () => dialog.remove());
+
+  customElements.whenDefined("sl-dialog").then(() => {
+    dialog.show();
+    gotoStep(1);
+  });
 }
 
-function onViewReporte(_id) {
-  heroToast.info("Vista de detalle en construcción.", { duration: 3000 });
+// Detecta los payouts al destinatario dentro del periodo. Devuelve una lista
+// de líneas para mostrar en el paso 3 y para persistir en el reporte.
+function detectPayoutsForReporte(state) {
+  const desde = state.periodoDesde;
+  const hasta = state.periodoHasta;
+  const brokerDoc = brokersData.find(b => b.id === state.destinatarioId);
+  if (!brokerDoc) return [];
+  const destNombre = brokerDoc.nombre || "";
+  const rows = [];
+  for (const ing of ingresosData) {
+    if (!ing.fecha || ing.fecha < desde || ing.fecha > hasta) continue;
+    if (!Array.isArray(ing.payouts)) continue;
+    for (const p of ing.payouts) {
+      if ((p.broker || "") !== destNombre) continue;
+      rows.push({
+        ingresoId: ing.id,
+        fecha: ing.fecha,
+        carrier: ing.carrier || ing.descripcionDeposito || "",
+        cliente: ing.descripcionTransaccion || "",
+        plan: ing.tipoPago || "",
+        montoPayout: Number(p.saldo) || 0,
+        descripcionDeposito: ing.descripcionDeposito || ""
+      });
+    }
+  }
+  rows.sort((a, b) => (a.fecha || "").localeCompare(b.fecha || ""));
+  return rows;
 }
 
-function onEditReporte(_id) {
-  heroToast.info("Edición en construcción.", { duration: 3000 });
+// Arma el objeto reporte a partir del state del wizard. No incluye el número
+// todavía (se asigna en saveReporte via transacción).
+function buildReporteFromState(state, existing) {
+  const selected = state.ingresosCandidatos.filter(c => state.ingresosSeleccionados.includes(c.ingresoId));
+  const totalPayout = selected.reduce((s, c) => s + (Number(c.montoPayout) || 0), 0);
+  return {
+    numeroReporte: existing?.numeroReporte || "(pendiente)",
+    fechaGeneracion: existing?.fechaGeneracion || new Date().toISOString(),
+    destinatarioId: state.destinatarioId,
+    destinatarioTipo: state.destinatarioTipo,
+    destinatarioNombre: state.destinatarioNombre,
+    periodo: { desde: state.periodoDesde, hasta: state.periodoHasta },
+    ingresos: selected.map(({ descripcionDeposito, ...rest }) => rest),
+    totalPayout,
+    estado: existing?.estado || "borrador",
+    metodoPago: state.metodoPago || "",
+    referenciaPago: state.referenciaPago || "",
+    fechaPago: state.fechaPago || "",
+    notas: state.notas || "",
+    emailSentAt: existing?.emailSentAt || null,
+    emailSentTo: existing?.emailSentTo || null
+  };
 }
 
-function onDeleteReporte(_id) {
-  heroToast.info("Eliminación en construcción.", { duration: 3000 });
+// Persiste el reporte en Firestore. Si es nuevo, obtiene el correlativo.
+async function saveReporte(state, existing) {
+  const user = auth.currentUser;
+  if (!user) throw new Error("Sin sesión activa");
+  const now = serverTimestamp();
+
+  if (existing) {
+    // Update de borrador existente
+    const selected = state.ingresosCandidatos.filter(c => state.ingresosSeleccionados.includes(c.ingresoId));
+    const totalPayout = selected.reduce((s, c) => s + (Number(c.montoPayout) || 0), 0);
+    const payload = {
+      destinatarioId: state.destinatarioId,
+      destinatarioTipo: state.destinatarioTipo,
+      destinatarioNombre: state.destinatarioNombre,
+      periodo: { desde: state.periodoDesde, hasta: state.periodoHasta },
+      ingresos: selected.map(({ descripcionDeposito, ...rest }) => rest),
+      totalPayout,
+      metodoPago: state.metodoPago || "",
+      referenciaPago: state.referenciaPago || "",
+      fechaPago: state.fechaPago || "",
+      notas: state.notas || "",
+      actualizadoPor: user.email,
+      actualizadoEn: now
+    };
+    await updateDoc(doc(db, REPORTES_COL, existing.id), payload);
+    logEvent(ACTIONS.FINANZAS_REPORTE_EDIT, existing.numeroReporte || existing.id, {
+      destinatario: state.destinatarioNombre, totalPayout
+    });
+    return;
+  }
+
+  // Nuevo reporte — reservar número y crear
+  const numeroReporte = await nextNumeroReporte();
+  const selected = state.ingresosCandidatos.filter(c => state.ingresosSeleccionados.includes(c.ingresoId));
+  const totalPayout = selected.reduce((s, c) => s + (Number(c.montoPayout) || 0), 0);
+  const payload = {
+    numeroReporte,
+    fechaGeneracion: new Date().toISOString(),
+    destinatarioId: state.destinatarioId,
+    destinatarioTipo: state.destinatarioTipo,
+    destinatarioNombre: state.destinatarioNombre,
+    periodo: { desde: state.periodoDesde, hasta: state.periodoHasta },
+    ingresos: selected.map(({ descripcionDeposito, ...rest }) => rest),
+    totalPayout,
+    estado: "borrador",
+    metodoPago: state.metodoPago || "",
+    referenciaPago: state.referenciaPago || "",
+    fechaPago: state.fechaPago || "",
+    notas: state.notas || "",
+    emailSentAt: null,
+    emailSentTo: null,
+    creadoPor: user.email,
+    creadoEn: now,
+    actualizadoPor: user.email,
+    actualizadoEn: now
+  };
+  await addDoc(collection(db, REPORTES_COL), payload);
+  logEvent(ACTIONS.FINANZAS_REPORTE_ADD, numeroReporte, {
+    destinatario: state.destinatarioNombre, totalPayout, ingresos: selected.length
+  });
+}
+
+async function reloadReportesAfterChange() {
+  try {
+    await loadReportes();
+    if (frTable) frTable.setData(reportesData);
+    populateReporteDestinatarioFilter();
+    updateReportesSummary();
+  } catch (e) {
+    console.warn("reload reportes fallo:", e);
+  }
+}
+
+// Renderiza el reporte formateado dentro de un contenedor (usado en preview,
+// modal ver y print). Usa DOM API — nada de innerHTML con contenido dinámico.
+function renderReporteFormattedInto(container, reporte) {
+  container.className = "fr-report";
+
+  const header = document.createElement("div");
+  header.className = "fr-report-header";
+  const brand = document.createElement("div");
+  brand.className = "fr-report-brand";
+  const logo = document.createElement("img");
+  logo.src = "icons/favicon-hero.png";
+  logo.alt = "Hero";
+  brand.appendChild(logo);
+  const brandText = document.createElement("div");
+  const brandName = document.createElement("div");
+  brandName.className = "fr-report-brand-name";
+  brandName.textContent = "HERO INSURANCE USA";
+  const brandSub = document.createElement("div");
+  brandSub.className = "fr-report-brand-sub";
+  brandSub.textContent = "Reporte de pago";
+  brandText.appendChild(brandName);
+  brandText.appendChild(brandSub);
+  brand.appendChild(brandText);
+  header.appendChild(brand);
+
+  const meta = document.createElement("div");
+  meta.className = "fr-report-meta";
+  const num = document.createElement("div");
+  num.className = "fr-report-num";
+  num.textContent = reporte.numeroReporte || "—";
+  const dateLine = document.createElement("div");
+  dateLine.className = "fr-report-date";
+  const iso = typeof reporte.fechaGeneracion === "string"
+    ? reporte.fechaGeneracion.slice(0, 10)
+    : (reporte.fechaGeneracion?.toDate ? reporte.fechaGeneracion.toDate().toISOString().slice(0, 10) : "");
+  dateLine.textContent = `Generado: ${iso ? formatFechaUS(iso) : "—"}`;
+  meta.appendChild(num);
+  meta.appendChild(dateLine);
+  header.appendChild(meta);
+
+  container.appendChild(header);
+
+  // Bloque destinatario + periodo
+  const info = document.createElement("div");
+  info.className = "fr-report-info";
+  const infoLeft = document.createElement("div");
+  infoLeft.className = "fr-report-info-block";
+  const lblTo = document.createElement("div");
+  lblTo.className = "fr-report-info-label";
+  lblTo.textContent = "Pagar a";
+  const valTo = document.createElement("div");
+  valTo.className = "fr-report-info-value";
+  valTo.textContent = reporte.destinatarioNombre || "—";
+  const tipoTag = document.createElement("span");
+  const tipoCls = reporte.destinatarioTipo === "broker" ? "broker" : "agencia";
+  tipoTag.className = `fb-tipo-badge fb-tipo-${tipoCls}`;
+  tipoTag.textContent = reporte.destinatarioTipo === "broker" ? "Broker/Agente" : "Agencia";
+  infoLeft.appendChild(lblTo);
+  infoLeft.appendChild(valTo);
+  infoLeft.appendChild(tipoTag);
+
+  const infoRight = document.createElement("div");
+  infoRight.className = "fr-report-info-block";
+  const lblPer = document.createElement("div");
+  lblPer.className = "fr-report-info-label";
+  lblPer.textContent = "Periodo";
+  const valPer = document.createElement("div");
+  valPer.className = "fr-report-info-value";
+  valPer.textContent = `${formatFechaUS(reporte.periodo?.desde)} → ${formatFechaUS(reporte.periodo?.hasta)}`;
+  infoRight.appendChild(lblPer);
+  infoRight.appendChild(valPer);
+
+  info.appendChild(infoLeft);
+  info.appendChild(infoRight);
+  container.appendChild(info);
+
+  // Tabla de ingresos
+  const table = document.createElement("table");
+  table.className = "fr-report-table";
+  const thead = document.createElement("thead");
+  const trh = document.createElement("tr");
+  ["Fecha", "Carrier", "Plan", "Cliente", "Monto"].forEach(h => {
+    const th = document.createElement("th");
+    th.textContent = h;
+    trh.appendChild(th);
+  });
+  thead.appendChild(trh);
+  table.appendChild(thead);
+  const tbody = document.createElement("tbody");
+  (reporte.ingresos || []).forEach(ing => {
+    const tr = document.createElement("tr");
+    const tdFecha = document.createElement("td");
+    tdFecha.textContent = ing.fecha ? formatFechaUS(ing.fecha) : "—";
+    const tdCarrier = document.createElement("td");
+    tdCarrier.textContent = ing.carrier || "—";
+    const tdPlan = document.createElement("td");
+    tdPlan.textContent = ing.plan || "—";
+    const tdCliente = document.createElement("td");
+    tdCliente.textContent = ing.cliente || "—";
+    const tdMonto = document.createElement("td");
+    tdMonto.className = "fr-report-td-amt";
+    tdMonto.textContent = formatMoney(ing.montoPayout);
+    tr.appendChild(tdFecha);
+    tr.appendChild(tdCarrier);
+    tr.appendChild(tdPlan);
+    tr.appendChild(tdCliente);
+    tr.appendChild(tdMonto);
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  const tfoot = document.createElement("tfoot");
+  const trf = document.createElement("tr");
+  const tdLbl = document.createElement("td");
+  tdLbl.colSpan = 4;
+  tdLbl.textContent = "Total";
+  const tdVal = document.createElement("td");
+  tdVal.className = "fr-report-td-amt fr-report-total";
+  tdVal.textContent = formatMoney(reporte.totalPayout || 0);
+  trf.appendChild(tdLbl);
+  trf.appendChild(tdVal);
+  tfoot.appendChild(trf);
+  table.appendChild(tfoot);
+  container.appendChild(table);
+
+  // Detalles del pago (si están)
+  if (reporte.metodoPago || reporte.referenciaPago || reporte.fechaPago) {
+    const pago = document.createElement("div");
+    pago.className = "fr-report-pago";
+    const pagoTitle = document.createElement("div");
+    pagoTitle.className = "fr-report-pago-title";
+    pagoTitle.textContent = "Detalles del pago";
+    pago.appendChild(pagoTitle);
+
+    const grid = document.createElement("div");
+    grid.className = "fr-report-pago-grid";
+    const kvs = [
+      ["Método", reporte.metodoPago ? metodoPagoLabel(reporte.metodoPago) : "—"],
+      ["Referencia", reporte.referenciaPago || "—"],
+      ["Fecha del pago", reporte.fechaPago ? formatFechaUS(reporte.fechaPago) : "—"]
+    ];
+    kvs.forEach(([k, v]) => {
+      const kv = document.createElement("div");
+      const kEl = document.createElement("div");
+      kEl.className = "fr-report-kv-k";
+      kEl.textContent = k;
+      const vEl = document.createElement("div");
+      vEl.className = "fr-report-kv-v";
+      vEl.textContent = v;
+      kv.appendChild(kEl);
+      kv.appendChild(vEl);
+      grid.appendChild(kv);
+    });
+    pago.appendChild(grid);
+    container.appendChild(pago);
+  }
+
+  // Notas
+  if (reporte.notas) {
+    const notas = document.createElement("div");
+    notas.className = "fr-report-notas";
+    const notasTitle = document.createElement("div");
+    notasTitle.className = "fr-report-notas-title";
+    notasTitle.textContent = "Notas";
+    const notasBody = document.createElement("div");
+    notasBody.className = "fr-report-notas-body";
+    notasBody.textContent = reporte.notas;
+    notas.appendChild(notasTitle);
+    notas.appendChild(notasBody);
+    container.appendChild(notas);
+  }
+
+  // Estado badge (esquina)
+  const estadoWrap = document.createElement("div");
+  estadoWrap.className = "fr-report-estado-wrap";
+  const estadoBg = document.createElement("span");
+  estadoBg.className = `fr-badge fr-badge-${reporte.estado || "borrador"}`;
+  estadoBg.textContent = REPORTE_ESTADO_LABEL[reporte.estado] || "Borrador";
+  estadoWrap.appendChild(estadoBg);
+  container.appendChild(estadoWrap);
+}
+
+function metodoPagoLabel(m) {
+  return { cheque: "Cheque", transferencia: "Transferencia (ACH/Wire)", efectivo: "Efectivo", otro: "Otro" }[m] || m;
+}
+
+// ─── Modal Ver reporte ─────────────────────────────────────
+function onViewReporte(id) {
+  const reporte = reportesData.find(r => r.id === id);
+  if (!reporte) return;
+  const dialog = document.createElement("sl-dialog");
+  dialog.label = `Reporte ${reporte.numeroReporte || ""}`;
+  dialog.className = "fr-view-dialog";
+  dialog.style.setProperty("--width", "820px");
+
+  const body = document.createElement("div");
+  body.className = "fr-view-body";
+  const reportEl = document.createElement("div");
+  renderReporteFormattedInto(reportEl, reporte);
+  body.appendChild(reportEl);
+  dialog.appendChild(body);
+
+  const brokerDoc = brokersData.find(b => b.id === reporte.destinatarioId);
+  const brokerEmail = brokerDoc?.email || "";
+
+  // Footer con acciones
+  const canMarkPaid = reporte.estado !== "pagado";
+  const canMarkSent = reporte.estado === "borrador";
+
+  const btnPrint = document.createElement("sl-button");
+  btnPrint.slot = "footer";
+  btnPrint.variant = "default";
+  btnPrint.innerHTML = `<i data-lucide="printer" slot="prefix" style="width:14px;height:14px;"></i>Descargar PDF`;
+  btnPrint.addEventListener("click", () => printReporte(reporte));
+
+  const btnEmail = document.createElement("sl-button");
+  btnEmail.slot = "footer";
+  btnEmail.variant = "default";
+  const emailDisabled = !brokerEmail;
+  if (emailDisabled) btnEmail.disabled = true;
+  btnEmail.title = emailDisabled ? "El destinatario no tiene email en su ficha" : "Abre tu cliente de email con el reporte prellenado";
+  btnEmail.innerHTML = `<i data-lucide="mail" slot="prefix" style="width:14px;height:14px;"></i>Enviar por email`;
+  btnEmail.addEventListener("click", () => sendReporteEmail(reporte, brokerDoc, dialog));
+
+  const btnPaid = document.createElement("sl-button");
+  btnPaid.slot = "footer";
+  btnPaid.variant = "primary";
+  if (!canMarkPaid) btnPaid.disabled = true;
+  btnPaid.innerHTML = `<i data-lucide="check-circle" slot="prefix" style="width:14px;height:14px;"></i>Marcar como pagado`;
+  btnPaid.addEventListener("click", () => openMarkAsPaidModal(reporte, dialog));
+
+  const btnClose = document.createElement("sl-button");
+  btnClose.slot = "footer";
+  btnClose.variant = "text";
+  btnClose.textContent = "Cerrar";
+  btnClose.addEventListener("click", () => dialog.hide());
+
+  dialog.appendChild(btnPrint);
+  dialog.appendChild(btnEmail);
+  if (canMarkSent) {
+    // opcional: aparece solo para borrador
+  }
+  dialog.appendChild(btnPaid);
+  dialog.appendChild(btnClose);
+
+  document.body.appendChild(dialog);
+  if (window.refreshIcons) window.refreshIcons();
+  dialog.addEventListener("sl-after-hide", () => dialog.remove());
+  customElements.whenDefined("sl-dialog").then(() => dialog.show());
+}
+
+// ─── Print / PDF ────────────────────────────────────────────
+// Escribe el reporte en un contenedor global oculto y dispara window.print.
+// Con @media print el contenedor es el único visible → sale a PDF limpio.
+function printReporte(reporte) {
+  const holder = document.getElementById("fr-print-holder") || (() => {
+    const el = document.createElement("div");
+    el.id = "fr-print-holder";
+    document.body.appendChild(el);
+    return el;
+  })();
+  holder.textContent = "";
+  const inner = document.createElement("div");
+  renderReporteFormattedInto(inner, reporte);
+  holder.appendChild(inner);
+  document.body.classList.add("fr-printing");
+  const cleanup = () => {
+    document.body.classList.remove("fr-printing");
+    window.removeEventListener("afterprint", cleanup);
+  };
+  window.addEventListener("afterprint", cleanup);
+  setTimeout(() => window.print(), 50);
+}
+
+// ─── Enviar email (mailto:) ─────────────────────────────────
+async function sendReporteEmail(reporte, brokerDoc, parentDialog) {
+  if (!brokerDoc?.email) {
+    heroToast.error("El destinatario no tiene email registrado en su ficha.");
+    return;
+  }
+  const subject = `Reporte de pago ${reporte.numeroReporte} — Hero Insurance USA`;
+  const linesBody = [
+    `Estimado/a ${reporte.destinatarioNombre},`,
+    ``,
+    `Adjunto el reporte de pago ${reporte.numeroReporte} correspondiente al periodo del ${formatFechaUS(reporte.periodo?.desde)} al ${formatFechaUS(reporte.periodo?.hasta)}.`,
+    ``,
+    `Detalle:`,
+    ...(reporte.ingresos || []).map(i => `  · ${formatFechaUS(i.fecha)} — ${i.carrier || "—"} — ${formatMoney(i.montoPayout)}`),
+    ``,
+    `Total: ${formatMoney(reporte.totalPayout || 0)}`,
+    ``,
+    `Cualquier duda, respondan a este correo.`,
+    ``,
+    `Saludos,`,
+    `Hero Insurance USA`
+  ];
+  const body = linesBody.join("\n");
+  const href = `mailto:${encodeURIComponent(brokerDoc.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  // Abrir cliente
+  window.location.href = href;
+
+  // Confirmar y marcar como enviado
+  const confirm = await heroConfirm({
+    title: "¿Se envió el email?",
+    message: `Se abrió tu cliente de correo. Confirma si el email a ${brokerDoc.email} salió correctamente para marcar el reporte como Enviado.`,
+    confirmLabel: "Sí, marcar como enviado",
+    variant: "primary"
+  });
+  if (!confirm) return;
+  try {
+    const now = new Date().toISOString();
+    await updateDoc(doc(db, REPORTES_COL, reporte.id), {
+      estado: reporte.estado === "borrador" ? "enviado" : reporte.estado,
+      emailSentAt: now,
+      emailSentTo: brokerDoc.email,
+      actualizadoPor: auth.currentUser?.email || null,
+      actualizadoEn: serverTimestamp()
+    });
+    logEvent(ACTIONS.FINANZAS_REPORTE_SEND, reporte.numeroReporte || reporte.id, {
+      destinatario: brokerDoc.email
+    });
+    heroToast.success("Reporte marcado como enviado");
+    if (parentDialog) parentDialog.hide();
+    await reloadReportesAfterChange();
+  } catch (e) {
+    heroToast.error("No se pudo actualizar el estado: " + (e.message || e));
+  }
+}
+
+// ─── Modal marcar como pagado ──────────────────────────────
+function openMarkAsPaidModal(reporte, parentDialog) {
+  const dialog = document.createElement("sl-dialog");
+  dialog.label = `Marcar ${reporte.numeroReporte} como pagado`;
+  dialog.className = "fr-paid-dialog";
+  dialog.innerHTML = `
+    <div class="fc-form">
+      <div class="fi-row-2">
+        <div class="fc-native-field">
+          <label for="fr-p-metodo" class="fc-native-label">Método de pago</label>
+          <select id="fr-p-metodo" class="fc-native-select" required>
+            <option value="">— Selecciona —</option>
+            <option value="cheque">Cheque</option>
+            <option value="transferencia">Transferencia (ACH/Wire)</option>
+            <option value="efectivo">Efectivo</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+        <div class="fc-native-field">
+          <label for="fr-p-fecha" class="fc-native-label">Fecha del pago</label>
+          <input type="date" id="fr-p-fecha" class="fc-native-date" required>
+        </div>
+      </div>
+      <div class="fc-native-field">
+        <label for="fr-p-referencia" class="fc-native-label"># Cheque / referencia (opcional)</label>
+        <input type="text" id="fr-p-referencia" class="fc-native-date" placeholder="Ej. 1234 · ACH #789">
+      </div>
+    </div>
+    <sl-button slot="footer" id="fr-p-cancel" variant="default">Cancelar</sl-button>
+    <sl-button slot="footer" id="fr-p-save" variant="primary">
+      <i data-lucide="check-circle" slot="prefix" style="width:14px;height:14px;"></i>
+      Marcar como pagado
+    </sl-button>
+  `;
+  document.body.appendChild(dialog);
+  if (window.refreshIcons) window.refreshIcons();
+  // Precarga si ya tiene datos
+  dialog.querySelector("#fr-p-metodo").value = reporte.metodoPago || "";
+  dialog.querySelector("#fr-p-fecha").value = reporte.fechaPago || todayISO();
+  dialog.querySelector("#fr-p-referencia").value = reporte.referenciaPago || "";
+
+  dialog.querySelector("#fr-p-cancel").addEventListener("click", () => dialog.hide());
+  dialog.addEventListener("sl-after-hide", () => dialog.remove());
+
+  dialog.querySelector("#fr-p-save").addEventListener("click", async () => {
+    const metodoPago = dialog.querySelector("#fr-p-metodo").value;
+    const fechaPago = dialog.querySelector("#fr-p-fecha").value;
+    const referenciaPago = dialog.querySelector("#fr-p-referencia").value.trim();
+    if (!metodoPago) { heroToast.error("Selecciona el método de pago."); return; }
+    if (!fechaPago) { heroToast.error("La fecha del pago es obligatoria."); return; }
+    try {
+      await updateDoc(doc(db, REPORTES_COL, reporte.id), {
+        estado: "pagado",
+        metodoPago, fechaPago, referenciaPago,
+        actualizadoPor: auth.currentUser?.email || null,
+        actualizadoEn: serverTimestamp()
+      });
+      logEvent(ACTIONS.FINANZAS_REPORTE_PAY, reporte.numeroReporte || reporte.id, {
+        destinatario: reporte.destinatarioNombre,
+        totalPayout: reporte.totalPayout,
+        metodoPago
+      });
+      dialog.hide();
+      if (parentDialog) parentDialog.hide();
+      await reloadReportesAfterChange();
+      heroToast.success(`Reporte ${reporte.numeroReporte} marcado como pagado`);
+    } catch (e) {
+      heroToast.error("No se pudo guardar: " + (e.message || e));
+    }
+  });
+
+  customElements.whenDefined("sl-dialog").then(() => dialog.show());
+}
+
+// ─── Editar / Eliminar borrador ─────────────────────────────
+function onEditReporte(id) {
+  const r = reportesData.find(x => x.id === id);
+  if (!r) return;
+  if (r.estado !== "borrador") {
+    heroToast.info("Solo los reportes en Borrador se pueden editar.");
+    return;
+  }
+  openReporteWizard(r);
+}
+
+async function onDeleteReporte(id) {
+  const r = reportesData.find(x => x.id === id);
+  if (!r) return;
+  if (r.estado !== "borrador") {
+    heroToast.info("Solo los reportes en Borrador se pueden eliminar.");
+    return;
+  }
+  const ok = await heroConfirm({
+    title: "Eliminar reporte",
+    message: `¿Eliminar el reporte ${r.numeroReporte}? Esta acción no se puede deshacer.`,
+    confirmLabel: "Eliminar",
+    variant: "danger"
+  });
+  if (!ok) return;
+  try {
+    await deleteDoc(doc(db, REPORTES_COL, id));
+    logEvent(ACTIONS.FINANZAS_REPORTE_DELETE, r.numeroReporte || id, {
+      destinatario: r.destinatarioNombre, totalPayout: r.totalPayout
+    });
+    await reloadReportesAfterChange();
+    heroToast.success("Reporte eliminado");
+  } catch (e) {
+    heroToast.error("No se pudo eliminar: " + (e.message || e));
+  }
 }
 
 let frStatusTimeout = null;

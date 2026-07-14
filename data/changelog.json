@@ -1,5 +1,27 @@
 [
   {
+    "id": "2026-07-14-finanzas-reportes-wizard",
+    "version": "v2.19.2",
+    "date": "2026-07-14",
+    "category": "feat",
+    "scope": "finanzas",
+    "audience": "admin",
+    "title": "Finanzas · Reportes de Pago — wizard, acciones y PDF",
+    "items": [
+      "El botón 'Nuevo reporte' abre un wizard de 5 pasos: destinatario → periodo → ingresos a incluir → detalles del pago → preview",
+      "Paso 3 detecta automáticamente todos los ingresos con payout al destinatario dentro del periodo elegido, con checkbox por línea para excluir manualmente si hace falta. Muestra chip vivo con # seleccionados y total del payout consolidado",
+      "Paso 5 renderiza el reporte formateado tal como se verá al guardar (branding Hero Light, tabla, KPIs, notas)",
+      "El botón 'Guardar borrador' persiste en Firestore con estado 'borrador' y reserva el correlativo RP-YYYY-### via runTransaction",
+      "En la tabla, cada reporte tiene acciones: Ver 👁 (siempre), Editar ✎ y Eliminar ✕ (solo si está en Borrador)",
+      "Modal Ver: muestra el reporte formateado + 3 botones: Descargar PDF, Enviar por email, Marcar como pagado",
+      "Descargar PDF: usa window.print() + CSS @media print — sale limpio con logo Hero, tabla de ingresos y total. El usuario elige 'Guardar como PDF' desde el diálogo del navegador",
+      "Enviar por email: abre el cliente de correo con destinatario/asunto/cuerpo prellenados (mailto:). Después pregunta si se envió correctamente para marcar el reporte como 'Enviado'",
+      "Marcar como pagado: modal con selector de método (Cheque/Transferencia/Efectivo/Otro), fecha del pago y referencia (# cheque, ACH ID, etc.). El reporte pasa a estado 'Pagado' y no se puede editar/eliminar más",
+      "Nuevas acciones en el audit-log: finanzas.reporte.add/edit/delete/send/pay",
+      "Bump v2.19.1 → v2.19.2"
+    ]
+  },
+  {
     "id": "2026-07-14-finanzas-reportes-skeleton",
     "version": "v2.19.1",
     "date": "2026-07-14",

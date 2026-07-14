@@ -82,7 +82,14 @@ export const ACTIONS = {
   FINANZAS_EGRESO_DELETE: "finanzas.egreso.delete",
 
   // Finanzas — Envío de reportes por email a brokers
-  FINANZAS_EMAIL_SEND: "finanzas.email.send"
+  FINANZAS_EMAIL_SEND: "finanzas.email.send",
+
+  // Finanzas — Reportes de Pago consolidados
+  FINANZAS_REPORTE_ADD: "finanzas.reporte.add",
+  FINANZAS_REPORTE_EDIT: "finanzas.reporte.edit",
+  FINANZAS_REPORTE_DELETE: "finanzas.reporte.delete",
+  FINANZAS_REPORTE_SEND: "finanzas.reporte.send",
+  FINANZAS_REPORTE_PAY: "finanzas.reporte.pay"
 };
 
 // Etiquetas amigables para mostrar en la UI
@@ -115,7 +122,12 @@ export const ACTION_LABELS = {
   "finanzas.egreso.add": { label: "Egreso registrado", icon: "arrow-up-circle", color: "#c0392b" },
   "finanzas.egreso.edit": { label: "Egreso editado", icon: "edit-3", color: "#06a3b6" },
   "finanzas.egreso.delete": { label: "Egreso eliminado", icon: "trash-2", color: "#c0392b" },
-  "finanzas.email.send": { label: "Reporte enviado al broker", icon: "send", color: "#06a3b6" }
+  "finanzas.email.send": { label: "Reporte enviado al broker", icon: "send", color: "#06a3b6" },
+  "finanzas.reporte.add": { label: "Reporte de pago generado", icon: "receipt", color: "#22a06b" },
+  "finanzas.reporte.edit": { label: "Reporte de pago editado", icon: "edit-3", color: "#06a3b6" },
+  "finanzas.reporte.delete": { label: "Reporte de pago eliminado", icon: "trash-2", color: "#c0392b" },
+  "finanzas.reporte.send": { label: "Reporte de pago enviado", icon: "send", color: "#06a3b6" },
+  "finanzas.reporte.pay": { label: "Reporte de pago marcado pagado", icon: "check-circle", color: "#22a06b" }
 };
 
 
