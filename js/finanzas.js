@@ -16,7 +16,7 @@ import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import {
   collection, getDocs, getDoc, setDoc, addDoc, updateDoc, deleteDoc, doc,
-  serverTimestamp, query, orderBy, writeBatch
+  serverTimestamp, query, orderBy, writeBatch, runTransaction
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { logEvent, ACTIONS } from "./audit-log.js";
 
@@ -44,6 +44,8 @@ document.addEventListener("DOMContentLoaded", () => {
   bindBrokersLazyInit();
   bindIngresosStaticHandlers();
   bindIngresosLazyInit();
+  bindReportesStaticHandlers();
+  bindReportesLazyInit();
   bindDashboardStaticHandlers();
   bindDashboardLazyInit();
   bindComparativasStaticHandlers();
@@ -1844,6 +1846,321 @@ async function sendIngresoEmail(ingreso, payoutIdx, broker) {
   });
 
   return data;
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// REPORTES DE PAGO — CRUD Firestore + tabla + wizard
+// ═══════════════════════════════════════════════════════════
+// Un reporte agrupa payouts de varios ingresos destinados a un mismo
+// destinatario (agencia o broker/agente) para consolidar el pago real.
+// Numeración: RP-YYYY-### con correlativo anual guardado en
+// finanzas-config/reportes-contador vía runTransaction.
+const REPORTES_COL = "finanzas-reportes-pago";
+const REPORTES_CONTADOR_DOC = "reportes-contador";
+const REPORTE_ESTADOS = ["borrador", "enviado", "pagado"];
+const REPORTE_ESTADO_LABEL = { borrador: "Borrador", enviado: "Enviado", pagado: "Pagado" };
+
+let reportesData = [];
+let frTable = null;
+let reportesInited = false;
+const frFilter = { text: "", estado: "all", destinatario: "all", periodo: "all", fromDate: null, toDate: null };
+let frCustomPickers = null;
+
+function bindReportesStaticHandlers() {
+  const addBtn = document.getElementById("fr-add-btn");
+  if (addBtn && !addBtn.dataset.bound) {
+    addBtn.dataset.bound = "1";
+    addBtn.addEventListener("click", () => openReporteWizard(null));
+  }
+  const search = document.getElementById("fr-search");
+  if (search && !search.dataset.bound) {
+    search.dataset.bound = "1";
+    search.addEventListener("input", (e) => {
+      frFilter.text = e.target.value.toLowerCase().trim();
+      applyFrFilters();
+    });
+  }
+  ["estado", "destinatario", "periodo"].forEach(key => {
+    const sel = document.getElementById(`fr-filter-${key}`);
+    if (sel && !sel.dataset.bound) {
+      sel.dataset.bound = "1";
+      sel.addEventListener("change", (e) => {
+        frFilter[key] = e.target.value;
+        if (key === "periodo") toggleFrCustomRange(e.target.value === "custom");
+        applyFrFilters();
+      });
+    }
+  });
+}
+
+function toggleFrCustomRange(show) {
+  const wrap = document.getElementById("fr-custom-range");
+  if (!wrap) return;
+  wrap.hidden = !show;
+  if (show) ensureFrCustomPickers();
+}
+
+function ensureFrCustomPickers() {
+  if (frCustomPickers) return;
+  const fromEl = document.getElementById("fr-date-from");
+  const toEl = document.getElementById("fr-date-to");
+  if (!fromEl || !toEl || typeof flatpickr === "undefined") return;
+  const today = new Date();
+  const yearStart = new Date(today.getFullYear(), 0, 1);
+  const fp1 = flatpickr(fromEl, {
+    locale: "es", dateFormat: "m/d/Y", defaultDate: yearStart,
+    onChange: ([d]) => { frFilter.fromDate = d ? startOfDay(d) : null; if (d && fp2) fp2.set("minDate", d); applyFrFilters(); }
+  });
+  const fp2 = flatpickr(toEl, {
+    locale: "es", dateFormat: "m/d/Y", defaultDate: today,
+    onChange: ([d]) => { frFilter.toDate = d ? endOfDay(d) : null; if (d && fp1) fp1.set("maxDate", d); applyFrFilters(); }
+  });
+  frCustomPickers = { fp1, fp2 };
+  frFilter.fromDate = startOfDay(yearStart);
+  frFilter.toDate = endOfDay(today);
+}
+
+function bindReportesLazyInit() {
+  document.querySelectorAll('.admin-sidebar-link[data-tab="reportes"]').forEach(b => {
+    if (b.dataset.frBound) return;
+    b.dataset.frBound = "1";
+    b.addEventListener("click", () => {
+      if (!reportesInited) initReportesPanel();
+    });
+  });
+}
+
+async function initReportesPanel() {
+  if (reportesInited) return;
+  reportesInited = true;
+  try {
+    if (brokersData.length === 0) { try { await loadBrokers(); } catch (_) {} }
+    if (!frTable) initFrTable();
+    await loadReportes();
+    frTable.setData(reportesData);
+    populateReporteDestinatarioFilter();
+    updateReportesSummary();
+  } catch (e) {
+    console.error("Error inicializando Reportes:", e);
+    reportesInited = false;
+    const msg = e?.code === "permission-denied" || /permission|insufficient/i.test(e?.message || "")
+      ? `Firestore rechazó la lectura de "${REPORTES_COL}". Verifica las reglas en Firebase Console.`
+      : `No se pudo cargar Reportes:\n${e?.message || e}`;
+    heroToast.error(msg, { duration: 6000 });
+  }
+  if (window.refreshIcons) window.refreshIcons();
+}
+
+async function loadReportes() {
+  const q = query(collection(db, REPORTES_COL), orderBy("fechaGeneracion", "desc"));
+  const snap = await getDocs(q);
+  reportesData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+function populateReporteDestinatarioFilter() {
+  const sel = document.getElementById("fr-filter-destinatario");
+  if (!sel) return;
+  const current = sel.value;
+  const set = new Set();
+  reportesData.forEach(r => { if (r.destinatarioNombre) set.add(r.destinatarioNombre); });
+  const list = [...set].sort((a, b) => a.localeCompare(b, "es"));
+  const opts = [`<option value="all">Todos</option>`]
+    .concat(list.map(t => `<option value="${escapeHtmlAttr(t)}" ${t === current ? "selected" : ""}>${escapeHtml(t)}</option>`))
+    .join("");
+  sel.innerHTML = opts;
+}
+
+function estadoBadge(estado) {
+  const label = REPORTE_ESTADO_LABEL[estado] || estado || "—";
+  const cls = `fr-badge fr-badge-${estado || "borrador"}`;
+  return `<span class="${cls}">${escapeHtml(label)}</span>`;
+}
+
+function initFrTable() {
+  frTable = new Tabulator("#fr-table", {
+    index: "id",
+    data: [],
+    layout: "fitColumns",
+    height: "560px",
+    pagination: true,
+    paginationSize: 25,
+    paginationSizeSelector: [10, 25, 50, 100],
+    initialSort: [{ column: "fechaGeneracion", dir: "desc" }],
+    placeholder: "Aún no hay reportes de pago. Crea el primero con el botón “Nuevo reporte”.",
+    locale: "es",
+    langs: {
+      "es": {
+        "pagination": {
+          "first": "«", "first_title": "Primera",
+          "last": "»",  "last_title": "Última",
+          "prev": "‹",  "prev_title": "Anterior",
+          "next": "›",  "next_title": "Siguiente",
+          "page_size": "Por página",
+          "counter": { "showing": "Mostrando", "of": "de", "rows": "reportes", "pages": "páginas" }
+        }
+      }
+    },
+    columns: [
+      {
+        title: "# Reporte", field: "numeroReporte", width: 140, sorter: "string",
+        formatter: (cell) => `<strong>${escapeHtml(cell.getValue() || "—")}</strong>`
+      },
+      {
+        title: "Fecha", field: "fechaGeneracion", width: 110, sorter: "string",
+        formatter: (cell) => {
+          const v = cell.getValue();
+          if (!v) return `<span class="fc-empty">—</span>`;
+          const iso = typeof v === "string" ? v.slice(0, 10) : (v.toDate ? v.toDate().toISOString().slice(0, 10) : "");
+          return iso ? formatFechaUS(iso) : `<span class="fc-empty">—</span>`;
+        }
+      },
+      {
+        title: "Destinatario", field: "destinatarioNombre", minWidth: 200, sorter: "string",
+        formatter: (cell) => {
+          const r = cell.getRow().getData();
+          const tipo = r.destinatarioTipo === "broker" ? "Broker" : "Agencia";
+          const cls = r.destinatarioTipo === "broker" ? "broker" : "agencia";
+          return `<div class="fr-dest"><strong>${escapeHtml(cell.getValue() || "—")}</strong><span class="fb-tipo-badge fb-tipo-${cls}">${tipo}</span></div>`;
+        }
+      },
+      {
+        title: "Periodo", field: "periodo", width: 170, headerSort: false,
+        formatter: (cell) => {
+          const p = cell.getValue();
+          if (!p || !p.desde || !p.hasta) return `<span class="fc-empty">—</span>`;
+          return `<span class="fr-periodo">${formatFechaUS(p.desde)} → ${formatFechaUS(p.hasta)}</span>`;
+        }
+      },
+      {
+        title: "# Ingresos", field: "ingresos", width: 100, hozAlign: "center", headerHozAlign: "center", headerSort: false,
+        formatter: (cell) => {
+          const arr = cell.getValue();
+          return Array.isArray(arr) ? String(arr.length) : "0";
+        }
+      },
+      {
+        title: "Total", field: "totalPayout", width: 140, hozAlign: "right", headerHozAlign: "right", sorter: "number",
+        formatter: (cell) => `<span class="fi-cell-money">${formatMoney(cell.getValue())}</span>`
+      },
+      {
+        title: "Estado", field: "estado", width: 120, sorter: "string",
+        formatter: (cell) => estadoBadge(cell.getValue())
+      },
+      {
+        title: "", field: "_actions", width: 130, hozAlign: "center", headerSort: false,
+        formatter: (cell) => {
+          const r = cell.getRow().getData();
+          const canEdit = r.estado === "borrador";
+          return `<div class="fc-actions">
+            <button class="fc-act-btn fr-view" data-id="${escapeHtmlAttr(r.id)}" title="Ver reporte">👁</button>
+            ${canEdit ? `<button class="fc-act-btn fc-edit" data-id="${escapeHtmlAttr(r.id)}" title="Editar">✎</button>` : ""}
+            ${canEdit ? `<button class="fc-act-btn fc-del" data-id="${escapeHtmlAttr(r.id)}" title="Eliminar">✕</button>` : ""}
+          </div>`;
+        }
+      }
+    ]
+  });
+
+  const tableEl = document.getElementById("fr-table");
+  tableEl.addEventListener("click", (e) => {
+    const viewBtn = e.target.closest(".fr-view");
+    const editBtn = e.target.closest(".fc-edit");
+    const delBtn = e.target.closest(".fc-del");
+    if (viewBtn) { e.stopPropagation(); onViewReporte(viewBtn.dataset.id); }
+    else if (editBtn) { e.stopPropagation(); onEditReporte(editBtn.dataset.id); }
+    else if (delBtn) { e.stopPropagation(); onDeleteReporte(delBtn.dataset.id); }
+  });
+
+  frTable.on("dataFiltered", (_filters, rows) => {
+    const data = Array.isArray(rows) ? rows.map(r => r.getData()) : null;
+    updateReportesSummary(data);
+  });
+  frTable.on("dataLoaded", () => updateReportesSummary());
+}
+
+function applyFrFilters() {
+  if (!frTable) return;
+  frTable.setFilter((row) => {
+    if (frFilter.estado !== "all" && row.estado !== frFilter.estado) return false;
+    if (frFilter.destinatario !== "all" && row.destinatarioNombre !== frFilter.destinatario) return false;
+    if (frFilter.periodo !== "all") {
+      const iso = row.fechaGeneracion && typeof row.fechaGeneracion === "string"
+        ? row.fechaGeneracion.slice(0, 10)
+        : (row.fechaGeneracion?.toDate ? row.fechaGeneracion.toDate().toISOString().slice(0, 10) : "");
+      if (!matchesPeriodo(iso, frFilter.periodo, frFilter.fromDate, frFilter.toDate)) return false;
+    }
+    if (frFilter.text) {
+      const hay = `${row.numeroReporte || ""} ${row.destinatarioNombre || ""} ${row.referenciaPago || ""} ${row.notas || ""}`.toLowerCase();
+      if (!hay.includes(frFilter.text)) return false;
+    }
+    return true;
+  });
+  updateReportesSummary();
+}
+
+function updateReportesSummary(data) {
+  const totalEl = document.getElementById("fr-sum-total");
+  const montoEl = document.getElementById("fr-sum-monto");
+  if (!totalEl || !frTable) return;
+  const visibleRows = Array.isArray(data) ? data : frTable.getData("active");
+  const total = visibleRows.length;
+  const monto = visibleRows.reduce((s, r) => s + (parseFloat(r.totalPayout) || 0), 0);
+  totalEl.textContent = String(total);
+  montoEl.textContent = formatMoney(monto);
+}
+
+// ─── Correlativo transaccional RP-YYYY-### ────────────────
+// Corre en runTransaction para evitar colisiones si dos usuarios generan
+// reportes al mismo tiempo. El doc guarda { year, seq } y avanza a partir
+// del año actual (reinicia a 1 si cambia el año).
+async function nextNumeroReporte() {
+  const ref = doc(db, "finanzas-config", REPORTES_CONTADOR_DOC);
+  const currentYear = new Date().getFullYear();
+  const seq = await runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+    let next;
+    if (!snap.exists()) {
+      next = { year: currentYear, seq: 1 };
+    } else {
+      const data = snap.data() || {};
+      if (data.year === currentYear) next = { year: currentYear, seq: (Number(data.seq) || 0) + 1 };
+      else next = { year: currentYear, seq: 1 };
+    }
+    tx.set(ref, next);
+    return next.seq;
+  });
+  return `RP-${currentYear}-${String(seq).padStart(3, "0")}`;
+}
+
+// ─── Handlers de acciones (placeholders skeleton) ──────────
+// El wizard completo y las acciones view/edit/delete llegan en el próximo
+// commit — de momento avisamos al usuario para que sepa que está en construcción.
+async function openReporteWizard(_existing) {
+  heroToast.info("El wizard de generación de reportes llega en el próximo bump. Skeleton listo, wizard en construcción.", { duration: 4500 });
+}
+
+function onViewReporte(_id) {
+  heroToast.info("Vista de detalle en construcción.", { duration: 3000 });
+}
+
+function onEditReporte(_id) {
+  heroToast.info("Edición en construcción.", { duration: 3000 });
+}
+
+function onDeleteReporte(_id) {
+  heroToast.info("Eliminación en construcción.", { duration: 3000 });
+}
+
+let frStatusTimeout = null;
+// eslint-disable-next-line no-unused-vars
+function showFrStatus(msg) {
+  const el = document.getElementById("fr-status");
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add("visible");
+  if (frStatusTimeout) clearTimeout(frStatusTimeout);
+  frStatusTimeout = setTimeout(() => el.classList.remove("visible"), 3000);
 }
 
 

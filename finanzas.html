@@ -117,6 +117,10 @@
 
         <div class="admin-sidebar-group">
           <div class="admin-sidebar-kicker">Reportes</div>
+          <button type="button" class="admin-sidebar-link" data-tab="reportes">
+            <i data-lucide="receipt"></i>
+            <span>Reportes de Pago</span>
+          </button>
           <button type="button" class="admin-sidebar-link" data-tab="comparativas">
             <i data-lucide="bar-chart-3"></i>
             <span>Comparativas</span>
@@ -413,6 +417,82 @@
         <div id="fb-table"></div>
 
         <div class="fc-status" id="fb-status"></div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════ -->
+      <!-- SECCIÓN REPORTES DE PAGO                        -->
+      <!-- ══════════════════════════════════════════════ -->
+      <section class="admin-section" id="tab-reportes" style="display:none;">
+        <div class="ad-toolbar">
+          <div>
+            <h2 style="margin:0;">🧾 Reportes de Pago</h2>
+            <p class="admin-note" style="margin:4px 0 0;">Consolida ingresos de varios carriers destinados a una agencia o broker/agente en un solo reporte de pago (correlativo RP-YYYY-###).</p>
+          </div>
+          <div class="ad-toolbar-actions">
+            <sl-button variant="primary" size="medium" id="fr-add-btn">
+              <i data-lucide="plus" slot="prefix" style="width:14px;height:14px;"></i>
+              Nuevo reporte
+            </sl-button>
+          </div>
+        </div>
+
+        <div class="fc-toolbar">
+          <div class="search-wrap">
+            <i data-lucide="search" class="search-icon"></i>
+            <input type="text" id="fr-search" placeholder="Buscar por número, destinatario o referencia...">
+          </div>
+        </div>
+
+        <div class="fi-filters-row">
+          <div class="fi-filter-group">
+            <label for="fr-filter-estado">Estado</label>
+            <select id="fr-filter-estado" class="fi-filter-select">
+              <option value="all" selected>Todos</option>
+              <option value="borrador">Borrador</option>
+              <option value="enviado">Enviado</option>
+              <option value="pagado">Pagado</option>
+            </select>
+          </div>
+          <div class="fi-filter-group">
+            <label for="fr-filter-destinatario">Destinatario</label>
+            <select id="fr-filter-destinatario" class="fi-filter-select">
+              <option value="all" selected>Todos</option>
+            </select>
+          </div>
+          <div class="fi-filter-group">
+            <label for="fr-filter-periodo">Periodo</label>
+            <select id="fr-filter-periodo" class="fi-filter-select">
+              <option value="all" selected>Todo</option>
+              <option value="m-01">Enero</option>
+              <option value="m-02">Febrero</option>
+              <option value="m-03">Marzo</option>
+              <option value="m-04">Abril</option>
+              <option value="m-05">Mayo</option>
+              <option value="m-06">Junio</option>
+              <option value="m-07">Julio</option>
+              <option value="m-08">Agosto</option>
+              <option value="m-09">Septiembre</option>
+              <option value="m-10">Octubre</option>
+              <option value="m-11">Noviembre</option>
+              <option value="m-12">Diciembre</option>
+              <option value="custom">Personalizado…</option>
+            </select>
+            <div id="fr-custom-range" class="fi-custom-range" hidden>
+              <input type="text" id="fr-date-from" class="fi-custom-input" placeholder="Desde" autocomplete="off">
+              <span class="fi-custom-sep">→</span>
+              <input type="text" id="fr-date-to" class="fi-custom-input" placeholder="Hasta" autocomplete="off">
+            </div>
+          </div>
+        </div>
+
+        <div class="fi-summary-bar" id="fr-summary-bar">
+          <div class="fi-sum-item"><span class="fi-sum-label">Reportes</span> <span class="fi-sum-value" id="fr-sum-total">0</span></div>
+          <div class="fi-sum-item"><span class="fi-sum-label">Total pagado</span> <span class="fi-sum-value" id="fr-sum-monto">$0.00</span></div>
+        </div>
+
+        <div id="fr-table"></div>
+
+        <div class="fc-status" id="fr-status"></div>
       </section>
 
       <!-- ══════════════════════════════════════════════ -->
@@ -793,7 +873,7 @@
   </div><!-- /.admin-shell -->
 
   <footer class="hero-footer">
-    <span>HERO HUB · FINANZAS v2.19.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+    <span>HERO HUB · FINANZAS v2.19.1</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
   </footer>
 
 </div><!-- /#finanzas-panel -->
@@ -809,6 +889,7 @@
     ingresos: 'Ingresos',
     comisiones: 'Tabla de Comisiones',
     brokers: 'Agencias',
+    reportes: 'Reportes de Pago',
     comparativas: 'Comparativas',
     exportar: 'Exportar',
     importar: 'Importar'

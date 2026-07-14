@@ -1,5 +1,24 @@
 [
   {
+    "id": "2026-07-14-finanzas-reportes-skeleton",
+    "version": "v2.19.1",
+    "date": "2026-07-14",
+    "category": "feat",
+    "scope": "finanzas",
+    "audience": "admin",
+    "title": "Finanzas · Reportes de Pago — skeleton del nuevo módulo",
+    "items": [
+      "Se agregó el segmento 'Reportes de Pago' al sidebar de Finanzas (grupo Reportes, ícono de recibo)",
+      "La sección muestra la tabla de reportes generados con columnas: # Reporte, Fecha, Destinatario, Periodo, # Ingresos, Total, Estado y acciones",
+      "Filtros: búsqueda por texto (número/destinatario/referencia/notas), estado (Borrador/Enviado/Pagado), destinatario y periodo (mes o rango custom)",
+      "Estados con badge de color: Borrador (gris), Enviado (cyan Hero), Pagado (verde)",
+      "Numeración correlativa RP-YYYY-###: la utilidad `nextNumeroReporte` corre en runTransaction de Firestore sobre `finanzas-config/reportes-contador` para evitar colisiones si dos personas generan reportes al mismo tiempo. Reinicia a 001 al cambiar de año",
+      "Colección Firestore: `finanzas-reportes-pago` (todavía vacía; queda lista para el wizard del próximo bump)",
+      "El botón 'Nuevo reporte' y las acciones Ver/Editar/Eliminar ya están bindeadas — al pulsarlas muestran un toast informando que el wizard llega en el próximo commit",
+      "Bump v2.19.0 → v2.19.1"
+    ]
+  },
+  {
     "id": "2026-07-14-finanzas-retiro-egresos",
     "version": "v2.19.0",
     "date": "2026-07-14",
