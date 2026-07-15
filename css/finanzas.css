@@ -2996,6 +2996,7 @@ body[data-theme="dark"] .fr-report-date { color: rgba(226, 232, 240, 0.6); }
   gap: 24px;
   margin-bottom: 24px;
 }
+.fr-report-info-3col { grid-template-columns: 1.4fr 1fr 1.2fr; }
 .fr-report-info-block { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
 .fr-report-info-label {
   font-size: 11px;
@@ -3010,6 +3011,47 @@ body[data-theme="dark"] .fr-report-info-label { color: rgba(226, 232, 240, 0.55)
   font-size: 18px;
   font-weight: 700;
 }
+.fr-report-info-value-mes {
+  color: #06a3b6;
+  font-size: 20px;
+  letter-spacing: 0.02em;
+}
+body[data-theme="dark"] .fr-report-info-value-mes { color: #67e8f9; }
+.fr-report-info-value-periodo {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(15, 23, 42, 0.75);
+}
+body[data-theme="dark"] .fr-report-info-value-periodo { color: rgba(226, 232, 240, 0.75); }
+.fr-report-info-mes {
+  border-left: 3px solid rgba(6, 163, 182, 0.25);
+  padding-left: 14px;
+}
+
+/* Tag "mes contable" en la tabla + hint pequeño del wizard */
+.fr-mes-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 6px;
+  background: rgba(6, 163, 182, 0.10);
+  color: #0891a3;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+body[data-theme="dark"] .fr-mes-tag {
+  background: rgba(6, 163, 182, 0.20);
+  color: #67e8f9;
+}
+.fr-wz-hint-small {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: rgba(15, 23, 42, 0.55);
+}
+body[data-theme="dark"] .fr-wz-hint-small { color: rgba(226, 232, 240, 0.55); }
 
 .fr-report-table {
   width: 100%;
@@ -3087,14 +3129,7 @@ body[data-theme="dark"] .fr-report-notas-title { color: #67e8f9; }
 /* Marcar pagado modal */
 .fr-paid-dialog::part(panel) { max-width: 520px; }
 
-/* ─── Print CSS: solo el reporte visible al imprimir ─── */
-#fr-print-holder { display: none; }
-@media print {
-  body.fr-printing > *:not(#fr-print-holder) { display: none !important; }
-  body.fr-printing #fr-print-holder { display: block !important; }
-  body.fr-printing { background: #fff !important; padding: 0 !important; margin: 0 !important; }
-  body.fr-printing .fr-report { border: none; box-shadow: none; padding: 24px; max-width: 100%; }
-  body.fr-printing .fr-report-estado-wrap { display: none !important; }
-  @page { size: letter; margin: 12mm; }
-}
+/* Print CSS: el PDF se imprime desde una ventana nueva (ver printReporte en
+   js/finanzas.js). Los estilos específicos de impresión viven allá; aquí
+   solo compartimos el look del .fr-report ya definido arriba. */
 

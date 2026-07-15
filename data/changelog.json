@@ -1,5 +1,33 @@
 [
   {
+    "id": "2026-07-14-finanzas-reportes-mes-contable",
+    "version": "v2.20.0",
+    "date": "2026-07-14",
+    "category": "feat",
+    "scope": "finanzas",
+    "audience": "admin",
+    "title": "Finanzas · Reportes de Pago — mes contable + fix del PDF + label 'Guardar reporte'",
+    "items": [
+      "🗓 Nuevo campo obligatorio 'Mes contable del reporte' en el wizard (paso 2). Es el mes al que se atribuye contablemente el reporte — independiente de la fecha en que llegó el ingreso de los carriers y de la fecha en que se paga al broker",
+      "El mes contable aparece prominente en el PDF y en el modal Ver (bloque grande destacado), y como columna nueva en la tabla de reportes",
+      "Al elegir mes contable, el rango de ingresos se precarga automáticamente al primer y último día de ese mes — se puede overridear manualmente si el pago cruzó meses (ej. carrier deposita en marzo comisiones de febrero)",
+      "El bloque de info del reporte pasa de 2 a 3 columnas: 'Pagar a' · 'Mes contable' · 'Ingresos del periodo'",
+      "🖨 Fix del 'Descargar PDF': el diálogo salía en blanco porque el approach previo usaba `window.print()` + `@media print` sobre el documento host, y el `sl-dialog` (position:fixed + backdrop) interfería con el layout de impresión",
+      "Ahora el reporte se renderiza dentro de un iframe oculto con dimensiones reales de Letter (off-screen) y disparamos `print()` sobre su contentWindow. El sl-dialog no interfiere porque el iframe tiene su propio document aislado",
+      "El CSS crítico del reporte va inline en el iframe para no depender del fetch async de finanzas.css que a veces no terminaba antes del print()",
+      "Al iniciar la impresión, cambiamos temporalmente el `document.title` del Hub al # del reporte para que el diálogo 'Guardar como PDF' sugiera el nombre correcto (ej. `Reporte RP-2026-001.pdf`) — se restaura tras cerrar el diálogo",
+      "Label del botón: 'Guardar borrador' → 'Guardar reporte' (y el toast de confirmación en consecuencia). El reporte sigue creándose en estado Borrador; solo cambió el label",
+      "✉ Enviar por email rediseñado — antes se abría el cliente nativo de correo (mailto:). Ahora el envío es directo desde el sistema, sin cliente intermedio",
+      "El botón 'Enviar por email' abre un modal para elegir el destinatario: viene pre-poblado con el email guardado del broker (si existe) pero es editable — puedes mandar el reporte a cualquier dirección (contador, asistente, dirección alterna)",
+      "El PDF del reporte se genera en el navegador con jsPDF + html2canvas y se manda al Worker en base64. El Worker lo adjunta al correo via Resend y envía desde la cuenta única del sistema (`reports@heroinsuranceusa.com` o similar)",
+      "El cuerpo del email es HTML con branding Hero Light, tabla de ingresos y total. El PDF adjunto es el reporte completo formateado",
+      "Nuevas librerías CDN en finanzas.html: jsPDF 2.5.1 + html2canvas 1.4.1 (~250KB combinado, solo se cargan en este módulo)",
+      "Requiere que el Worker de Cloudflare tenga el endpoint nuevo `/finanzas/send-consolidated-report`. Si no está deployado, el envío falla con toast informativo",
+      "Los reportes ya guardados antes de este bump aparecen con '—' en la columna 'Mes contable' hasta que se editen y se les asigne uno",
+      "Bump v2.19.2 → v2.20.0"
+    ]
+  },
+  {
     "id": "2026-07-14-finanzas-reportes-wizard",
     "version": "v2.19.2",
     "date": "2026-07-14",

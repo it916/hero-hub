@@ -1861,6 +1861,33 @@ const REPORTES_CONTADOR_DOC = "reportes-contador";
 const REPORTE_ESTADOS = ["borrador", "enviado", "pagado"];
 const REPORTE_ESTADO_LABEL = { borrador: "Borrador", enviado: "Enviado", pagado: "Pagado" };
 
+// ─── Helpers para el mes contable ─────────────────────────
+// mesReporte usa formato ISO "YYYY-MM" para orden natural y parseo trivial.
+function firstDayOfMesReporte(mesReporte) {
+  if (!mesReporte || !/^\d{4}-\d{2}$/.test(mesReporte)) return "";
+  return `${mesReporte}-01`;
+}
+function lastDayOfMesReporte(mesReporte) {
+  if (!mesReporte || !/^\d{4}-\d{2}$/.test(mesReporte)) return "";
+  const [y, m] = mesReporte.split("-").map(Number);
+  const last = new Date(y, m, 0).getDate();
+  return `${mesReporte}-${String(last).padStart(2, "0")}`;
+}
+// Formato "FEB 2026" para tabla y bloques compactos.
+function formatMesReporteAbrev(mesReporte) {
+  if (!mesReporte || !/^\d{4}-\d{2}$/.test(mesReporte)) return "—";
+  const [y, m] = mesReporte.split("-").map(Number);
+  return `${MESES_ABREV[m - 1] || "?"} ${y}`;
+}
+// Formato "FEBRERO 2026" para PDF / modal.
+const MESES_FULL_UPPER = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO",
+                          "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+function formatMesReporteFull(mesReporte) {
+  if (!mesReporte || !/^\d{4}-\d{2}$/.test(mesReporte)) return "—";
+  const [y, m] = mesReporte.split("-").map(Number);
+  return `${MESES_FULL_UPPER[m - 1] || "?"} ${y}`;
+}
+
 let reportesData = [];
 let frTable = null;
 let reportesInited = false;
@@ -2005,6 +2032,14 @@ function initFrTable() {
       {
         title: "# Reporte", field: "numeroReporte", width: 140, sorter: "string",
         formatter: (cell) => `<strong>${escapeHtml(cell.getValue() || "—")}</strong>`
+      },
+      {
+        title: "Mes contable", field: "mesReporte", width: 130, sorter: "string",
+        formatter: (cell) => {
+          const v = cell.getValue();
+          if (!v) return `<span class="fc-empty">—</span>`;
+          return `<span class="fr-mes-tag">${escapeHtml(formatMesReporteAbrev(v))}</span>`;
+        }
       },
       {
         title: "Fecha", field: "fechaGeneracion", width: 110, sorter: "string",
@@ -2154,13 +2189,21 @@ async function openReporteWizard(existing) {
     try { await loadIngresos(); } catch (_) {}
   }
 
+  // Default para mes contable: mes anterior al actual (típicamente el reporte
+  // se emite al inicio del mes siguiente al mes contable). Formato ISO YYYY-MM.
+  const _defTs = new Date();
+  _defTs.setDate(1);
+  _defTs.setMonth(_defTs.getMonth() - 1);
+  const defaultMesReporte = `${_defTs.getFullYear()}-${String(_defTs.getMonth() + 1).padStart(2, "0")}`;
+
   const state = {
     step: 1,
     destinatarioId: existing?.destinatarioId || "",
     destinatarioTipo: existing?.destinatarioTipo || "",
     destinatarioNombre: existing?.destinatarioNombre || "",
-    periodoDesde: existing?.periodo?.desde || `${new Date().getFullYear()}-01-01`,
-    periodoHasta: existing?.periodo?.hasta || todayISO(),
+    mesReporte: existing?.mesReporte || defaultMesReporte,
+    periodoDesde: existing?.periodo?.desde || firstDayOfMesReporte(existing?.mesReporte || defaultMesReporte),
+    periodoHasta: existing?.periodo?.hasta || lastDayOfMesReporte(existing?.mesReporte || defaultMesReporte),
     ingresosSeleccionados: existing?.ingresos ? existing.ingresos.map(i => i.ingresoId) : [],
     ingresosCandidatos: [],
     metodoPago: existing?.metodoPago || "",
@@ -2200,19 +2243,45 @@ async function openReporteWizard(existing) {
           </div>
         </div>
 
-        <!-- Paso 2: Periodo -->
+        <!-- Paso 2: Mes contable + periodo de ingresos -->
         <div class="fr-panel" data-step="2" hidden>
-          <h3 class="fr-panel-title">¿Qué periodo incluye?</h3>
-          <p class="fr-panel-hint">Rango de fechas de los ingresos a consolidar en este reporte.</p>
-          <div class="fi-row-2">
-            <div class="fc-native-field">
-              <label for="fr-wz-desde" class="fc-native-label">Desde</label>
-              <input type="date" id="fr-wz-desde" class="fc-native-date" required>
+          <h3 class="fr-panel-title">Mes contable y periodo</h3>
+          <p class="fr-panel-hint">El mes contable es al que se atribuye este reporte (aparece prominente en el PDF). El periodo abajo se usa para auto-detectar los ingresos en el paso siguiente.</p>
+
+          <div class="fc-native-field">
+            <label class="fc-native-label" style="display:flex;align-items:center;gap:6px;">
+              <i data-lucide="calendar-clock" style="width:16px;height:16px;"></i>
+              Mes contable del reporte
+            </label>
+            <div class="fi-row-2">
+              <select id="fr-wz-mes-mes" class="fc-native-select" required>
+                <option value="01">Enero</option>
+                <option value="02">Febrero</option>
+                <option value="03">Marzo</option>
+                <option value="04">Abril</option>
+                <option value="05">Mayo</option>
+                <option value="06">Junio</option>
+                <option value="07">Julio</option>
+                <option value="08">Agosto</option>
+                <option value="09">Septiembre</option>
+                <option value="10">Octubre</option>
+                <option value="11">Noviembre</option>
+                <option value="12">Diciembre</option>
+              </select>
+              <select id="fr-wz-mes-ano" class="fc-native-select" required></select>
             </div>
-            <div class="fc-native-field">
-              <label for="fr-wz-hasta" class="fc-native-label">Hasta</label>
+          </div>
+
+          <div class="fc-native-field" style="margin-top:16px;">
+            <label class="fc-native-label" style="display:flex;align-items:center;gap:6px;">
+              <i data-lucide="calendar-range" style="width:16px;height:16px;"></i>
+              Rango de ingresos a detectar
+            </label>
+            <div class="fi-row-2">
+              <input type="date" id="fr-wz-desde" class="fc-native-date" required>
               <input type="date" id="fr-wz-hasta" class="fc-native-date" required>
             </div>
+            <p class="fr-wz-hint-small">Se ajusta automáticamente al mes contable elegido. Puedes overridearlo si el pago cruzó meses (ej. carrier deposita en marzo comisiones de febrero).</p>
           </div>
         </div>
 
@@ -2270,7 +2339,7 @@ async function openReporteWizard(existing) {
         </sl-button>
         <sl-button id="fr-wz-save" variant="primary" hidden>
           <i data-lucide="save" slot="prefix" style="width:14px;height:14px;"></i>
-          ${isEdit ? "Guardar cambios" : "Guardar borrador"}
+          ${isEdit ? "Guardar cambios" : "Guardar reporte"}
         </sl-button>
       </div>
     </div>
@@ -2294,6 +2363,22 @@ async function openReporteWizard(existing) {
   };
   selDest.insertAdjacentHTML("beforeend", buildOpts("Agencias", agencias) + buildOpts("Brokers/Agentes", brokers));
 
+  // Selector de año contable: rango del actual ± 3 años.
+  const selMes = dialog.querySelector("#fr-wz-mes-mes");
+  const selAno = dialog.querySelector("#fr-wz-mes-ano");
+  const currentYear = new Date().getFullYear();
+  const yearOptions = [];
+  for (let y = currentYear - 3; y <= currentYear + 1; y++) yearOptions.push(y);
+  yearOptions.forEach(y => {
+    const opt = document.createElement("option");
+    opt.value = String(y);
+    opt.textContent = String(y);
+    selAno.appendChild(opt);
+  });
+  const [initMesY, initMesM] = state.mesReporte.split("-");
+  selMes.value = initMesM;
+  selAno.value = initMesY;
+
   // Precarga de campos step 2/4
   dialog.querySelector("#fr-wz-desde").value = state.periodoDesde;
   dialog.querySelector("#fr-wz-hasta").value = state.periodoHasta;
@@ -2301,6 +2386,20 @@ async function openReporteWizard(existing) {
   dialog.querySelector("#fr-wz-fecha-pago").value = state.fechaPago;
   dialog.querySelector("#fr-wz-referencia").value = state.referenciaPago;
   dialog.querySelector("#fr-wz-notas").value = state.notas;
+
+  // Al cambiar mes/año contable, reasignamos state y auto-precargamos el rango
+  // de ingresos con el primer/último día de ese mes. Si el usuario ya tocó
+  // manualmente el rango, no lo respetamos (siempre re-precarga). Es raro que
+  // el rango deba divergir del mes, y si diverge el usuario lo ajusta después.
+  const onMesReporteChange = () => {
+    state.mesReporte = `${selAno.value}-${selMes.value}`;
+    state.periodoDesde = firstDayOfMesReporte(state.mesReporte);
+    state.periodoHasta = lastDayOfMesReporte(state.mesReporte);
+    dialog.querySelector("#fr-wz-desde").value = state.periodoDesde;
+    dialog.querySelector("#fr-wz-hasta").value = state.periodoHasta;
+  };
+  selMes.addEventListener("change", onMesReporteChange);
+  selAno.addEventListener("change", onMesReporteChange);
 
   // Listeners
   selDest.addEventListener("change", (e) => {
@@ -2445,8 +2544,12 @@ async function openReporteWizard(existing) {
       return;
     }
     if (state.step === 2) {
+      if (!state.mesReporte || !/^\d{4}-\d{2}$/.test(state.mesReporte)) {
+        heroToast.error("Selecciona el mes contable del reporte.");
+        return;
+      }
       if (!state.periodoDesde || !state.periodoHasta) {
-        heroToast.error("Ambas fechas son obligatorias.");
+        heroToast.error("Ambas fechas del rango de ingresos son obligatorias.");
         return;
       }
       if (state.periodoDesde > state.periodoHasta) {
@@ -2470,7 +2573,7 @@ async function openReporteWizard(existing) {
       await saveReporte(state, existing);
       dialog.hide();
       await reloadReportesAfterChange();
-      heroToast.success(isEdit ? "Reporte actualizado" : "Reporte guardado como borrador");
+      heroToast.success(isEdit ? "Reporte actualizado" : "Reporte guardado");
     } catch (e) {
       console.error(e);
       heroToast.error("No se pudo guardar: " + (e.message || e));
@@ -2531,6 +2634,7 @@ function buildReporteFromState(state, existing) {
     destinatarioId: state.destinatarioId,
     destinatarioTipo: state.destinatarioTipo,
     destinatarioNombre: state.destinatarioNombre,
+    mesReporte: state.mesReporte || "",
     periodo: { desde: state.periodoDesde, hasta: state.periodoHasta },
     ingresos: selected.map(({ descripcionDeposito, ...rest }) => rest),
     totalPayout,
@@ -2558,6 +2662,7 @@ async function saveReporte(state, existing) {
       destinatarioId: state.destinatarioId,
       destinatarioTipo: state.destinatarioTipo,
       destinatarioNombre: state.destinatarioNombre,
+      mesReporte: state.mesReporte || "",
       periodo: { desde: state.periodoDesde, hasta: state.periodoHasta },
       ingresos: selected.map(({ descripcionDeposito, ...rest }) => rest),
       totalPayout,
@@ -2585,6 +2690,7 @@ async function saveReporte(state, existing) {
     destinatarioId: state.destinatarioId,
     destinatarioTipo: state.destinatarioTipo,
     destinatarioNombre: state.destinatarioNombre,
+    mesReporte: state.mesReporte || "",
     periodo: { desde: state.periodoDesde, hasta: state.periodoHasta },
     ingresos: selected.map(({ descripcionDeposito, ...rest }) => rest),
     totalPayout,
@@ -2659,9 +2765,11 @@ function renderReporteFormattedInto(container, reporte) {
 
   container.appendChild(header);
 
-  // Bloque destinatario + periodo
+  // Bloque destinatario + mes contable + periodo (3 columnas).
   const info = document.createElement("div");
-  info.className = "fr-report-info";
+  info.className = "fr-report-info fr-report-info-3col";
+
+  // Columna 1: Pagar a
   const infoLeft = document.createElement("div");
   infoLeft.className = "fr-report-info-block";
   const lblTo = document.createElement("div");
@@ -2678,18 +2786,32 @@ function renderReporteFormattedInto(container, reporte) {
   infoLeft.appendChild(valTo);
   infoLeft.appendChild(tipoTag);
 
+  // Columna 2: Mes contable (destacado)
+  const infoMid = document.createElement("div");
+  infoMid.className = "fr-report-info-block fr-report-info-mes";
+  const lblMes = document.createElement("div");
+  lblMes.className = "fr-report-info-label";
+  lblMes.textContent = "Mes contable";
+  const valMes = document.createElement("div");
+  valMes.className = "fr-report-info-value fr-report-info-value-mes";
+  valMes.textContent = formatMesReporteFull(reporte.mesReporte);
+  infoMid.appendChild(lblMes);
+  infoMid.appendChild(valMes);
+
+  // Columna 3: Periodo de ingresos
   const infoRight = document.createElement("div");
   infoRight.className = "fr-report-info-block";
   const lblPer = document.createElement("div");
   lblPer.className = "fr-report-info-label";
-  lblPer.textContent = "Periodo";
+  lblPer.textContent = "Ingresos del periodo";
   const valPer = document.createElement("div");
-  valPer.className = "fr-report-info-value";
+  valPer.className = "fr-report-info-value fr-report-info-value-periodo";
   valPer.textContent = `${formatFechaUS(reporte.periodo?.desde)} → ${formatFechaUS(reporte.periodo?.hasta)}`;
   infoRight.appendChild(lblPer);
   infoRight.appendChild(valPer);
 
   info.appendChild(infoLeft);
+  info.appendChild(infoMid);
   info.appendChild(infoRight);
   container.appendChild(info);
 
@@ -2834,11 +2956,9 @@ function onViewReporte(id) {
   const btnEmail = document.createElement("sl-button");
   btnEmail.slot = "footer";
   btnEmail.variant = "default";
-  const emailDisabled = !brokerEmail;
-  if (emailDisabled) btnEmail.disabled = true;
-  btnEmail.title = emailDisabled ? "El destinatario no tiene email en su ficha" : "Abre tu cliente de email con el reporte prellenado";
+  btnEmail.title = "Abre tu cliente de email con el reporte prellenado";
   btnEmail.innerHTML = `<i data-lucide="mail" slot="prefix" style="width:14px;height:14px;"></i>Enviar por email`;
-  btnEmail.addEventListener("click", () => sendReporteEmail(reporte, brokerDoc, dialog));
+  btnEmail.addEventListener("click", () => openEmailPromptModal(reporte, brokerDoc, dialog));
 
   const btnPaid = document.createElement("sl-button");
   btnPaid.slot = "footer";
@@ -2868,39 +2988,274 @@ function onViewReporte(id) {
 }
 
 // ─── Print / PDF ────────────────────────────────────────────
-// Escribe el reporte en un contenedor global oculto y dispara window.print.
-// Con @media print el contenedor es el único visible → sale a PDF limpio.
+// Renderiza el reporte dentro de un iframe con dimensiones reales pero
+// posicionado off-screen (left:-10000px). Chrome no imprime iframes con
+// dimensiones 0x0 — necesita layout real para considerar el contenido.
+// El CSS crítico va inline (no como <link>) para no depender del fetch
+// asíncrono que puede no terminar antes de llamar print().
 function printReporte(reporte) {
-  const holder = document.getElementById("fr-print-holder") || (() => {
-    const el = document.createElement("div");
-    el.id = "fr-print-holder";
-    document.body.appendChild(el);
-    return el;
-  })();
-  holder.textContent = "";
-  const inner = document.createElement("div");
-  renderReporteFormattedInto(inner, reporte);
-  holder.appendChild(inner);
-  document.body.classList.add("fr-printing");
-  const cleanup = () => {
-    document.body.classList.remove("fr-printing");
-    window.removeEventListener("afterprint", cleanup);
+  const prev = document.getElementById("fr-print-iframe");
+  if (prev) prev.remove();
+
+  const iframe = document.createElement("iframe");
+  iframe.id = "fr-print-iframe";
+  iframe.setAttribute("aria-hidden", "true");
+  // Dimensiones reales de Letter, off-screen. Ver comment arriba.
+  Object.assign(iframe.style, {
+    position: "fixed",
+    left: "-10000px",
+    top: "0",
+    width: "8.5in",
+    height: "11in",
+    border: "0"
+  });
+  document.body.appendChild(iframe);
+
+  const idoc = iframe.contentDocument;
+  const iwin = iframe.contentWindow;
+  const html = idoc.documentElement;
+  while (html.firstChild) html.removeChild(html.firstChild);
+  html.lang = "es";
+
+  const head = idoc.createElement("head");
+  const body = idoc.createElement("body");
+
+  const meta = idoc.createElement("meta");
+  meta.setAttribute("charset", "UTF-8");
+  head.appendChild(meta);
+
+  // <base> para que la imagen relativa del logo resuelva.
+  const base = idoc.createElement("base");
+  base.href = window.location.origin + window.location.pathname.replace(/[^/]+$/, "");
+  head.appendChild(base);
+
+  const title = idoc.createElement("title");
+  title.textContent = `Reporte ${reporte.numeroReporte || ""} — Hero Insurance USA`;
+  head.appendChild(title);
+
+  // Google Fonts vía <link> (best-effort — si no cargan, cae a serif de sistema).
+  const gfonts = idoc.createElement("link");
+  gfonts.rel = "stylesheet";
+  gfonts.href = "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap";
+  head.appendChild(gfonts);
+
+  // CSS crítico INLINE — replica los estilos de .fr-report* de finanzas.css
+  // para que el iframe no dependa del <link> externo (que puede no cargar a tiempo).
+  const style = idoc.createElement("style");
+  style.textContent = `
+    * { box-sizing: border-box; }
+    body { background: #fff; margin: 0; padding: 24px; font-family: 'Inter', system-ui, sans-serif; color: #0a3d4a; }
+    @page { size: letter; margin: 12mm; }
+    @media print { body { padding: 0; } }
+
+    .fr-report { background: #fff; color: #0a3d4a; padding: 24px; font-family: 'Inter', sans-serif; position: relative; max-width: 100%; margin: 0 auto; }
+    .fr-report-header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 2px solid #06a3b6; margin-bottom: 20px; }
+    .fr-report-brand { display: flex; align-items: center; gap: 12px; }
+    .fr-report-brand img { width: 44px; height: 44px; }
+    .fr-report-brand-name { font-family: 'Bricolage Grotesque', sans-serif; font-size: 18px; font-weight: 800; letter-spacing: 0.02em; }
+    .fr-report-brand-sub { font-size: 12px; color: rgba(15,23,42,.6); text-transform: uppercase; letter-spacing: 0.08em; }
+    .fr-report-meta { text-align: right; }
+    .fr-report-num { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; color: #06a3b6; }
+    .fr-report-date { font-size: 12px; color: rgba(15,23,42,.6); margin-top: 4px; }
+
+    .fr-report-info { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+    .fr-report-info-3col { grid-template-columns: 1.4fr 1fr 1.2fr; }
+    .fr-report-info-block { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+    .fr-report-info-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(15,23,42,.55); font-weight: 600; }
+    .fr-report-info-value { font-family: 'Bricolage Grotesque', sans-serif; font-size: 18px; font-weight: 700; }
+    .fr-report-info-value-mes { color: #06a3b6; font-size: 20px; letter-spacing: 0.02em; }
+    .fr-report-info-value-periodo { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; color: rgba(15,23,42,.75); }
+    .fr-report-info-mes { border-left: 3px solid rgba(6,163,182,.25); padding-left: 14px; }
+
+    .fr-report-table { width: 100%; border-collapse: collapse; margin: 8px 0 20px; }
+    .fr-report-table th { text-align: left; padding: 10px 12px; background: rgba(6,163,182,.08); color: #0891a3; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(6,163,182,.3); }
+    .fr-report-table td { padding: 10px 12px; font-size: 13px; border-bottom: 1px solid rgba(148,163,184,.18); }
+    .fr-report-td-amt { text-align: right; font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+    .fr-report-table tfoot td { font-size: 14px; font-weight: 700; background: rgba(240,244,248,.7); border-top: 2px solid #06a3b6; border-bottom: none; padding: 12px; }
+    .fr-report-total { color: #16a34a; font-size: 16px; }
+
+    .fr-report-pago { margin-top: 20px; padding: 16px; background: rgba(240,244,248,.7); border-radius: 10px; }
+    .fr-report-pago-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(15,23,42,.55); margin-bottom: 10px; font-weight: 600; }
+    .fr-report-pago-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .fr-report-kv-k { font-size: 11px; color: rgba(15,23,42,.6); }
+    .fr-report-kv-v { font-weight: 600; margin-top: 2px; }
+
+    .fr-report-notas { margin-top: 16px; padding: 12px 16px; border-left: 3px solid #06a3b6; background: rgba(6,163,182,.04); border-radius: 4px; }
+    .fr-report-notas-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #0891a3; font-weight: 600; margin-bottom: 4px; }
+    .fr-report-notas-body { font-size: 13px; white-space: pre-wrap; }
+
+    .fr-report-estado-wrap { display: none; }
+
+    .fb-tipo-badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 4px; }
+    .fb-tipo-agencia { background: rgba(147,51,234,.10); color: #7c3aed; border: 1px solid rgba(147,51,234,.30); }
+    .fb-tipo-broker { background: rgba(232,163,23,.12); color: #b8860b; border: 1px solid rgba(232,163,23,.35); }
+  `;
+  head.appendChild(style);
+
+  html.appendChild(head);
+  html.appendChild(body);
+
+  const target = idoc.createElement("div");
+  body.appendChild(target);
+  renderReporteFormattedInto(target, reporte);
+
+  // Nombre del archivo que ofrece el diálogo de "Guardar como PDF": Chrome/Edge
+  // toman document.title del documento HOST (no del iframe). Cambiamos el título
+  // del Hub temporalmente para que salga el # del reporte, y restauramos tras
+  // imprimir (o cancelar).
+  const originalTitle = document.title;
+  const reportTitle = `Reporte ${reporte.numeroReporte || ""}`.trim();
+  document.title = reportTitle;
+
+  const restoreTitle = () => {
+    document.title = originalTitle;
+    window.removeEventListener("afterprint", restoreTitle);
   };
-  window.addEventListener("afterprint", cleanup);
-  setTimeout(() => window.print(), 50);
+  window.addEventListener("afterprint", restoreTitle);
+  // Safety net: si el navegador no dispara afterprint por alguna razón,
+  // restauramos igualmente después de un rato prudencial.
+  setTimeout(restoreTitle, 30000);
+
+  // Esperar a que las fonts carguen y luego imprimir.
+  const doPrint = () => {
+    try {
+      iwin.focus();
+      iwin.print();
+    } catch (e) {
+      restoreTitle();
+      heroToast.error("No se pudo imprimir: " + (e.message || e));
+    }
+  };
+
+  const trigger = () => {
+    if (idoc.fonts && idoc.fonts.ready) {
+      idoc.fonts.ready.then(doPrint).catch(doPrint);
+    } else {
+      setTimeout(doPrint, 700);
+    }
+  };
+
+  // Margen para que el iframe termine su layout inicial.
+  setTimeout(trigger, 500);
+
+  // Cleanup diferido — 60s después, el iframe se remueve.
+  setTimeout(() => { try { iframe.remove(); } catch (_) {} }, 60000);
 }
 
-// ─── Enviar email (mailto:) ─────────────────────────────────
-async function sendReporteEmail(reporte, brokerDoc, parentDialog) {
-  if (!brokerDoc?.email) {
-    heroToast.error("El destinatario no tiene email registrado en su ficha.");
-    return;
+// ─── Modal: elegir email destino antes de enviar ───────────
+// El email guardado en el broker es solo una sugerencia — el usuario puede
+// escribir cualquier otro (ej. contador, asistente, dirección diferente).
+function openEmailPromptModal(reporte, brokerDoc, parentDialog) {
+  const suggested = brokerDoc?.email || "";
+  const dialog = document.createElement("sl-dialog");
+  dialog.label = `Enviar ${reporte.numeroReporte} por email`;
+  dialog.className = "fr-email-dialog";
+  dialog.innerHTML = `
+    <div class="fc-form">
+      <p class="admin-note" style="margin:0 0 12px;">El reporte se envía directamente desde el sistema con el PDF adjunto — no necesita cliente de correo.</p>
+      <div class="fc-native-field">
+        <label for="fr-em-to" class="fc-native-label">Enviar a</label>
+        <input type="email" id="fr-em-to" class="fc-native-date" placeholder="destinatario@ejemplo.com" autocomplete="off" required>
+        ${suggested ? `<p class="fr-wz-hint-small">Sugerencia (email guardado en la ficha del destinatario): <code>${escapeHtml(suggested)}</code></p>` : `<p class="fr-wz-hint-small">El destinatario no tiene email guardado en su ficha. Escribe uno.</p>`}
+      </div>
+    </div>
+    <sl-button slot="footer" id="fr-em-cancel" variant="default">Cancelar</sl-button>
+    <sl-button slot="footer" id="fr-em-send" variant="primary">
+      <i data-lucide="send" slot="prefix" style="width:14px;height:14px;"></i>
+      Enviar reporte
+    </sl-button>
+  `;
+  document.body.appendChild(dialog);
+  if (window.refreshIcons) window.refreshIcons();
+  const inp = dialog.querySelector("#fr-em-to");
+  inp.value = suggested;
+
+  dialog.querySelector("#fr-em-cancel").addEventListener("click", () => dialog.hide());
+  dialog.addEventListener("sl-after-hide", () => dialog.remove());
+  dialog.addEventListener("sl-after-show", () => inp.focus());
+
+  const btnSend = dialog.querySelector("#fr-em-send");
+  const submit = async () => {
+    const email = (inp.value || "").trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      heroToast.error("Escribe un email válido.");
+      inp.focus();
+      return;
+    }
+    btnSend.loading = true;
+    btnSend.disabled = true;
+    try {
+      await sendReporteEmail(reporte, email, parentDialog);
+      dialog.hide();
+    } catch (e) {
+      heroToast.error(e.message || String(e));
+    } finally {
+      btnSend.loading = false;
+      btnSend.disabled = false;
+    }
+  };
+  btnSend.addEventListener("click", submit);
+  inp.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); submit(); } });
+
+  customElements.whenDefined("sl-dialog").then(() => dialog.show());
+}
+
+// ─── Generar PDF del reporte (client-side) ────────────────
+// Renderiza el reporte en un contenedor off-screen y usa html2canvas +
+// jsPDF para producir un PDF Letter. Devuelve el contenido en base64 sin
+// el prefix `data:application/pdf;base64,`.
+async function generateReportePDFBase64(reporte) {
+  if (typeof html2canvas === "undefined" || !window.jspdf) {
+    throw new Error("Librerías de PDF no cargadas (jsPDF/html2canvas).");
   }
-  const subject = `Reporte de pago ${reporte.numeroReporte} — Hero Insurance USA`;
-  const linesBody = [
-    `Estimado/a ${reporte.destinatarioNombre},`,
+  const wrapper = document.createElement("div");
+  wrapper.style.cssText = "position:fixed;left:-10000px;top:0;width:8.5in;background:#fff;padding:24px;box-sizing:border-box;font-family:'Inter',sans-serif;color:#0a3d4a;";
+  renderReporteFormattedInto(wrapper, reporte);
+  // El badge de estado no debe salir en el PDF.
+  const estadoEl = wrapper.querySelector(".fr-report-estado-wrap");
+  if (estadoEl) estadoEl.remove();
+  document.body.appendChild(wrapper);
+  try {
+    // scale:1.5 es un buen balance calidad/tamaño para PDFs administrativos.
+    // JPEG con calidad 0.85 comprime ~10x mejor que PNG sin pérdida visible.
+    const canvas = await html2canvas(wrapper, { scale: 1.5, useCORS: true, backgroundColor: "#ffffff" });
+    const imgData = canvas.toDataURL("image/jpeg", 0.85);
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: "portrait", unit: "in", format: "letter", compress: true });
+    const pageWidth = 8.5;
+    const pageHeight = 11;
+    const imgWidth = pageWidth;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    let heightLeft = imgHeight;
+    let position = 0;
+    pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight, undefined, "FAST");
+    heightLeft -= pageHeight;
+    while (heightLeft > 0) {
+      position -= pageHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight, undefined, "FAST");
+      heightLeft -= pageHeight;
+    }
+    return pdf.output("dataurlstring").split(",")[1];
+  } finally {
+    wrapper.remove();
+  }
+}
+
+// ─── Cuerpo del email — texto simple (con salto de línea) ──
+// El PDF adjunto tiene el detalle rico con branding. El cuerpo del email
+// se mantiene tipo carta simple para que sea legible en cualquier cliente
+// y no compita visualmente con el PDF.
+function buildReporteEmailBody(reporte) {
+  const desdeUS = reporte.periodo?.desde ? formatFechaUS(reporte.periodo.desde) : "";
+  const hastaUS = reporte.periodo?.hasta ? formatFechaUS(reporte.periodo.hasta) : "";
+  const periodoStr = (desdeUS && hastaUS) ? ` (ingresos del ${desdeUS} al ${hastaUS})` : "";
+  const mesStr = formatMesReporteFull(reporte.mesReporte);
+
+  const lines = [
+    `Estimado/a ${reporte.destinatarioNombre || ""},`,
     ``,
-    `Adjunto el reporte de pago ${reporte.numeroReporte} correspondiente al periodo del ${formatFechaUS(reporte.periodo?.desde)} al ${formatFechaUS(reporte.periodo?.hasta)}.`,
+    `Adjunto el reporte de pago ${reporte.numeroReporte || ""} correspondiente al mes contable de ${mesStr}${periodoStr}.`,
     ``,
     `Detalle:`,
     ...(reporte.ingresos || []).map(i => `  · ${formatFechaUS(i.fecha)} — ${i.carrier || "—"} — ${formatMoney(i.montoPayout)}`),
@@ -2912,36 +3267,102 @@ async function sendReporteEmail(reporte, brokerDoc, parentDialog) {
     `Saludos,`,
     `Hero Insurance USA`
   ];
-  const body = linesBody.join("\n");
-  const href = `mailto:${encodeURIComponent(brokerDoc.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  // Abrir cliente
-  window.location.href = href;
+  return { text: lines.join("\n"), lines };
+}
 
-  // Confirmar y marcar como enviado
-  const confirm = await heroConfirm({
-    title: "¿Se envió el email?",
-    message: `Se abrió tu cliente de correo. Confirma si el email a ${brokerDoc.email} salió correctamente para marcar el reporte como Enviado.`,
-    confirmLabel: "Sí, marcar como enviado",
-    variant: "primary"
-  });
-  if (!confirm) return;
+// HTML equivalente — replica el texto plano con `<br>` para clientes que
+// solo rendean HTML (Gmail moderno por defecto). Cero estilos, cero tabla:
+// el look profesional vive en el PDF adjunto.
+function buildReporteEmailHTML(reporte) {
+  const { lines } = buildReporteEmailBody(reporte);
+  const html = lines
+    .map(l => escapeHtml(l).replace(/^(\s+)/, m => "&nbsp;".repeat(m.length)))
+    .join("<br>");
+  return `<!DOCTYPE html>
+<html lang="es">
+<body style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#000;line-height:1.5;">
+${html}
+</body>
+</html>`;
+}
+
+// ─── Enviar email (directo via Cloudflare Worker) ──────────
+// `emailTo` es el destinatario final ya validado (puede o no coincidir con
+// el email guardado del broker — el usuario lo decide en openEmailPromptModal).
+// Genera el PDF client-side y lo manda al Worker en base64. El Worker lo
+// adjunta al email via Resend y responde con { id }.
+async function sendReporteEmail(reporte, emailTo, parentDialog) {
+  const user = auth.currentUser;
+  if (!user) throw new Error("Sin sesión activa");
+
+  let idToken;
+  try { idToken = await user.getIdToken(); }
+  catch (e) { throw new Error("No se pudo obtener tu sesión: " + (e.message || e)); }
+
+  // Generar PDF client-side.
+  let pdfBase64;
+  try {
+    pdfBase64 = await generateReportePDFBase64(reporte);
+  } catch (e) {
+    throw new Error("No se pudo generar el PDF: " + (e.message || e));
+  }
+
+  const subject = `Reporte de pago ${reporte.numeroReporte} — Hero Insurance USA`;
+  const htmlBody = buildReporteEmailHTML(reporte);
+  const filename = `Reporte ${reporte.numeroReporte}.pdf`;
+
+  const payload = {
+    idToken,
+    emailTo,
+    subject,
+    htmlBody,
+    pdfBase64,
+    filename,
+    reporte: {
+      numeroReporte: reporte.numeroReporte,
+      destinatarioNombre: reporte.destinatarioNombre,
+      mesReporte: reporte.mesReporte,
+      totalPayout: Number(reporte.totalPayout) || 0
+    }
+  };
+
+  let resp, data = {};
+  try {
+    resp = await fetch(FINANZAS_WORKER_URL + "/finanzas/send-consolidated-report", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+  } catch (e) {
+    throw new Error("Red caída: " + (e.message || e));
+  }
+  try { data = await resp.json(); } catch (_) {}
+  if (!resp.ok) {
+    if (resp.status === 404) {
+      throw new Error("El endpoint /finanzas/send-consolidated-report todavía no está deployado en el Worker. Avisale a IT.");
+    }
+    throw new Error(data.error || `HTTP ${resp.status}`);
+  }
+
+  // Persistir estado en Firestore.
   try {
     const now = new Date().toISOString();
     await updateDoc(doc(db, REPORTES_COL, reporte.id), {
       estado: reporte.estado === "borrador" ? "enviado" : reporte.estado,
       emailSentAt: now,
-      emailSentTo: brokerDoc.email,
-      actualizadoPor: auth.currentUser?.email || null,
+      emailSentTo: emailTo,
+      actualizadoPor: user.email,
       actualizadoEn: serverTimestamp()
     });
     logEvent(ACTIONS.FINANZAS_REPORTE_SEND, reporte.numeroReporte || reporte.id, {
-      destinatario: brokerDoc.email
+      destinatario: emailTo,
+      resendId: data.id || null
     });
-    heroToast.success("Reporte marcado como enviado");
+    heroToast.success(`Reporte enviado a ${emailTo}`);
     if (parentDialog) parentDialog.hide();
     await reloadReportesAfterChange();
   } catch (e) {
-    heroToast.error("No se pudo actualizar el estado: " + (e.message || e));
+    heroToast.error("Email enviado pero no se pudo actualizar el estado: " + (e.message || e));
   }
 }
 
