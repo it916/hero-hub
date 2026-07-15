@@ -1,5 +1,21 @@
 [
   {
+    "id": "2026-07-15-gcal-fix-popup-cold-start",
+    "version": "v2.20.1",
+    "date": "2026-07-15",
+    "category": "fix",
+    "scope": "gcal",
+    "audience": "all",
+    "title": "Calendario · fin del popup residual del tile 'Próximo meeting'",
+    "items": [
+      "🩹 Fix del popup que aparecía y se cerraba solo al abrir el Hub — pasaba cuando el token de Google Calendar en localStorage estaba expirado (más de ~55 min desde la última visita) y el widget intentaba renovarlo silenciosamente",
+      "El refresh silencioso usaba `prompt: \"\"` en Google Identity Services, que le permite a Google mostrar UI a discreción. Ahora usa `prompt: \"none\"` — cero UI garantizada",
+      "Si por alguna razón Google no puede renovar sin popup (ej. consent revocado manualmente, cambio de contraseña de tu cuenta corporativa, etc.), el tile cae a estado 'Reconectar cuenta' con un botón visible. Click → consent normal con user activation, sin flash sorpresivo",
+      "Logging interno de diagnóstico agregado (`window._gcalLog` con las últimas 50 entradas del ciclo del widget) — se queda 1-2 semanas para validar en distintos escenarios de cold start y después se limpia",
+      "Bump v2.20.0 → v2.20.1"
+    ]
+  },
+  {
     "id": "2026-07-14-finanzas-reportes-mes-contable",
     "version": "v2.20.0",
     "date": "2026-07-14",

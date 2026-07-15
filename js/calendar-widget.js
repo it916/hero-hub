@@ -36,6 +36,19 @@
   const GCAL_CLIENT_ID = "1062942956307-ke4ibd6p9j6pcc190ek6ffjc4pt6log6.apps.googleusercontent.com";
   const GCAL_SCOPE = "https://www.googleapis.com/auth/calendar.readonly";
 
+  // ══════════════════════════════════════════════
+  // Logging de diagnóstico (temporal — para debug del popup residual)
+  // Uso: en consola → console.table(window._gcalLog)
+  // ══════════════════════════════════════════════
+  const _gcalLog = [];
+  window._gcalLog = _gcalLog;
+  function gcalLog(event, extra) {
+    const entry = { t: new Date().toISOString().slice(11, 23), event, vis: document.visibilityState, ...extra };
+    _gcalLog.push(entry);
+    if (_gcalLog.length > 50) _gcalLog.shift();
+    console.log("[gcal]", event, extra || "");
+  }
+
   // GIS carga desde <script src="https://accounts.google.com/gsi/client">
   // como async defer — puede no estar lista cuando llamemos. Esta promesa
   // espera hasta que window.google.accounts.oauth2 exista.
@@ -61,24 +74,36 @@
   async function requestGisToken({ hintEmail, silent }) {
     const ready = await waitForGis();
     if (!ready) {
-      console.warn("[calendar-widget] GIS no cargó a tiempo");
+      gcalLog("gis-not-ready");
       return null;
     }
+    const startedAt = performance.now();
+    gcalLog("gis-request-start", { silent, hint: hintEmail || null });
     return new Promise((resolve) => {
       try {
         const client = window.google.accounts.oauth2.initTokenClient({
           client_id: GCAL_CLIENT_ID,
           scope: GCAL_SCOPE,
           hint: hintEmail || undefined,
-          prompt: silent ? "" : "consent",
+          // "none" garantiza cero UI en el path silencioso: si GIS no puede
+          // renovar sin popup, devuelve error y caemos a estado "reconnect"
+          // con botón visible (user activation legítima al hacer click).
+          // "" (default) permitía a Google mostrar UI a discreción → flash.
+          prompt: silent ? "none" : "consent",
           callback: (response) => {
+            const took = Math.round(performance.now() - startedAt);
             if (response && response.error) {
-              console.warn("[calendar-widget] GIS error:", response.error);
+              gcalLog("gis-callback-error", { took, error: response.error });
               resolve(null);
               return;
             }
-            if (!response || !response.access_token) { resolve(null); return; }
+            if (!response || !response.access_token) {
+              gcalLog("gis-callback-no-token", { took });
+              resolve(null);
+              return;
+            }
             const ttlSec = Number(response.expires_in) || 3600;
+            gcalLog("gis-callback-ok", { took, ttlSec });
             const payload = {
               accessToken: response.access_token,
               // Restamos 5 min de margen para renovar antes de expirar
@@ -89,13 +114,14 @@
             resolve(payload);
           },
           error_callback: (err) => {
-            console.warn("[calendar-widget] GIS error_callback:", err && err.type);
+            const took = Math.round(performance.now() - startedAt);
+            gcalLog("gis-error-callback", { took, type: err && err.type, msg: err && err.message });
             resolve(null);
           },
         });
         client.requestAccessToken();
       } catch (e) {
-        console.warn("[calendar-widget] initTokenClient falló:", e.message);
+        gcalLog("gis-init-threw", { msg: e.message });
         resolve(null);
       }
     });
@@ -220,7 +246,7 @@
       href: "#",
       label: "Reintentar",
       iconName: "refresh-cw",
-      onclick: (e) => { e.preventDefault(); refresh({ force: true }); },
+      onclick: (e) => { e.preventDefault(); refresh({ force: true, trigger: "retry" }); },
     });
     refreshIcons();
   }
@@ -397,8 +423,15 @@
   async function refresh(opts = {}) {
     if (!getTile()) return;
 
+    const trigger = opts.trigger || "unknown";
+    const existing = readToken();
+    const tokenState = !existing
+      ? "absent"
+      : (tokenIsValid(existing) ? `valid-ttl-${Math.round((existing.expiresAt - Date.now()) / 1000)}s` : "expired");
+    gcalLog("refresh", { trigger, tokenState, force: !!opts.force });
+
     const token = await getFreshToken();
-    if (!token) { renderReconnect(); return; }
+    if (!token) { gcalLog("refresh-no-token"); renderReconnect(); return; }
 
     if (!cachedEvents || opts.force) renderLoading();
 
@@ -410,9 +443,10 @@
       renderMeetings(processed);
     } catch (e) {
       if (e.message === "auth-required") {
+        gcalLog("fetch-auth-required", { status: e.status });
         renderReconnect(e.status === 403 ? "no-permission" : undefined);
       } else {
-        console.warn("[calendar-widget] fetch falló:", e.message);
+        gcalLog("fetch-error", { msg: e.message });
         renderError();
       }
     }
@@ -427,7 +461,7 @@
     const lastToken = readToken();
     const hintEmail = lastToken?.email || null;
     const fresh = await requestGisToken({ hintEmail, silent: false });
-    if (fresh) await refresh({ force: true });
+    if (fresh) await refresh({ force: true, trigger: "reconnect" });
   }
 
   // ══════════════════════════════════════════════
@@ -435,17 +469,17 @@
   // ══════════════════════════════════════════════
   function installRefreshTriggers() {
     if (refreshTimer) clearInterval(refreshTimer);
-    refreshTimer = setInterval(() => refresh(), REFRESH_INTERVAL_MS);
+    refreshTimer = setInterval(() => refresh({ trigger: "interval" }), REFRESH_INTERVAL_MS);
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState !== "visible") return;
-      if (Date.now() - lastFetchAt > MIN_REFRESH_ON_FOCUS_MS) refresh();
+      if (Date.now() - lastFetchAt > MIN_REFRESH_ON_FOCUS_MS) refresh({ trigger: "focus" });
     });
   }
 
   function init() {
     if (!getTile()) return;
     installRefreshTriggers();
-    refresh();
+    refresh({ trigger: "init" });
   }
 
   if (document.readyState === "loading") {
@@ -456,7 +490,7 @@
 
   // Si el token llega DESPUÉS del init (por login fresh en la misma página),
   // volver a renderizar.
-  window.addEventListener("hero-gcal-token-ready", () => refresh({ force: true }));
+  window.addEventListener("hero-gcal-token-ready", () => refresh({ force: true, trigger: "token-ready" }));
 
   window._gcalWidget = { refresh };
 })();
