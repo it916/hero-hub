@@ -3120,11 +3120,61 @@ body[data-theme="dark"] .fr-report-notas { background: rgba(6, 163, 182, 0.12); 
 body[data-theme="dark"] .fr-report-notas-title { color: #67e8f9; }
 .fr-report-notas-body { font-size: 13px; white-space: pre-wrap; }
 
-.fr-report-estado-wrap { position: absolute; top: 20px; right: 32px; }
+.fr-report-estado-wrap { margin-bottom: 6px; display: flex; justify-content: flex-end; }
+
+/* Tabla de reportes — filas clickeables (abren modal Ver) */
+#fr-table .tabulator-row { cursor: pointer; }
 
 /* Modal Ver */
-.fr-view-dialog::part(panel) { max-width: 860px; }
+.fr-view-dialog::part(panel) { max-width: 860px; overflow: visible; }
 .fr-view-body { padding-bottom: 8px; }
+
+/* Pestañas externas del modal Ver (Editar arriba, Eliminar abajo).
+   Colapsadas por default (44px, solo ícono); expanden al hover mostrando
+   el label. Position:fixed → se sincronizan con el panel del sl-dialog
+   via window resize desde js/finanzas.js. */
+.fr-view-tab {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  width: 44px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 0 8px 8px 0;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  overflow: hidden;
+  white-space: nowrap;
+  box-shadow: 3px 4px 14px rgba(0, 0, 0, 0.18);
+  transition: width 220ms cubic-bezier(.4, 0, .2, 1), background 200ms ease, box-shadow 200ms ease;
+  z-index: 1010;
+}
+.fr-view-tab:hover { width: 148px; box-shadow: 4px 5px 18px rgba(0, 0, 0, 0.24); }
+.fr-view-tab:focus-visible { outline: 3px solid rgba(255, 255, 255, 0.6); outline-offset: 2px; }
+.fr-view-tab-icon { flex-shrink: 0; width: 20px; height: 20px; }
+.fr-view-tab-label {
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity 160ms ease 60ms, transform 200ms ease 60ms;
+}
+.fr-view-tab:hover .fr-view-tab-label { opacity: 1; transform: translateX(0); }
+
+.fr-view-tab-edit { background: #06a3b6; }
+.fr-view-tab-edit:hover { background: #058a99; }
+.fr-view-tab-delete { background: #dc2626; }
+.fr-view-tab-delete:hover { background: #b91c1c; }
+
+/* En pantallas angostas, las pestañas se salen de la vista — se ocultan.
+   Las acciones (editar / eliminar) quedan accesibles solo desde desktop.
+   Si mobile se vuelve caso real, agregar botones fallback en el footer. */
+@media (max-width: 900px) {
+  .fr-view-tab { display: none; }
+}
 
 /* Marcar pagado modal */
 .fr-paid-dialog::part(panel) { max-width: 520px; }

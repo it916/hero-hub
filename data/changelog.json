@@ -1,5 +1,28 @@
 [
   {
+    "id": "2026-07-15-finanzas-reportes-ux-refactor",
+    "version": "v2.20.2",
+    "date": "2026-07-15",
+    "category": "feat",
+    "scope": "finanzas",
+    "audience": "admin",
+    "title": "Finanzas · Reportes de Pago — email con branding + tabla clickeable + pestañas laterales del modal",
+    "items": [
+      "✉ Email al broker rediseñado con branding Hero Light: header blanco + logo grande + banda cyan fina como separador + card blanca con resumen ejecutivo (# reporte, periodo, cantidad de ingresos, total destacado en cyan). Estilos inline (los clientes de correo tipo Outlook strippean el <style> del head)",
+      "El email deja el detalle línea por línea de los ingresos SOLO en el PDF adjunto — el cuerpo del email es un resumen breve, no compite visualmente con el PDF",
+      "Disclaimer de confidencialidad agregado al footer del email (CONFIDENTIALITY NOTICE en inglés — solo el destinatario debe leer el contenido)",
+      "🖱 Tabla de Reportes: columna de acciones eliminada. Click en cualquier lugar de la fila → abre el modal Ver reporte (con cursor:pointer para señal visual)",
+      "🎨 Modal Ver reporte con pestañas externas animadas al costado derecho (solo para borradores): pestaña cyan con ✎ arriba, pestaña roja con 🗑 abajo. Colapsadas por default (~44px, solo ícono), expanden al hover mostrando el label (Editar / Eliminar). Aisla visualmente la acción destructiva del resto del footer",
+      "El footer del modal quedó limpio: solo Descargar PDF · Enviar por email · Marcar como pagado (los 3 botones frecuentes)",
+      "Botón Cerrar del modal eliminado — la X del sl-dialog cumple esa función",
+      "En pantallas <900px las pestañas se ocultan (evitan salirse de la vista); si se vuelve caso real de uso en tablet/mobile, agregar fallback al footer",
+      "🏷 Columna 'Cliente' de la tabla del reporte generado renombrada a 'Descripción' — refleja mejor el contenido del campo (que ya venía de descripcionTransaccion internamente)",
+      "💳 Zelle agregado como método de pago (junto a Cheque, Transferencia, Efectivo, Otro) — visible en el wizard Nuevo Reporte y en el modal Marcar como Pagado",
+      "🔧 Fix del chip de estado ('Borrador' / 'Enviado' / 'Pagado') en el reporte: antes flotaba con position:absolute y se superponía sobre el # RP-YYYY-###. Ahora vive dentro del bloque meta del header, arriba del número, alineado a la derecha. Sigue oculto en el PDF",
+      "Bump v2.20.1 → v2.20.2"
+    ]
+  },
+  {
     "id": "2026-07-15-gcal-fix-popup-cold-start",
     "version": "v2.20.1",
     "date": "2026-07-15",

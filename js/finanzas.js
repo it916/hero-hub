@@ -2081,30 +2081,14 @@ function initFrTable() {
       {
         title: "Estado", field: "estado", width: 120, sorter: "string",
         formatter: (cell) => estadoBadge(cell.getValue())
-      },
-      {
-        title: "", field: "_actions", width: 130, hozAlign: "center", headerSort: false,
-        formatter: (cell) => {
-          const r = cell.getRow().getData();
-          const canEdit = r.estado === "borrador";
-          return `<div class="fc-actions">
-            <button class="fc-act-btn fr-view" data-id="${escapeHtmlAttr(r.id)}" title="Ver reporte">👁</button>
-            ${canEdit ? `<button class="fc-act-btn fc-edit" data-id="${escapeHtmlAttr(r.id)}" title="Editar">✎</button>` : ""}
-            ${canEdit ? `<button class="fc-act-btn fc-del" data-id="${escapeHtmlAttr(r.id)}" title="Eliminar">✕</button>` : ""}
-          </div>`;
-        }
       }
     ]
   });
 
-  const tableEl = document.getElementById("fr-table");
-  tableEl.addEventListener("click", (e) => {
-    const viewBtn = e.target.closest(".fr-view");
-    const editBtn = e.target.closest(".fc-edit");
-    const delBtn = e.target.closest(".fc-del");
-    if (viewBtn) { e.stopPropagation(); onViewReporte(viewBtn.dataset.id); }
-    else if (editBtn) { e.stopPropagation(); onEditReporte(editBtn.dataset.id); }
-    else if (delBtn) { e.stopPropagation(); onDeleteReporte(delBtn.dataset.id); }
+  // rowClick va como evento (no como opción del constructor en Tabulator 6.x)
+  frTable.on("rowClick", (_e, row) => {
+    const d = row.getData();
+    if (d && d.id) onViewReporte(d.id);
   });
 
   frTable.on("dataFiltered", (_filters, rows) => {
@@ -2304,6 +2288,7 @@ async function openReporteWizard(existing) {
                 <option value="">— Ninguno —</option>
                 <option value="cheque">Cheque</option>
                 <option value="transferencia">Transferencia (ACH/Wire)</option>
+                <option value="zelle">Zelle</option>
                 <option value="efectivo">Efectivo</option>
                 <option value="otro">Otro</option>
               </select>
@@ -2750,6 +2735,14 @@ function renderReporteFormattedInto(container, reporte) {
 
   const meta = document.createElement("div");
   meta.className = "fr-report-meta";
+  // Estado va arriba del número; antes flotaba con position:absolute y se
+  // superponía sobre el # RP-YYYY-###. Ahora vive en el flow del meta.
+  const estadoWrap = document.createElement("div");
+  estadoWrap.className = "fr-report-estado-wrap";
+  const estadoBg = document.createElement("span");
+  estadoBg.className = `fr-badge fr-badge-${reporte.estado || "borrador"}`;
+  estadoBg.textContent = REPORTE_ESTADO_LABEL[reporte.estado] || "Borrador";
+  estadoWrap.appendChild(estadoBg);
   const num = document.createElement("div");
   num.className = "fr-report-num";
   num.textContent = reporte.numeroReporte || "—";
@@ -2759,6 +2752,7 @@ function renderReporteFormattedInto(container, reporte) {
     ? reporte.fechaGeneracion.slice(0, 10)
     : (reporte.fechaGeneracion?.toDate ? reporte.fechaGeneracion.toDate().toISOString().slice(0, 10) : "");
   dateLine.textContent = `Generado: ${iso ? formatFechaUS(iso) : "—"}`;
+  meta.appendChild(estadoWrap);
   meta.appendChild(num);
   meta.appendChild(dateLine);
   header.appendChild(meta);
@@ -2820,7 +2814,7 @@ function renderReporteFormattedInto(container, reporte) {
   table.className = "fr-report-table";
   const thead = document.createElement("thead");
   const trh = document.createElement("tr");
-  ["Fecha", "Carrier", "Plan", "Cliente", "Monto"].forEach(h => {
+  ["Fecha", "Carrier", "Plan", "Descripción", "Monto"].forEach(h => {
     const th = document.createElement("th");
     th.textContent = h;
     trh.appendChild(th);
@@ -2910,18 +2904,10 @@ function renderReporteFormattedInto(container, reporte) {
     container.appendChild(notas);
   }
 
-  // Estado badge (esquina)
-  const estadoWrap = document.createElement("div");
-  estadoWrap.className = "fr-report-estado-wrap";
-  const estadoBg = document.createElement("span");
-  estadoBg.className = `fr-badge fr-badge-${reporte.estado || "borrador"}`;
-  estadoBg.textContent = REPORTE_ESTADO_LABEL[reporte.estado] || "Borrador";
-  estadoWrap.appendChild(estadoBg);
-  container.appendChild(estadoWrap);
 }
 
 function metodoPagoLabel(m) {
-  return { cheque: "Cheque", transferencia: "Transferencia (ACH/Wire)", efectivo: "Efectivo", otro: "Otro" }[m] || m;
+  return { cheque: "Cheque", transferencia: "Transferencia (ACH/Wire)", zelle: "Zelle", efectivo: "Efectivo", otro: "Otro" }[m] || m;
 }
 
 // ─── Modal Ver reporte ─────────────────────────────────────
@@ -2945,7 +2931,26 @@ function onViewReporte(id) {
 
   // Footer con acciones
   const canMarkPaid = reporte.estado !== "pagado";
-  const canMarkSent = reporte.estado === "borrador";
+  const isDraft = reporte.estado === "borrador";
+
+  // Helper para armar botones sl-button sin innerHTML (hook de seguridad).
+  // Si label es "", el botón queda icon-only; usar tooltip para accesibilidad.
+  // Si slot es falsy, no se setea (útil para inline dentro del body).
+  const makeSlBtn = ({ slot, variant, iconName, label, tooltip }) => {
+    const btn = document.createElement("sl-button");
+    if (slot) btn.slot = slot;
+    btn.variant = variant;
+    if (tooltip) btn.title = tooltip;
+    const icon = document.createElement("i");
+    icon.setAttribute("data-lucide", iconName);
+    // Con label: prefix; sin label: ícono dentro del contenido default.
+    if (label) icon.setAttribute("slot", "prefix");
+    icon.style.width = "14px";
+    icon.style.height = "14px";
+    btn.appendChild(icon);
+    if (label) btn.appendChild(document.createTextNode(label));
+    return btn;
+  };
 
   const btnPrint = document.createElement("sl-button");
   btnPrint.slot = "footer";
@@ -2967,23 +2972,64 @@ function onViewReporte(id) {
   btnPaid.innerHTML = `<i data-lucide="check-circle" slot="prefix" style="width:14px;height:14px;"></i>Marcar como pagado`;
   btnPaid.addEventListener("click", () => openMarkAsPaidModal(reporte, dialog));
 
-  const btnClose = document.createElement("sl-button");
-  btnClose.slot = "footer";
-  btnClose.variant = "text";
-  btnClose.textContent = "Cerrar";
-  btnClose.addEventListener("click", () => dialog.hide());
-
   dialog.appendChild(btnPrint);
   dialog.appendChild(btnEmail);
-  if (canMarkSent) {
-    // opcional: aparece solo para borrador
-  }
   dialog.appendChild(btnPaid);
-  dialog.appendChild(btnClose);
 
   document.body.appendChild(dialog);
   if (window.refreshIcons) window.refreshIcons();
-  dialog.addEventListener("sl-after-hide", () => dialog.remove());
+
+  // Pestañas externas: Editar (arriba) + Eliminar (abajo) al costado derecho
+  // del panel del sl-dialog. Solo para borradores. Colapsadas por default
+  // (~44px), expanden al hover mostrando el label. Se posicionan como
+  // position:fixed y siguen al panel via window resize.
+  let editTab = null, deleteTab = null, positionTabs = null;
+  if (isDraft) {
+    const makeTab = (variantCls, iconName, label, onClick) => {
+      const tab = document.createElement("button");
+      tab.className = `fr-view-tab ${variantCls}`;
+      tab.type = "button";
+      tab.title = label;
+      const icon = document.createElement("i");
+      icon.setAttribute("data-lucide", iconName);
+      icon.className = "fr-view-tab-icon";
+      tab.appendChild(icon);
+      const lbl = document.createElement("span");
+      lbl.className = "fr-view-tab-label";
+      lbl.textContent = label;
+      tab.appendChild(lbl);
+      tab.addEventListener("click", onClick);
+      return tab;
+    };
+    editTab = makeTab("fr-view-tab-edit", "pencil", "Editar",
+      () => { dialog.hide(); onEditReporte(reporte.id); });
+    deleteTab = makeTab("fr-view-tab-delete", "trash-2", "Eliminar",
+      () => { dialog.hide(); onDeleteReporte(reporte.id); });
+    document.body.appendChild(editTab);
+    document.body.appendChild(deleteTab);
+
+    positionTabs = () => {
+      const panel = dialog.shadowRoot?.querySelector('[part="panel"]');
+      if (!panel) return;
+      const rect = panel.getBoundingClientRect();
+      editTab.style.left = `${rect.right}px`;
+      editTab.style.top = `${rect.top + 20}px`;
+      deleteTab.style.left = `${rect.right}px`;
+      deleteTab.style.top = `${rect.bottom - 44 - 20}px`;
+    };
+    dialog.addEventListener("sl-after-show", () => {
+      positionTabs();
+      if (window.refreshIcons) window.refreshIcons();
+    });
+    window.addEventListener("resize", positionTabs);
+  }
+
+  dialog.addEventListener("sl-after-hide", () => {
+    if (positionTabs) window.removeEventListener("resize", positionTabs);
+    if (editTab) editTab.remove();
+    if (deleteTab) deleteTab.remove();
+    dialog.remove();
+  });
   customElements.whenDefined("sl-dialog").then(() => dialog.show());
 }
 
@@ -3242,46 +3288,117 @@ async function generateReportePDFBase64(reporte) {
   }
 }
 
-// ─── Cuerpo del email — texto simple (con salto de línea) ──
-// El PDF adjunto tiene el detalle rico con branding. El cuerpo del email
-// se mantiene tipo carta simple para que sea legible en cualquier cliente
-// y no compita visualmente con el PDF.
-function buildReporteEmailBody(reporte) {
+// ─── Cuerpo del email — HTML con branding Hero ─────────────
+// Layout tabular (los clientes de correo tipo Outlook no soportan flexbox)
+// con estilos inline (Gmail y otros strippean el <style> del head).
+// Fuentes web-safe (Arial); Hero Light branding: cyan #06a3b6, fondo
+// #f0f4f8, card blanca. El detalle línea-a-línea de ingresos vive solo
+// en el PDF adjunto; el email da resumen ejecutivo.
+function buildReporteEmailHTML(reporte) {
+  const nombre = escapeHtml(reporte.destinatarioNombre || "");
+  const numeroReporte = escapeHtml(reporte.numeroReporte || "—");
+  const mesStr = escapeHtml(formatMesReporteFull(reporte.mesReporte));
   const desdeUS = reporte.periodo?.desde ? formatFechaUS(reporte.periodo.desde) : "";
   const hastaUS = reporte.periodo?.hasta ? formatFechaUS(reporte.periodo.hasta) : "";
-  const periodoStr = (desdeUS && hastaUS) ? ` (ingresos del ${desdeUS} al ${hastaUS})` : "";
-  const mesStr = formatMesReporteFull(reporte.mesReporte);
+  const periodoStr = (desdeUS && hastaUS) ? escapeHtml(`${desdeUS} – ${hastaUS}`) : "—";
+  const itemCount = (reporte.ingresos || []).length;
+  const itemLabel = `${itemCount} ${itemCount === 1 ? "item" : "items"}`;
+  const totalStr = escapeHtml(formatMoney(reporte.totalPayout || 0));
+  const year = new Date().getFullYear();
 
-  const lines = [
-    `Estimado/a ${reporte.destinatarioNombre || ""},`,
-    ``,
-    `Adjunto el reporte de pago ${reporte.numeroReporte || ""} correspondiente al mes contable de ${mesStr}${periodoStr}.`,
-    ``,
-    `Detalle:`,
-    ...(reporte.ingresos || []).map(i => `  · ${formatFechaUS(i.fecha)} — ${i.carrier || "—"} — ${formatMoney(i.montoPayout)}`),
-    ``,
-    `Total: ${formatMoney(reporte.totalPayout || 0)}`,
-    ``,
-    `Cualquier duda, respondan a este correo.`,
-    ``,
-    `Saludos,`,
-    `Hero Insurance USA`
-  ];
-  return { text: lines.join("\n"), lines };
-}
-
-// HTML equivalente — replica el texto plano con `<br>` para clientes que
-// solo rendean HTML (Gmail moderno por defecto). Cero estilos, cero tabla:
-// el look profesional vive en el PDF adjunto.
-function buildReporteEmailHTML(reporte) {
-  const { lines } = buildReporteEmailBody(reporte);
-  const html = lines
-    .map(l => escapeHtml(l).replace(/^(\s+)/, m => "&nbsp;".repeat(m.length)))
-    .join("<br>");
   return `<!DOCTYPE html>
 <html lang="es">
-<body style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#000;line-height:1.5;">
-${html}
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reporte de pago ${numeroReporte}</title>
+</head>
+<body style="margin:0;padding:0;background:#f0f4f8;font-family:Arial,Helvetica,sans-serif;color:#1a2b3c;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f0f4f8;">
+  <tr>
+    <td align="center" style="padding:24px 12px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:8px;overflow:hidden;">
+        <tr>
+          <td align="center" style="background:#ffffff;padding:28px 20px 24px 20px;">
+            <img src="https://hub.heroinsuranceusa.com/images/logo.png" alt="Hero Insurance USA" width="360" style="display:block;border:0;max-width:360px;width:100%;height:auto;">
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#06a3b6;height:4px;line-height:4px;font-size:0;">&nbsp;</td>
+        </tr>
+        <tr>
+          <td style="padding:32px 32px 8px 32px;">
+            <p style="margin:0 0 16px 0;font-size:16px;line-height:1.5;color:#1a2b3c;">Hola ${nombre},</p>
+            <p style="margin:0 0 24px 0;font-size:15px;line-height:1.55;color:#4a5b6c;">
+              Te compartimos tu reporte de pago del mes contable de <strong style="color:#1a2b3c;">${mesStr}</strong>.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:0 32px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">
+              <tr>
+                <td style="padding:20px 24px 8px 24px;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td style="padding:6px 0;font-size:14px;color:#6b7c8d;width:110px;">Reporte</td>
+                      <td style="padding:6px 0;font-size:14px;color:#1a2b3c;font-weight:600;">${numeroReporte}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:6px 0;font-size:14px;color:#6b7c8d;">Periodo</td>
+                      <td style="padding:6px 0;font-size:14px;color:#1a2b3c;font-weight:600;">${periodoStr}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:6px 0 12px 0;font-size:14px;color:#6b7c8d;">Ingresos</td>
+                      <td style="padding:6px 0 12px 0;font-size:14px;color:#1a2b3c;font-weight:600;">${itemLabel}</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:0 24px 20px 24px;border-top:1px solid #e2e8f0;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td style="padding:16px 0 0 0;font-size:14px;color:#6b7c8d;width:110px;vertical-align:middle;">Total</td>
+                      <td style="padding:16px 0 0 0;font-size:28px;color:#06a3b6;font-weight:bold;letter-spacing:-0.5px;">${totalStr}</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:24px 32px 32px 32px;">
+            <p style="margin:0 0 16px 0;font-size:14px;line-height:1.5;color:#4a5b6c;">
+              El detalle completo está en el PDF adjunto.
+            </p>
+            <p style="margin:0 0 20px 0;font-size:14px;line-height:1.5;color:#4a5b6c;">
+              Cualquier duda, responde a este correo.
+            </p>
+            <p style="margin:0;font-size:14px;color:#1a2b3c;">
+              — Hero Insurance USA
+            </p>
+          </td>
+        </tr>
+      </table>
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;">
+        <tr>
+          <td style="padding:20px 16px 8px 16px;">
+            <p style="margin:0;font-size:11px;line-height:1.55;color:#8b9baa;text-align:left;">
+              <strong style="color:#6b7c8d;">CONFIDENTIALITY NOTICE:</strong> The contents of this e-mail message and any attachments are intended solely for the addressee(s) and may contain confidential and/or legally privileged information. If you are not the intended recipient, please notify the sender immediately and delete this message.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:4px 12px 20px 12px;font-size:12px;color:#8b9baa;">
+            © ${year} Hero Insurance USA · Florida
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
 </body>
 </html>`;
 }
@@ -3380,6 +3497,7 @@ function openMarkAsPaidModal(reporte, parentDialog) {
             <option value="">— Selecciona —</option>
             <option value="cheque">Cheque</option>
             <option value="transferencia">Transferencia (ACH/Wire)</option>
+            <option value="zelle">Zelle</option>
             <option value="efectivo">Efectivo</option>
             <option value="otro">Otro</option>
           </select>
