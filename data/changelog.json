@@ -1,5 +1,23 @@
 [
   {
+    "id": "2026-07-20-solicitud-cuenta-notif-solicitante",
+    "version": "v2.21.2",
+    "date": "2026-07-20",
+    "category": "feat",
+    "scope": "it-console",
+    "audience": "admin",
+    "title": "Solicitudes · notificaciones automáticas al solicitante en cada cambio de estado (Fase C)",
+    "items": [
+      "📬 Cuando un autorizador aprueba una solicitud, el solicitante recibe automáticamente un email 'Tu solicitud fue autorizada' con el nombre del autorizador y la referencia. Antes solo IT era notificado",
+      "📬 Cuando IT rechaza una solicitud, el solicitante recibe un email 'Tu solicitud fue rechazada' con motivo opcional. El rechazo ahora tiene un prompt para escribir el motivo antes de rechazar",
+      "📬 Cuando IT procesa una solicitud de BAJA (suspender cuenta), el solicitante recibe email 'La cuenta fue suspendida'. En altas ya llegaba desde /create-user; ese comportamiento se mantiene",
+      "🎨 Los emails al solicitante siguen el design system de Hero (header cyan/verde/rojo según estado, referencia visible, contacto de IT)",
+      "🔒 Backend: /solicitud-cuenta/autorizar y /alta-agente/resolver ahora disparan la notificación desde el Worker (fuente única). El endpoint /resolver acepta `motivo` (para rechazos) y `skipSolicitanteNotif` (para evitar duplicar cuando /create-user ya notificó)",
+      "🧹 Se retiró el sendViaResend inline del rechazarSolicitud del frontend — la notificación ya no vive en el Hub; el Worker se encarga",
+      "Bump v2.21.1 → v2.21.2"
+    ]
+  },
+  {
     "id": "2026-07-20-solicitud-cuenta-reenvio",
     "version": "v2.21.1",
     "date": "2026-07-20",

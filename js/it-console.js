@@ -2380,11 +2380,14 @@ function renderSolicitudes() {
   }).join('');
 }
 
-async function resolverSolicitud(id, estado) {
+async function resolverSolicitud(id, estado, opts = {}) {
   try {
+    const body = { id, estado };
+    if (opts.motivo) body.motivo = opts.motivo;
+    if (opts.skipSolicitanteNotif) body.skipSolicitanteNotif = true;
     await authFetch(WORKER_URL + '/alta-agente/resolver', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, estado })
+      body: JSON.stringify(body)
     });
     showToast('Solicitud marcada como ' + estado);
     auditLog('solicitud', 'Solicitud marcada como ' + estado, id);
@@ -2399,29 +2402,26 @@ async function rechazarSolicitud(id, solEmail, solNombre, persona, tipo) {
     body: 'Vas a rechazar la solicitud de ' + tipoLabel + ' para ' + persona + '. Se notificará al solicitante.',
     confirmText: 'Rechazar', destructive: true,
   }))) return;
+
+  // Motivo opcional — prompt nativo (KISS). Si el usuario cancela, se queda
+  // en null y el email al solicitante no incluye la sección "Motivo".
+  const motivo = window.prompt('Motivo del rechazo (opcional — se incluirá en el email al solicitante):', '');
+
   try {
+    // Fase C: la notificación al solicitante ahora la manda el Worker desde
+    // /alta-agente/resolver (fuente única, con motivo si viene). Ya no hay
+    // sendViaResend inline aquí — evitamos duplicar emails y mantenemos el
+    // template consistente entre autorizada/procesada/rechazada.
     await authFetch(WORKER_URL + '/alta-agente/resolver', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, estado: 'rechazada' })
+      body: JSON.stringify({
+        id,
+        estado: 'rechazada',
+        motivo: motivo || undefined,
+      })
     });
-    if (solEmail) {
-      await sendViaResend({
-        to: solEmail,
-        subject: 'Solicitud de ' + tipoLabel + ' no procesada — ' + persona,
-        html: '<div style="font-family:Trebuchet MS,Arial,sans-serif;max-width:600px;background:#f0f4f8;padding:32px 16px;">'
-          + '<div style="background:#fff;border-radius:16px;overflow:hidden;">'
-          + '<div style="background:linear-gradient(135deg,#06a3b6,#048395);padding:24px 32px;">'
-          + '<img src="https://i.ibb.co/Gr4mzLv/Nuevo-Logo-Cuadrado-compress.png" width="120" style="display:block;margin:0 auto 12px;"/>'
-          + '<h2 style="color:#fff;margin:0;text-align:center;font-size:18px;">Solicitud no procesada</h2></div>'
-          + '<div style="padding:24px 32px;">'
-          + '<p style="font-size:14px;color:#444;">Hola <strong>' + (solNombre||'') + '</strong>, la solicitud de ' + tipoLabel + ' para <strong>' + persona + '</strong> no pudo ser procesada en este momento.</p>'
-          + '<p style="font-size:13px;color:#777;">Si tienes dudas, comunícate con el equipo de IT.</p>'
-          + '</div></div></div>',
-        text: 'La solicitud de ' + tipoLabel + ' para ' + persona + ' no pudo ser procesada.'
-      });
-    }
     showToast('Solicitud rechazada' + (solEmail ? ' — solicitante notificado' : ''));
-    auditLog('solicitud', 'Solicitud rechazada (' + tipoLabel + '): ' + persona, solEmail || 'sin email');
+    auditLog('solicitud', 'Solicitud rechazada (' + tipoLabel + '): ' + persona + (motivo ? ' · ' + motivo : ''), solEmail || 'sin email');
     loadSolicitudes();
   } catch(err) { showToast('Error: ' + err.message); }
 }
@@ -2560,8 +2560,12 @@ async function crearUsuarioDesdeModal() {
     addLog('Usuario creado: ' + email, 'success');
     auditLog('usuario', 'Usuario creado desde solicitud: ' + nombre + ' ' + apellido, email);
 
-    // Mark solicitud as processed
-    await resolverSolicitud(solModalData.id, 'procesada');
+    // Mark solicitud as processed.
+    // skipSolicitanteNotif: true → el Worker YA notificó al solicitante desde
+    // /create-user con el email de "Solicitud procesada" (que incluye el
+    // email corporativo creado). No queremos duplicar la notificación desde
+    // resolver.
+    await resolverSolicitud(solModalData.id, 'procesada', { skipSolicitanteNotif: true });
 
     // Send onboarding email (al correo personal indicado en la solicitud).
     // Va en su propio try/catch — un fallo del email (Resend caído, rate
