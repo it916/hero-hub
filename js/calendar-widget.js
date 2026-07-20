@@ -36,19 +36,6 @@
   const GCAL_CLIENT_ID = "1062942956307-ke4ibd6p9j6pcc190ek6ffjc4pt6log6.apps.googleusercontent.com";
   const GCAL_SCOPE = "https://www.googleapis.com/auth/calendar.readonly";
 
-  // ══════════════════════════════════════════════
-  // Logging de diagnóstico (temporal — para debug del popup residual)
-  // Uso: en consola → console.table(window._gcalLog)
-  // ══════════════════════════════════════════════
-  const _gcalLog = [];
-  window._gcalLog = _gcalLog;
-  function gcalLog(event, extra) {
-    const entry = { t: new Date().toISOString().slice(11, 23), event, vis: document.visibilityState, ...extra };
-    _gcalLog.push(entry);
-    if (_gcalLog.length > 50) _gcalLog.shift();
-    console.log("[gcal]", event, extra || "");
-  }
-
   // GIS carga desde <script src="https://accounts.google.com/gsi/client">
   // como async defer — puede no estar lista cuando llamemos. Esta promesa
   // espera hasta que window.google.accounts.oauth2 exista.
@@ -73,12 +60,7 @@
   // silent=false → consent screen visible (para el flujo "Reconectar").
   async function requestGisToken({ hintEmail, silent }) {
     const ready = await waitForGis();
-    if (!ready) {
-      gcalLog("gis-not-ready");
-      return null;
-    }
-    const startedAt = performance.now();
-    gcalLog("gis-request-start", { silent, hint: hintEmail || null });
+    if (!ready) return null;
     return new Promise((resolve) => {
       try {
         const client = window.google.accounts.oauth2.initTokenClient({
@@ -88,40 +70,29 @@
           // "none" garantiza cero UI en el path silencioso: si GIS no puede
           // renovar sin popup, devuelve error y caemos a estado "reconnect"
           // con botón visible (user activation legítima al hacer click).
-          // "" (default) permitía a Google mostrar UI a discreción → flash.
           prompt: silent ? "none" : "consent",
           callback: (response) => {
-            const took = Math.round(performance.now() - startedAt);
-            if (response && response.error) {
-              gcalLog("gis-callback-error", { took, error: response.error });
-              resolve(null);
-              return;
-            }
-            if (!response || !response.access_token) {
-              gcalLog("gis-callback-no-token", { took });
-              resolve(null);
-              return;
-            }
+            if (response && response.error) { resolve(null); return; }
+            if (!response || !response.access_token) { resolve(null); return; }
             const ttlSec = Number(response.expires_in) || 3600;
-            gcalLog("gis-callback-ok", { took, ttlSec });
             const payload = {
               accessToken: response.access_token,
               // Restamos 5 min de margen para renovar antes de expirar
               expiresAt: Date.now() + (ttlSec - 300) * 1000,
               email: hintEmail || null,
             };
-            localStorage.setItem(GCAL_TOKEN_KEY, JSON.stringify(payload));
+            try {
+              localStorage.setItem(GCAL_TOKEN_KEY, JSON.stringify(payload));
+            } catch (e) {
+              console.warn("[gcal] No se pudo persistir el token:", e.message);
+            }
             resolve(payload);
           },
-          error_callback: (err) => {
-            const took = Math.round(performance.now() - startedAt);
-            gcalLog("gis-error-callback", { took, type: err && err.type, msg: err && err.message });
-            resolve(null);
-          },
+          error_callback: () => resolve(null),
         });
         client.requestAccessToken();
       } catch (e) {
-        gcalLog("gis-init-threw", { msg: e.message });
+        console.warn("[gcal] GIS initTokenClient falló:", e.message);
         resolve(null);
       }
     });
@@ -133,6 +104,9 @@
   let refreshTimer = null;
   let lastFetchAt = 0;
   let cachedEvents = null;
+  // Mutex para evitar refreshes concurrentes (init + evento token-ready
+  // pueden coincidir en el mismo tick al hacer login fresh).
+  let refreshInFlight = false;
 
   // ══════════════════════════════════════════════
   // Token helpers
@@ -422,33 +396,30 @@
   // ══════════════════════════════════════════════
   async function refresh(opts = {}) {
     if (!getTile()) return;
-
-    const trigger = opts.trigger || "unknown";
-    const existing = readToken();
-    const tokenState = !existing
-      ? "absent"
-      : (tokenIsValid(existing) ? `valid-ttl-${Math.round((existing.expiresAt - Date.now()) / 1000)}s` : "expired");
-    gcalLog("refresh", { trigger, tokenState, force: !!opts.force });
-
-    const token = await getFreshToken();
-    if (!token) { gcalLog("refresh-no-token"); renderReconnect(); return; }
-
-    if (!cachedEvents || opts.force) renderLoading();
-
+    if (refreshInFlight) return;
+    refreshInFlight = true;
     try {
-      const raw = await fetchMeetings(token.accessToken);
-      const processed = processEvents(raw);
-      cachedEvents = processed;
-      lastFetchAt = Date.now();
-      renderMeetings(processed);
-    } catch (e) {
-      if (e.message === "auth-required") {
-        gcalLog("fetch-auth-required", { status: e.status });
-        renderReconnect(e.status === 403 ? "no-permission" : undefined);
-      } else {
-        gcalLog("fetch-error", { msg: e.message });
-        renderError();
+      const token = await getFreshToken();
+      if (!token) { renderReconnect(); return; }
+
+      if (!cachedEvents || opts.force) renderLoading();
+
+      try {
+        const raw = await fetchMeetings(token.accessToken);
+        const processed = processEvents(raw);
+        cachedEvents = processed;
+        lastFetchAt = Date.now();
+        renderMeetings(processed);
+      } catch (e) {
+        if (e.message === "auth-required") {
+          renderReconnect(e.status === 403 ? "no-permission" : undefined);
+        } else {
+          console.warn("[gcal] Fetch de meetings falló:", e.message);
+          renderError();
+        }
       }
+    } finally {
+      refreshInFlight = false;
     }
   }
 

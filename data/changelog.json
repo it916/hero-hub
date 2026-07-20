@@ -1,5 +1,20 @@
 [
   {
+    "id": "2026-07-20-gcal-cleanup-hardening",
+    "version": "v2.20.3",
+    "date": "2026-07-20",
+    "category": "refactor",
+    "scope": "gcal",
+    "audience": "admin",
+    "title": "Calendario · cleanup del diagnostic logging + hardening del refresh del token",
+    "items": [
+      "🧹 Retirado `window._gcalLog` y los 12 call sites de `gcalLog(...)` que se dejaron temporalmente en v2.20.1 para diagnosticar el popup residual. Confirmado en 5 días de uso que no hubo más popups — el logger cumplió su función",
+      "🔒 Mutex de refresh: el widget ya no dispara dos fetches simultáneos a Google Calendar cuando `init()` y el evento `hero-gcal-token-ready` coinciden en el mismo tick (login fresh). Guardia booleana `refreshInFlight` con reset en `finally`",
+      "🛡 `localStorage.setItem` del token ahora está envuelto en try/catch — si el storage está lleno o la pestaña es modo incógnito con storage bloqueado, el widget sigue funcionando con el token en memoria en vez de romperse silenciosamente",
+      "Bump v2.20.2 → v2.20.3"
+    ]
+  },
+  {
     "id": "2026-07-15-finanzas-reportes-ux-refactor",
     "version": "v2.20.2",
     "date": "2026-07-15",
