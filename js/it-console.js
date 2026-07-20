@@ -5404,3 +5404,203 @@ function _plantillasRenderInfo(tmpl) {
   addField('Email corporativo', PLANTILLAS_SAMPLE.email, true);
   addField('Contrasena temporal', PLANTILLAS_SAMPLE.password, true);
 }
+
+// ══════════════════════════════════════════════════════════════
+// Backfill del personalEmail para cuentas existentes
+// ══════════════════════════════════════════════════════════════
+// Utilidad one-shot (y reutilizable): lista todos los usuarios de
+// Workspace, cruza con shared/workspaceUsers/byEmail de Firestore, y
+// permite completar el personalEmail que falta. Dirty tracking + batch
+// save — solo escribe los que cambiaron. Ver conversación de v2.21.5:
+// las cuentas existentes en Workspace no tienen doc en Firestore, así que
+// al primer suspend caen al prompt manual; este backfill adelanta ese trabajo.
+
+var _backfillState = {
+  rows: [],   // { email, nombre, original, current, existedBefore }
+  loaded: false,
+};
+
+async function openBackfillModal() {
+  var modal = document.getElementById('backfill-modal');
+  if (!modal) return;
+  modal.style.display = 'block';
+
+  // Necesitamos la lista de Workspace users primero. Si allUsers está vacío
+  // (Fernando nunca cargó la tabla), traerlos ahora.
+  if (!allUsers || !allUsers.length) {
+    document.getElementById('bf-list').textContent = 'Cargando usuarios de Workspace...';
+    try {
+      const resp = await authFetch(WORKER_URL + '/users');
+      if (resp.ok) {
+        const data = await resp.json();
+        allUsers = data.users || [];
+      }
+    } catch (e) {
+      addLog('Backfill: error cargando /users: ' + e.message, 'warn');
+    }
+  }
+
+  // Cruce con Firestore — en paralelo para ~20 usuarios está bien.
+  var list = document.getElementById('bf-list');
+  while (list.firstChild) list.removeChild(list.firstChild);
+  var loading = document.createElement('div');
+  loading.style.cssText = 'padding:24px;text-align:center;color:var(--hero-text-muted);font-family:var(--mono);font-size:12px;';
+  loading.textContent = 'Consultando Firestore…';
+  list.appendChild(loading);
+
+  var records = await Promise.all(
+    allUsers.map(function(u) { return getWorkspaceUser(u.email); })
+  );
+
+  _backfillState.rows = allUsers.map(function(u, i) {
+    var rec = records[i] || {};
+    return {
+      email: u.email,
+      nombre: u.nombre || '',
+      original: rec.personalEmail || '',
+      current:  rec.personalEmail || '',
+      existedBefore: !!(rec && rec.personalEmail),
+    };
+  });
+  _backfillState.loaded = true;
+  renderBackfillList();
+}
+
+function closeBackfillModal() {
+  var modal = document.getElementById('backfill-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function renderBackfillList() {
+  var list = document.getElementById('bf-list');
+  var counts = document.getElementById('bf-counts');
+  var filter = (document.getElementById('bf-filter').value) || 'missing';
+  if (!list) return;
+
+  while (list.firstChild) list.removeChild(list.firstChild);
+
+  var rows = _backfillState.rows;
+  var conCorreo = rows.filter(function(r) { return r.original.trim(); }).length;
+  var sinCorreo = rows.length - conCorreo;
+  counts.textContent = sinCorreo + ' sin · ' + conCorreo + ' con · ' + rows.length + ' total';
+
+  var visible = filter === 'all' ? rows : rows.filter(function(r) { return !r.original.trim(); });
+
+  if (!visible.length) {
+    var empty = document.createElement('div');
+    empty.style.cssText = 'padding:40px 24px;text-align:center;color:var(--hero-text-muted);font-family:var(--mono);font-size:12px;';
+    empty.textContent = filter === 'missing'
+      ? 'Todas las cuentas tienen correo personal registrado ✓'
+      : 'Sin resultados';
+    list.appendChild(empty);
+    updateBackfillButton();
+    return;
+  }
+
+  visible.forEach(function(row) {
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'padding:12px 24px;border-bottom:1px solid var(--hero-border-card);display:flex;gap:12px;align-items:center;';
+
+    var avatar = document.createElement('div');
+    avatar.style.cssText = 'flex-shrink:0;width:32px;height:32px;border-radius:50%;background:' + userAvatarColor(row.nombre) + ';color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--sans);font-weight:700;font-size:11px;letter-spacing:.3px;';
+    avatar.textContent = userInitials(row.nombre);
+    wrap.appendChild(avatar);
+
+    var info = document.createElement('div');
+    info.style.cssText = 'flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;';
+
+    var nombreLine = document.createElement('div');
+    nombreLine.style.cssText = 'font-size:13px;font-weight:600;color:var(--hero-text-primary);line-height:1.2;';
+    nombreLine.textContent = row.nombre || '—';
+    info.appendChild(nombreLine);
+
+    var emailLine = document.createElement('div');
+    emailLine.style.cssText = 'font-family:var(--mono);font-size:11px;color:var(--hero-primary);line-height:1.2;';
+    emailLine.textContent = row.email;
+    info.appendChild(emailLine);
+
+    var input = document.createElement('input');
+    input.type = 'email';
+    input.className = 'form-input';
+    input.placeholder = 'correo.personal@gmail.com';
+    input.value = row.current;
+    input.style.cssText = 'width:100%;font-size:12px;padding:6px 10px;margin-top:4px;';
+    input.addEventListener('input', function() {
+      row.current = input.value.trim();
+      updateBackfillButton();
+      // Badge visual de dirty
+      badge.style.display = (row.current !== row.original) ? 'inline-flex' : 'none';
+    });
+    info.appendChild(input);
+
+    wrap.appendChild(info);
+
+    var badge = document.createElement('span');
+    badge.style.cssText = 'display:none;font-family:var(--mono);font-size:9px;padding:3px 8px;border-radius:20px;background:rgba(6,163,182,0.10);color:var(--hero-primary);flex-shrink:0;align-self:flex-start;';
+    badge.textContent = 'Sin guardar';
+    wrap.appendChild(badge);
+
+    list.appendChild(wrap);
+  });
+
+  updateBackfillButton();
+}
+
+function _backfillDirtyRows() {
+  return _backfillState.rows.filter(function(r) {
+    return r.current !== r.original && (r.current.trim() || r.original.trim());
+  });
+}
+
+function updateBackfillButton() {
+  var btn = document.getElementById('bf-save-btn');
+  if (!btn) return;
+  var dirty = _backfillDirtyRows();
+  if (!dirty.length) {
+    btn.disabled = true;
+    btn.textContent = 'Sin cambios';
+  } else {
+    btn.disabled = false;
+    btn.textContent = 'Guardar ' + dirty.length + (dirty.length === 1 ? ' cambio' : ' cambios');
+  }
+}
+
+async function saveBackfillBatch() {
+  var dirty = _backfillDirtyRows();
+  if (!dirty.length) return;
+  var btn = document.getElementById('bf-save-btn');
+  btn.disabled = true;
+  btn.textContent = 'Guardando…';
+
+  var errors = 0;
+  for (var i = 0; i < dirty.length; i++) {
+    var r = dirty[i];
+    try {
+      // Si es el primer registro (no existedBefore), llenamos metadata basica.
+      // Si ya existia, solo mergea personalEmail.
+      var payload = { personalEmail: r.current };
+      if (!r.existedBefore) {
+        payload.email = r.email;
+        payload.nombre = r.nombre;
+        payload.createdAt = new Date().toISOString();
+        payload.createdBy = 'backfill';
+      }
+      payload.updatedAt = new Date().toISOString();
+      payload.updatedBy = 'backfill';
+      await saveWorkspaceUser(r.email, payload);
+      r.original = r.current;
+      r.existedBefore = true;
+    } catch (e) {
+      errors++;
+      console.warn('[backfill] error guardando ' + r.email + ':', e && e.message);
+    }
+  }
+
+  addLog('Backfill: ' + (dirty.length - errors) + ' correos guardados' + (errors ? ' · ' + errors + ' fallaron' : ''), errors ? 'warn' : 'success');
+  auditLog('usuario', 'Backfill de correos personales: ' + (dirty.length - errors) + ' registros', '');
+  showToast(errors
+    ? errors + ' errores al guardar. Revisá la consola.'
+    : dirty.length + ' correo(s) guardados'
+  );
+  renderBackfillList();
+}

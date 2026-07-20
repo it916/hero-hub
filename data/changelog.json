@@ -1,5 +1,24 @@
 [
   {
+    "id": "2026-07-20-it-console-backfill-personal-email",
+    "version": "v2.21.8",
+    "date": "2026-07-20",
+    "category": "feat",
+    "scope": "it-console",
+    "audience": "admin",
+    "title": "IT Console · utility para poblar correo personal masivamente",
+    "items": [
+      "🔄 Nuevo botón 'Poblar correo personal' en la toolbar de Usuarios. Abre un modal con lista de todos los usuarios de Workspace + input por fila para completar el correo personal que falta",
+      "🎯 Filtro 'Solo faltantes' (default) muestra las cuentas sin correo personal registrado en Firestore. Al cambiarlo a 'Todos' se ven también las que ya tienen registrado (para editar)",
+      "💾 Dirty tracking + batch save: el botón muestra 'Guardar N cambios' con contador en vivo. Solo escribe a Firestore los registros que cambiaron. Badge 'Sin guardar' aparece en cada fila modificada hasta que se guarda",
+      "🧠 Cruza allUsers (Workspace) con shared/workspaceUsers/byEmail (Firestore) en paralelo con Promise.all al abrir el modal — rápido para ~20 usuarios internos",
+      "📝 Guarda además de personalEmail, metadata createdBy='backfill' + updatedAt para trazabilidad de dónde vino cada registro",
+      "🎨 Cada fila muestra el avatar de iniciales (mismo patrón que la tabla Usuarios) para identificar rápido",
+      "🛡 Si guarda con errores, muestra count en el toast + warns en la consola. No aborta el batch por un fallo individual",
+      "Bump v2.21.7 → v2.21.8"
+    ]
+  },
+  {
     "id": "2026-07-20-it-console-restore-confirm-email",
     "version": "v2.21.7",
     "date": "2026-07-20",
