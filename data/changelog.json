@@ -1,5 +1,22 @@
 [
   {
+    "id": "2026-07-20-solicitud-cuenta-reenvio",
+    "version": "v2.21.1",
+    "date": "2026-07-20",
+    "category": "feat",
+    "scope": "it-console",
+    "audience": "admin",
+    "title": "IT Console · botón 'Reenviar' para solicitudes pendientes (Fase D)",
+    "items": [
+      "📩 Nuevo botón 'Reenviar' en cada fila de solicitud pendiente del IT Console (sección Solicitudes). Regenera los links de autorización con nuevo exp de 7 días y manda el email a los 3 autorizadores otra vez",
+      "🛡 Solo aparece si la solicitud está en estado 'pendiente' — si ya fue autorizada, procesada o rechazada, no tiene sentido reenviar y el botón no se muestra",
+      "🏷 Los emails de reenvío llegan con banner naranja 'REENVÍO' y subject '[ALTA/BAJA · Reenvío]' para que los autorizadores no lo confundan con un duplicado por bug",
+      "📊 El KV registra reenviosCount, ultimoReenvio y linkExpiresAt en cada solicitud — útil para auditoría y para el próximo dashboard del solicitante (Fase C)",
+      "🔒 Backend: nuevo endpoint POST /solicitud-cuenta/reenviar en el Worker, protegido por HERO_TOKEN + rate limit 5/min por IP + dedupByBody",
+      "Bump v2.21.0 → v2.21.1"
+    ]
+  },
+  {
     "id": "2026-07-20-solicitud-cuenta-migrada",
     "version": "v2.21.0",
     "date": "2026-07-20",

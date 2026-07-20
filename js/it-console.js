@@ -2327,15 +2327,22 @@ function renderSolicitudes() {
 
     let acciones = '';
     if (isOpen) {
+      // Botón "Reenviar autorizadores": solo si pendiente (no si ya autorizada).
+      // Regenera links HMAC con nuevo exp de 7 días. Ver Fase D en Worker.
+      const reenviarBtn = isPending
+        ? '<button class="btn btn-secondary" onclick="reenviarAutorizadores(\'' + s.id + '\',\'' + (isBaja ? 'baja' : 'alta') + '\',\'' + safeTitulo + '\')" style="font-size:12px;" title="Reenviar el email de autorización con links nuevos"><iconify-icon icon="tabler:mail-forward"></iconify-icon> Reenviar</button>'
+        : '';
       if (isBaja) {
         acciones = '<div style="display:flex;gap:8px;flex-wrap:wrap;">'
           + '<button class="btn btn-primary" onclick="suspenderDesdeSolicitud(\'' + s.id + '\',\'' + safeCorreoEl + '\',\'' + safeTitulo + '\')" style="font-size:12px;flex:1;background:linear-gradient(135deg,#c0392b,#e67e22);"><iconify-icon icon="tabler:lock"></iconify-icon> Suspender cuenta</button>'
+          + reenviarBtn
           + '<button class="btn btn-secondary" onclick="rechazarSolicitud(\'' + s.id + '\',\'' + safeSolEmail + '\',\'' + safeSolNombre + '\',\'' + safeTitulo + '\',\'baja\')" style="font-size:12px;"><iconify-icon icon="tabler:x"></iconify-icon> Rechazar</button>'
           + '<button class="btn btn-secondary" onclick="resolverSolicitud(\'' + s.id + '\',\'procesada\')" style="font-size:12px;"><iconify-icon icon="tabler:check"></iconify-icon> Marcar procesada</button>'
           + '</div>';
       } else {
         acciones = '<div style="display:flex;gap:8px;flex-wrap:wrap;">'
           + '<button class="btn btn-primary" onclick="openSolModal(\'' + s.id + '\')" style="font-size:12px;flex:1;"><iconify-icon icon="tabler:user-plus"></iconify-icon> Crear usuario</button>'
+          + reenviarBtn
           + '<button class="btn btn-secondary" onclick="rechazarSolicitud(\'' + s.id + '\',\'' + safeSolEmail + '\',\'' + safeSolNombre + '\',\'' + safeTitulo + '\',\'alta\')" style="font-size:12px;"><iconify-icon icon="tabler:x"></iconify-icon> Rechazar</button>'
           + '<button class="btn btn-secondary" onclick="resolverSolicitud(\'' + s.id + '\',\'procesada\')" style="font-size:12px;"><iconify-icon icon="tabler:check"></iconify-icon> Marcar procesada</button>'
           + '</div>';
@@ -2415,6 +2422,32 @@ async function rechazarSolicitud(id, solEmail, solNombre, persona, tipo) {
     }
     showToast('Solicitud rechazada' + (solEmail ? ' — solicitante notificado' : ''));
     auditLog('solicitud', 'Solicitud rechazada (' + tipoLabel + '): ' + persona, solEmail || 'sin email');
+    loadSolicitudes();
+  } catch(err) { showToast('Error: ' + err.message); }
+}
+
+// ── Reenviar emails a autorizadores (Fase D) ─────────────────
+// Regenera los links HMAC con nuevo `exp` (7 días adelante) y manda los
+// emails otra vez a los 3 autorizadores. Solo funciona si la solicitud
+// sigue en estado 'pendiente' — si ya fue autorizada/procesada/rechazada,
+// el Worker devuelve 409.
+async function reenviarAutorizadores(id, tipo, persona) {
+  const tipoLabel = tipo === 'baja' ? 'baja' : 'alta';
+  if (!(await heroConfirm({
+    title: '¿Reenviar a autorizadores?',
+    body: 'Se enviará el email de autorización otra vez a los 3 autorizadores '
+        + '(' + tipoLabel + ' de ' + persona + '). Los links tendrán 7 días de validez desde ahora.',
+    confirmText: 'Reenviar',
+  }))) return;
+  try {
+    const resp = await authFetch(WORKER_URL + '/solicitud-cuenta/reenviar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id })
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || 'Error del servidor');
+    showToast('Emails reenviados a ' + (data.autorizadores || 3) + ' autorizadores');
+    auditLog('solicitud', 'Reenvío de autorizadores (' + tipoLabel + '): ' + persona, id);
     loadSolicitudes();
   } catch(err) { showToast('Error: ' + err.message); }
 }
