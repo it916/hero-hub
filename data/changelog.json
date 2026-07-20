@@ -1,5 +1,25 @@
 [
   {
+    "id": "2026-07-20-it-console-usuarios-enriquecidos",
+    "version": "v2.21.4",
+    "date": "2026-07-20",
+    "category": "feat",
+    "scope": "it-console",
+    "audience": "admin",
+    "title": "IT Console · tabla Usuarios estilo Google Workspace + fix del modal de confirmación",
+    "items": [
+      "👥 Tabla de Usuarios rediseñada con look similar a Google Workspace Admin: avatar de iniciales con color determinista por nombre + nombre + cargo + email en la primera columna. Nuevas columnas: Departamento, Rol (Super Admin / Delegated Admin / Usuario). Se removió la columna 'Creado' — sigue accesible desde el modal individual",
+      "🔍 La búsqueda ahora incluye cargo y departamento (además de nombre y email) — puedes buscar 'CEO' o 'Operaciones' y filtra las filas correspondientes",
+      "🎯 Nuevo filtro 'Rol' junto a los filtros OU y 2FA — útil para ver solo los administradores del dominio",
+      "🎗 Anillo cyan alrededor del avatar cuando el usuario tiene contraseña temporal (changePasswordAtNextLogin) — señal visual para spotear altas recientes que aún no completaron su primer login",
+      "🏷 Chip '(+N aliases)' junto al email cuando el usuario tiene aliases configurados en Workspace; el tooltip muestra la lista completa",
+      "🛈 Tooltip del estado ahora muestra el motivo de suspensión si existe (viene de suspensionReason de la Admin API)",
+      "🐛 Fix del modal de confirmación al eliminar/suspender usuario: aparecía detrás del modal padre. Causa: z-index del heroConfirm local (200) menor al de user-modal (300 !important). Cambiado a 1000",
+      "🔒 Backend: /users del Worker ahora usa projection=full para traer cargo/departamento/aliases/isAdmin/isDelegatedAdmin/suspensionReason/changePasswordAtNextLogin en la misma llamada — sin costo extra de quota más allá de un JSON más grande",
+      "Bump v2.21.3 → v2.21.4 (agrupa el fix del z-index + la tabla enriquecida)"
+    ]
+  },
+  {
     "id": "2026-07-20-solicitud-cuenta-notif-solicitante",
     "version": "v2.21.2",
     "date": "2026-07-20",

@@ -766,7 +766,12 @@ function heroConfirm(opts) {
       modal.setAttribute('aria-modal', 'true');
       modal.setAttribute('aria-labelledby', 'cf-title');
       modal.setAttribute('data-close-fn', '__heroConfirmCancel');
-      modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(26,39,51,0.5);z-index:200;overflow-y:auto;padding:24px;';
+      // z-index:1000 — encima de los otros modales del Console
+      // (#user-modal, #ticket-modal, #dev-modal, #lic-modal) que están
+      // forzados a z-index:300 !important desde el CSS. Sin esto, el
+      // heroConfirm quedaba oculto detrás del modal padre al confirmar
+      // acciones como "Eliminar cuenta" o "Suspender".
+      modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(26,39,51,0.5);z-index:1000;overflow-y:auto;padding:24px;';
       modal.innerHTML =
           '<div style="background:#ffffff;border:1px solid var(--hero-border);border-radius:14px;max-width:440px;margin:60px auto;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,0.18);">'
         +   '<div id="cf-title" style="font-size:16px;font-weight:700;color:var(--hero-text-primary);margin-bottom:8px;"></div>'
@@ -2890,6 +2895,31 @@ async function loadUsers() {
   btn.innerHTML = '↺ Cargar usuarios';
 }
 
+// Iniciales del nombre para el avatar (2 letras).
+function userInitials(nombre) {
+  if (!nombre) return '?';
+  const parts = String(nombre).trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}
+
+// Color determinista del avatar basado en un hash simple del nombre —
+// misma persona → mismo color siempre, sin coordinar con Firestore.
+function userAvatarColor(nombre) {
+  const palette = ['#06a3b6', '#0891a3', '#0f8054', '#22a06b', '#7c3aed', '#c026d3', '#d97706', '#dc2626', '#0284c7', '#059669'];
+  let hash = 0;
+  const s = String(nombre || '');
+  for (let i = 0; i < s.length; i++) hash = (hash * 31 + s.charCodeAt(i)) | 0;
+  return palette[Math.abs(hash) % palette.length];
+}
+
+// Etiqueta del rol de Workspace: Super Admin > Delegated Admin > Usuario.
+function userRoleLabel(u) {
+  if (u.isAdmin) return { key: 'admin',     label: 'Super Admin',     color: '#dc2626', bg: 'rgba(220,38,38,0.10)' };
+  if (u.isDelegatedAdmin) return { key: 'delegated', label: 'Delegated Admin', color: '#d97706', bg: 'rgba(217,119,6,0.10)' };
+  return { key: 'user', label: 'Usuario', color: 'var(--hero-text-muted)', bg: 'rgba(120,120,120,0.08)' };
+}
+
 function renderUsers(users) {
   const tbody = document.getElementById('usr-tbody');
   document.getElementById('usr-count').textContent = users.length + ' usuario' + (users.length !== 1 ? 's' : '');
@@ -2900,37 +2930,60 @@ function renderUsers(users) {
   }
 
   tbody.innerHTML = users.map((u, i) => {
-    const estadoColor = u.estado === 'activo' ? 'var(--hero-success)' : 'var(--hero-error)';
+    const estadoColor = u.estado === 'activo' ? 'var(--hero-success)' : 'var(--hero-danger)';
     const estadoBg    = u.estado === 'activo' ? 'rgba(34,160,107,0.1)' : 'rgba(214,69,69,0.1)';
-    const creado      = u.creado ? new Date(u.creado).toLocaleDateString('es-MX', { year:'numeric', month:'short', day:'numeric' }) : '—';
+    const estadoTitle = u.estado === 'activo'
+      ? 'Cuenta activa'
+      : ('Cuenta suspendida' + (u.suspensionReason ? ' · ' + u.suspensionReason : ''));
     const login       = u.ultimoLogin && u.ultimoLogin !== '1970-01-01T00:00:00.000Z'
       ? new Date(u.ultimoLogin).toLocaleDateString('es-MX', { year:'numeric', month:'short', day:'numeric' })
       : 'Nunca';
     const rowBg = i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)';
     const ouLabel = !u.orgUnitPath || u.orgUnitPath === '/' ? '—' : u.orgUnitPath.replace(/^\//, '');
-    // 2FA: check verde si está enrolado, warning rojo si no. Si está enforced por
-    // política pero el usuario aún no se enroló (mfaEnforced && !mfaEnrolled),
-    // se muestra igual como faltante.
     const mfaLabel = u.mfaEnrolled
       ? '<iconify-icon icon="tabler:check"></iconify-icon>'
       : '<iconify-icon icon="tabler:alert-triangle"></iconify-icon>';
     const mfaColor = u.mfaEnrolled ? 'var(--hero-success)' : 'var(--hero-danger)';
     const mfaBg    = u.mfaEnrolled ? 'rgba(34,160,107,0.1)' : 'rgba(214,69,69,0.1)';
     const mfaTitle = u.mfaEnrolled ? '2FA activado' : (u.mfaEnforced ? '2FA obligatorio pero sin enrolar' : '2FA no activado');
+    const rol = userRoleLabel(u);
+    const initials = userInitials(u.nombre);
+    const avColor  = userAvatarColor(u.nombre);
+    const aliasCount = Array.isArray(u.aliases) ? u.aliases.length : 0;
+    const cargoLine  = u.cargo ? escHtml(u.cargo) : '';
+    // Anillo cyan si tiene contraseña temporal — señala altas recientes.
+    const avRing = u.changePasswordAtNextLogin
+      ? 'box-shadow:0 0 0 2px var(--hero-bg-page),0 0 0 4px var(--hero-primary);'
+      : '';
+    const avTitle = u.nombre + (u.changePasswordAtNextLogin ? ' · debe cambiar contraseña al iniciar sesión' : '');
+    const aliasTitle = aliasCount ? u.aliases.join(', ').replace(/"/g,'&quot;') : '';
 
     return '<tr style="border-bottom:1px solid var(--hero-border-card);background:' + rowBg + ';">' +
-      '<td style="padding:10px 16px;color:var(--hero-text-primary);">' + escHtml(u.nombre) + '</td>' +
-      '<td style="padding:10px 16px;font-family:var(--mono);font-size:12px;color:var(--hero-primary);">' + escHtml(u.email) + '</td>' +
-      '<td style="padding:10px 16px;font-family:var(--mono);font-size:11px;color:var(--hero-text-body);">' + escHtml(ouLabel) + '</td>' +
-      '<td style="padding:10px 16px;">' +
+      '<td style="padding:12px 16px;">' +
+        '<div style="display:flex;align-items:center;gap:12px;">' +
+          '<div style="flex-shrink:0;width:36px;height:36px;border-radius:50%;background:' + avColor + ';color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--sans);font-weight:700;font-size:13px;letter-spacing:.3px;' + avRing + '" title="' + escHtml(avTitle) + '">' + escHtml(initials) + '</div>' +
+          '<div style="min-width:0;flex:1;">' +
+            '<div style="font-size:13px;font-weight:600;color:var(--hero-text-primary);line-height:1.25;">' + escHtml(u.nombre || '—') + '</div>' +
+            (cargoLine ? '<div style="font-size:11px;color:var(--hero-text-muted);line-height:1.35;">' + cargoLine + '</div>' : '') +
+            '<div style="font-family:var(--mono);font-size:11px;color:var(--hero-primary);line-height:1.35;">' + escHtml(u.email) +
+              (aliasCount ? ' <span style="color:var(--hero-text-muted);font-size:10px;" title="' + aliasTitle + '">(+' + aliasCount + ' ' + (aliasCount === 1 ? 'alias' : 'aliases') + ')</span>' : '') +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</td>' +
+      '<td style="padding:12px 16px;font-size:12px;color:var(--hero-text-body);">' + escHtml(u.departamento || '—') + '</td>' +
+      '<td style="padding:12px 16px;font-family:var(--mono);font-size:11px;color:var(--hero-text-body);">' + escHtml(ouLabel) + '</td>' +
+      '<td style="padding:12px 16px;" title="' + escHtml(estadoTitle) + '">' +
         '<span style="font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:20px;background:' + estadoBg + ';color:' + estadoColor + ';">' + escHtml(u.estado) + '</span>' +
       '</td>' +
-      '<td style="padding:10px 16px;text-align:center;" title="' + mfaTitle + '">' +
+      '<td style="padding:12px 16px;text-align:center;" title="' + mfaTitle + '">' +
         '<span style="font-family:var(--mono);font-size:12px;font-weight:700;padding:3px 8px;border-radius:20px;background:' + mfaBg + ';color:' + mfaColor + ';">' + mfaLabel + '</span>' +
       '</td>' +
-      '<td style="padding:10px 16px;font-family:var(--mono);font-size:11px;color:var(--hero-text-body);">' + creado + '</td>' +
-      '<td style="padding:10px 16px;font-family:var(--mono);font-size:11px;color:var(--hero-text-body);">' + login + '</td>' +
-      '<td style="padding:10px 16px;text-align:center;">' +
+      '<td style="padding:12px 16px;">' +
+        '<span style="font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:20px;background:' + rol.bg + ';color:' + rol.color + ';">' + escHtml(rol.label) + '</span>' +
+      '</td>' +
+      '<td style="padding:12px 16px;font-family:var(--mono);font-size:11px;color:var(--hero-text-body);">' + login + '</td>' +
+      '<td style="padding:12px 16px;text-align:center;">' +
         '<div style="display:flex;gap:6px;justify-content:center;">' +
         '<button onclick="copyEmail(\'' + escJs(u.email) + '\')" style="background:transparent;border:1px solid var(--hero-border-card);color:var(--hero-text-body);padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer;display:inline-flex;align-items:center;" title="Copiar email"><iconify-icon icon="tabler:copy"></iconify-icon></button>' +
         '<button onclick="openUserModal(\'' + escJs(u.email) + '\',\'' + escJs(u.nombre) + '\')" style="background:rgba(6,163,182,0.1);border:1px solid rgba(6,163,182,0.3);color:var(--hero-primary);padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer;display:inline-flex;align-items:center;" title="Gestionar"><iconify-icon icon="tabler:settings"></iconify-icon></button>' +
@@ -2957,12 +3010,23 @@ function filterUsers() {
   const q = document.getElementById('usr-search').value.toLowerCase();
   const ou = document.getElementById('usr-filter-ou')?.value || '';
   const mfa = document.getElementById('usr-filter-mfa')?.value || '';
+  const rol = document.getElementById('usr-filter-rol')?.value || '';
   if (!allUsers.length) return;
   const filtered = allUsers.filter(u => {
-    const matchText = u.nombre.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+    // Búsqueda incluye ahora cargo y departamento — Fernando puede buscar
+    // "CEO", "Operaciones" o el nombre indistintamente.
+    const matchText = !q
+      || (u.nombre || '').toLowerCase().includes(q)
+      || (u.email || '').toLowerCase().includes(q)
+      || (u.cargo || '').toLowerCase().includes(q)
+      || (u.departamento || '').toLowerCase().includes(q);
     const matchOu = !ou || (u.orgUnitPath || '/') === ou;
     const matchMfa = !mfa || (mfa === 'si' ? u.mfaEnrolled : !u.mfaEnrolled);
-    return matchText && matchOu && matchMfa;
+    const matchRol = !rol
+      || (rol === 'admin' && u.isAdmin)
+      || (rol === 'delegated' && u.isDelegatedAdmin && !u.isAdmin)
+      || (rol === 'user' && !u.isAdmin && !u.isDelegatedAdmin);
+    return matchText && matchOu && matchMfa && matchRol;
   });
   renderUsers(filtered);
 }

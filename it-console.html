@@ -1383,6 +1383,12 @@ html { scroll-behavior: smooth; }
           <option value="no">Sin 2FA</option>
           <option value="si">Con 2FA</option>
         </select>
+        <select class="form-input" id="usr-filter-rol" onchange="filterUsers()" style="min-width:170px;">
+          <option value="">Rol: Todos</option>
+          <option value="admin">Super Admin</option>
+          <option value="delegated">Delegated Admin</option>
+          <option value="user">Usuario</option>
+        </select>
         <button class="btn btn-secondary" onclick="loadUsers()" id="btn-load-users" style="font-size:12px;">
           ↺ Cargar usuarios
         </button>
@@ -1395,12 +1401,12 @@ html { scroll-behavior: smooth; }
           <table id="usr-table" style="width:100%; border-collapse:collapse; font-size:13px;">
             <thead>
               <tr style="border-bottom:1px solid var(--hero-border); background:var(--hero-bg-page);">
-                <th style="padding:11px 16px; text-align:left; font-family:var(--mono); font-size:10px; letter-spacing:1px; color:var(--hero-text-muted); font-weight:500; text-transform:uppercase;">Nombre</th>
-                <th style="padding:11px 16px; text-align:left; font-family:var(--mono); font-size:10px; letter-spacing:1px; color:var(--hero-text-muted); font-weight:500; text-transform:uppercase;">Email</th>
+                <th style="padding:11px 16px; text-align:left; font-family:var(--mono); font-size:10px; letter-spacing:1px; color:var(--hero-text-muted); font-weight:500; text-transform:uppercase;">Usuario</th>
+                <th style="padding:11px 16px; text-align:left; font-family:var(--mono); font-size:10px; letter-spacing:1px; color:var(--hero-text-muted); font-weight:500; text-transform:uppercase;">Departamento</th>
                 <th style="padding:11px 16px; text-align:left; font-family:var(--mono); font-size:10px; letter-spacing:1px; color:var(--hero-text-muted); font-weight:500; text-transform:uppercase;">OU</th>
                 <th style="padding:11px 16px; text-align:left; font-family:var(--mono); font-size:10px; letter-spacing:1px; color:var(--hero-text-muted); font-weight:500; text-transform:uppercase;">Estado</th>
                 <th style="padding:11px 16px; text-align:center; font-family:var(--mono); font-size:10px; letter-spacing:1px; color:var(--hero-text-muted); font-weight:500; text-transform:uppercase;" title="Verificación en 2 pasos">2FA</th>
-                <th style="padding:11px 16px; text-align:left; font-family:var(--mono); font-size:10px; letter-spacing:1px; color:var(--hero-text-muted); font-weight:500; text-transform:uppercase;">Creado</th>
+                <th style="padding:11px 16px; text-align:left; font-family:var(--mono); font-size:10px; letter-spacing:1px; color:var(--hero-text-muted); font-weight:500; text-transform:uppercase;">Rol</th>
                 <th style="padding:11px 16px; text-align:left; font-family:var(--mono); font-size:10px; letter-spacing:1px; color:var(--hero-text-muted); font-weight:500; text-transform:uppercase;">Último login</th>
                 <th style="padding:11px 16px; text-align:center; font-family:var(--mono); font-size:10px; letter-spacing:1px; color:var(--hero-text-muted); font-weight:500; text-transform:uppercase;">Acciones</th>
               </tr>
