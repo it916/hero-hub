@@ -1430,10 +1430,11 @@ function buildEmailReset(nombre, emailCorp, password) {
 
 // ── Template: cuenta suspendida (al personal email) ──────────
 // Se envía al correo personal (Gmail/etc.) cuando IT suspende una cuenta
-// de Workspace. Incluye advertencia de eliminación a los 7 días y CTA de
-// mailto a IT con subject pre-llenado para solicitar reactivación.
-function buildEmailSuspension(nombre, emailCorp, fechaEliminacion) {
+// de Workspace. Incluye motivo específico + advertencia de eliminación a
+// los 7 días + CTA de mailto a IT con subject pre-llenado para reactivación.
+function buildEmailSuspension(nombre, emailCorp, fechaEliminacion, motivo) {
   var P = '#06a3b6';
+  var motivoText = motivo || 'por decisión de la administración';
   var mailtoUrl = 'mailto:it@heroinsuranceusa.com'
     + '?subject=' + encodeURIComponent('Reactivar cuenta ' + emailCorp)
     + '&body=' + encodeURIComponent('Hola equipo de IT,\n\nSolicito la reactivacion de la cuenta ' + emailCorp + '.\n\nGracias.\n\n' + (nombre || ''));
@@ -1447,7 +1448,11 @@ function buildEmailSuspension(nombre, emailCorp, fechaEliminacion) {
   + '<h1 style="margin:0;font-size:22px;font-weight:700;color:#fff;">Tu cuenta corporativa fue suspendida</h1>'
   + '</td></tr>'
   + '<tr><td style="padding:32px 40px;">'
-  + '<p style="margin:0 0 18px;font-size:14px;color:#2d3748;line-height:1.55;">Hola <strong>' + nombre + '</strong>, este correo es para informarte que tu cuenta corporativa <strong style="color:#c0392b;">' + emailCorp + '</strong> fue suspendida por decisión de la administración.</p>'
+  + '<p style="margin:0 0 16px;font-size:14px;color:#2d3748;line-height:1.55;">Hola <strong>' + nombre + '</strong>, este correo es para informarte que tu cuenta corporativa <strong style="color:#c0392b;">' + emailCorp + '</strong> fue suspendida.</p>'
+  + '<div style="background:#f7faff;border-radius:10px;border:1px solid #d8e1ea;padding:14px 18px;margin-bottom:18px;">'
+  + '<p style="margin:0 0 4px;font-size:10px;font-weight:700;color:#8fa6cc;text-transform:uppercase;letter-spacing:1.5px;">Motivo</p>'
+  + '<p style="margin:0;font-size:13px;color:#2d3748;line-height:1.5;">' + escHtml(motivoText) + '</p>'
+  + '</div>'
   + '<p style="margin:0 0 20px;font-size:13px;color:#4a5568;line-height:1.55;">Mientras la cuenta está suspendida no podrás acceder al correo, al calendario ni a ningún otro servicio de Google Workspace de Hero Insurance USA.</p>'
   + '<div style="background:#fff8e6;border-radius:12px;border:1px solid #f5d87a;border-left:4px solid #f0b429;padding:16px 20px;margin-bottom:24px;">'
   + '<p style="margin:0 0 6px;font-size:11px;font-weight:700;color:#b08a00;text-transform:uppercase;letter-spacing:1.5px;">Plazo importante</p>'
@@ -1460,6 +1465,39 @@ function buildEmailSuspension(nombre, emailCorp, fechaEliminacion) {
   + '<div style="background:#f7faff;border-radius:10px;border:1px solid #e2eaf8;padding:14px 18px;">'
   + '<p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#8fa6cc;text-transform:uppercase;letter-spacing:1.5px;">Contacto directo</p>'
   + '<p style="margin:0;font-size:13px;color:#4a5568;">También puedes escribir directamente a <a href="mailto:it@heroinsuranceusa.com" style="color:' + P + ';font-weight:700;">it@heroinsuranceusa.com</a></p>'
+  + '</div>'
+  + '</td></tr>'
+  + '<tr><td style="padding:14px 40px;background:#f0f4f8;text-align:center;border-top:1px solid #e8e8e8;">'
+  + '<p style="margin:0;font-size:10px;color:#aaa;">Hero Insurance USA &bull; IT Department</p>'
+  + '<p style="margin:4px 0 0;font-size:10px;color:#ccc;">CONFIDENTIALITY NOTICE: This email is intended solely for the addressee.</p>'
+  + '</td></tr>'
+  + '</table></td></tr></table></body></html>';
+}
+
+// ── Template: cuenta reactivada (al personal email) ──────────
+// Se envía al correo personal cuando IT reactiva una cuenta que estaba
+// suspendida — cierra el loop que abrió el email de suspensión (donde
+// prometimos que si el usuario solicitaba reactivación, podría volver).
+function buildEmailReactivation(nombre, emailCorp) {
+  var P = '#06a3b6';
+  return '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head>'
+  + '<body style="margin:0;padding:0;background:#f0f4f8;font-family:Trebuchet MS,Arial,sans-serif;">'
+  + '<table cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#f0f4f8;"><tr><td style="padding:32px 16px;">'
+  + '<table cellspacing="0" cellpadding="0" border="0" width="600" align="center" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(34,160,107,0.10);">'
+  + '<tr><td style="background:linear-gradient(135deg,#22a06b,#0f8054);padding:32px 40px;text-align:center;">'
+  + '<img src="https://i.ibb.co/Gr4mzLv/Nuevo-Logo-Cuadrado-compress.png" width="120" style="display:block;margin:0 auto 18px;"/>'
+  + '<div style="display:inline-block;background:rgba(255,255,255,0.2);color:#fff;font-weight:700;font-size:11px;letter-spacing:3px;padding:5px 14px;border-radius:20px;margin-bottom:10px;">CUENTA REACTIVADA</div>'
+  + '<h1 style="margin:0;font-size:22px;font-weight:700;color:#fff;">Tu cuenta ya está activa nuevamente</h1>'
+  + '</td></tr>'
+  + '<tr><td style="padding:32px 40px;">'
+  + '<p style="margin:0 0 18px;font-size:14px;color:#2d3748;line-height:1.55;">Hola <strong>' + nombre + '</strong>, tu cuenta corporativa <strong style="color:' + P + ';">' + emailCorp + '</strong> fue reactivada y ya puedes iniciar sesión con normalidad.</p>'
+  + '<p style="margin:0 0 20px;font-size:13px;color:#4a5568;line-height:1.55;">Todo el contenido (correos, calendario, Drive) sigue disponible tal como estaba antes de la suspensión.</p>'
+  + '<div style="text-align:center;margin:0 0 24px;">'
+  + '<a href="https://mail.google.com" style="display:inline-block;padding:14px 32px;background:' + P + ';color:#fff;font-family:Trebuchet MS,Arial,sans-serif;font-size:14px;font-weight:700;text-decoration:none;border-radius:30px;letter-spacing:0.5px;box-shadow:0 4px 14px rgba(6,163,182,0.30);">✓ Iniciar sesión</a>'
+  + '</div>'
+  + '<div style="background:#eef4ff;border-radius:10px;border:1px solid #c5deff;padding:14px 18px;">'
+  + '<p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#8fa6cc;text-transform:uppercase;letter-spacing:1.5px;">¿Problemas para acceder?</p>'
+  + '<p style="margin:0;font-size:13px;color:#4a5568;">Si necesitas restablecer tu contraseña o tienes cualquier inconveniente, escribe a <a href="mailto:it@heroinsuranceusa.com" style="color:' + P + ';font-weight:700;">it@heroinsuranceusa.com</a></p>'
   + '</div>'
   + '</td></tr>'
   + '<tr><td style="padding:14px 40px;background:#f0f4f8;text-align:center;border-top:1px solid #e8e8e8;">'
@@ -1598,6 +1636,28 @@ async function userAction(action) {
     if (!ok) return;
   }
 
+  // Suspender: pedir motivo ANTES de tocar Workspace. Si cancela el modal
+  // del motivo, cancelamos toda la acción (no suspendemos "sin motivo").
+  // Pre-selecciona motivo basado en ultimoLogin del usuario si tenemos ese dato.
+  var motivoSuspend = null;
+  if (action === 'suspend') {
+    var userRecord = (window.allUsers || allUsers || []).find(function(u) { return u.email === email; });
+    var hint = suggestSuspensionReasonKey(userRecord);
+    motivoSuspend = await askSuspensionReason(nombre, email, hint);
+    if (!motivoSuspend) return; // canceló → no suspende
+  }
+
+  // Restaurar: confirm simple. No requiere motivo (buena noticia) ni
+  // type-to-confirm (no destructivo). Se enviará email al usuario avisando.
+  if (action === 'restore') {
+    const okRestore = await heroConfirm({
+      title: '¿Reactivar la cuenta?',
+      body: 'La cuenta de ' + nombre + ' (' + email + ') volverá a estar activa. Si tenemos su correo personal registrado, se le enviará un aviso.',
+      confirmText: 'Reactivar',
+    });
+    if (!okRestore) return;
+  }
+
   addLog('Ejecutando ' + labels[action] + ' para ' + email + '...', 'info');
 
   try {
@@ -1635,18 +1695,21 @@ async function userAction(action) {
 
     // #2 — Al suspender: buscar personalEmail en Firestore, promptear si no
     // existe, mandar email de aviso + guardar scheduledDeletionAt (7 dias).
+    // El motivo ya fue elegido arriba (askSuspensionReason).
     if (action === 'suspend') {
-      await notificarSuspension(email, nombre);
+      await notificarSuspension(email, nombre, motivoSuspend);
     }
 
     // #3 — Al restaurar: limpiar scheduledDeletionAt del Firestore para
-    // sacar la cuenta del contador "próximas eliminaciones" del dashboard.
+    // sacar la cuenta del contador "próximas eliminaciones" del dashboard,
+    // y notificar al correo personal para cerrar el loop del email de suspensión.
     if (action === 'restore') {
       saveWorkspaceUser(email, {
         reactivatedAt: new Date().toISOString(),
         scheduledDeletionAt: null,
         suspendedAt: null,
       });
+      await notificarReactivacion(email, nombre);
     }
 
     showToast(msgs[action]);
@@ -1658,17 +1721,180 @@ async function userAction(action) {
   }
 }
 
+// ── Selector de motivo de suspensión ─────────────────────────
+// Modal con radio buttons de motivos predefinidos + opción "Otro" con
+// textarea. Retorna Promise<{motivo:string} | null> donde null = canceló.
+// Pre-selección inteligente: si el user nunca hizo login o hace >3/6 meses
+// que no entra, pre-selecciona el motivo correspondiente. Ahorra clicks.
+//
+// El param `preselectHint` es el key del motivo a pre-marcar (o null).
+// Valores válidos: 'never', '3m', '6m', 'contrato', 'renuncia', 'admin', 'otro'.
+var SUSPENSION_REASONS = [
+  { key: 'never',    label: 'Cuenta inactiva — nunca ha iniciado sesión',           text: 'porque la cuenta nunca fue utilizada (no se registró ningún inicio de sesión).' },
+  { key: '3m',       label: 'Cuenta inactiva — sin login en los últimos 3 meses',   text: 'por falta de uso: no se ha detectado actividad en los últimos 3 meses.' },
+  { key: '6m',       label: 'Cuenta inactiva — sin login en los últimos 6 meses',   text: 'por falta de uso prolongado: no se ha detectado actividad en los últimos 6 meses.' },
+  { key: 'contrato', label: 'Fin de contrato',                                       text: 'porque tu contrato con Hero Insurance USA finalizó.' },
+  { key: 'renuncia', label: 'Renuncia',                                              text: 'como parte del proceso de desvinculación por renuncia.' },
+  { key: 'admin',    label: 'Solicitud de la administración',                        text: 'por decisión de la administración.' },
+  { key: 'otro',     label: 'Otro (especificar)',                                    text: null }
+];
+
+function askSuspensionReason(nombre, emailCorp, preselectHint) {
+  return new Promise(function(resolve) {
+    var modal = document.getElementById('suspension-reason-modal');
+    if (modal) modal.remove();
+
+    modal = document.createElement('div');
+    modal.id = 'suspension-reason-modal';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.style.cssText = 'display:block;position:fixed;inset:0;background:rgba(26,39,51,0.5);z-index:1000;overflow-y:auto;padding:24px;';
+
+    var card = document.createElement('div');
+    card.style.cssText = 'background:#fff;border:1px solid var(--hero-border);border-radius:14px;max-width:520px;margin:40px auto;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,0.18);';
+
+    var h = document.createElement('div');
+    h.style.cssText = 'font-size:16px;font-weight:700;color:var(--hero-text-primary);margin-bottom:6px;';
+    h.textContent = '¿Suspender cuenta de ' + nombre + '?';
+    card.appendChild(h);
+
+    var subh = document.createElement('div');
+    subh.style.cssText = 'font-size:12px;color:var(--hero-text-muted);margin-bottom:16px;line-height:1.5;';
+    subh.textContent = 'Selecciona el motivo. El usuario lo recibirá en el email de aviso.';
+    card.appendChild(subh);
+
+    var chosenKey = preselectHint || 'admin';
+    var radios = [];
+
+    SUSPENSION_REASONS.forEach(function(r) {
+      var lbl = document.createElement('label');
+      lbl.style.cssText = 'display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--hero-border-card);border-radius:8px;margin-bottom:6px;cursor:pointer;transition:all .12s;';
+      lbl.dataset.key = r.key;
+
+      var input = document.createElement('input');
+      input.type = 'radio';
+      input.name = 'susp-reason';
+      input.value = r.key;
+      input.style.cssText = 'margin-top:2px;flex-shrink:0;accent-color:var(--hero-primary);';
+      if (r.key === chosenKey) input.checked = true;
+      radios.push(input);
+
+      var text = document.createElement('span');
+      text.style.cssText = 'font-size:13px;color:var(--hero-text-primary);line-height:1.4;';
+      text.textContent = r.label;
+
+      lbl.appendChild(input);
+      lbl.appendChild(text);
+      card.appendChild(lbl);
+
+      lbl.addEventListener('click', function() {
+        chosenKey = r.key;
+        radios.forEach(function(ri) { ri.checked = (ri.value === r.key); });
+        highlightSelected();
+        toggleOtroField();
+      });
+    });
+
+    var otroWrap = document.createElement('div');
+    otroWrap.style.cssText = 'margin-top:8px;display:none;';
+    var otroLbl = document.createElement('label');
+    otroLbl.style.cssText = 'display:block;font-size:11px;color:var(--hero-text-muted);margin-bottom:4px;';
+    otroLbl.textContent = 'Motivo personalizado (aparece tal cual en el email):';
+    otroWrap.appendChild(otroLbl);
+    var otroInput = document.createElement('textarea');
+    otroInput.className = 'form-input';
+    otroInput.rows = 3;
+    otroInput.placeholder = 'ej. Retiro voluntario en periodo de prueba';
+    otroInput.style.cssText = 'width:100%;font-family:inherit;font-size:13px;';
+    otroWrap.appendChild(otroInput);
+    card.appendChild(otroWrap);
+
+    var actions = document.createElement('div');
+    actions.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;margin-top:18px;';
+
+    var btnCancel = document.createElement('button');
+    btnCancel.className = 'btn btn-secondary';
+    btnCancel.textContent = 'Cancelar';
+    btnCancel.style.cssText = 'font-size:13px;';
+
+    var btnOk = document.createElement('button');
+    btnOk.className = 'btn btn-primary';
+    btnOk.textContent = 'Suspender';
+    btnOk.style.cssText = 'font-size:13px;background:linear-gradient(135deg,#c0392b,#a52917);';
+
+    actions.appendChild(btnCancel);
+    actions.appendChild(btnOk);
+    card.appendChild(actions);
+
+    modal.appendChild(card);
+    document.body.appendChild(modal);
+
+    function highlightSelected() {
+      Array.from(card.querySelectorAll('label[data-key]')).forEach(function(lbl) {
+        var isChecked = lbl.dataset.key === chosenKey;
+        lbl.style.borderColor = isChecked ? 'var(--hero-primary)' : 'var(--hero-border-card)';
+        lbl.style.background = isChecked ? 'rgba(6,163,182,0.06)' : 'transparent';
+      });
+    }
+    function toggleOtroField() {
+      var isOtro = chosenKey === 'otro';
+      otroWrap.style.display = isOtro ? 'block' : 'none';
+      if (isOtro) setTimeout(function() { otroInput.focus(); }, 50);
+    }
+
+    highlightSelected();
+    toggleOtroField();
+    otroInput.addEventListener('input', function() {
+      btnOk.disabled = chosenKey === 'otro' && !otroInput.value.trim();
+    });
+    if (chosenKey === 'otro') btnOk.disabled = true;
+
+    function close(result) {
+      modal.remove();
+      resolve(result);
+    }
+
+    btnCancel.addEventListener('click', function() { close(null); });
+    btnOk.addEventListener('click', function() {
+      var r = SUSPENSION_REASONS.find(function(x) { return x.key === chosenKey; });
+      var text = (r && r.text) || otroInput.value.trim();
+      if (!text) return;
+      close({ key: chosenKey, text: text, label: r ? r.label : 'Otro' });
+    });
+
+    // ESC cancela
+    var onKey = function(e) {
+      if (e.key === 'Escape') { document.removeEventListener('keydown', onKey); close(null); }
+    };
+    document.addEventListener('keydown', onKey);
+  });
+}
+
+// Sugerencia de motivo pre-seleccionado según la última fecha de login.
+// El usuario aparece en la lista con `ultimoLogin` (ISO o vacío/'1970-...').
+function suggestSuspensionReasonKey(user) {
+  if (!user) return 'admin';
+  var login = user.ultimoLogin;
+  if (!login || login === '1970-01-01T00:00:00.000Z') return 'never';
+  var days = (Date.now() - new Date(login).getTime()) / 86400000;
+  if (days >= 180) return '6m';
+  if (days >= 90) return '3m';
+  return 'admin';
+}
+
 // ── Notificación al personal al suspender cuenta ─────────────
 // Se llama SIEMPRE después de suspender exitosamente en Workspace.
+// Recibe el motivo (elegido en askSuspensionReason antes de suspender).
 // Flujo:
 //   1. Busca personalEmail en Firestore shared/workspaceUsers/byEmail/{email}.
 //   2. Si no lo tiene → prompt para escribirlo (dejar vacío para saltear).
-//   3. Guarda suspendedAt + scheduledDeletionAt (+7 días) en Firestore
+//   3. Guarda suspendedAt + scheduledDeletionAt (+7 días) + motivo en Firestore
 //      para que el chip de dashboard "próximas eliminaciones" lo detecte.
-//   4. Si hay personalEmail → manda buildEmailSuspension al correo personal.
+//   4. Si hay personalEmail → manda buildEmailSuspension al correo personal
+//      con el motivo específico.
 //   5. Nunca throws — errores se registran en addLog pero el suspend
 //      principal ya fue exitoso, no queremos romper el flujo del modal.
-async function notificarSuspension(emailCorp, nombre) {
+async function notificarSuspension(emailCorp, nombre, motivo) {
   try {
     var registro = await getWorkspaceUser(emailCorp);
     var personalEmail = (registro && registro.personalEmail) || '';
@@ -1690,12 +1916,15 @@ async function notificarSuspension(emailCorp, nombre) {
     scheduledDeletion.setDate(scheduledDeletion.getDate() + 7);
 
     // Guarda el estado de suspensión en Firestore. Incluye personalEmail si
-    // vino nuevo del prompt (permite backfill on-demand).
+    // vino nuevo del prompt (permite backfill on-demand) y motivo/motivoKey
+    // para trazabilidad de por qué se suspendió cada cuenta.
     var updateData = {
       suspendedAt: now.toISOString(),
       suspendedBy: 'it-console',
       scheduledDeletionAt: scheduledDeletion.toISOString(),
       reactivatedAt: null,
+      suspendedReason: (motivo && motivo.text) || null,
+      suspendedReasonKey: (motivo && motivo.key) || null,
     };
     if (personalEmail) updateData.personalEmail = personalEmail;
     saveWorkspaceUser(emailCorp, updateData);
@@ -1710,23 +1939,61 @@ async function notificarSuspension(emailCorp, nombre) {
     var fechaLabel = scheduledDeletion.toLocaleDateString('es-ES', {
       timeZone: 'America/New_York', year: 'numeric', month: 'long', day: 'numeric'
     });
+    var motivoText = (motivo && motivo.text) || 'por decisión de la administración';
     try {
       await sendOnboardingViaResend({
         to: personalEmail,
         subject: 'Tu cuenta ' + emailCorp + ' fue suspendida — Hero Insurance USA',
-        html: buildEmailSuspension(nombre, emailCorp, fechaLabel),
-        text: 'Hola ' + nombre + ', tu cuenta corporativa ' + emailCorp + ' fue suspendida. '
+        html: buildEmailSuspension(nombre, emailCorp, fechaLabel, motivoText),
+        text: 'Hola ' + nombre + ', tu cuenta corporativa ' + emailCorp + ' fue suspendida ' + motivoText + ' '
             + 'Si no solicitas reactivación en los próximos 7 días (antes del ' + fechaLabel + '), '
             + 'la cuenta será eliminada permanentemente. '
             + 'Para solicitar reactivación escribe a it@heroinsuranceusa.com.',
       });
-      addLog('Email de suspensión enviado a ' + personalEmail, 'success');
-      auditLog('usuario', 'Aviso de suspensión enviado al personal', emailCorp + ' → ' + personalEmail);
+      addLog('Email de suspensión enviado a ' + personalEmail + ' (motivo: ' + (motivo && motivo.key || 'admin') + ')', 'success');
+      auditLog('usuario', 'Aviso de suspensión enviado al personal · motivo: ' + (motivo && motivo.label || 'admin'), emailCorp + ' → ' + personalEmail);
     } catch (emailErr) {
       addLog('Cuenta suspendida pero aviso al personal falló: ' + emailErr.message, 'warn');
     }
   } catch (e) {
     console.warn('[notificarSuspension] error inesperado:', e && e.message);
+  }
+}
+
+// ── Notificación al personal al reactivar cuenta ─────────────
+// Cierra el loop que abrió el email de suspensión (donde prometimos que
+// si el usuario solicitaba reactivación, podría volver). Se llama después
+// de restaurar exitosamente en Workspace.
+// Flujo:
+//   1. Busca personalEmail en Firestore (guardado al crear o al suspender).
+//   2. Si no lo tiene → warn silencioso. El restore ya sucedió, no
+//      interrumpimos con prompts para casos donde IT reactiva y no espera
+//      email (ej. reactivación técnica sin usuario detrás).
+//   3. Si hay → manda buildEmailReactivation al correo personal.
+async function notificarReactivacion(emailCorp, nombre) {
+  try {
+    var registro = await getWorkspaceUser(emailCorp);
+    var personalEmail = (registro && registro.personalEmail) || '';
+    if (!personalEmail) {
+      addLog('Cuenta reactivada sin correo personal registrado — no se notificó al usuario', 'warn');
+      return;
+    }
+    try {
+      await sendOnboardingViaResend({
+        to: personalEmail,
+        subject: 'Tu cuenta ' + emailCorp + ' fue reactivada — Hero Insurance USA',
+        html: buildEmailReactivation(nombre, emailCorp),
+        text: 'Hola ' + nombre + ', tu cuenta corporativa ' + emailCorp + ' fue reactivada. '
+            + 'Ya puedes iniciar sesión con normalidad en mail.google.com. '
+            + 'Si tienes cualquier problema, escribe a it@heroinsuranceusa.com.',
+      });
+      addLog('Email de reactivación enviado a ' + personalEmail, 'success');
+      auditLog('usuario', 'Aviso de reactivación enviado al personal', emailCorp + ' → ' + personalEmail);
+    } catch (emailErr) {
+      addLog('Cuenta reactivada pero aviso al personal falló: ' + emailErr.message, 'warn');
+    }
+  } catch (e) {
+    console.warn('[notificarReactivacion] error inesperado:', e && e.message);
   }
 }
 
@@ -2690,6 +2957,22 @@ async function suspenderDesdeSolicitud(id, correoEliminar, persona) {
         + '(la eliminación definitiva es un paso manual posterior). La solicitud quedará marcada como procesada.',
     confirmText: 'Suspender', destructive: true, mustType: correoEliminar,
   }))) return;
+
+  // Pide motivo. Pre-selecciona 'contrato' o 'renuncia' si el motivo de la
+  // solicitud original coincide con esas palabras clave. Si el usuario cancela,
+  // se aborta la suspensión (no queremos suspender sin motivo consistente
+  // con lo que le mandaremos al correo personal).
+  var sol = (allSolicitudes || []).find(function(x) { return x.id === id; });
+  var solMotivo = (sol && sol.motivo || '').toLowerCase();
+  var hint = 'admin';
+  if (solMotivo.indexOf('renuncia') !== -1) hint = 'renuncia';
+  else if (solMotivo.indexOf('contrato') !== -1 || solMotivo.indexOf('fin de') !== -1) hint = 'contrato';
+  // También sugiere por login si tenemos el user en la tabla cargada.
+  var userRecord = (allUsers || []).find(function(u) { return u.email === correoEliminar; });
+  if (userRecord && hint === 'admin') hint = suggestSuspensionReasonKey(userRecord);
+  var motivo = await askSuspensionReason(persona, correoEliminar, hint);
+  if (!motivo) return;
+
   try {
     const resp = await authFetch(WORKER_URL + '/user-action', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -2702,9 +2985,9 @@ async function suspenderDesdeSolicitud(id, correoEliminar, persona) {
       body: JSON.stringify({ id, estado: 'procesada' })
     });
     showToast('Cuenta suspendida: ' + correoEliminar);
-    auditLog('solicitud', 'Cuenta suspendida desde solicitud de baja: ' + persona, correoEliminar);
+    auditLog('solicitud', 'Cuenta suspendida desde solicitud de baja: ' + persona + ' · motivo: ' + motivo.label, correoEliminar);
     // Notificar al correo personal (mismo flujo que userAction('suspend')).
-    await notificarSuspension(correoEliminar, persona);
+    await notificarSuspension(correoEliminar, persona, motivo);
     loadSolicitudes();
   } catch(err) {
     showToast('Error: ' + err.message);
@@ -4977,14 +5260,27 @@ var PLANTILLAS_TEMPLATES = {
       var fecha = new Date(Date.now() + 7 * 86400000).toLocaleDateString('es-ES', {
         timeZone: 'America/New_York', year: 'numeric', month: 'long', day: 'numeric'
       });
-      return buildEmailSuspension(PLANTILLAS_SAMPLE.nombre, PLANTILLAS_SAMPLE.email, fecha);
+      // Motivo de ejemplo — el motivo real lo elige Fernando en askSuspensionReason
+      // al momento de suspender. Aquí mostramos el caso más común para el preview.
+      var motivoEjemplo = 'por falta de uso: no se ha detectado actividad en los últimos 3 meses.';
+      return buildEmailSuspension(PLANTILLAS_SAMPLE.nombre, PLANTILLAS_SAMPLE.email, fecha, motivoEjemplo);
     },
     subject: 'Tu cuenta jperez@heroinsuranceusa.com fue suspendida — Hero Insurance USA',
     from: 'Fernando Romero <it@heroinsuranceusa.com>',
     to: '(correo personal registrado en shared/workspaceUsers)',
-    trigger: 'IT suspende una cuenta desde el modal de Usuarios o desde una solicitud de baja. Va al correo personal registrado en Firestore; si no hay, se pide en un prompt al momento de suspender.',
+    trigger: 'IT suspende una cuenta desde el modal de Usuarios o desde una solicitud de baja. Antes de suspender se abre un modal para elegir el motivo (con pre-selección inteligente según el último login). El motivo elegido aparece tal cual en el email al usuario.',
     endpoint: 'POST /email/onboarding (mismo endpoint que onboarding porque acepta destinos externos)',
-    sections: ['Header rojo con badge SUSPENDIDA', 'Explicacion breve', 'Advertencia amarilla del plazo de 7 dias', 'CTA Solicitar reactivacion (mailto)', 'Contacto directo']
+    sections: ['Header rojo con badge SUSPENDIDA', 'Bloque de motivo específico (elegido en el modal)', 'Explicación breve', 'Advertencia amarilla del plazo de 7 días', 'CTA Solicitar reactivación (mailto)', 'Contacto directo']
+  },
+  'reactivacion': {
+    label: 'Reactivacion de cuenta',
+    build: function() { return buildEmailReactivation(PLANTILLAS_SAMPLE.nombre, PLANTILLAS_SAMPLE.email); },
+    subject: 'Tu cuenta jperez@heroinsuranceusa.com fue reactivada — Hero Insurance USA',
+    from: 'Fernando Romero <it@heroinsuranceusa.com>',
+    to: '(correo personal registrado en shared/workspaceUsers)',
+    trigger: 'IT reactiva una cuenta previamente suspendida (userAction restore). Cierra el loop del email de suspensión que prometía la posibilidad de reactivación.',
+    endpoint: 'POST /email/onboarding',
+    sections: ['Header verde con badge REACTIVADA', 'Confirmación amistosa', 'CTA Iniciar sesión (mail.google.com)', 'Bloque de ayuda con contacto IT']
   }
 };
 

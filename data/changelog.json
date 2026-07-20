@@ -1,5 +1,40 @@
 [
   {
+    "id": "2026-07-20-it-console-restore-confirm-email",
+    "version": "v2.21.7",
+    "date": "2026-07-20",
+    "category": "feat",
+    "scope": "it-console",
+    "audience": "admin",
+    "title": "IT Console · reactivación con confirmación + email al usuario",
+    "items": [
+      "✅ Al reactivar una cuenta suspendida ahora aparece un heroConfirm ('¿Reactivar la cuenta?') antes de tocar Workspace. Elimina el riesgo de reactivación accidental por click distraído",
+      "📧 Se envía email al correo personal del usuario avisando 'Tu cuenta ya está activa nuevamente'. Cierra el loop del email de suspensión que prometía la posibilidad de reactivación — el usuario no queda esperando confirmación",
+      "🎨 Nuevo template buildEmailReactivation: header verde, badge REACTIVADA, texto amistoso, CTA Iniciar sesión a mail.google.com, contacto IT",
+      "📋 Nueva 7ª tab 'Reactivación de cuenta' en la pestaña Plantillas del IT Console para preview del template",
+      "🛡 Si no tenemos el correo personal del usuario en Firestore, el restore igualmente sucede (no bloqueamos por un email) pero se registra un warn en el log — util para casos de reactivación técnica sin usuario detrás",
+      "Bump v2.21.6 → v2.21.7"
+    ]
+  },
+  {
+    "id": "2026-07-20-it-console-motivo-suspension",
+    "version": "v2.21.6",
+    "date": "2026-07-20",
+    "category": "feat",
+    "scope": "it-console",
+    "audience": "admin",
+    "title": "IT Console · selector de motivo al suspender cuenta (con pre-selección según último login)",
+    "items": [
+      "🎯 Al suspender una cuenta ahora aparece un modal para elegir el motivo antes de tocar Workspace. Opciones: 'Cuenta inactiva — nunca ha iniciado sesión', 'sin login en los últimos 3 meses', 'sin login en los últimos 6 meses', 'Fin de contrato', 'Renuncia', 'Solicitud de la administración', 'Otro' (con textarea libre)",
+      "🧠 Pre-selección inteligente: el modal detecta el ultimoLogin del usuario y marca el motivo probable — nunca ha entrado → 'nunca ha iniciado sesión'; >6 meses → '6 meses'; >3 meses → '3 meses'. Ahorra clicks cuando el motivo evidente es la inactividad",
+      "📧 El motivo elegido aparece TAL CUAL en el email al correo personal del usuario, dentro de un bloque destacado 'Motivo'. Ya no es genérico 'por decisión de la administración' — el usuario sabe exactamente por qué se suspendió su cuenta",
+      "💾 Se guarda suspendedReason (texto) + suspendedReasonKey (código) en Firestore shared/workspaceUsers para trazabilidad histórica y para poder analizar patrones (ej. cuántas suspensiones fueron por inactividad vs fin de contrato)",
+      "🔗 Desde el modal de baja de solicitud (suspenderDesdeSolicitud): el modal detecta si la solicitud menciona 'renuncia' o 'contrato' y lo pre-selecciona; sino cae al motivo por login. Consistencia entre los 2 flujos de suspensión",
+      "🛡 Si Fernando cancela el modal del motivo, se aborta toda la acción — no queremos suspender sin motivo consistente con lo que se le mandará al usuario",
+      "Bump v2.21.5 → v2.21.6"
+    ]
+  },
+  {
     "id": "2026-07-20-it-console-suspension-notif-plantillas",
     "version": "v2.21.5",
     "date": "2026-07-20",
