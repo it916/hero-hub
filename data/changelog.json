@@ -1,5 +1,24 @@
 [
   {
+    "id": "2026-07-20-it-console-suspension-notif-plantillas",
+    "version": "v2.21.5",
+    "date": "2026-07-20",
+    "category": "feat",
+    "scope": "it-console",
+    "audience": "admin",
+    "title": "IT Console · notificación de suspensión al usuario + pestaña Plantillas + alerta de eliminaciones",
+    "items": [
+      "📧 Al suspender una cuenta de Workspace (desde el modal de Usuarios o desde una solicitud de baja), se envía automáticamente un email al correo personal del empleado avisando que su cuenta fue suspendida y que si no solicita reactivación en los próximos 7 días la cuenta será eliminada permanentemente. Incluye CTA 'Solicitar reactivación' con mailto pre-llenado a IT",
+      "🗄 Nueva colección Firestore shared/workspaceUsers/byEmail/{email} donde se guarda personalEmail + cargo + area al crear cuenta. Se usa después al suspender. Si no tenemos el personalEmail (para cuentas viejas), se pide con un prompt y se guarda para siguientes acciones (backfill on-demand)",
+      "⚠ Chip nuevo en el dashboard del IT Console: 'N cuentas suspendidas cumplen 7 días'. Aparece cuando alguna cuenta suspendida ya cumplió su plazo de eliminación programada y necesita revisión manual. Trackea scheduledDeletionAt y respeta reactivatedAt (si Fernando restaura la cuenta, sale del chip)",
+      "🔄 Al restaurar una cuenta (action=restore), se limpia scheduledDeletionAt del Firestore para que salga del chip",
+      "🎨 Nueva pestaña 'Plantillas de email' bajo el grupo Sistema del sidebar. Muestra los 6 templates que dispara el IT Console (onboarding empleado/agente ES/EN, reset, suspensión) con datos de ejemplo en un iframe. Panel lateral con asunto, from, to, endpoint, cuándo se dispara, secciones y datos de ejemplo. Botones 'Abrir en pestaña' y 'Copiar HTML' para inspeccionar el rendering exacto",
+      "🎨 Nuevo template buildEmailSuspension con header rojo, badge 'CUENTA SUSPENDIDA', advertencia amarilla del plazo de 7 días y CTA de mailto para solicitar reactivación",
+      "🔒 Reusa el endpoint /email/onboarding del Worker que ya acepta destinos externos (@gmail, @yahoo). Sin cambios en el Worker",
+      "Bump v2.21.4 → v2.21.5"
+    ]
+  },
+  {
     "id": "2026-07-20-it-console-usuarios-enriquecidos",
     "version": "v2.21.4",
     "date": "2026-07-20",

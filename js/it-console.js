@@ -134,7 +134,8 @@ const pageLabels = {
   'onboarding': 'Enviar Onboarding',
   'toolbox': 'Soporte · Toolbox',
   'dispositivos': 'Soporte · Dispositivos',
-  'licencias': 'Soporte · Licencias'
+  'licencias': 'Soporte · Licencias',
+  'plantillas': 'Plantillas de email'
 };
 
 // Las 4 sub-páginas del módulo Soporte comparten una sola entrada del sidebar
@@ -195,6 +196,7 @@ function showPage(id) {
     'toolbox':      () => loadToolbox(),
     'logs':         () => renderSessionLogs(),
     'config':       () => loadConfig(),
+    'plantillas':   () => loadPlantillas(),
   };
   if (autoLoad[id]) autoLoad[id]();
 
@@ -1426,6 +1428,101 @@ function buildEmailReset(nombre, emailCorp, password) {
   + '</td></tr></table></td></tr></table></body></html>';
 }
 
+// ── Template: cuenta suspendida (al personal email) ──────────
+// Se envía al correo personal (Gmail/etc.) cuando IT suspende una cuenta
+// de Workspace. Incluye advertencia de eliminación a los 7 días y CTA de
+// mailto a IT con subject pre-llenado para solicitar reactivación.
+function buildEmailSuspension(nombre, emailCorp, fechaEliminacion) {
+  var P = '#06a3b6';
+  var mailtoUrl = 'mailto:it@heroinsuranceusa.com'
+    + '?subject=' + encodeURIComponent('Reactivar cuenta ' + emailCorp)
+    + '&body=' + encodeURIComponent('Hola equipo de IT,\n\nSolicito la reactivacion de la cuenta ' + emailCorp + '.\n\nGracias.\n\n' + (nombre || ''));
+  return '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head>'
+  + '<body style="margin:0;padding:0;background:#f0f4f8;font-family:Trebuchet MS,Arial,sans-serif;">'
+  + '<table cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#f0f4f8;"><tr><td style="padding:32px 16px;">'
+  + '<table cellspacing="0" cellpadding="0" border="0" width="600" align="center" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(192,57,43,0.10);">'
+  + '<tr><td style="background:linear-gradient(135deg,#c0392b,#a52917);padding:32px 40px;text-align:center;">'
+  + '<img src="https://i.ibb.co/Gr4mzLv/Nuevo-Logo-Cuadrado-compress.png" width="120" style="display:block;margin:0 auto 18px;"/>'
+  + '<div style="display:inline-block;background:rgba(255,255,255,0.2);color:#fff;font-weight:700;font-size:11px;letter-spacing:3px;padding:5px 14px;border-radius:20px;margin-bottom:10px;">CUENTA SUSPENDIDA</div>'
+  + '<h1 style="margin:0;font-size:22px;font-weight:700;color:#fff;">Tu cuenta corporativa fue suspendida</h1>'
+  + '</td></tr>'
+  + '<tr><td style="padding:32px 40px;">'
+  + '<p style="margin:0 0 18px;font-size:14px;color:#2d3748;line-height:1.55;">Hola <strong>' + nombre + '</strong>, este correo es para informarte que tu cuenta corporativa <strong style="color:#c0392b;">' + emailCorp + '</strong> fue suspendida por decisión de la administración.</p>'
+  + '<p style="margin:0 0 20px;font-size:13px;color:#4a5568;line-height:1.55;">Mientras la cuenta está suspendida no podrás acceder al correo, al calendario ni a ningún otro servicio de Google Workspace de Hero Insurance USA.</p>'
+  + '<div style="background:#fff8e6;border-radius:12px;border:1px solid #f5d87a;border-left:4px solid #f0b429;padding:16px 20px;margin-bottom:24px;">'
+  + '<p style="margin:0 0 6px;font-size:11px;font-weight:700;color:#b08a00;text-transform:uppercase;letter-spacing:1.5px;">Plazo importante</p>'
+  + '<p style="margin:0;font-size:13px;color:#7a5f00;line-height:1.6;">Si no solicitas la reactivación de tu cuenta en los próximos <strong>7 días</strong>' + (fechaEliminacion ? ' (antes del <strong>' + fechaEliminacion + '</strong>)' : '') + ', la cuenta será <strong>eliminada de forma permanente</strong> y no podrás recuperar su contenido.</p>'
+  + '</div>'
+  + '<div style="text-align:center;margin:0 0 24px;">'
+  + '<a href="' + mailtoUrl + '" style="display:inline-block;padding:14px 32px;background:' + P + ';color:#fff;font-family:Trebuchet MS,Arial,sans-serif;font-size:14px;font-weight:700;text-decoration:none;border-radius:30px;letter-spacing:0.5px;box-shadow:0 4px 14px rgba(6,163,182,0.30);">✉ Solicitar reactivación</a>'
+  + '<p style="margin:12px 0 0;font-size:11px;color:#999;">Se abrirá tu cliente de correo con un mensaje pre-llenado para IT.</p>'
+  + '</div>'
+  + '<div style="background:#f7faff;border-radius:10px;border:1px solid #e2eaf8;padding:14px 18px;">'
+  + '<p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#8fa6cc;text-transform:uppercase;letter-spacing:1.5px;">Contacto directo</p>'
+  + '<p style="margin:0;font-size:13px;color:#4a5568;">También puedes escribir directamente a <a href="mailto:it@heroinsuranceusa.com" style="color:' + P + ';font-weight:700;">it@heroinsuranceusa.com</a></p>'
+  + '</div>'
+  + '</td></tr>'
+  + '<tr><td style="padding:14px 40px;background:#f0f4f8;text-align:center;border-top:1px solid #e8e8e8;">'
+  + '<p style="margin:0;font-size:10px;color:#aaa;">Hero Insurance USA &bull; IT Department</p>'
+  + '<p style="margin:4px 0 0;font-size:10px;color:#ccc;">CONFIDENTIALITY NOTICE: This email is intended solely for the addressee.</p>'
+  + '</td></tr>'
+  + '</table></td></tr></table></body></html>';
+}
+
+// ── Helpers Firestore: shared/workspaceUsers/{email} ─────────
+// Guarda info paralela a Workspace que necesitamos y Workspace no expone:
+// principalmente `personalEmail` para notificar al usuario cuando su cuenta
+// se suspende. Import dinámico de firestore para no cargar el SDK si nunca
+// llegamos a usarlo (el IT Console lo importa on-demand igual que en
+// bootstrapFromHub). NUNCA sobreescribe fields no incluidos en `data` — usa
+// setDoc merge para preservar el historial (fecha suspensión, reactivación).
+async function _fsWorkspaceRef(email) {
+  await import('/js/firebase-config.js');
+  const [{ getFirestore, doc }] = await Promise.all([
+    import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'),
+  ]);
+  const db = getFirestore();
+  return { db, ref: doc(db, 'shared', 'workspaceUsers', 'byEmail', email) };
+}
+
+async function saveWorkspaceUser(email, data) {
+  if (!email || !data) return;
+  try {
+    const { setDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+    const { ref } = await _fsWorkspaceRef(email);
+    await setDoc(ref, data, { merge: true });
+  } catch (e) {
+    console.warn('[workspaceUsers] save falló:', e && e.message);
+  }
+}
+
+async function getWorkspaceUser(email) {
+  if (!email) return null;
+  try {
+    const { getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+    const { ref } = await _fsWorkspaceRef(email);
+    const snap = await getDoc(ref);
+    return snap.exists() ? snap.data() : null;
+  } catch (e) {
+    console.warn('[workspaceUsers] get falló:', e && e.message);
+    return null;
+  }
+}
+
+// Lista todos los docs — usado por el chip de "próximas eliminaciones" en dashboard.
+async function listWorkspaceUsers() {
+  try {
+    const { getFirestore, collection, getDocs } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+    await import('/js/firebase-config.js');
+    const db = getFirestore();
+    const snap = await getDocs(collection(db, 'shared', 'workspaceUsers', 'byEmail'));
+    return snap.docs.map(d => ({ email: d.id, ...d.data() }));
+  } catch (e) {
+    console.warn('[workspaceUsers] list falló:', e && e.message);
+    return [];
+  }
+}
+
 // ── Gestión de usuarios Workspace ────────────────────────────
 let currentUserEmail = null;
 
@@ -1536,12 +1633,100 @@ async function userAction(action) {
       }
     }
 
+    // #2 — Al suspender: buscar personalEmail en Firestore, promptear si no
+    // existe, mandar email de aviso + guardar scheduledDeletionAt (7 dias).
+    if (action === 'suspend') {
+      await notificarSuspension(email, nombre);
+    }
+
+    // #3 — Al restaurar: limpiar scheduledDeletionAt del Firestore para
+    // sacar la cuenta del contador "próximas eliminaciones" del dashboard.
+    if (action === 'restore') {
+      saveWorkspaceUser(email, {
+        reactivatedAt: new Date().toISOString(),
+        scheduledDeletionAt: null,
+        suspendedAt: null,
+      });
+    }
+
     showToast(msgs[action]);
     closeUserModal();
     loadUsers();
   } catch (err) {
     addLog('Error: ' + err.message, 'error');
     showToast('Error: ' + err.message);
+  }
+}
+
+// ── Notificación al personal al suspender cuenta ─────────────
+// Se llama SIEMPRE después de suspender exitosamente en Workspace.
+// Flujo:
+//   1. Busca personalEmail en Firestore shared/workspaceUsers/byEmail/{email}.
+//   2. Si no lo tiene → prompt para escribirlo (dejar vacío para saltear).
+//   3. Guarda suspendedAt + scheduledDeletionAt (+7 días) en Firestore
+//      para que el chip de dashboard "próximas eliminaciones" lo detecte.
+//   4. Si hay personalEmail → manda buildEmailSuspension al correo personal.
+//   5. Nunca throws — errores se registran en addLog pero el suspend
+//      principal ya fue exitoso, no queremos romper el flujo del modal.
+async function notificarSuspension(emailCorp, nombre) {
+  try {
+    var registro = await getWorkspaceUser(emailCorp);
+    var personalEmail = (registro && registro.personalEmail) || '';
+
+    // Si no lo tenemos guardado, pedirlo. Vacío = saltear la notificación.
+    if (!personalEmail) {
+      var input = window.prompt(
+        'No tenemos el correo personal de ' + nombre + '.\n\n'
+        + 'Escríbelo para notificarle la suspensión (o deja vacío para saltear).\n'
+        + 'Se guardará para futuras acciones sobre esta cuenta.',
+        ''
+      );
+      personalEmail = (input || '').trim();
+    }
+
+    // Calcula fecha de eliminación programada (suspend + 7 días).
+    var now = new Date();
+    var scheduledDeletion = new Date(now);
+    scheduledDeletion.setDate(scheduledDeletion.getDate() + 7);
+
+    // Guarda el estado de suspensión en Firestore. Incluye personalEmail si
+    // vino nuevo del prompt (permite backfill on-demand).
+    var updateData = {
+      suspendedAt: now.toISOString(),
+      suspendedBy: 'it-console',
+      scheduledDeletionAt: scheduledDeletion.toISOString(),
+      reactivatedAt: null,
+    };
+    if (personalEmail) updateData.personalEmail = personalEmail;
+    saveWorkspaceUser(emailCorp, updateData);
+
+    if (!personalEmail) {
+      addLog('Cuenta suspendida sin correo personal registrado — no se notificó al usuario', 'warn');
+      return;
+    }
+
+    // Manda email al personal. Usa el endpoint /email/onboarding que ya
+    // acepta destinos externos (@gmail, @yahoo, etc.).
+    var fechaLabel = scheduledDeletion.toLocaleDateString('es-ES', {
+      timeZone: 'America/New_York', year: 'numeric', month: 'long', day: 'numeric'
+    });
+    try {
+      await sendOnboardingViaResend({
+        to: personalEmail,
+        subject: 'Tu cuenta ' + emailCorp + ' fue suspendida — Hero Insurance USA',
+        html: buildEmailSuspension(nombre, emailCorp, fechaLabel),
+        text: 'Hola ' + nombre + ', tu cuenta corporativa ' + emailCorp + ' fue suspendida. '
+            + 'Si no solicitas reactivación en los próximos 7 días (antes del ' + fechaLabel + '), '
+            + 'la cuenta será eliminada permanentemente. '
+            + 'Para solicitar reactivación escribe a it@heroinsuranceusa.com.',
+      });
+      addLog('Email de suspensión enviado a ' + personalEmail, 'success');
+      auditLog('usuario', 'Aviso de suspensión enviado al personal', emailCorp + ' → ' + personalEmail);
+    } catch (emailErr) {
+      addLog('Cuenta suspendida pero aviso al personal falló: ' + emailErr.message, 'warn');
+    }
+  } catch (e) {
+    console.warn('[notificarSuspension] error inesperado:', e && e.message);
   }
 }
 
@@ -1741,6 +1926,41 @@ async function loadHome() {
   _renderHomeTickets(ticketsPri);
   _renderHomeSols(solsAccion);
   _renderHomeLics(licsVencer);
+
+  // Alerta de cuentas suspendidas próximas a eliminar (background — no bloquea
+  // el render del home si Firestore tarda o falla).
+  _renderPendingDeletionsChip();
+}
+
+// Chip de alerta en el dashboard: cuentas suspendidas cuyo scheduledDeletionAt
+// ya llegó (o pasó) y NO fueron reactivadas ni eliminadas. Se prometió al
+// usuario que su cuenta se eliminaria a los 7 días si no solicitaba
+// reactivación; este chip le recuerda a IT que ese plazo se cumplió.
+async function _renderPendingDeletionsChip() {
+  var alert = document.getElementById('home-alert-eliminaciones');
+  if (!alert) return;
+  try {
+    var users = await listWorkspaceUsers();
+    var now = Date.now();
+    var pending = users.filter(function(u) {
+      if (!u.scheduledDeletionAt) return false;
+      if (u.reactivatedAt) return false;
+      if (u.deletedAt) return false;
+      return new Date(u.scheduledDeletionAt).getTime() <= now;
+    });
+    if (!pending.length) {
+      alert.style.display = 'none';
+      return;
+    }
+    document.getElementById('home-alert-count').textContent = pending.length;
+    var plural = pending.length === 1 ? '' : 's';
+    document.getElementById('home-alert-plural').textContent = plural;
+    document.getElementById('home-alert-plural2').textContent = plural;
+    document.getElementById('home-alert-plural3').textContent = pending.length === 1 ? '' : 'n';
+    alert.style.display = 'flex';
+  } catch (e) {
+    console.warn('[pending-deletions] error:', e && e.message);
+  }
 }
 
 function _renderHomeTickets(items) {
@@ -2483,6 +2703,8 @@ async function suspenderDesdeSolicitud(id, correoEliminar, persona) {
     });
     showToast('Cuenta suspendida: ' + correoEliminar);
     auditLog('solicitud', 'Cuenta suspendida desde solicitud de baja: ' + persona, correoEliminar);
+    // Notificar al correo personal (mismo flujo que userAction('suspend')).
+    await notificarSuspension(correoEliminar, persona);
     loadSolicitudes();
   } catch(err) {
     showToast('Error: ' + err.message);
@@ -2564,6 +2786,20 @@ async function crearUsuarioDesdeModal() {
     // registro visible en el panel de Auditoría del Hub.
     addLog('Usuario creado: ' + email, 'success');
     auditLog('usuario', 'Usuario creado desde solicitud: ' + nombre + ' ' + apellido, email);
+
+    // Guardar en Firestore shared/workspaceUsers/byEmail/{email} la info
+    // que Workspace no tiene (correo personal) — se usará después al
+    // suspender la cuenta para notificar al empleado.
+    saveWorkspaceUser(email, {
+      email: email,
+      nombre: nombre + ' ' + apellido,
+      personalEmail: solModalData.correoPersonal || solModalData.correo || '',
+      cargo: solModalData.cargo || '',
+      area: solModalData.area || '',
+      createdAt: new Date().toISOString(),
+      createdBy: 'crearUsuarioDesdeModal',
+      solicitudId: solModalData.id || null,
+    });
 
     // Mark solicitud as processed.
     // skipSolicitanteNotif: true → el Worker YA notificó al solicitante desde
@@ -2663,6 +2899,20 @@ async function crearUsuario() {
     nuevoUsuario = { nombre: nombre + ' ' + apellido, email: emailCorp, password, emailPersonal: emailPers };
     addLog('Usuario creado: ' + emailCorp, 'success', 'log-new');
     auditLog('usuario', 'Usuario creado en Workspace: ' + nombre + ' ' + apellido, emailCorp);
+
+    // Guardar personalEmail + metadata en Firestore para usar al suspender.
+    // Reusa el email personal ingresado en el modulo — puede ser vacio si
+    // el usuario opto por no ingresarlo.
+    saveWorkspaceUser(emailCorp, {
+      email: emailCorp,
+      nombre: nombre + ' ' + apellido,
+      personalEmail: emailPers || '',
+      cargo: '',
+      area: '',
+      createdAt: new Date().toISOString(),
+      createdBy: 'crearUsuario',
+      solicitudId: window._altaId || null,
+    });
 
     // Si viene de una solicitud de alta, marcarla como procesada
     if (window._altaId) {
@@ -4651,4 +4901,210 @@ async function generateMonthlyReport() {
     'Tickets: ' + (summary.tickets?.total || 0)
     + ' · Solicitudes: ' + (summary.solicitudes?.total || 0)
     + ' · Intervenciones: ' + (summary.intervenciones?.total || 0));
+}
+
+// ══════════════════════════════════════════════════════════════
+// Plantillas de email — página de preview
+// ══════════════════════════════════════════════════════════════
+// Renderiza los templates de email del IT Console con datos de ejemplo
+// dentro de un iframe. Reusa las funciones buildOnboardingEmail,
+// buildEmailReset y buildEmailSuspension que ya viven en este archivo.
+// Se inicializa una sola vez (guard _plantillasBooted) porque no depende
+// de datos remotos.
+
+var _plantillasBooted = false;
+
+var PLANTILLAS_SAMPLE = {
+  nombre: 'Juan Perez',
+  email: 'jperez@heroinsuranceusa.com',
+  password: 'TempPass2026!'
+};
+
+var PLANTILLAS_TEMPLATES = {
+  'emp-es': {
+    label: 'Onboarding empleado ES',
+    build: function() { return buildOnboardingEmail(PLANTILLAS_SAMPLE.nombre, PLANTILLAS_SAMPLE.email, PLANTILLAS_SAMPLE.password, 'empleado', 'es'); },
+    subject: 'Bienvenido(a) a Hero Insurance USA - Informacion de acceso',
+    from: 'Fernando Romero <it@heroinsuranceusa.com>',
+    to: '(correo personal del nuevo empleado, ej. juan.perez@gmail.com)',
+    trigger: 'IT crea la cuenta en Workspace desde el modulo "Crear Usuario" con tipo=empleado. Se envia inmediatamente al correo personal indicado.',
+    endpoint: 'POST /email/onboarding',
+    sections: ['Header con logo + role "Empleado"', 'Card credenciales', '4 pasos numerados de inicio de sesion', 'Politicas de seguridad', 'CTA Abrir ticket de soporte']
+  },
+  'emp-en': {
+    label: 'Onboarding empleado EN',
+    build: function() { return buildOnboardingEmail(PLANTILLAS_SAMPLE.nombre, PLANTILLAS_SAMPLE.email, PLANTILLAS_SAMPLE.password, 'empleado', 'en'); },
+    subject: 'Welcome to Hero Insurance USA - Account access information',
+    from: 'Fernando Romero <it@heroinsuranceusa.com>',
+    to: '(personal email of the new employee)',
+    trigger: 'Same as above with English toggle. Used when the new hire prefers English.',
+    endpoint: 'POST /email/onboarding',
+    sections: ['Header with logo + role "Employee"', 'Credentials card', '4 numbered login steps', 'Security policies', 'CTA Open support ticket']
+  },
+  'agt-es': {
+    label: 'Onboarding agente ES',
+    build: function() { return buildOnboardingEmail(PLANTILLAS_SAMPLE.nombre, PLANTILLAS_SAMPLE.email, PLANTILLAS_SAMPLE.password, 'agente', 'es'); },
+    subject: 'Bienvenido(a) a Hero Insurance USA - Acceso de Agente',
+    from: 'Fernando Romero <it@heroinsuranceusa.com>',
+    to: '(correo personal del nuevo agente)',
+    trigger: 'IT procesa una solicitud de ALTA autorizada donde tipoPersona=agente. Version reducida sin pasos ni politicas.',
+    endpoint: 'POST /email/onboarding',
+    sections: ['Header con logo + role "Agente"', 'Card credenciales', 'CTA Abrir ticket de soporte (directo)']
+  },
+  'agt-en': {
+    label: 'Onboarding agente EN',
+    build: function() { return buildOnboardingEmail(PLANTILLAS_SAMPLE.nombre, PLANTILLAS_SAMPLE.email, PLANTILLAS_SAMPLE.password, 'agente', 'en'); },
+    subject: 'Welcome to Hero Insurance USA - Agent access',
+    from: 'Fernando Romero <it@heroinsuranceusa.com>',
+    to: '(personal email of the new agent)',
+    trigger: 'Same as above with English toggle.',
+    endpoint: 'POST /email/onboarding',
+    sections: ['Header with logo + role "Agent"', 'Credentials card', 'CTA Open support ticket']
+  },
+  'reset': {
+    label: 'Reset de contrasena',
+    build: function() { return buildEmailReset(PLANTILLAS_SAMPLE.nombre, PLANTILLAS_SAMPLE.email, PLANTILLAS_SAMPLE.password); },
+    subject: 'Restablecimiento de contrasena - Hero Insurance USA',
+    from: 'Fernando Romero <it@heroinsuranceusa.com>',
+    to: 'La cuenta corporativa afectada',
+    trigger: 'IT resetea la contrasena desde el modal de usuario del IT Console. Se envia al mismo correo corporativo reseteado.',
+    endpoint: 'POST /email',
+    sections: ['Header con logo', 'Aviso de seguridad amarillo', 'Card credenciales', 'CTA Contactar soporte', 'Timestamp']
+  },
+  'suspension': {
+    label: 'Suspension de cuenta',
+    build: function() {
+      var fecha = new Date(Date.now() + 7 * 86400000).toLocaleDateString('es-ES', {
+        timeZone: 'America/New_York', year: 'numeric', month: 'long', day: 'numeric'
+      });
+      return buildEmailSuspension(PLANTILLAS_SAMPLE.nombre, PLANTILLAS_SAMPLE.email, fecha);
+    },
+    subject: 'Tu cuenta jperez@heroinsuranceusa.com fue suspendida — Hero Insurance USA',
+    from: 'Fernando Romero <it@heroinsuranceusa.com>',
+    to: '(correo personal registrado en shared/workspaceUsers)',
+    trigger: 'IT suspende una cuenta desde el modal de Usuarios o desde una solicitud de baja. Va al correo personal registrado en Firestore; si no hay, se pide en un prompt al momento de suspender.',
+    endpoint: 'POST /email/onboarding (mismo endpoint que onboarding porque acepta destinos externos)',
+    sections: ['Header rojo con badge SUSPENDIDA', 'Explicacion breve', 'Advertencia amarilla del plazo de 7 dias', 'CTA Solicitar reactivacion (mailto)', 'Contacto directo']
+  }
+};
+
+var _plantillasCurrentKey = 'emp-es';
+
+function loadPlantillas() {
+  if (_plantillasBooted) {
+    // Solo re-render por si cambio algo, pero mantenemos la tab activa.
+    _plantillasRenderPreview(_plantillasCurrentKey);
+    return;
+  }
+  _plantillasBooted = true;
+
+  var tabsWrap = document.getElementById('plt-tabs');
+  if (!tabsWrap) return;
+  while (tabsWrap.firstChild) tabsWrap.removeChild(tabsWrap.firstChild);
+
+  Object.keys(PLANTILLAS_TEMPLATES).forEach(function(key) {
+    var t = PLANTILLAS_TEMPLATES[key];
+    var btn = document.createElement('button');
+    btn.className = 'btn btn-secondary';
+    btn.dataset.key = key;
+    btn.style.cssText = 'font-size:12px;padding:8px 14px;';
+    btn.textContent = t.label;
+    btn.addEventListener('click', function() { _plantillasRenderPreview(key); });
+    tabsWrap.appendChild(btn);
+  });
+
+  document.getElementById('plt-btn-open').addEventListener('click', function() {
+    var html = PLANTILLAS_TEMPLATES[_plantillasCurrentKey].build();
+    var blob = new Blob([html], { type: 'text/html' });
+    window.open(URL.createObjectURL(blob), '_blank');
+  });
+
+  document.getElementById('plt-btn-copy').addEventListener('click', function() {
+    var html = PLANTILLAS_TEMPLATES[_plantillasCurrentKey].build();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(html).then(function() { showToast('HTML copiado'); });
+    } else {
+      showToast('Clipboard no disponible en este navegador');
+    }
+  });
+
+  _plantillasRenderPreview('emp-es');
+}
+
+function _plantillasRenderPreview(key) {
+  var tmpl = PLANTILLAS_TEMPLATES[key];
+  if (!tmpl) return;
+  _plantillasCurrentKey = key;
+
+  var label = document.getElementById('plt-current-label');
+  if (label) label.textContent = tmpl.label;
+
+  var frame = document.getElementById('plt-frame');
+  if (frame) frame.srcdoc = tmpl.build();
+
+  document.querySelectorAll('#plt-tabs button').forEach(function(b) {
+    var active = b.dataset.key === key;
+    b.className = active ? 'btn btn-primary' : 'btn btn-secondary';
+  });
+
+  _plantillasRenderInfo(tmpl);
+}
+
+function _plantillasRenderInfo(tmpl) {
+  var panel = document.getElementById('plt-info');
+  if (!panel) return;
+  while (panel.firstChild) panel.removeChild(panel.firstChild);
+
+  function addTitle(text) {
+    var h = document.createElement('div');
+    h.style.cssText = 'font-size:10px;font-weight:800;color:var(--hero-primary);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;';
+    h.textContent = text;
+    panel.appendChild(h);
+  }
+  function addField(label, value, mono) {
+    var dt = document.createElement('div');
+    dt.style.cssText = 'font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--hero-text-muted);text-transform:uppercase;margin-top:10px;margin-bottom:3px;';
+    dt.textContent = label;
+    var dd = document.createElement('div');
+    dd.style.cssText = 'font-size:12px;color:var(--hero-text-primary);' + (mono ? 'font-family:var(--mono);color:var(--hero-primary);word-break:break-all;' : '');
+    dd.textContent = value;
+    panel.appendChild(dt);
+    panel.appendChild(dd);
+  }
+  function addSeparator() {
+    var s = document.createElement('div');
+    s.style.cssText = 'height:1px;background:var(--hero-border-card);margin:14px 0;';
+    panel.appendChild(s);
+  }
+
+  addTitle('Detalles');
+  addField('Asunto', tmpl.subject, false);
+  addField('De', tmpl.from, true);
+  addField('Para', tmpl.to, true);
+  addField('Endpoint', tmpl.endpoint, true);
+
+  addSeparator();
+  addTitle('Cuando se dispara');
+  var p = document.createElement('p');
+  p.style.cssText = 'font-size:12px;color:var(--hero-text-body);line-height:1.55;margin:0;';
+  p.textContent = tmpl.trigger;
+  panel.appendChild(p);
+
+  addSeparator();
+  addTitle('Secciones');
+  var ol = document.createElement('ol');
+  ol.style.cssText = 'padding-left:18px;color:var(--hero-text-muted);margin:0;';
+  tmpl.sections.forEach(function(s) {
+    var li = document.createElement('li');
+    li.style.cssText = 'font-size:11px;margin-bottom:4px;';
+    li.textContent = s;
+    ol.appendChild(li);
+  });
+  panel.appendChild(ol);
+
+  addSeparator();
+  addTitle('Datos de ejemplo');
+  addField('Nombre', PLANTILLAS_SAMPLE.nombre, false);
+  addField('Email corporativo', PLANTILLAS_SAMPLE.email, true);
+  addField('Contrasena temporal', PLANTILLAS_SAMPLE.password, true);
 }

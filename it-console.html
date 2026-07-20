@@ -1107,6 +1107,9 @@ html { scroll-behavior: smooth; }
     <a class="nav-item" onclick="showPage('config')" href="#">
       <span class="nav-icon"><iconify-icon icon="tabler:settings"></iconify-icon></span> Configuración
     </a>
+    <a class="nav-item" onclick="showPage('plantillas')" href="#">
+      <span class="nav-icon"><iconify-icon icon="tabler:mail-cog"></iconify-icon></span> Plantillas de email
+    </a>
   </nav>
 
   <div class="sidebar-footer">
@@ -1157,6 +1160,20 @@ html { scroll-behavior: smooth; }
       <div class="section-header">
         <div class="section-title"><span>//</span> Home</div>
         <div class="section-desc" id="home-saludo">Cola priorizada — qué necesita tu atención ahora.</div>
+      </div>
+
+      <!-- Alerta: cuentas suspendidas próximas a eliminar (>=7 días desde la suspensión) -->
+      <div id="home-alert-eliminaciones" style="display:none;background:linear-gradient(135deg,rgba(232,163,23,0.10),rgba(232,163,23,0.05));border:1px solid rgba(232,163,23,0.35);border-left:4px solid #e8a317;border-radius:10px;padding:14px 18px;margin-bottom:16px;display:none;align-items:center;gap:14px;cursor:pointer;" onclick="showPage('usuarios')" title="Ver usuarios y decidir cuáles eliminar">
+        <div style="width:38px;height:38px;flex-shrink:0;background:rgba(232,163,23,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#e8a317;font-size:20px;">
+          <iconify-icon icon="tabler:alert-triangle"></iconify-icon>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:700;color:#b08a00;line-height:1.2;">
+            <span id="home-alert-count">0</span> cuenta<span id="home-alert-plural">s</span> suspendida<span id="home-alert-plural2">s</span> cumple<span id="home-alert-plural3">n</span> 7 días
+          </div>
+          <div style="font-size:11px;color:var(--hero-text-muted);margin-top:3px;">Se prometió eliminación permanente si el usuario no solicitaba reactivación. Revisa y elimina manualmente cuando corresponda.</div>
+        </div>
+        <iconify-icon icon="tabler:chevron-right" style="color:var(--hero-text-muted);flex-shrink:0;"></iconify-icon>
       </div>
 
       <!-- Stats row: lo que requiere acción HOY + actividad de sesión -->
@@ -2554,6 +2571,31 @@ html { scroll-behavior: smooth; }
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button class="btn btn-secondary" onclick="window.open('https://github.com/it916/hero-it-console/blob/main/hero-it-console.js#L900','_blank')" style="font-size:12px;"><iconify-icon icon="tabler:brand-github"></iconify-icon> Ver código de las plantillas</button>
         </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ PLANTILLAS DE EMAIL ═══════════════════ -->
+    <div class="page" id="page-plantillas">
+      <div class="section-title-wrap" style="margin-bottom:8px;">
+        <div class="section-title"><span>//</span> Plantillas de email</div>
+        <div class="section-desc">Vista previa de los emails que dispara el IT Console. Renderizados con datos de ejemplo.</div>
+      </div>
+
+      <div id="plt-tabs" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;"></div>
+
+      <div style="display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start;">
+        <div style="background:var(--hero-bg-card);border:1px solid var(--hero-border-card);border-radius:12px;overflow:hidden;">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--hero-bg-page);border-bottom:1px solid var(--hero-border-card);font-size:12px;color:var(--hero-text-muted);">
+            <div>Vista previa · <strong id="plt-current-label" style="color:var(--hero-text-primary);">—</strong></div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-secondary" id="plt-btn-open" style="font-size:11px;padding:4px 10px;"><iconify-icon icon="tabler:external-link"></iconify-icon> Abrir en pestaña</button>
+              <button class="btn btn-secondary" id="plt-btn-copy" style="font-size:11px;padding:4px 10px;"><iconify-icon icon="tabler:copy"></iconify-icon> Copiar HTML</button>
+            </div>
+          </div>
+          <iframe id="plt-frame" title="Preview" style="display:block;width:100%;height:720px;border:0;background:var(--hero-bg-page);"></iframe>
+        </div>
+
+        <aside id="plt-info" style="background:var(--hero-bg-card);border:1px solid var(--hero-border-card);border-radius:12px;padding:16px;font-size:12px;line-height:1.55;color:var(--hero-text-body);position:sticky;top:16px;"></aside>
       </div>
     </div>
 
