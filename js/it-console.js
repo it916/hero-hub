@@ -638,6 +638,21 @@ async function sendViaResend({ to, subject, html, text }) {
   return result;
 }
 
+// Variante para el email de onboarding del empleado nuevo — apunta al
+// endpoint /email/onboarding del Worker, que acepta destinos externos
+// (@gmail, @yahoo, etc.) por diseño. El endpoint /email genérico restringe
+// el destino a @heroinsuranceusa para evitar envíos accidentales.
+async function sendOnboardingViaResend({ to, subject, html, text }) {
+  const resp = await authFetch(WORKER_URL + '/email/onboarding', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ to, subject, html, text })
+  });
+  const result = await resp.json();
+  if (!resp.ok) throw new Error(result.message || result.error || 'Error del Worker');
+  return result;
+}
+
 // ── Log helper ────────────────────────────────────────────────
 const SESSION_LOGS_MAX = 500;
 function addLog(message, type = 'info', consoleId = null) {
@@ -2511,7 +2526,7 @@ async function crearUsuarioDesdeModal() {
     const lang = document.getElementById('sm-lang').value;
     const destinoPersonal = solModalData.correoPersonal || solModalData.correo;
     if (destinoPersonal) {
-      await sendViaResend({
+      await sendOnboardingViaResend({
         to: destinoPersonal,
         subject: onboardingSubject('agente', lang),
         html: buildEmailAgente(nombre + ' ' + apellido, email, password, lang),
@@ -2608,7 +2623,7 @@ async function crearUsuario() {
         const htmlBody = tipo === 'empleado'
           ? buildEmailEmpleado(nuevoUsuario.nombre, emailCorp, password, lang)
           : buildEmailAgente(nuevoUsuario.nombre, emailCorp, password, lang);
-        await sendViaResend({
+        await sendOnboardingViaResend({
           to: emailPers,
           subject: onboardingSubject(tipo, lang),
           html: htmlBody,
@@ -2656,7 +2671,7 @@ async function sendOnboardingNuevo(tipo) {
       : buildEmailAgente(nuevoUsuario.nombre, nuevoUsuario.email, nuevoUsuario.password, lang);
     const asunto = onboardingSubject(tipo, lang);
 
-    await sendViaResend({ to: nuevoUsuario.emailPersonal, subject: asunto, html: htmlBody,
+    await sendOnboardingViaResend({ to: nuevoUsuario.emailPersonal, subject: asunto, html: htmlBody,
       text: onboardingText(nuevoUsuario.nombre, nuevoUsuario.email, lang) });
 
     addLog('Onboarding enviado a ' + nuevoUsuario.emailPersonal, 'success', 'log-new');
@@ -2762,7 +2777,7 @@ async function enviarOnboarding() {
       : buildEmailAgente(nombre, emailCorp, pass, lang);
     const asunto = onboardingSubject(tipo, lang);
 
-    await sendViaResend({
+    await sendOnboardingViaResend({
       to: personal, subject: asunto, html,
       text: onboardingText(nombre, emailCorp, lang),
     });

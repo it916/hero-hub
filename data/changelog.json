@@ -1,5 +1,22 @@
 [
   {
+    "id": "2026-07-20-it-console-onboarding-email-fix",
+    "version": "v2.20.4",
+    "date": "2026-07-20",
+    "category": "fix",
+    "scope": "it-console",
+    "audience": "admin",
+    "title": "IT Console · fix del email de onboarding al empleado nuevo (dominios externos)",
+    "items": [
+      "🐛 Fix del bug donde al crear una cuenta de Google Workspace desde una solicitud autorizada aparecía un toast de error diciendo 'Destino fuera de dominio @heroinsuranceusa.com', PERO la cuenta sí se creaba en Workspace (por eso llegaba la notificación de Google). El error era el envío del email de onboarding a la dirección personal del empleado (@gmail u otro dominio externo)",
+      "🔧 Causa raíz: el endpoint /email del Worker restringe el destino a @heroinsuranceusa como medida defensiva contra bugs del frontend que pudieran mandar spam a clientes por accidente. El caso de uso del onboarding (mandar credenciales al correo personal del empleado nuevo) rompe esa regla POR DISEÑO — todavía no tiene acceso a su @heroinsuranceusa",
+      "✨ Solución: nuevo endpoint POST /email/onboarding en el Worker con protección propia (HERO_TOKEN gate ya heredado + rate limit 10/min + dedupByBody + log de auditoría). Acepta destinos externos por diseño. El From sigue restringido a @heroinsuranceusa para evitar spoofing",
+      "📤 Los 4 call sites de onboarding en el frontend cambiaron a la nueva función sendOnboardingViaResend: creación desde solicitud, creación manual con auto-send, envío manual de onboarding del módulo Crear Usuario, y el módulo Onboarding dedicado",
+      "🔒 Los otros 3 call sites de sendViaResend (reset de contraseña + rechazo de solicitud) siguen usando /email — van a correos corporativos internos",
+      "Bump v2.20.3 → v2.20.4"
+    ]
+  },
+  {
     "id": "2026-07-20-gcal-cleanup-hardening",
     "version": "v2.20.3",
     "date": "2026-07-20",
