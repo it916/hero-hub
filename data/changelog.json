@@ -1,5 +1,24 @@
 [
   {
+    "id": "2026-07-20-solicitud-cuenta-migrada",
+    "version": "v2.21.0",
+    "date": "2026-07-20",
+    "category": "feat",
+    "scope": "solicitud-cuenta",
+    "audience": "team",
+    "title": "Solicitud de correos migrada al Hero Hub · Fase A de la iniciativa de solicitudes",
+    "items": [
+      "📥 El formulario de alta/baja de cuentas corporativas ahora vive dentro del Hero Hub como página nativa: solicitud-cuenta.html. Reemplaza al sitio anterior alojado aparte en it916.github.io/alta-agentes",
+      "🎨 Rediseñado con el design system oficial del Hub (Hero Light + Inter/Bricolage) — antes usaba una paleta royal blue que se sentía como un producto distinto",
+      "🔒 Ahora el formulario está detrás del auth del Hub: solo puede llenarlo alguien con cuenta @heroinsuranceusa.com autenticado. Los datos del solicitante (nombre + email corporativo) se auto-completan desde la sesión — no se pueden spoofear ni tipear mal",
+      "🎯 Toda solicitud queda trazada al empleado autenticado que la envió; nada de campos manuales para el solicitante",
+      "🔗 El sitio viejo (it916.github.io/alta-agentes) ahora muestra un banner 'Página movida' con redirección automática a los 6s al nuevo URL — se mantendrá vivo 2-3 meses para links compartidos por email antiguos",
+      "🚫 El rol 'agente' NO tiene acceso a esta página (los agentes no piden altas/bajas — es tarea de líderes)",
+      "🔧 Sin cambios en el Worker: sigue recibiendo POST /solicitud-cuenta con el mismo payload. Preparado para la Fase B (email de confirmación al solicitante), Fase D (reenvío de links expirados) y Fase C (notificaciones automáticas de cambio de estado)",
+      "Bump v2.20.5 → v2.21.0"
+    ]
+  },
+  {
     "id": "2026-07-20-it-console-audit-order-fix",
     "version": "v2.20.5",
     "date": "2026-07-20",

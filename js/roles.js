@@ -21,18 +21,18 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-
 export const ROLES = {
   admin: {
     label: "Administrador",
-    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones", "changelog", "admin", "finanzas", "finanzas-manual", "it-console", "mi-perfil", "contracting"],
+    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones", "changelog", "admin", "finanzas", "finanzas-manual", "it-console", "mi-perfil", "contracting", "solicitud-cuenta"],
     isAdmin: true
   },
   interno: {
     label: "Equipo interno",
-    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones", "changelog", "mi-perfil", "contracting"],
+    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones", "changelog", "mi-perfil", "contracting", "solicitud-cuenta"],
     isAdmin: false
   },
   finanzas: {
     label: "Finanzas",
     // Misma visibilidad que "interno" + la página de Finanzas y su manual. Sin acceso a admin/grabaciones/onboarding.
-    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "reuniones", "changelog", "finanzas", "finanzas-manual", "mi-perfil", "contracting"],
+    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "reuniones", "changelog", "finanzas", "finanzas-manual", "mi-perfil", "contracting", "solicitud-cuenta"],
     isAdmin: false
   },
   it: {
@@ -40,12 +40,13 @@ export const ROLES = {
     // Misma visibilidad que "interno" + la IT Console. Sin acceso a admin/finanzas.
     // it@ está en LEGACY_ADMIN_EMAILS y entra como admin — este rol es para
     // futuros asistentes de IT o cuentas de servicio que necesiten la consola.
-    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "reuniones", "changelog", "it-console", "mi-perfil", "contracting"],
+    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "reuniones", "changelog", "it-console", "mi-perfil", "contracting", "solicitud-cuenta"],
     isAdmin: false
   },
   agente: {
     label: "Agente",
     // Acceso restringido: solo Inicio, Equipo, Portales, Grabaciones y Changelog.
+    // Los agentes NO pueden solicitar altas/bajas de cuentas — es tarea de líderes.
     // En portales.js sigue habiendo lógica que muestra al agente solo su sección personal.
     pages: ["index", "equipo", "portales", "grabaciones", "changelog", "mi-perfil"],
     isAdmin: false

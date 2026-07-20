@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="icons/favicon-hero.png">
+<link rel="apple-touch-icon" href="icons/favicon-hero.png">
+<meta name="theme-color" content="#06a3b6">
+<title>Solicitud de cuenta — Hero Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+
+<script type="module" src="js/user-menu.js"></script>
+<script defer src="https://unpkg.com/lucide@0.474.0"></script>
+<script defer src="js/topbar-dropdown.js"></script>
+<script defer src="js/toast.js"></script>
+</head>
+<body>
+<script>try{var t=localStorage.getItem("hero-theme");if(t)document.body.dataset.theme=t;}catch(e){}</script>
+<script>try{var r=localStorage.getItem("hero-user-role");if(r){document.body.classList.add("skip-loading","role-"+r);}}catch(e){}</script>
+
+<noscript>
+  <div style="position:fixed;inset:0;background:#062a33;color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font-family:system-ui,sans-serif;z-index:99999;">
+    <div>
+      <h1 style="margin:0 0 12px;">Hero Hub requiere JavaScript</h1>
+      <p style="margin:0;opacity:.85;">Activa JavaScript en tu navegador para acceder al Hero Hub.</p>
+    </div>
+  </div>
+</noscript>
+
+<div id="loading" class="login-container"><div class="login-card"><p>Verificando acceso...</p></div></div>
+
+<div id="dashboard" style="display:none;">
+
+  <header class="hero-topbar">
+    <div class="topbar-inner">
+      <div class="brand-block">
+        <a href="index.html" class="brand-link">
+          <div class="logo-mark"><img src="icons/favicon-hero.png" alt="Hero"></div>
+          <div>
+            <div class="brand-name">HERO HUB</div>
+            <div class="brand-sub">Hero Insurance USA</div>
+          </div>
+        </a>
+      </div>
+      <nav class="topbar-nav" id="topbar-nav">
+        <a href="index.html" class="nav-link"><i data-lucide="home"></i><span>Inicio</span></a>
+        <a href="equipo.html" class="nav-link"><i data-lucide="users"></i><span>Equipo</span></a>
+
+        <div class="nav-group">
+          <button class="nav-group-toggle" type="button" aria-expanded="false" aria-haspopup="true">
+            <i data-lucide="briefcase"></i><span>Operaciones</span>
+            <i data-lucide="chevron-down" class="nav-group-arrow"></i>
+          </button>
+          <div class="nav-dropdown" role="menu">
+            <a href="portales.html" class="nav-link" role="menuitem"><i data-lucide="shield"></i><span>Portales</span></a>
+            <a href="agencias.html" class="nav-link" role="menuitem"><i data-lucide="network"></i><span>Agencias</span></a>
+            <a href="directorio.html" class="nav-link" role="menuitem"><i data-lucide="book-user"></i><span>Directorio</span></a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-group-toggle" type="button" aria-expanded="false" aria-haspopup="true">
+            <i data-lucide="library"></i><span>Recursos</span>
+            <i data-lucide="chevron-down" class="nav-group-arrow"></i>
+          </button>
+          <div class="nav-dropdown" role="menu">
+            <a href="guias.html" class="nav-link" role="menuitem"><i data-lucide="book-open"></i><span>Guías</span></a>
+            <a href="politicas.html" class="nav-link" role="menuitem"><i data-lucide="scroll-text"></i><span>Políticas</span></a>
+            <a href="onboarding.html" class="nav-link" role="menuitem"><i data-lucide="rocket"></i><span>Onboarding</span></a>
+            <a href="reuniones.html" class="nav-link" role="menuitem"><i data-lucide="presentation"></i><span>Reuniones</span></a>
+          </div>
+        </div>
+
+        <a href="changelog.html" class="nav-link"><i data-lucide="sparkles"></i><span>Changelog</span></a>
+      </nav>
+      <div class="topbar-actions">
+        <button id="btn-logout" class="icon-btn" title="Salir" style="display:none;"><i data-lucide="log-out"></i></button>
+
+        <div class="user-menu-wrap">
+          <button id="user-avatar-btn" class="user-avatar-btn" type="button" aria-label="Menú de usuario" aria-haspopup="true" aria-expanded="false">
+            <img id="user-avatar" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="" class="avatar">
+          </button>
+          <div id="user-menu" class="user-menu" role="menu" hidden>
+            <div class="user-menu-header">
+              <img id="user-menu-avatar" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="" class="user-menu-photo">
+              <div class="user-menu-info">
+                <div class="user-menu-name" id="user-menu-name">—</div>
+                <div class="user-menu-email" id="user-menu-email">—</div>
+                <div class="user-menu-role" id="user-menu-role" hidden></div>
+              </div>
+            </div>
+            <div class="user-menu-divider"></div>
+            <button id="user-menu-profile" class="user-menu-item" type="button" role="menuitem">
+              <i data-lucide="user"></i><span>Mi perfil</span>
+            </button>
+            <a href="admin.html" id="user-menu-admin" class="user-menu-item" role="menuitem" hidden>
+              <i data-lucide="shield-check"></i><span>Admin</span>
+            </a>
+            <div class="user-menu-divider"></div>
+            <button id="user-menu-theme" class="user-menu-item" type="button" role="menuitem">
+              <i data-lucide="sun"></i><span>Cambiar a noche</span>
+            </button>
+            <div class="user-menu-divider"></div>
+            <button id="user-menu-logout" class="user-menu-item user-menu-item-danger" type="button" role="menuitem">
+              <i data-lucide="log-out"></i><span>Cerrar sesión</span>
+            </button>
+          </div>
+        </div>
+        <button id="btn-menu" class="icon-btn menu-toggle" title="Menú"><i data-lucide="menu"></i></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+
+    <section class="sc-intro">
+      <div class="sc-intro-badge">
+        <i data-lucide="mail-plus"></i>
+        <span>Procedimiento PROC-IT-001</span>
+      </div>
+      <h1 class="sc-intro-title">Solicitud de cuenta corporativa</h1>
+      <p class="sc-intro-lead">
+        Solicita el <strong>alta</strong> o <strong>baja</strong> de una cuenta
+        <span class="sc-mono">@heroinsuranceusa.com</span>. Los autorizadores
+        recibirán la solicitud por email; basta con que uno la apruebe para que
+        IT proceda.
+      </p>
+      <div class="sc-intro-solicitante">
+        <span class="sc-solicitante-label">Solicitando como</span>
+        <div class="sc-solicitante-info">
+          <strong id="sc-solicitante-nombre">—</strong>
+          <span class="sep" aria-hidden="true">·</span>
+          <span id="sc-solicitante-email" class="sc-mono">—</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="sc-card">
+      <form id="sc-form" novalidate>
+
+        <div class="sc-tipo" role="tablist" aria-label="Tipo de solicitud">
+          <button type="button" class="sc-tipo-btn" data-tipo="alta" aria-pressed="true">
+            <i data-lucide="user-plus"></i>
+            <span class="sc-tipo-label">Alta</span>
+            <span class="sc-tipo-help">Crear cuenta nueva</span>
+          </button>
+          <button type="button" class="sc-tipo-btn" data-tipo="baja" aria-pressed="false">
+            <i data-lucide="user-x"></i>
+            <span class="sc-tipo-label">Baja</span>
+            <span class="sc-tipo-help">Desactivar cuenta existente</span>
+          </button>
+        </div>
+
+        <div class="sc-field sc-field-fecha">
+          <label for="sc-fecha-requerida">Fecha requerida <span class="sc-req">*</span></label>
+          <input type="date" id="sc-fecha-requerida" required>
+          <div class="sc-help" id="sc-fecha-help">Día en que la cuenta debe estar activa.</div>
+        </div>
+
+        <!-- ══ ALTA ══ -->
+        <div class="sc-group" id="sc-group-alta">
+
+          <div class="sc-section-label">Tipo de persona</div>
+          <div class="sc-persona" data-grupo="alta" role="tablist">
+            <button type="button" data-persona="agente" aria-pressed="true">
+              <span class="sc-persona-name">Agente</span>
+              <span class="sc-persona-help">sin cargo ni área</span>
+            </button>
+            <button type="button" data-persona="empleado" aria-pressed="false">
+              <span class="sc-persona-name">Empleado</span>
+              <span class="sc-persona-help">con cargo y área</span>
+            </button>
+          </div>
+
+          <div class="sc-section-label">Datos de la persona</div>
+          <div class="sc-row">
+            <div class="sc-field">
+              <label for="sc-alta-nombre">Nombre <span class="sc-req">*</span></label>
+              <input type="text" id="sc-alta-nombre" placeholder="Ej. Juan">
+            </div>
+            <div class="sc-field">
+              <label for="sc-alta-apellido">Apellido <span class="sc-req">*</span></label>
+              <input type="text" id="sc-alta-apellido" placeholder="Ej. Pérez">
+            </div>
+          </div>
+
+          <div class="sc-row sc-solo-empleado" id="sc-alta-solo-empleado">
+            <div class="sc-field">
+              <label for="sc-alta-cargo">Cargo <span class="sc-req">*</span></label>
+              <input type="text" id="sc-alta-cargo" placeholder="Ej. Analista de pólizas">
+            </div>
+            <div class="sc-field">
+              <label for="sc-alta-area">Área <span class="sc-req">*</span></label>
+              <input type="text" id="sc-alta-area" placeholder="Ej. Operaciones">
+            </div>
+          </div>
+
+          <div class="sc-field">
+            <label for="sc-alta-correo-personal">Correo personal <span class="sc-req">*</span></label>
+            <input type="email" id="sc-alta-correo-personal" placeholder="juan.perez@gmail.com">
+            <div class="sc-help">Aquí llegarán las credenciales iniciales una vez creada la cuenta.</div>
+          </div>
+
+          <div class="sc-field">
+            <label for="sc-alta-telefono">Teléfono <span class="sc-req">*</span></label>
+            <input type="tel" id="sc-alta-telefono" placeholder="(786) 323-6818" maxlength="14">
+          </div>
+        </div>
+
+        <!-- ══ BAJA ══ -->
+        <div class="sc-group sc-hidden" id="sc-group-baja">
+
+          <div class="sc-section-label sc-section-label-baja">Tipo de persona</div>
+          <div class="sc-persona sc-persona-baja" data-grupo="baja" role="tablist">
+            <button type="button" data-persona="agente" aria-pressed="true">
+              <span class="sc-persona-name">Agente</span>
+              <span class="sc-persona-help">sin cargo ni área</span>
+            </button>
+            <button type="button" data-persona="empleado" aria-pressed="false">
+              <span class="sc-persona-name">Empleado</span>
+              <span class="sc-persona-help">con cargo y área</span>
+            </button>
+          </div>
+
+          <div class="sc-section-label sc-section-label-baja">Datos de la persona a dar de baja</div>
+
+          <div class="sc-field">
+            <label for="sc-baja-nombre">Nombre completo <span class="sc-req">*</span></label>
+            <input type="text" id="sc-baja-nombre" placeholder="Ej. Juan Pérez">
+          </div>
+
+          <div class="sc-field">
+            <label for="sc-baja-correo-eliminar">Correo corporativo a desactivar <span class="sc-req">*</span></label>
+            <input type="email" id="sc-baja-correo-eliminar" placeholder="jperez@heroinsuranceusa.com">
+            <div class="sc-help">Por procedimiento PROC-IT-001 la cuenta se suspende primero; la eliminación es un paso manual posterior.</div>
+          </div>
+
+          <div class="sc-row sc-solo-empleado" id="sc-baja-solo-empleado">
+            <div class="sc-field">
+              <label for="sc-baja-cargo">Cargo <span class="sc-req">*</span></label>
+              <input type="text" id="sc-baja-cargo" placeholder="Ej. Analista de pólizas">
+            </div>
+            <div class="sc-field">
+              <label for="sc-baja-area">Área <span class="sc-req">*</span></label>
+              <input type="text" id="sc-baja-area" placeholder="Ej. Operaciones">
+            </div>
+          </div>
+
+          <div class="sc-field">
+            <label for="sc-baja-motivo">Motivo <span class="sc-req">*</span></label>
+            <select id="sc-baja-motivo" required>
+              <option value="">Selecciona un motivo</option>
+              <option value="Renuncia">Renuncia</option>
+              <option value="Despido">Despido</option>
+              <option value="Cambio de puesto">Cambio de puesto</option>
+              <option value="Fin de contrato">Fin de contrato</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+
+          <div class="sc-field">
+            <label for="sc-baja-detalle">Detalle adicional</label>
+            <textarea id="sc-baja-detalle" rows="4" placeholder="Información adicional relevante para la baja (opcional)."></textarea>
+          </div>
+        </div>
+
+        <div class="sc-actions">
+          <button type="submit" class="sc-submit" id="sc-submit-btn">
+            <i data-lucide="send"></i>
+            <span id="sc-submit-label">Enviar solicitud</span>
+          </button>
+        </div>
+      </form>
+    </section>
+
+  </main>
+
+  <footer class="hero-footer">
+    <span>HERO HUB · v2.21.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+  </footer>
+</div>
+
+<script>
+  window.refreshIcons = () => { if (window.lucide) lucide.createIcons(); };
+  document.addEventListener("DOMContentLoaded", () => {
+    window.refreshIcons();
+    const menuBtn = document.getElementById("btn-menu");
+    const nav = document.getElementById("topbar-nav");
+    if (menuBtn && nav) menuBtn.addEventListener("click", () => nav.classList.toggle("open"));
+  });
+</script>
+<script type="module" src="js/solicitud-cuenta.js"></script>
+</body>
+</html>
