@@ -1,5 +1,21 @@
 [
   {
+    "id": "2026-07-20-it-console-audit-order-fix",
+    "version": "v2.20.5",
+    "date": "2026-07-20",
+    "category": "fix",
+    "scope": "it-console",
+    "audience": "admin",
+    "title": "IT Console · orden del auditLog al crear usuario desde solicitud",
+    "items": [
+      "🐛 Fix: cuando se creaba un usuario en Workspace desde una solicitud autorizada, la Auditoría solo registraba 'solicitud procesada' pero NO 'usuario creado'. Causa: el auditLog vivía DESPUÉS del envío del email de onboarding — si ese envío fallaba (como pasaba antes del fix del /email/onboarding en v2.20.4), el throw saltaba directo al catch y se saltaba el registro de la creación",
+      "🔧 Reordenado el flujo de crearUsuarioDesdeModal: el auditLog corre INMEDIATAMENTE después del /create-user, antes que cualquier operación que pueda tirar. Así la creación queda registrada aunque el resolverSolicitud o el email de onboarding fallen",
+      "🛡 El envío del email de onboarding ahora vive en su propio try/catch anidado — un fallo del email (Resend caído, rate limit, network) no bloquea el resto del flujo ni ensucia el toast",
+      "🎯 Toast honesto: si el usuario se crea pero el onboarding falla, muestra 'Usuario creado ✓ · onboarding pendiente' con el motivo del error, en lugar del 'Error' genérico que hacía parecer que todo falló",
+      "Bump v2.20.4 → v2.20.5"
+    ]
+  },
+  {
     "id": "2026-07-20-it-console-onboarding-email-fix",
     "version": "v2.20.4",
     "date": "2026-07-20",

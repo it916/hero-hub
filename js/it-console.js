@@ -2519,24 +2519,43 @@ async function crearUsuarioDesdeModal() {
     const data = await resp.json();
     if (!resp.ok) throw new Error(data.error || 'Error al crear usuario');
 
+    // Audit inmediato — la creación del usuario debe quedar registrada en
+    // Auditoría aunque el resolverSolicitud o el envío del onboarding fallen
+    // más adelante. Si esto no está acá arriba, un throw en el email de
+    // onboarding hace que el usuario quede creado en Workspace pero sin
+    // registro visible en el panel de Auditoría del Hub.
+    addLog('Usuario creado: ' + email, 'success');
+    auditLog('usuario', 'Usuario creado desde solicitud: ' + nombre + ' ' + apellido, email);
+
     // Mark solicitud as processed
     await resolverSolicitud(solModalData.id, 'procesada');
 
-    // Send onboarding email (al correo personal indicado en la solicitud)
+    // Send onboarding email (al correo personal indicado en la solicitud).
+    // Va en su propio try/catch — un fallo del email (Resend caído, rate
+    // limit, dominio raro) no debe hacer parecer que la creación del usuario
+    // falló ni cortar el flujo de UI.
+    let onboardingOk = true;
+    let onboardingErr = null;
     const lang = document.getElementById('sm-lang').value;
     const destinoPersonal = solModalData.correoPersonal || solModalData.correo;
     if (destinoPersonal) {
-      await sendOnboardingViaResend({
-        to: destinoPersonal,
-        subject: onboardingSubject('agente', lang),
-        html: buildEmailAgente(nombre + ' ' + apellido, email, password, lang),
-        text: onboardingText(nombre, email, lang),
-      });
+      try {
+        await sendOnboardingViaResend({
+          to: destinoPersonal,
+          subject: onboardingSubject('agente', lang),
+          html: buildEmailAgente(nombre + ' ' + apellido, email, password, lang),
+          text: onboardingText(nombre, email, lang),
+        });
+      } catch (mailErr) {
+        onboardingOk = false;
+        onboardingErr = mailErr.message;
+        addLog('Usuario creado pero onboarding falló: ' + mailErr.message, 'warn');
+      }
     }
 
-    addLog('Usuario creado: ' + email, 'success');
-    auditLog('usuario', 'Usuario creado desde solicitud: ' + nombre + ' ' + apellido, email);
-    showToast('Usuario creado y solicitante notificado');
+    showToast(onboardingOk
+      ? 'Usuario creado y solicitante notificado'
+      : 'Usuario creado ✓ · onboarding pendiente (' + onboardingErr + ')');
     closeSolModal();
     loadSolicitudes();
   } catch(err) {
