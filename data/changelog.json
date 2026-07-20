@@ -1,5 +1,21 @@
 [
   {
+    "id": "2026-07-20-it-console-backfill-modal-visible",
+    "version": "v2.21.9",
+    "date": "2026-07-20",
+    "category": "fix",
+    "scope": "it-console",
+    "audience": "admin",
+    "title": "IT Console · fix del modal de backfill que no se veía",
+    "items": [
+      "🐛 Fix: al hacer click en 'Poblar correo personal' desde la tabla Usuarios, el modal no aparecía. Los warnings de form fields sin id/name subían con cada click — señal de que el JS SÍ ejecutaba pero el modal quedaba invisible",
+      "🔧 Causa: el modal estaba insertado dentro del bloque <div class='page' id='page-solicitudes'> que tiene display:none cuando no es la página activa. Al abrirlo desde la página Usuarios, el modal cambiaba su propio display:block pero heredaba el display:none del contenedor padre",
+      "✨ Fix: movido a nivel raíz del body (fuera de cualquier .page), junto al toast global. Ahora puede abrirse desde cualquier página del IT Console",
+      "🎗 z-index del backfill-modal bumpeado a 1000 (era 300) para asegurar que quede encima del user-modal si ya estaba abierto",
+      "Bump v2.21.8 → v2.21.9"
+    ]
+  },
+  {
     "id": "2026-07-20-it-console-backfill-personal-email",
     "version": "v2.21.8",
     "date": "2026-07-20",
