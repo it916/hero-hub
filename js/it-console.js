@@ -197,6 +197,7 @@ function showPage(id) {
     'logs':         () => renderSessionLogs(),
     'config':       () => loadConfig(),
     'plantillas':   () => loadPlantillas(),
+    'crear-usuario': () => initCrearUsuario(),
   };
   if (autoLoad[id]) autoLoad[id]();
 
@@ -3005,13 +3006,10 @@ function openSolModal(id) {
   document.getElementById('sol-modal-solicitante-email').textContent = s.solicitanteEmail || '';
   document.getElementById('sm-nombre').value   = s.nombre;
   document.getElementById('sm-apellido').value = s.apellido;
-  // Suggest email — quita diacríticos combinables (U+0300–U+036F) usando
-  // escapes unicode para que el archivo no dependa de su codificación.
-  const sugerido = (s.nombre.charAt(0) + s.apellido).toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s/g,'');
+  const sugerido = _slugUsername(s.nombre, s.apellido);
   document.getElementById('sm-email-user').value = sugerido;
   document.getElementById('sm-email-preview').textContent = sugerido + '@heroinsuranceusa.com';
-  document.getElementById('sm-password').value = '';
+  document.getElementById('sm-password').value = _generateStrongPassword();
   document.getElementById('sol-modal').style.display = 'block';
 }
 
@@ -3129,6 +3127,49 @@ async function crearUsuarioDesdeModal() {
 
 // ── Módulo Crear Usuario ──────────────────────────────────────
 let nuevoUsuario = null;
+
+// Convención de username: primera inicial del nombre + apellido, minúsculas,
+// sin acentos, ñ ni caracteres no alfanuméricos (Luis García → lgarcia,
+// María Núñez → mnunez, O'Brien → obrien, De la Cruz → delacruz).
+function _slugUsername(nombre, apellido) {
+  const raw = (String(nombre || '').charAt(0) + String(apellido || '')).toLowerCase();
+  return raw.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
+}
+
+// Auto-sugerencia del email corporativo mientras se escribe nombre/apellido.
+// Se apaga apenas el usuario edita el campo a mano (para no pisar su elección
+// si, por ej., ya existe una colisión y quiso mandar 'lgarcia2').
+let _emailUserEdited = false;
+let _crearUsuarioBooted = false;
+let _emailUpdateProgrammatic = false;
+
+function _updateSuggestedEmailUser() {
+  if (_emailUserEdited) return;
+  const n = document.getElementById('new-nombre').value.trim();
+  const a = document.getElementById('new-apellido').value.trim();
+  const emailInput = document.getElementById('new-email-user');
+  _emailUpdateProgrammatic = true;
+  emailInput.value = (n && a) ? _slugUsername(n, a) : '';
+  _emailUpdateProgrammatic = false;
+  previewEmail();
+}
+
+function initCrearUsuario() {
+  // Pre-generar contraseña si el campo está vacío (no pisar si Fernando ya
+  // escribió una a mano o si volvió a la página sin resetear).
+  const pwd = document.getElementById('new-password');
+  if (pwd && !pwd.value.trim()) pwd.value = _generateStrongPassword();
+
+  if (_crearUsuarioBooted) return;
+  _crearUsuarioBooted = true;
+
+  document.getElementById('new-nombre').addEventListener('input', _updateSuggestedEmailUser);
+  document.getElementById('new-apellido').addEventListener('input', _updateSuggestedEmailUser);
+  document.getElementById('new-email-user').addEventListener('input', () => {
+    if (_emailUpdateProgrammatic) return;
+    _emailUserEdited = true;
+  });
+}
 
 function previewEmail() {
   const user = document.getElementById('new-email-user').value.trim();
@@ -3296,6 +3337,8 @@ function resetCrearUsuario() {
   document.getElementById('new-preview').innerHTML = 'Completa el formulario para ver la vista previa';
   document.getElementById('new-status-box').style.display = 'none';
   nuevoUsuario = null;
+  _emailUserEdited = false;
+  document.getElementById('new-password').value = _generateStrongPassword();
 }
 
 // ── Página Enviar Onboarding (standalone) ────────────────────
@@ -3407,6 +3450,7 @@ async function loadUsers() {
     window._workspaceUsers = allUsers; // cache for global search
     addLog('Usuarios cargados: ' + allUsers.length, 'success');
     populateOuFilter(allUsers);
+    _usersCurrentPage = 1;
     renderUsers(allUsers);
 
   } catch (err) {
@@ -3453,16 +3497,28 @@ function userRoleLabel(u) {
   return { key: 'user', label: 'Usuario', color: 'var(--hero-text-muted)', bg: 'rgba(120,120,120,0.08)' };
 }
 
+const USERS_PER_PAGE = 25;
+let _usersCurrentPage = 1;
+let _usersLastRendered = [];
+
 function renderUsers(users) {
+  _usersLastRendered = users || [];
   const tbody = document.getElementById('usr-tbody');
   document.getElementById('usr-count').textContent = users.length + ' usuario' + (users.length !== 1 ? 's' : '');
 
   if (!users.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="padding:32px;text-align:center;color:var(--hero-text-muted);font-family:var(--mono);font-size:12px;">Sin resultados</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="padding:32px;text-align:center;color:var(--hero-text-muted);font-family:var(--mono);font-size:13px;">Sin resultados</td></tr>';
+    renderUsersPagination(0);
     return;
   }
 
-  tbody.innerHTML = users.map((u, i) => {
+  const totalPages = Math.max(1, Math.ceil(users.length / USERS_PER_PAGE));
+  if (_usersCurrentPage > totalPages) _usersCurrentPage = totalPages;
+  if (_usersCurrentPage < 1) _usersCurrentPage = 1;
+  const start = (_usersCurrentPage - 1) * USERS_PER_PAGE;
+  const pageUsers = users.slice(start, start + USERS_PER_PAGE);
+
+  tbody.innerHTML = pageUsers.map((u, i) => {
     const estadoColor = u.estado === 'activo' ? 'var(--hero-success)' : 'var(--hero-danger)';
     const estadoBg    = u.estado === 'activo' ? 'rgba(34,160,107,0.1)' : 'rgba(214,69,69,0.1)';
     const estadoTitle = u.estado === 'activo'
@@ -3492,38 +3548,112 @@ function renderUsers(users) {
     const aliasTitle = aliasCount ? u.aliases.join(', ').replace(/"/g,'&quot;') : '';
 
     return '<tr style="border-bottom:1px solid var(--hero-border-card);background:' + rowBg + ';">' +
-      '<td style="padding:12px 16px;">' +
+      '<td style="padding:14px 16px;">' +
         '<div style="display:flex;align-items:center;gap:12px;">' +
           '<div style="flex-shrink:0;width:36px;height:36px;border-radius:50%;background:' + avColor + ';color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--sans);font-weight:700;font-size:13px;letter-spacing:.3px;' + avRing + '" title="' + escHtml(avTitle) + '">' + escHtml(initials) + '</div>' +
           '<div style="min-width:0;flex:1;">' +
-            '<div style="font-size:13px;font-weight:600;color:var(--hero-text-primary);line-height:1.25;">' + escHtml(u.nombre || '—') + '</div>' +
-            (cargoLine ? '<div style="font-size:11px;color:var(--hero-text-muted);line-height:1.35;">' + cargoLine + '</div>' : '') +
-            '<div style="font-family:var(--mono);font-size:11px;color:var(--hero-primary);line-height:1.35;">' + escHtml(u.email) +
-              (aliasCount ? ' <span style="color:var(--hero-text-muted);font-size:10px;" title="' + aliasTitle + '">(+' + aliasCount + ' ' + (aliasCount === 1 ? 'alias' : 'aliases') + ')</span>' : '') +
+            '<div style="font-size:14px;font-weight:600;color:var(--hero-text-primary);line-height:1.25;">' + escHtml(u.nombre || '—') + '</div>' +
+            (cargoLine ? '<div style="font-size:12px;color:var(--hero-text-muted);line-height:1.35;">' + cargoLine + '</div>' : '') +
+            '<div style="font-family:var(--mono);font-size:12px;color:var(--hero-primary);line-height:1.35;">' + escHtml(u.email) +
+              (aliasCount ? ' <span style="color:var(--hero-text-muted);font-size:11px;" title="' + aliasTitle + '">(+' + aliasCount + ' ' + (aliasCount === 1 ? 'alias' : 'aliases') + ')</span>' : '') +
             '</div>' +
           '</div>' +
         '</div>' +
       '</td>' +
-      '<td style="padding:12px 16px;font-size:12px;color:var(--hero-text-body);">' + escHtml(u.departamento || '—') + '</td>' +
-      '<td style="padding:12px 16px;font-family:var(--mono);font-size:11px;color:var(--hero-text-body);">' + escHtml(ouLabel) + '</td>' +
-      '<td style="padding:12px 16px;" title="' + escHtml(estadoTitle) + '">' +
-        '<span style="font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:20px;background:' + estadoBg + ';color:' + estadoColor + ';">' + escHtml(u.estado) + '</span>' +
+      '<td style="padding:14px 16px;font-size:13px;color:var(--hero-text-body);">' + escHtml(u.departamento || '—') + '</td>' +
+      '<td style="padding:14px 16px;font-family:var(--mono);font-size:12px;color:var(--hero-text-body);">' + escHtml(ouLabel) + '</td>' +
+      '<td style="padding:14px 16px;" title="' + escHtml(estadoTitle) + '">' +
+        '<span style="font-family:var(--mono);font-size:11px;padding:3px 8px;border-radius:20px;background:' + estadoBg + ';color:' + estadoColor + ';">' + escHtml(u.estado) + '</span>' +
       '</td>' +
-      '<td style="padding:12px 16px;text-align:center;" title="' + mfaTitle + '">' +
-        '<span style="font-family:var(--mono);font-size:12px;font-weight:700;padding:3px 8px;border-radius:20px;background:' + mfaBg + ';color:' + mfaColor + ';">' + mfaLabel + '</span>' +
+      '<td style="padding:14px 16px;text-align:center;" title="' + mfaTitle + '">' +
+        '<span style="font-family:var(--mono);font-size:13px;font-weight:700;padding:3px 8px;border-radius:20px;background:' + mfaBg + ';color:' + mfaColor + ';">' + mfaLabel + '</span>' +
       '</td>' +
-      '<td style="padding:12px 16px;">' +
-        '<span style="font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:20px;background:' + rol.bg + ';color:' + rol.color + ';">' + escHtml(rol.label) + '</span>' +
+      '<td style="padding:14px 16px;">' +
+        '<span style="font-family:var(--mono);font-size:11px;padding:3px 8px;border-radius:20px;background:' + rol.bg + ';color:' + rol.color + ';">' + escHtml(rol.label) + '</span>' +
       '</td>' +
-      '<td style="padding:12px 16px;font-family:var(--mono);font-size:11px;color:var(--hero-text-body);">' + login + '</td>' +
-      '<td style="padding:12px 16px;text-align:center;">' +
+      '<td style="padding:14px 16px;font-family:var(--mono);font-size:12px;color:var(--hero-text-body);">' + login + '</td>' +
+      '<td style="padding:14px 16px;text-align:center;">' +
         '<div style="display:flex;gap:6px;justify-content:center;">' +
-        '<button onclick="copyEmail(\'' + escJs(u.email) + '\')" style="background:transparent;border:1px solid var(--hero-border-card);color:var(--hero-text-body);padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer;display:inline-flex;align-items:center;" title="Copiar email"><iconify-icon icon="tabler:copy"></iconify-icon></button>' +
-        '<button onclick="openUserModal(\'' + escJs(u.email) + '\',\'' + escJs(u.nombre) + '\')" style="background:rgba(6,163,182,0.1);border:1px solid rgba(6,163,182,0.3);color:var(--hero-primary);padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer;display:inline-flex;align-items:center;" title="Gestionar"><iconify-icon icon="tabler:settings"></iconify-icon></button>' +
+        '<button onclick="copyEmail(\'' + escJs(u.email) + '\')" style="background:transparent;border:1px solid var(--hero-border-card);color:var(--hero-text-body);padding:4px 8px;border-radius:6px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;" title="Copiar email"><iconify-icon icon="tabler:copy"></iconify-icon></button>' +
+        '<button onclick="openUserModal(\'' + escJs(u.email) + '\',\'' + escJs(u.nombre) + '\')" style="background:rgba(6,163,182,0.1);border:1px solid rgba(6,163,182,0.3);color:var(--hero-primary);padding:4px 8px;border-radius:6px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;" title="Gestionar"><iconify-icon icon="tabler:settings"></iconify-icon></button>' +
         '</div>' +
       '</td>' +
     '</tr>';
   }).join('');
+
+  renderUsersPagination(users.length);
+}
+
+// Paginación construida con DOM API (no innerHTML) para evitar el hook de
+// seguridad y no arriesgar XSS con datos externos.
+function renderUsersPagination(totalItems) {
+  const wrap = document.getElementById('usr-pagination');
+  if (!wrap) return;
+  while (wrap.firstChild) wrap.removeChild(wrap.firstChild);
+
+  if (totalItems <= 0) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'flex';
+
+  const totalPages = Math.max(1, Math.ceil(totalItems / USERS_PER_PAGE));
+  const start = totalItems === 0 ? 0 : (_usersCurrentPage - 1) * USERS_PER_PAGE + 1;
+  const end = Math.min(_usersCurrentPage * USERS_PER_PAGE, totalItems);
+
+  const info = document.createElement('span');
+  info.style.cssText = 'font-family:var(--mono);font-size:12px;color:var(--hero-text-muted);';
+  info.textContent = 'Mostrando ' + start + '-' + end + ' de ' + totalItems;
+
+  const controls = document.createElement('div');
+  controls.style.cssText = 'display:flex;gap:6px;align-items:center;flex-wrap:wrap;';
+
+  const makeBtn = (label, page, opts) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = label;
+    const isActive = opts && opts.active;
+    const isDisabled = opts && opts.disabled;
+    const base = 'min-width:32px;height:32px;padding:0 10px;border-radius:6px;font-family:var(--mono);font-size:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;';
+    if (isActive) {
+      b.style.cssText = base + 'background:var(--hero-primary);color:#fff;border:1px solid var(--hero-primary);font-weight:600;';
+    } else if (isDisabled) {
+      b.style.cssText = base + 'background:transparent;color:var(--hero-text-muted);border:1px solid var(--hero-border-card);opacity:0.4;cursor:not-allowed;';
+      b.disabled = true;
+    } else {
+      b.style.cssText = base + 'background:transparent;color:var(--hero-text-body);border:1px solid var(--hero-border-card);';
+      b.addEventListener('click', () => goToUsersPage(page));
+    }
+    return b;
+  };
+
+  const makeEllipsis = () => {
+    const s = document.createElement('span');
+    s.style.cssText = 'padding:0 4px;color:var(--hero-text-muted);font-family:var(--mono);font-size:12px;';
+    s.textContent = '…';
+    return s;
+  };
+
+  controls.appendChild(makeBtn('‹ Anterior', _usersCurrentPage - 1, { disabled: _usersCurrentPage <= 1 }));
+
+  // Construye la lista de páginas visibles: 1, ...contexto..., total.
+  // Contexto = página actual ± 1.
+  const pages = new Set([1, totalPages, _usersCurrentPage, _usersCurrentPage - 1, _usersCurrentPage + 1]);
+  const shown = Array.from(pages).filter(p => p >= 1 && p <= totalPages).sort((a, b) => a - b);
+  let prev = 0;
+  shown.forEach(p => {
+    if (p - prev > 1) controls.appendChild(makeEllipsis());
+    controls.appendChild(makeBtn(String(p), p, { active: p === _usersCurrentPage }));
+    prev = p;
+  });
+
+  controls.appendChild(makeBtn('Siguiente ›', _usersCurrentPage + 1, { disabled: _usersCurrentPage >= totalPages }));
+
+  wrap.appendChild(info);
+  wrap.appendChild(controls);
+}
+
+function goToUsersPage(page) {
+  _usersCurrentPage = page;
+  renderUsers(_usersLastRendered);
+  document.getElementById('usr-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function populateOuFilter(users) {
@@ -3561,6 +3691,7 @@ function filterUsers() {
       || (rol === 'user' && !u.isAdmin && !u.isDelegatedAdmin);
     return matchText && matchOu && matchMfa && matchRol;
   });
+  _usersCurrentPage = 1;
   renderUsers(filtered);
 }
 
