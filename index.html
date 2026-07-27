@@ -419,37 +419,90 @@
     <span class="fab-support-label">Soporte IT</span>
   </a>
 
-  <!-- ══ POP-UP MENSAJE DEL DÍA ══ -->
+  <!-- ══ POP-UP INICIO DE JORNADA (antes: mensaje del día) ══ -->
   <div id="daily-popup" class="daily-popup-overlay" style="display:none;">
     <div class="daily-popup">
       <div class="dp-glow"></div>
-      <button class="dp-close" id="dp-close"><i data-lucide="x"></i></button>
+      <button class="dp-close" id="dp-close" aria-label="Cerrar"><i data-lucide="x"></i></button>
 
-      <div class="dp-kicker">✦ MENSAJE DEL DÍA ✦</div>
+      <!-- Vista 1: Inicio de jornada -->
+      <div class="dp-view" id="dp-view-start">
+        <div class="dp-kicker">✦ INICIO DE JORNADA ✦</div>
+        <div class="dp-hello">¡Hola, <span id="dp-hello-name">Héroe</span>!</div>
+        <div class="dp-tagline">Marca tu inicio de jornada y arranca el día</div>
 
-      <div class="dp-frase" id="dp-frase">—</div>
+        <div class="dp-actions">
+          <button class="dp-action-btn dp-action-primary" id="dp-btn-start" type="button">
+            <span class="dp-action-icon"><i data-lucide="log-in"></i></span>
+            <span class="dp-action-body">
+              <span class="dp-action-title">Iniciar mi día</span>
+              <span class="dp-action-sub">Registrar entrada</span>
+            </span>
+          </button>
 
-      <div class="dp-author">
-        <div class="dp-author-av" id="dp-author-av"></div>
-        <div>
-          <div class="dp-author-name" id="dp-author-name">—</div>
-          <div class="dp-author-date" id="dp-author-date">—</div>
+          <a class="dp-action-btn dp-action-secondary" id="dp-btn-office"
+             href="https://app.v2.gather.town/app/hero-insurance-usa-2e9e375c-6dcb-40c4-b607-d0791d5dfb78"
+             target="_blank" rel="noopener">
+            <span class="dp-action-icon"><i data-lucide="building-2"></i></span>
+            <span class="dp-action-body">
+              <span class="dp-action-title">Entrar a Oficina Virtual</span>
+              <span class="dp-action-sub">Gather Town · el equipo te espera</span>
+            </span>
+          </a>
+        </div>
+
+        <div class="dp-divider"></div>
+
+        <div class="dp-mensaje-label">✧ Mensaje del día</div>
+        <div class="dp-frase" id="dp-frase">—</div>
+        <div class="dp-author">
+          <div class="dp-author-av" id="dp-author-av"></div>
+          <div>
+            <div class="dp-author-name" id="dp-author-name">—</div>
+            <div class="dp-author-date" id="dp-author-date">—</div>
+          </div>
         </div>
       </div>
 
-      <div class="dp-divider"></div>
+      <!-- Vista 2: Confirmación tras iniciar día (auto-cierre 5s) -->
+      <div class="dp-view" id="dp-view-confirm" style="display:none;">
+        <div class="dp-check">
+          <svg viewBox="0 0 52 52" class="dp-check-svg" aria-hidden="true">
+            <circle cx="26" cy="26" r="24" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M14 27l7 7 17-17"/>
+          </svg>
+        </div>
+        <div class="dp-confirm-title">¡Jornada iniciada!</div>
+        <div class="dp-confirm-sub" id="dp-confirm-sub">Que tengas un gran día ✨</div>
+        <div class="dp-progress"><div class="dp-progress-fill" id="dp-progress-fill"></div></div>
+      </div>
+    </div>
+  </div>
 
-      <div class="dp-reactions-label">¿Cómo te hace sentir este mensaje?</div>
-      <div class="dp-reactions" id="dp-reactions">
-        <button class="dp-react-btn" data-emoji="😎">😎</button>
-        <button class="dp-react-btn" data-emoji="❤️">❤️</button>
-        <button class="dp-react-btn" data-emoji="🔥">🔥</button>
-        <button class="dp-react-btn" data-emoji="🤣">🤣</button>
-        <button class="dp-react-btn" data-emoji="💪">💪</button>
-        <button class="dp-react-btn" data-emoji="✨">✨</button>
+  <!-- ══ MODAL BREAK — bloqueante ══ -->
+  <div id="break-modal" class="break-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="bm-title">
+    <div class="break-modal">
+      <div class="bm-glow"></div>
+
+      <div class="bm-emoji-wrap">
+        <div class="bm-emoji" id="bm-emoji">☕</div>
+        <span class="bm-steam bm-steam-1"></span>
+        <span class="bm-steam bm-steam-2"></span>
+        <span class="bm-steam bm-steam-3"></span>
       </div>
 
-      <div class="dp-reactions-summary" id="dp-reactions-summary"></div>
+      <div class="bm-title" id="bm-title">Tómate tu descanso</div>
+      <div class="bm-sub">¡Buen provecho!</div>
+
+      <div class="bm-timer-wrap">
+        <div class="bm-timer" id="bm-timer">00:00</div>
+        <div class="bm-timer-label">llevas en break</div>
+      </div>
+
+      <button class="bm-end-btn" id="bm-end-btn" type="button">
+        <i data-lucide="play"></i>
+        Terminar break
+      </button>
     </div>
   </div>
 
@@ -475,7 +528,7 @@
   </div>
 
   <footer class="hero-footer">
-    <span>HERO HUB · v2.21.9</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+    <span>HERO HUB · v2.22.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
   </footer>
 </div>
 

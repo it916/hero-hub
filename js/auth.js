@@ -237,144 +237,166 @@ function updateDateTime() {
   }
 }
 
-// ══ POP-UP MENSAJE DEL DÍA ══
-function getTodayKey() {
-  const d = new Date();
-  return `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,"0")}-${d.getDate().toString().padStart(2,"0")}`;
+// ══ MODAL INICIO DE JORNADA (antes: pop-up mensaje del día) ══
+// Se muestra si el usuario abre el Hub y aún no ha marcado Entrada hoy.
+// La condición se lee de localStorage (hh-attendance-last) que attendance.js
+// mantiene actualizado — evitamos un read extra a Firestore.
+
+function _isSameLocalDay(isoA, isoB) {
+  const a = new Date(isoA);
+  const b = new Date(isoB);
+  return a.getFullYear() === b.getFullYear()
+      && a.getMonth() === b.getMonth()
+      && a.getDate() === b.getDate();
+}
+
+function _hasEntradaToday() {
+  try {
+    // Flag persistente: cada vez que se marca Entrada, attendance.js escribe
+    // aquí el día (YYYY-MM-DD). Esto sobrevive a Break/Salida posteriores.
+    const entryDay = localStorage.getItem("hh-attendance-entry-day");
+    const todayKey = new Date().toISOString().slice(0, 10);
+    if (entryDay === todayKey) return true;
+
+    // Fallback para usuarios que ya marcaron Entrada hoy pero antes de este
+    // fix (no tienen el flag nuevo): si el último evento es Entrada de hoy,
+    // también cuenta.
+    const raw = localStorage.getItem("hh-attendance-last");
+    if (!raw) return false;
+    const last = JSON.parse(raw);
+    if (last.type !== "Entrada") return false;
+    return _isSameLocalDay(last.timestamp, new Date().toISOString());
+  } catch { return false; }
 }
 
 async function checkDailyPopup() {
   try {
-    const userSnap = await getDoc(doc(db, "users", currentUser.email));
-    const userData = userSnap.exists() ? userSnap.data() : {};
-    const lastSeen = userData.lastMessageSeenDate;
-    const todayKey = getTodayKey();
+    if (_hasEntradaToday()) return;
 
-    if (lastSeen === todayKey) return;
+    // Si el usuario está en Break, attendance.js abrirá el break-modal.
+    // No mostrar el modal de inicio de jornada encima.
+    const rawLast = localStorage.getItem("hh-attendance-last");
+    if (rawLast) {
+      const last = JSON.parse(rawLast);
+      if (last.type === "Inicio Break" && _isSameLocalDay(last.timestamp, new Date().toISOString())) return;
+    }
 
     const msgSnap = await getDoc(doc(db, "shared", "messages"));
-    if (!msgSnap.exists()) return;
-    const items = msgSnap.data().items || [];
-    if (!items.length) return;
-
-    const seed = hashString(todayKey);
-    const idx = seed % items.length;
-    const msg = items[idx];
-    if (!msg) return;
-
-    showDailyPopup(msg, idx);
+    let msg = null;
+    if (msgSnap.exists()) {
+      const items = msgSnap.data().items || [];
+      if (items.length) {
+        const raw = items[Math.floor(Math.random() * items.length)];
+        msg = typeof raw === "string"
+          ? { frase: raw, autor: "—", created_at: null }
+          : raw;
+      }
+    }
+    showDailyPopup(msg);
   } catch (e) {
     console.warn("Daily popup failed:", e.message);
   }
 }
 
-function hashString(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash);
-}
+function showDailyPopup(msg) {
+  const popup = document.getElementById("daily-popup");
+  if (!popup) return;
 
-function showDailyPopup(msg, idx) {
+  // Saludo
+  const helloName = document.getElementById("dp-hello-name");
+  if (helloName) helloName.textContent = getFirstName(currentUser);
+
+  // Vista 1 (inicio) visible; vista 2 (confirmación) oculta
+  const viewStart = document.getElementById("dp-view-start");
+  const viewConfirm = document.getElementById("dp-view-confirm");
+  if (viewStart) viewStart.style.display = "";
+  if (viewConfirm) viewConfirm.style.display = "none";
+
+  // Frase del día — si no hay mensaje, escondemos el bloque
   const fraseEl = document.getElementById("dp-frase");
   const nameEl = document.getElementById("dp-author-name");
   const avEl = document.getElementById("dp-author-av");
   const dateEl = document.getElementById("dp-author-date");
-  const popup = document.getElementById("daily-popup");
+  const mensajeLabel = document.querySelector(".dp-mensaje-label");
+  const authorBlock = document.querySelector("#dp-view-start .dp-author");
 
-  if (!popup || !fraseEl) return;
-
-  fraseEl.textContent = msg.frase || "—";
-  nameEl.textContent = msg.autor || "Anónimo";
-
-  const initials = (msg.autor || "A").split(" ").slice(0,2).map(w => w[0] || "").join("").toUpperCase();
-  avEl.textContent = initials;
-
-  if (msg.created_at) {
-    const d = new Date(msg.created_at);
-    dateEl.textContent = d.toLocaleDateString("es-ES", { day:"2-digit", month:"short", year:"numeric" });
+  if (msg && fraseEl) {
+    fraseEl.textContent = msg.frase || "—";
+    if (nameEl) nameEl.textContent = msg.autor || "Anónimo";
+    if (avEl) {
+      const initials = (msg.autor || "A").split(" ").slice(0,2).map(w => w[0] || "").join("").toUpperCase();
+      avEl.textContent = initials;
+    }
+    if (dateEl && msg.created_at) {
+      const d = new Date(msg.created_at);
+      dateEl.textContent = d.toLocaleDateString("es-ES", { day:"2-digit", month:"short", year:"numeric" });
+    } else if (dateEl) {
+      dateEl.textContent = "";
+    }
+    if (fraseEl) fraseEl.style.display = "";
+    if (mensajeLabel) mensajeLabel.style.display = "";
+    if (authorBlock) authorBlock.style.display = "";
   } else {
-    dateEl.textContent = "—";
+    if (fraseEl) fraseEl.style.display = "none";
+    if (mensajeLabel) mensajeLabel.style.display = "none";
+    if (authorBlock) authorBlock.style.display = "none";
   }
 
-  renderReactions(msg);
-
-  document.querySelectorAll(".dp-react-btn").forEach(btn => {
-    btn.onclick = () => reactToMessage(btn.dataset.emoji, idx);
-  });
+  // Botón "Iniciar mi día" → click proxy al botón Entrada del HQCC.
+  // La vista de confirmación se dispara desde attendance.js cuando la
+  // marca tiene éxito — así también funciona si marcan desde el HQCC.
+  const btnStart = document.getElementById("dp-btn-start");
+  if (btnStart) {
+    btnStart.onclick = () => {
+      btnStart.disabled = true;
+      const hqEntrada = document.querySelector(".att-entrada");
+      if (hqEntrada) hqEntrada.click();
+    };
+  }
 
   popup.style.display = "flex";
   if (window.refreshIcons) window.refreshIcons();
 }
 
-function firstNameFromEmail(email) {
-  if (!email) return "?";
-  const lower = email.toLowerCase();
-  const member = teamMembers.find(m =>
-    Array.isArray(m.email) && m.email.some(e => (e || "").toLowerCase() === lower)
-  );
-  if (member?.name) return member.name.trim().split(/\s+/)[0];
-  return email.split("@")[0].split(".")[0];
-}
+// Muestra la vista de confirmación (checkmark + barra 5s) y auto-cierra.
+function _showJornadaConfirmation() {
+  const popup = document.getElementById("daily-popup");
+  const viewStart = document.getElementById("dp-view-start");
+  const viewConfirm = document.getElementById("dp-view-confirm");
+  const fill = document.getElementById("dp-progress-fill");
+  if (!popup || !viewConfirm) return;
 
-function renderReactions(msg) {
-  const reactions = msg.reactions || {};
-  const summaryEl = document.getElementById("dp-reactions-summary");
-  if (!summaryEl) return;
+  if (viewStart) viewStart.style.display = "none";
+  viewConfirm.style.display = "";
 
-  const byEmoji = {};
-  Object.entries(reactions).forEach(([email, emoji]) => {
-    if (!byEmoji[emoji]) byEmoji[emoji] = [];
-    byEmoji[emoji].push(email);
-  });
-
-  summaryEl.innerHTML = Object.keys(byEmoji).length
-    ? Object.entries(byEmoji).map(([emoji, emails]) => {
-        const isMine = emails.includes(currentUser.email);
-        const names = emails.map(firstNameFromEmail).slice(0,3);
-        const extra = emails.length > 3 ? ` +${emails.length-3}` : "";
-        return `<div class="dp-react-chip ${isMine ? 'mine':''}">
-          <span class="react-emoji">${emoji}</span>
-          <span class="react-names">${names.join(", ")}${extra}</span>
-        </div>`;
-      }).join("")
-    : `<span style="color:var(--muted);font-size:11.5px;">Sé el primero en reaccionar</span>`;
-
-  // Botones siempre vírgenes: cada vez que el popup aparece, el usuario
-  // puede reaccionar de nuevo aunque ya haya reaccionado antes a este mensaje.
-  document.querySelectorAll(".dp-react-btn").forEach(btn => btn.classList.remove("selected"));
-}
-
-async function reactToMessage(emoji, idx) {
-  try {
-    const msgSnap = await getDoc(doc(db, "shared", "messages"));
-    if (!msgSnap.exists()) return;
-    const items = msgSnap.data().items || [];
-    if (!items[idx]) return;
-
-    if (!items[idx].reactions) items[idx].reactions = {};
-
-    // Siempre setea (no toggle). El usuario reemplaza libremente su reacción
-    // cada vez que ve el mensaje, sin riesgo de borrarla por doble clic.
-    items[idx].reactions[currentUser.email] = emoji;
-
-    await updateDoc(doc(db, "shared", "messages"), { items });
-    renderReactions(items[idx]);
-  } catch (e) {
-    heroToast.error("No se pudo guardar la reacción: " + e.message);
+  // Sub-mensaje con la hora
+  const sub = document.getElementById("dp-confirm-sub");
+  if (sub) {
+    const now = new Date();
+    const h = now.getHours() % 12 || 12;
+    const m = now.getMinutes().toString().padStart(2, "0");
+    const ampm = now.getHours() >= 12 ? "pm" : "am";
+    sub.textContent = `Entrada registrada a las ${h}:${m} ${ampm} · ¡que tengas un gran día! ✨`;
   }
+
+  // Reinicia y arranca la barra (removeClass fuerza restart de la animación)
+  if (fill) {
+    fill.classList.remove("running");
+    void fill.offsetWidth;
+    fill.classList.add("running");
+  }
+
+  setTimeout(() => { popup.style.display = "none"; }, 5000);
 }
+
+// Expuesto para que attendance.js dispare la confirmación cuando se marca
+// Entrada, sin importar si el usuario clickeó "Iniciar mi día" en el modal
+// o el botón Entrada directo del HQCC.
+window.showJornadaConfirmation = _showJornadaConfirmation;
 
 const dpClose = document.getElementById("dp-close");
 if (dpClose) {
-  dpClose.addEventListener("click", async () => {
-    try {
-      await setDoc(doc(db, "users", currentUser.email), {
-        lastMessageSeenDate: getTodayKey()
-      }, { merge:true });
-    } catch (e) { console.warn(e); }
+  dpClose.addEventListener("click", () => {
     document.getElementById("daily-popup").style.display = "none";
   });
 }

@@ -192,11 +192,37 @@ async function recordAttendance(type, btn, extras = {}) {
     });
     setFeedback(`✓ ${type} registrada a las ${formatTime(now)}`, "ok");
     saveLast(type, now.toISOString(), extras);
+    // Persistimos aparte el día de la primera Entrada para que
+    // checkDailyPopup pueda detectarla aunque después se marquen Break/Salida
+    // y "hh-attendance-last" ya no sea "Entrada".
+    if (type === "Entrada") {
+      try { localStorage.setItem("hh-attendance-entry-day", now.toISOString().slice(0, 10)); } catch {}
+    }
     refreshStatusFromStorage();
     if (window.hqccSyncBreak) window.hqccSyncBreak();
+
+    // Modal de break: se abre al iniciar y se cierra al terminar.
+    if (type === "Inicio Break") openBreakModal(now);
+    else if (type === "Fin Break") closeBreakModal();
+
+    // Modal de inicio de jornada: si estaba abierto (o se marcó Entrada
+    // desde el HQCC con el modal abierto), mostrar la vista de confirmación
+    // + barra 5s antes de auto-cerrar.
+    if (type === "Entrada") {
+      const dp = document.getElementById("daily-popup");
+      if (dp && dp.style.display !== "none" && typeof window.showJornadaConfirmation === "function") {
+        window.showJornadaConfirmation();
+      }
+    }
   } catch (e) {
     console.error("attendance:", e);
     setFeedback("✗ No se pudo registrar. Reintenta.", "err");
+    // Si el fallo es la Entrada disparada desde el modal de inicio de
+    // jornada, reactivamos su botón para que el usuario pueda reintentar.
+    if (type === "Entrada") {
+      const btnStart = document.getElementById("dp-btn-start");
+      if (btnStart) btnStart.disabled = false;
+    }
   } finally {
     btn.classList.remove("is-loading");
     btn.disabled = false;
@@ -334,6 +360,96 @@ function initHqccBreakToggle() {
   sync();
 }
 
+// ── Modal Break (bloqueante) ───────────────────────────────────────
+// El modal vive en index.html (#break-modal). Se abre al registrar
+// "Inicio Break" y se cierra al terminar. No tiene X ni cierre por ESC;
+// el único cierre es el botón "Terminar break" que a su vez dispara el
+// evento de Fin Break. Se reabre automáticamente al recargar la página
+// si el usuario dejó el break activo.
+const BREAK_OVERTIME_MS = 30 * 60 * 1000; // 30 min
+let _breakTimerInt = null;
+let _breakOvertimeNoticed = false;
+
+function _breakOvertimeKey(isoTs) {
+  return "hh-break-30min-shown:" + new Date(isoTs).toISOString().slice(0, 10);
+}
+
+function _updateBreakTimer(startTs) {
+  const el = document.getElementById("bm-timer");
+  if (!el) return;
+  const diff = Math.max(0, Date.now() - startTs);
+  const totalSec = Math.floor(diff / 1000);
+  const mm = Math.floor(totalSec / 60);
+  const ss = totalSec % 60;
+  const hh = Math.floor(mm / 60);
+  const mmRem = mm % 60;
+  el.textContent = hh > 0
+    ? `${hh}:${mmRem.toString().padStart(2, "0")}:${ss.toString().padStart(2, "0")}`
+    : `${mm.toString().padStart(2, "0")}:${ss.toString().padStart(2, "0")}`;
+
+  if (diff >= BREAK_OVERTIME_MS) {
+    el.classList.add("overtime");
+    if (!_breakOvertimeNoticed) {
+      _breakOvertimeNoticed = true;
+      const startIso = new Date(startTs).toISOString();
+      const flagKey = _breakOvertimeKey(startIso);
+      if (localStorage.getItem(flagKey) !== "1") {
+        try { localStorage.setItem(flagKey, "1"); } catch {}
+        if (typeof heroToast !== "undefined") {
+          heroToast.info("Ya llevas 30 min de break — recuerda regresar cuando puedas");
+        }
+      }
+    }
+  } else {
+    el.classList.remove("overtime");
+  }
+}
+
+function openBreakModal(startTs) {
+  const overlay = document.getElementById("break-modal");
+  if (!overlay) return;
+  const startMs = startTs instanceof Date ? startTs.getTime() : new Date(startTs).getTime();
+
+  overlay.classList.add("is-open");
+  overlay.style.display = "flex";
+  document.body.style.overflow = "hidden";
+
+  // Reset overtime tracking para esta apertura; si ya se disparó el toast
+  // para este día, el flag en localStorage evita repetirlo.
+  _breakOvertimeNoticed = false;
+
+  _updateBreakTimer(startMs);
+  if (_breakTimerInt) clearInterval(_breakTimerInt);
+  _breakTimerInt = setInterval(() => _updateBreakTimer(startMs), 1000);
+
+  if (window.refreshIcons) window.refreshIcons();
+
+  const endBtn = document.getElementById("bm-end-btn");
+  if (endBtn && !endBtn.dataset.bound) {
+    endBtn.dataset.bound = "1";
+    endBtn.addEventListener("click", () => {
+      endBtn.disabled = true;
+      const proxy = document.getElementById("hqcc-break-out");
+      if (proxy) proxy.click();
+      // recordAttendance("Fin Break") → cierra el modal vía el hook.
+      // Reactivamos el botón por si falló y el modal sigue abierto.
+      setTimeout(() => { endBtn.disabled = false; }, 1500);
+    });
+  }
+}
+
+function closeBreakModal() {
+  const overlay = document.getElementById("break-modal");
+  if (!overlay) return;
+  overlay.classList.remove("is-open");
+  overlay.style.display = "none";
+  document.body.style.overflow = "";
+  if (_breakTimerInt) { clearInterval(_breakTimerInt); _breakTimerInt = null; }
+}
+
+window.openBreakModal = openBreakModal;
+window.closeBreakModal = closeBreakModal;
+
 // ── Init ───────────────────────────────────────────────────────────
 function init() {
   // Botones genéricos: data-att-type indica qué tipo registrar
@@ -353,6 +469,12 @@ function init() {
 
   initHqccBreakToggle();
   refreshStatusFromStorage();
+
+  // Si al cargar la página el usuario ya está en break hoy, reabre el modal.
+  const last = loadLast();
+  if (last && last.type === "Inicio Break" && isSameLocalDay(last.timestamp, new Date().toISOString())) {
+    openBreakModal(last.timestamp);
+  }
 }
 
 if (document.readyState === "loading") {

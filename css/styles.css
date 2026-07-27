@@ -4515,9 +4515,294 @@ body[data-theme="dark"] .bdc-cd-label{ color:#06a3b6; }
   color:var(--cyan-deep);
 }
 
+/* ══════════════════════════════════════════
+   INICIO DE JORNADA — vistas del daily-popup
+   ══════════════════════════════════════════ */
+
+.dp-hello {
+  font-family:var(--display);
+  font-size:clamp(24px, 3.2vw, 32px);
+  font-weight:800;
+  color:var(--text);
+  text-align:center;
+  margin-bottom:6px;
+  letter-spacing:-.01em;
+}
+.dp-hello span {
+  background:linear-gradient(135deg, var(--cyan), var(--cyan-deep));
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+.dp-tagline {
+  text-align:center;
+  font-size:13.5px;
+  color:var(--text-2);
+  margin-bottom:22px;
+}
+
+.dp-actions {
+  display:flex; flex-direction:column; gap:10px;
+  margin-bottom:22px;
+}
+.dp-action-btn {
+  display:flex; align-items:center; gap:14px;
+  padding:14px 16px;
+  border-radius:14px;
+  border:2px solid var(--border);
+  background:var(--paper);
+  color:var(--text);
+  text-decoration:none;
+  cursor:pointer;
+  transition:all .2s cubic-bezier(.18,.89,.32,1.28);
+  font-family:inherit;
+  text-align:left;
+}
+.dp-action-btn:hover {
+  transform:translateY(-2px);
+  border-color:var(--cyan);
+  box-shadow:0 8px 20px rgba(6,163,182,.15);
+}
+.dp-action-btn:disabled { opacity:.6; cursor:not-allowed; transform:none; }
+.dp-action-icon {
+  width:44px; height:44px;
+  border-radius:12px;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+  background:rgba(6,163,182,.1);
+  color:var(--cyan);
+}
+.dp-action-icon i { width:22px; height:22px; }
+.dp-action-body { display:flex; flex-direction:column; gap:2px; flex:1; }
+.dp-action-title {
+  font-family:var(--display); font-weight:700;
+  font-size:15px; color:var(--text);
+}
+.dp-action-sub {
+  font-size:12px; color:var(--muted);
+  font-family:var(--mono);
+}
+
+/* Verde emerald para "Iniciar mi día" — coherente con el botón Entrada
+   del HQCC banner (.att-entrada / .hqcc-att-btn.entrada). Verde = go. */
+.dp-action-primary {
+  background:linear-gradient(135deg, #10b981, #059669);
+  border-color:#059669;
+  color:#fff;
+  box-shadow:0 4px 12px rgba(16,185,129,.28);
+}
+.dp-action-primary .dp-action-icon {
+  background:rgba(255,255,255,.2);
+  color:#fff;
+}
+.dp-action-primary .dp-action-title { color:#fff; }
+.dp-action-primary .dp-action-sub { color:rgba(255,255,255,.85); }
+.dp-action-primary:hover {
+  box-shadow:0 10px 24px rgba(16,185,129,.42);
+  border-color:#059669;
+}
+
+.dp-mensaje-label {
+  text-align:center;
+  font-family:var(--mono);
+  font-size:10px; font-weight:700;
+  letter-spacing:2.5px; text-transform:uppercase;
+  color:var(--cyan);
+  margin-bottom:14px;
+}
+
+/* Vista de confirmación (post-marcar entrada) */
+.dp-check {
+  display:flex; justify-content:center;
+  margin:8px 0 20px;
+}
+.dp-check-svg {
+  width:88px; height:88px;
+  color:var(--cyan-deep);
+  animation:dp-check-in .55s cubic-bezier(.18,.89,.32,1.28);
+}
+.dp-check-svg circle { animation:dp-stroke .5s ease-out forwards; stroke-dasharray:151; stroke-dashoffset:151; }
+.dp-check-svg path { animation:dp-stroke .35s .3s ease-out forwards; stroke-dasharray:60; stroke-dashoffset:60; }
+@keyframes dp-check-in { from { transform:scale(.4); opacity:0; } to { transform:scale(1); opacity:1; } }
+@keyframes dp-stroke { to { stroke-dashoffset:0; } }
+
+.dp-confirm-title {
+  text-align:center;
+  font-family:var(--display); font-weight:800;
+  font-size:26px; color:var(--text);
+  margin-bottom:6px;
+}
+.dp-confirm-sub {
+  text-align:center;
+  font-size:14px; color:var(--text-2);
+  margin-bottom:26px;
+}
+.dp-progress {
+  height:6px;
+  background:var(--paper);
+  border-radius:999px;
+  overflow:hidden;
+  border:1px solid var(--border);
+}
+.dp-progress-fill {
+  height:100%;
+  background:linear-gradient(90deg, var(--cyan), var(--cyan-deep));
+  width:100%;
+  transform-origin:left center;
+  transform:scaleX(0);
+}
+.dp-progress-fill.running {
+  animation:dp-prog 5s linear forwards;
+}
+@keyframes dp-prog { from { transform:scaleX(0); } to { transform:scaleX(1); } }
+
+/* ══════════════════════════════════════════
+   BREAK MODAL — bloqueante con contador
+   ══════════════════════════════════════════ */
+.break-modal-overlay {
+  position:fixed; inset:0;
+  background:rgba(6,42,51,.82);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+  z-index:10001;
+  display:none;
+  align-items:center; justify-content:center;
+  padding:24px;
+  animation:dp-fade .3s ease;
+}
+.break-modal-overlay.is-open { display:flex; }
+
+.break-modal {
+  position:relative;
+  max-width:440px;
+  width:100%;
+  background:linear-gradient(135deg, #fff 0%, #fff6ec 100%);
+  border-radius:24px;
+  padding:44px 36px 32px;
+  box-shadow:0 30px 80px rgba(0,0,0,.4);
+  animation:dp-pop .5s cubic-bezier(.18,.89,.32,1.28);
+  overflow:hidden;
+  isolation:isolate;
+  text-align:center;
+}
+[data-theme="dark"] .break-modal {
+  background:linear-gradient(135deg, #2a1f14 0%, #1a1108 100%);
+}
+.bm-glow {
+  position:absolute; top:-120px; right:-120px;
+  width:340px; height:340px;
+  background:radial-gradient(circle, rgba(217,119,6,.22) 0%, transparent 70%);
+  pointer-events:none;
+  animation:dp-glow-spin 22s linear infinite;
+  z-index:-1;
+}
+
+.bm-emoji-wrap {
+  position:relative;
+  height:110px;
+  display:flex; align-items:flex-end; justify-content:center;
+  margin-bottom:18px;
+}
+.bm-emoji {
+  font-size:78px;
+  line-height:1;
+  animation:bm-float 3.5s ease-in-out infinite;
+  filter:drop-shadow(0 8px 16px rgba(217,119,6,.25));
+}
+@keyframes bm-float {
+  0%, 100% { transform:translateY(0) rotate(-2deg); }
+  50%      { transform:translateY(-6px) rotate(2deg); }
+}
+.bm-steam {
+  position:absolute; top:0;
+  width:8px; height:38px;
+  background:linear-gradient(to top, rgba(180,180,180,.5), transparent);
+  border-radius:50%;
+  opacity:0;
+  animation:bm-steam 3s ease-in-out infinite;
+}
+.bm-steam-1 { left:calc(50% - 18px); animation-delay:0s; }
+.bm-steam-2 { left:calc(50% + 0px);  animation-delay:.6s; }
+.bm-steam-3 { left:calc(50% + 18px); animation-delay:1.2s; }
+@keyframes bm-steam {
+  0%   { opacity:0; transform:translateY(20px) scale(.8); }
+  40%  { opacity:.6; }
+  100% { opacity:0; transform:translateY(-20px) scale(1.3); }
+}
+[data-theme="dark"] .bm-steam {
+  background:linear-gradient(to top, rgba(200,200,200,.35), transparent);
+}
+
+.bm-title {
+  font-family:var(--display); font-weight:800;
+  font-size:26px; color:var(--text);
+  margin-bottom:4px;
+  letter-spacing:-.01em;
+}
+.bm-sub {
+  font-size:14px; color:var(--text-2);
+  margin-bottom:24px;
+}
+
+.bm-timer-wrap {
+  background:var(--paper);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:18px;
+  margin-bottom:22px;
+}
+.bm-timer {
+  font-family:var(--mono);
+  font-size:44px; font-weight:800;
+  color:var(--cyan-deep);
+  letter-spacing:2px;
+  line-height:1;
+  margin-bottom:6px;
+  font-variant-numeric:tabular-nums;
+}
+.bm-timer.overtime {
+  color:#d97706;
+  animation:bm-pulse 1.5s ease-in-out infinite;
+}
+@keyframes bm-pulse {
+  0%, 100% { opacity:1; }
+  50%      { opacity:.65; }
+}
+.bm-timer-label {
+  font-family:var(--mono);
+  font-size:11px; color:var(--muted);
+  letter-spacing:1px;
+  text-transform:uppercase;
+}
+
+.bm-end-btn {
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  padding:14px 28px;
+  border:none;
+  border-radius:14px;
+  background:linear-gradient(135deg, var(--cyan), var(--cyan-deep));
+  color:#fff;
+  font-family:inherit;
+  font-size:15px; font-weight:700;
+  cursor:pointer;
+  transition:all .2s cubic-bezier(.18,.89,.32,1.28);
+  box-shadow:0 6px 16px rgba(6,163,182,.35);
+  width:100%;
+}
+.bm-end-btn:hover {
+  transform:translateY(-2px);
+  box-shadow:0 10px 24px rgba(6,163,182,.45);
+}
+.bm-end-btn:disabled { opacity:.6; cursor:not-allowed; transform:none; }
+.bm-end-btn i { width:18px; height:18px; }
+
 @media (max-width:500px) {
   .daily-popup { padding:32px 24px 24px; }
-  .dp-react-btn { width:46px; height:46px; font-size:22px; }
+  .dp-action-btn { padding:12px 14px; }
+  .dp-action-icon { width:40px; height:40px; }
+  .break-modal { padding:36px 24px 24px; }
+  .bm-emoji { font-size:64px; }
+  .bm-timer { font-size:36px; }
 }
 /* ═══════════════════════════════════════════
    AGREGAR AL FINAL DE css/styles.css
