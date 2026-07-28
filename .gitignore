@@ -1,5 +1,10 @@
 .claude/
 
+# Node modules — solo se instalan localmente para tareas puntuales (ej.
+# generar PNGs de íconos con sharp). El proyecto es HTML plano sin bundler.
+node_modules/
+package-lock.json
+
 # Datos financieros reales — usados solo para migración local, no para el repo
 INGRESOS 2026.csv
 INGRESOS 2026.xlsx
