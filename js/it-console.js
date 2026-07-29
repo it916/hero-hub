@@ -1392,6 +1392,144 @@ function buildOnboardingEmail(nombre, email, password, tipo, lang) {
     + '</table></td></tr></table></body></html>';
 }
 
+// Plantilla: bienvenida al Hero Hub después de que HR firma los consents.
+// Destinatario: correo corporativo (@heroinsuranceusa.com), ya activo.
+// No incluye credenciales — el usuario ya inició sesión en Workspace en la
+// fase previa de onboarding. Este email cierra el ciclo de incorporación
+// invitándolo al Hub y presentándole las secciones + recursos clave.
+//
+// Estilo: Hero Light real (docs/design-system.md) — Bricolage Grotesque
+// para títulos, Inter para body, JetBrains Mono para URLs; card blanco
+// radius 22px sobre paper #f0f4f8; único acento cyan (no colores por
+// sección); tipografía sobre decoración. Se siente como una página del
+// Hub en formato email, no como un template genérico.
+function buildEmailBienvenidaHub(nombre, emailCorp) {
+  var P       = '#06a3b6'; // --cyan
+  var P_DEEP  = '#066b78'; // --cyan-deep
+  var TEXT    = '#0a3d4a'; // --text
+  var TEXT_2  = '#1a4a5a'; // --text-2
+  var MUTED   = '#5a7480'; // --muted
+  var PAPER   = '#f0f4f8'; // --paper
+  var BORDER  = '#e5eaef'; // ~ --border en hex opaco (para clientes que ignoran rgba)
+  var LOGO    = 'https://hub.heroinsuranceusa.com/images/logo-shield-only.png';
+  var HUB_URL = 'https://hub.heroinsuranceusa.com';
+
+  // Stacks web-safe con Google Fonts como preferida — Gmail y Apple Mail
+  // las cargan del <link>; Outlook desktop cae al fallback system.
+  var FF_DISP = "'Bricolage Grotesque','Segoe UI',system-ui,-apple-system,Helvetica,Arial,sans-serif";
+  var FF_SANS = "'Inter','Segoe UI',system-ui,-apple-system,Helvetica,Arial,sans-serif";
+  var FF_MONO = "'JetBrains Mono','SF Mono',Consolas,Menlo,monospace";
+
+  // Íconos Lucide como PNG hospedados en el repo — mismos que el topbar del
+  // Hub. Se sirven como <img> porque Gmail strippa SVG inline. Los PNG están
+  // a 88x88 (2x retina) y se muestran a 22x22, así se ven nítidos incluso
+  // en pantallas HiDPI.
+  var ICO_BASE = HUB_URL + '/images/icons/lucide/';
+  function ico(name) {
+    return '<img src="' + ICO_BASE + name + '.png" width="22" height="22" alt="" style="display:block;width:22px;height:22px;border:0;"/>';
+  }
+
+  // Cuatro líneas — las secciones más relevantes para arrancar.
+  // Cada sección con su ícono Lucide del topbar, en un tile 42x42 cyan-tenue.
+  var secciones = [
+    ['users',   'Equipo',     'Conoce al equipo y sus roles',      '/equipo.html'],
+    ['network', 'Agencias',   'Organigrama y comisiones por plan', '/agencias.html'],
+    ['shield',  'Portales',   'Accesos r&aacute;pidos a carriers', '/portales.html'],
+    ['rocket',  'Onboarding', 'Tu ruta paso a paso al arrancar',   '/onboarding.html']
+  ];
+
+  var seccionesHtml = secciones.map(function(s) {
+    return '<table cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:16px;"><tr valign="middle">'
+      + '<td width="56" style="padding-right:14px;">'
+      + '<a href="' + HUB_URL + s[3] + '" style="text-decoration:none;display:block;">'
+      + '<table cellspacing="0" cellpadding="0" border="0"><tr><td width="42" height="42" align="center" valign="middle" style="width:42px;height:42px;background:rgba(6,163,182,0.08);border-radius:14px;">'
+      + ico(s[0])
+      + '</td></tr></table>'
+      + '</a>'
+      + '</td>'
+      + '<td valign="middle">'
+      + '<a href="' + HUB_URL + s[3] + '" style="text-decoration:none;color:' + TEXT + ';display:block;">'
+      + '<div style="font-family:' + FF_SANS + ';font-size:15px;font-weight:600;color:' + TEXT + ';line-height:1.3;margin-bottom:2px;">' + s[1] + '</div>'
+      + '<div style="font-family:' + FF_SANS + ';font-size:13px;font-weight:400;color:' + MUTED + ';line-height:1.4;">' + s[2] + '</div>'
+      + '</a>'
+      + '</td>'
+      + '</tr></table>';
+  }).join('');
+
+  return '<!DOCTYPE html><html lang="es"><head>'
+    + '<meta charset="UTF-8"/>'
+    + '<meta name="viewport" content="width=device-width,initial-scale=1"/>'
+    + '<link rel="preconnect" href="https://fonts.googleapis.com"/>'
+    + '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>'
+    + '<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet"/>'
+    + '</head>'
+    + '<body style="margin:0;padding:0;background:' + PAPER + ';font-family:' + FF_SANS + ';">'
+    + '<table cellspacing="0" cellpadding="0" border="0" width="100%" style="background:' + PAPER + ';"><tr><td style="padding:40px 16px;">'
+    + '<table cellspacing="0" cellpadding="0" border="0" width="600" align="center" style="background:#ffffff;border-radius:22px;overflow:hidden;box-shadow:0 4px 20px rgba(10,61,74,0.06);">'
+
+    // ── Header interno: logo + wordmark ───────────────────────
+    + '<tr><td style="padding:32px 40px 24px;border-bottom:1px solid ' + BORDER + ';">'
+    + '<table cellspacing="0" cellpadding="0" border="0"><tr valign="middle">'
+    + '<td width="52" style="padding-right:14px;">'
+    + '<img src="' + LOGO + '" width="40" height="40" alt="Hero Insurance USA" style="width:40px;height:40px;display:block;"/>'
+    + '</td>'
+    + '<td valign="middle">'
+    + '<div style="font-family:' + FF_SANS + ';font-size:11px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:' + P + ';">Hero Hub</div>'
+    + '<div style="font-family:' + FF_SANS + ';font-size:11px;font-weight:400;color:' + MUTED + ';margin-top:2px;">Hero Insurance USA</div>'
+    + '</td>'
+    + '</tr></table>'
+    + '</td></tr>'
+
+    // ── Hero: título + intro + CTA ────────────────────────────
+    + '<tr><td style="padding:40px 40px 8px;">'
+    + '<h1 style="margin:0 0 20px;font-family:' + FF_DISP + ';font-size:32px;font-weight:700;color:' + TEXT + ';line-height:1.15;letter-spacing:-0.5px;">Bienvenido al equipo,<br>' + nombre + '.</h1>'
+    + '<p style="margin:0 0 14px;font-family:' + FF_SANS + ';font-size:15px;color:' + TEXT_2 + ';line-height:1.65;">Hoy oficialmente formas parte de la familia Hero. Todo el equipo est&aacute; emocionado de tenerte a bordo.</p>'
+    + '<p style="margin:0 0 30px;font-family:' + FF_SANS + ';font-size:15px;color:' + TEXT_2 + ';line-height:1.65;">Queremos compartir contigo el <strong style="color:' + TEXT + ';font-weight:600;">Hero Hub</strong>, nuestro cuartel general digital &mdash; ah&iacute; encontrar&aacute;s todo lo que necesitas para arrancar con el pie derecho.</p>'
+
+    // CTA
+    + '<table cellspacing="0" cellpadding="0" border="0"><tr><td>'
+    + '<a href="' + HUB_URL + '" style="display:inline-block;padding:14px 28px;background:' + P + ';color:#ffffff;font-family:' + FF_SANS + ';font-size:14px;font-weight:600;text-decoration:none;border-radius:14px;letter-spacing:0.2px;">Entrar al Hub &nbsp;&rarr;</a>'
+    + '</td></tr></table>'
+    + '<p style="margin:14px 0 0;font-family:' + FF_MONO + ';font-size:12px;color:' + MUTED + ';">hub.heroinsuranceusa.com</p>'
+    + '</td></tr>'
+
+    // ── Divisor ────────────────────────────────────────────────
+    + '<tr><td style="padding:36px 40px 0;"><div style="border-top:1px solid ' + BORDER + ';"></div></td></tr>'
+
+    // ── Secciones del Hub ─────────────────────────────────────
+    + '<tr><td style="padding:32px 40px 8px;">'
+    + '<p style="margin:0 0 24px;font-family:' + FF_SANS + ';font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:' + MUTED + ';">Dentro del Hub</p>'
+    + seccionesHtml
+    + '</td></tr>'
+
+    // ── Divisor ────────────────────────────────────────────────
+    + '<tr><td style="padding:24px 40px 0;"><div style="border-top:1px solid ' + BORDER + ';"></div></td></tr>'
+
+    // ── Firma CEO con foto ────────────────────────────────────
+    + '<tr><td style="padding:32px 40px 40px;">'
+    + '<p style="margin:0 0 20px;font-family:' + FF_SANS + ';font-size:14px;color:' + TEXT_2 + ';line-height:1.6;">Con la mejor bienvenida,</p>'
+    + '<table cellspacing="0" cellpadding="0" border="0"><tr valign="middle">'
+    + '<td width="76" style="padding-right:16px;">'
+    + '<img src="' + HUB_URL + '/images/team/jesus-gutierrez.jpg" width="60" height="60" alt="Jes&uacute;s Guti&eacute;rrez" style="width:60px;height:60px;display:block;border-radius:50%;object-fit:cover;border:2px solid rgba(6,163,182,0.15);"/>'
+    + '</td>'
+    + '<td valign="middle">'
+    + '<p style="margin:0 0 4px;font-family:' + FF_DISP + ';font-size:20px;font-weight:600;color:' + TEXT + ';line-height:1.2;">Jes&uacute;s Guti&eacute;rrez</p>'
+    + '<p style="margin:0;font-family:' + FF_SANS + ';font-size:11px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:' + P + ';">CEO &nbsp;&middot;&nbsp; Hero Insurance USA</p>'
+    + '</td>'
+    + '</tr></table>'
+    + '</td></tr>'
+
+    + '</table>'
+
+    // ── Footer (fuera del card, sobre paper) ───────────────────
+    + '<table cellspacing="0" cellpadding="0" border="0" width="600" align="center" style="margin-top:20px;"><tr><td style="padding:0 40px;text-align:center;">'
+    + '<p style="margin:0 0 4px;font-family:' + FF_SANS + ';font-size:11px;color:' + MUTED + ';">Hero Insurance USA &middot; <a href="mailto:it@heroinsuranceusa.com" style="color:' + P + ';text-decoration:none;">it&#64;heroinsuranceusa.com</a></p>'
+    + '<p style="margin:0;font-family:' + FF_SANS + ';font-size:10px;color:' + MUTED + ';opacity:0.7;">CONFIDENTIALITY NOTICE: This email is intended solely for the addressee.</p>'
+    + '</td></tr></table>'
+
+    + '</td></tr></table></body></html>';
+}
+
 function buildEmailReset(nombre, emailCorp, password) {
   var now = new Date();
   var fecha = now.toLocaleDateString('es-ES', { timeZone:'America/New_York', year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' });
@@ -1571,6 +1709,40 @@ function openUserModal(email, nombre) {
   document.getElementById('um-nombre').textContent = nombre;
   document.getElementById('um-new-password').value = '';
   document.getElementById('user-modal').style.display = 'block';
+}
+
+// Envía el email de bienvenida oficial al Hub. Se dispara desde el modal de
+// Usuarios cuando HR ya firmó los consents del empleado nuevo. Va al correo
+// corporativo (@hero) que ya está activo tras el onboarding de Workspace.
+async function enviarBienvenidaHub() {
+  if (!currentUserEmail) return;
+  const email  = currentUserEmail;
+  const nombre = document.getElementById('um-nombre').textContent;
+
+  const ok = await heroConfirm({
+    title: '¿Enviar bienvenida al Hub?',
+    body: 'Se enviará un correo a ' + email + ' dándole la bienvenida oficial al equipo e invitándolo a explorar el Hero Hub. Úsalo cuando HR ya haya firmado los consents.',
+    confirmText: 'Enviar bienvenida',
+  });
+  if (!ok) return;
+
+  addLog('Enviando bienvenida al Hub a ' + email + '...', 'info');
+
+  try {
+    await sendViaResend({
+      to: email,
+      subject: 'Bienvenido al Hero Hub — Hero Insurance USA',
+      html: buildEmailBienvenidaHub(nombre, email),
+      text: 'Bienvenido al equipo, ' + nombre + '. Accede al Hero Hub en https://hub.heroinsuranceusa.com',
+    });
+    addLog('Bienvenida al Hub enviada a ' + email, 'success');
+    auditLog('usuario', 'Bienvenida al Hub enviada a ' + nombre, email);
+    showToast('Bienvenida al Hub enviada');
+    closeUserModal();
+  } catch (err) {
+    addLog('Error enviando bienvenida al Hub: ' + err.message, 'error');
+    showToast('Error: ' + err.message);
+  }
 }
 
 function closeUserModal() {

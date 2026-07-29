@@ -1,5 +1,24 @@
 [
   {
+    "id": "2026-07-28-it-console-bienvenida-hub",
+    "version": "v2.22.1",
+    "date": "2026-07-28",
+    "category": "feat",
+    "scope": "it-console",
+    "audience": "admin",
+    "title": "IT Console · botón para enviar bienvenida al Hub tras consents de HR",
+    "items": [
+      "✉ Nuevo botón 'Enviar bienvenida al Hub' en el modal de Usuarios Workspace del IT Console, entre 'Enviar / Offboarding' y 'Eliminar cuenta'",
+      "Diseñado para dispararse una vez que HR ya firmó los consents del empleado nuevo — el correo va al @heroinsuranceusa.com corporativo (que ya está activo tras el onboarding de Workspace) con un mensaje cálido firmado por Jesús Gutiérrez, CEO",
+      "Diseño alineado al design system del Hub (docs/design-system.md): fondo paper #f0f4f8, card blanco radius 22px con sombra suave, tipografía Bricolage Grotesque para titulares + Inter para body + JetBrains Mono para URLs, único acento cyan. Sin colores por sección, sin emojis decorativos, sin sellos. Se siente como una página del Hub en formato email",
+      "Estructura del email: (1) header con logo + wordmark 'HERO HUB', (2) hero con H1 grande 'Bienvenido al equipo, {Nombre}.' + intro cálida + CTA pill al Hub, (3) sección 'DENTRO DEL HUB' con las 4 secciones más relevantes para arrancar (Equipo, Agencias, Portales, Onboarding) — cada una con su ícono Lucide del topbar del Hub (users, network, shield, rocket) como PNG hospedado en el repo (images/icons/lucide/*.png a 88px 2x-retina para nitidez) en un tile cuadrado cyan-tenue de 42×42, (4) firma del CEO con foto redonda de Jesús Gutiérrez (images/team/jesus-gutierrez.jpg) al lado + Bricolage 20px + rol Inter uppercase, (5) footer discreto fuera del card",
+      "🛡 Logo servido desde el propio repo (images/logo-shield-only.png vía hub.heroinsuranceusa.com) en vez de ibb.co que estaba corrupto",
+      "Confirm previo con heroConfirm para evitar envíos accidentales; auditado en audit-log como 'Bienvenida al Hub enviada a X'",
+      "Reusa endpoint /email genérico del Worker (destino interno @hero) — sin cambios en backend",
+      "Bump v2.22.0 → v2.22.1"
+    ]
+  },
+  {
     "id": "2026-07-27-inicio-jornada-modal",
     "version": "v2.22.0",
     "date": "2026-07-27",
