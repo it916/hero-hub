@@ -1,5 +1,24 @@
 [
   {
+    "id": "2026-07-30-users-fase1-guard-auth",
+    "version": "v2.23.4",
+    "date": "2026-07-30",
+    "category": "refactor",
+    "scope": "seguridad",
+    "audience": "admin",
+    "title": "Guard de auth migrado a users/ — cierra gap de seguridad",
+    "items": [
+      "🔒 js/roles.js (guardPage) ahora lee el rol desde users/{email}.access.role en vez de shared/roles.users{}. Antes había un gap: eliminar un usuario desde el panel Usuarios borraba el doc pero el usuario seguía pudiendo loguearse porque shared/roles quedaba con la entry",
+      "✅ Ahora deleteUser() del panel Usuarios revoca acceso al Hub inmediatamente (el usuario necesita cerrar sesión + reintentar por el cache de rol)",
+      "✅ Se rechaza el acceso si access.active === false (usuario desactivado explícitamente) o si no existe doc en users/",
+      "🔑 Backdoor legacy conservado: it@heroinsuranceusa.com siempre entra como admin (recovery si algo se rompe)",
+      "🧑‍💼 Daniela Molina (dmolina@) creada como doc en users/ con meta.excluded=true — puede loguearse y marcar asistencia pero no aparece en Equipo (patrón para empleados en período de prueba). Mismo mecanismo que Luis Ernesto Gutiérrez",
+      "🧹 Removido el feature flag USE_USERS_COLLECTION de firebase-config.js (ya nadie lo consultaba)",
+      "📌 Estado post-Fase 1: shared/team y shared/roles quedan huérfanos en Firestore (sin lectores). Se borrarán en Fase 1.5 tras validar 1-2 semanas en producción",
+      "Bump v2.23.3 → v2.23.4"
+    ]
+  },
+  {
     "id": "2026-07-30-users-fase1-panel-usuarios",
     "version": "v2.23.3",
     "date": "2026-07-30",

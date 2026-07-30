@@ -16,12 +16,3 @@ apiKey: "AIzaSyAtlIACoJkSg77xjw0N3ODFoaH0Sf2pVtc",
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-
-// ═══════════════════════════════════════════════════════════════
-// Feature flags — refactor/users-unificado (Fase 0)
-// ═══════════════════════════════════════════════════════════════
-// Cuando true → equipo.js, mi-perfil.js y roles-admin.js leen de la
-// colección users/{email} en vez de shared/team.members[] +
-// shared/roles. Se activa DESPUÉS de correr el migrador (Fase 0.4)
-// y validar campo por campo.
-export const USE_USERS_COLLECTION = false;

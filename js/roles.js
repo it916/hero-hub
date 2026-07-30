@@ -4,13 +4,14 @@
 // Define los roles disponibles, qué puede ver cada uno, y expone
 // funciones para consultar permisos desde cualquier página del Hub.
 //
-// Los roles de cada usuario se guardan en Firestore:
-//   shared/roles → { users: { "email@heroinsuranceusa.com": "rol" } }
+// Desde v2.23.4 los roles se leen de la colección users/{email}.access.role
+// (fuente de verdad unificada de la Fase 1 del refactor). shared/roles
+// queda deprecado y sin lecturas.
 //
-// Si un usuario no tiene rol asignado, se le niega el acceso al Hub.
+// Si un usuario no tiene doc en users/, no tiene rol, o su access.active
+// es false → se le niega el acceso al Hub.
 
-import { db } from "./firebase-config.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getUserByEmail } from "./user-store.js";
 
 // ═══════════════════════════════════════════
 // DEFINICIÓN DE ROLES
@@ -80,13 +81,18 @@ let cachedRole = null;
 let cachedEmail = null;
 
 /**
- * Obtiene el rol de un usuario desde Firestore.
+ * Obtiene el rol de un usuario desde Firestore users/{email}.
  * Devuelve un objeto { role, definition } donde:
  *   - role: el string del rol ("admin", "agente", etc.)
  *   - definition: el objeto de ROLES con las páginas permitidas
  *
- * Si el usuario no existe en la lista de roles, devuelve null.
- * Los emails de LEGACY_ADMIN_EMAILS siempre obtienen admin.
+ * Devuelve null si:
+ *   - el email no existe en users/ (ni como docId ni como alias en identity.emails[])
+ *   - access.role es null (usuario sin rol asignado)
+ *   - access.active es false (usuario desactivado)
+ *
+ * Los emails de LEGACY_ADMIN_EMAILS (it@) siempre obtienen admin —
+ * backdoor para arranque/recovery si Firestore está mal.
  */
 export async function loadUserRole(email) {
   if (!email) return null;
@@ -103,38 +109,22 @@ export async function loadUserRole(email) {
   }
 
   try {
-    const snap = await getDoc(doc(db, "shared", "roles"));
-    if (!snap.exists()) {
-      console.warn("No existe el documento shared/roles. Crea el documento en Firestore.");
-      return null;
-    }
+    // getUserByEmail matchea docId Y aliases en identity.emails[]
+    const person = await getUserByEmail(normalizedEmail);
+    if (!person) return null;
 
-    const data = snap.data();
-    const users = data.users || {};
+    // Usuario existe pero está desactivado explícitamente
+    if (person.access?.active === false) return null;
 
-    // Buscar el email (los keys en Firestore son case-sensitive)
-    let roleEntry = users[normalizedEmail] || users[email];
-    if (!roleEntry) {
-      // Intentar match case-insensitive como último recurso
-      const foundKey = Object.keys(users).find(
-        k => k.toLowerCase() === normalizedEmail
-      );
-      if (foundKey) roleEntry = users[foundKey];
-    }
-
-    if (!roleEntry) return null;
-
-    // Normalizar: el panel admin guarda objetos {role, updatedAt, updatedBy};
-    // el formato legacy guarda strings directos.
-    let roleName = typeof roleEntry === "string" ? roleEntry : roleEntry.role;
+    let roleName = person.access?.role;
     if (!roleName) return null;
 
-    // Migración de roles antiguos (directivo, rrhh → interno)
+    // Migración de roles antiguos (directivo, rrhh → interno) por si
+    // algún doc migrado hace tiempo aún tiene valores legacy
     if (LEGACY_ROLE_ALIASES[roleName]) {
       roleName = LEGACY_ROLE_ALIASES[roleName];
     }
 
-    // Verificar que el rol existe en nuestro catálogo
     const definition = ROLES[roleName];
     if (!definition) {
       console.warn(`Rol desconocido "${roleName}" para ${email}. Usando fallback.`);
