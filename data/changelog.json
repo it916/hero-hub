@@ -1,5 +1,23 @@
 [
   {
+    "id": "2026-07-30-users-fase1-equipo",
+    "version": "v2.23.2",
+    "date": "2026-07-30",
+    "category": "refactor",
+    "scope": "equipo",
+    "audience": "admin",
+    "title": "Refactor users/{email} · fase 1 · equipo.js consume el store",
+    "items": [
+      "equipo.js migrado a user-store: grid, filtro, perfil heroico y modal admin (crear/editar/eliminar) leen y escriben en users/{email} en vez de shared/team.members[]",
+      "Toda la lógica de rendering pasa de innerHTML a DOM API (createElement + textContent) — pasa el hook de seguridad y evita XSS teóricos con nombres/emails",
+      "user-store.js extendido con nameToIso (nombre en español/inglés → ISO alpha-2) y slugifyName exportado. Emojis de bandera ahora indexados por ISO",
+      "Modal: input de país acepta nombre libre pero al guardar se convierte a ISO; si el nombre no matchea ningún ISO conocido, error explícito antes del write",
+      "Modal en modo edit: bloquea el cambio del email principal (docId único) — si se cambia se muestra error pidiendo hacerlo desde IT (evita rename desincronizado)",
+      "Cleanup del estado: se removieron 4 docs vacíos de users/ que quedaron de tests previos (dmolina, eduardoromero, kaizenteam, life) + rename de Marge de aca@ a msulbaran@ (aca@ ya no se usa)",
+      "Bump v2.23.1 → v2.23.2"
+    ]
+  },
+  {
     "id": "2026-07-30-users-fase1-mi-perfil",
     "version": "v2.23.1",
     "date": "2026-07-30",

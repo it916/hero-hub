@@ -147,11 +147,38 @@ export function countryFlagUrl(iso) {
   return `https://flagicons.lipis.dev/flags/4x3/${iso.toLowerCase()}.svg`;
 }
 
+// Convierte nombre de país (ES o EN) a código ISO alpha-2. Devuelve null si
+// no matchea nada — el UI del modal de equipo lo usa para persistir ISO
+// mientras el usuario tipea en el input libre "Venezuela"/"Cuba"/etc.
+const NAME_TO_ISO_EXTRA = {
+  "eeuu": "US", "us": "US", "united states": "US",
+  "mexico": "MX", "panama": "PA", "peru": "PE",
+  "espana": "ES", "brasil": "BR", "brazil": "BR",
+  "republica dominicana": "DO"
+};
+
+export function nameToIso(name) {
+  if (!name) return null;
+  const clean = String(name).toLowerCase().trim();
+  // 1) Match directo en el mapping ISO→nombre (case-insensitive)
+  for (const [iso, label] of Object.entries(ISO_TO_NAME)) {
+    if (label.toLowerCase() === clean) return iso;
+  }
+  // 2) Fallback: quitar acentos y buscar en extras
+  const noAccents = clean.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (NAME_TO_ISO_EXTRA[noAccents]) return NAME_TO_ISO_EXTRA[noAccents];
+  for (const [iso, label] of Object.entries(ISO_TO_NAME)) {
+    const labelClean = label.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    if (labelClean === noAccents) return iso;
+  }
+  return null;
+}
+
 // ═══════════════════════════════════════════
-// HELPERS INTERNOS
+// HELPERS INTERNOS (exportados donde hay reuso)
 // ═══════════════════════════════════════════
 
-function slugifyName(name) {
+export function slugifyName(name) {
   const clean = (name || "")
     .toLowerCase()
     .normalize("NFD")

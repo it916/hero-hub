@@ -1,45 +1,34 @@
 import { auth, db } from "./firebase-config.js";
 import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { doc, getDoc, setDoc }
+import { doc, getDoc }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { isAdmin as isAdminRole } from "./roles.js";
 import { getFreshGooglePhotoURL } from "./user-photo.js";
+import {
+  getAllUsers, createUser, updateUserFields, deleteUser,
+  countryLabel, countryFlagUrl, nameToIso, slugifyName
+} from "./user-store.js";
 
 const ALLOWED_DOMAIN = "heroinsuranceusa.com";
-// ADMIN_EMAILS eliminado: ahora usamos el sistema de roles desde roles.js
 
+// Emoji de bandera para la ficha del héroe (bio.origen). NO se usa en el
+// resto del UI (los cards y hero-profile usan SVG via countryFlagUrl porque
+// Windows no renderiza bien los emoji de banderas).
 const FLAGS_EMOJI = {
-  'venezuela':'🇻🇪',
-  'cuba':'🇨🇺',
-  'colombia':'🇨🇴',
-  'chile':'🇨🇱',
-  'honduras':'🇭🇳',
-  'estados unidos':'🇺🇸',
-  'eeuu':'🇺🇸',
-  'us':'🇺🇸',
+  VE:'🇻🇪', CU:'🇨🇺', CO:'🇨🇴', CL:'🇨🇱', HN:'🇭🇳',
+  US:'🇺🇸', AR:'🇦🇷', MX:'🇲🇽', ES:'🇪🇸', PE:'🇵🇪',
+  EC:'🇪🇨', UY:'🇺🇾', CR:'🇨🇷', PA:'🇵🇦', DO:'🇩🇴',
+  GT:'🇬🇹', NI:'🇳🇮', SV:'🇸🇻', BO:'🇧🇴', PY:'🇵🇾',
+  PR:'🇵🇷', BR:'🇧🇷'
 };
-const FLAGS = {
-  'venezuela':'https://flagicons.lipis.dev/flags/4x3/ve.svg',
-  'cuba':'https://flagicons.lipis.dev/flags/4x3/cu.svg',
-  'colombia':'https://flagicons.lipis.dev/flags/4x3/co.svg',
-  'chile':'https://flagicons.lipis.dev/flags/4x3/cl.svg',
-  'honduras':'https://flagicons.lipis.dev/flags/4x3/hn.svg',
-  'estados unidos':'https://flagicons.lipis.dev/flags/4x3/us.svg',
-  'eeuu':'https://flagicons.lipis.dev/flags/4x3/us.svg',
-  'us':'https://flagicons.lipis.dev/flags/4x3/us.svg',
-};
-const getFlag = (c) => c ? (FLAGS[c.toLowerCase().trim()] || null) : null;
-const getFlagEmoji = (c) => c ? (FLAGS_EMOJI[c.toLowerCase().trim()] || '') : '';
+const getFlagEmoji = (iso) => iso ? (FLAGS_EMOJI[String(iso).toUpperCase()] || '') : '';
 
 const MONTHS = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
 
-// Personas que NO deben aparecer en la vista del equipo. Filtra al cargar; no toca Firestore.
-const EXCLUDED_NAMES = ['Luis Ernesto Gutiérrez'];
-const normName = s => (s || '').toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
-
 // Paises sugeridos en el <datalist> del modal de miembro. No es exhaustiva,
 // pero cubre los origenes actuales del equipo + resto de LatAm + España/US.
+// La lista queda como nombres ES; al guardar se convierten a ISO via nameToIso.
 const COUNTRIES_SUGGESTED = [
   "Venezuela", "Cuba", "Colombia", "Chile", "Honduras", "Estados Unidos",
   "Argentina", "México", "España", "Perú", "Ecuador", "Uruguay",
@@ -55,23 +44,6 @@ const COUNTRIES_SUGGESTED = [
 // commit, y devuelve el path relativo con cache-buster.
 const GH_REPO_OWNER = "it916";
 const GH_REPO_NAME = "hero-hub";
-
-function slugifyName(name) {
-  const clean = (name || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "") // quitar acentos
-    .replace(/[^a-z0-9\s]/g, "") // solo letras/digitos/espacios
-    .trim();
-  const parts = clean.split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "miembro-" + Date.now();
-  if (parts.length === 1) return parts[0];
-  // Convención del proyecto: primer nombre + segunda palabra del nombre
-  // completo (que en LatAm suele ser el primer apellido para nombres cortos,
-  // o segundo nombre para nombres compuestos — no es perfecto pero coincide
-  // con las 17 fotos actuales).
-  return `${parts[0]}-${parts[1]}`;
-}
 
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
@@ -144,12 +116,17 @@ async function uploadPhotoToGitHub(file, slug) {
 }
 
 // ═══ GENERADOR DE BIOS HEROICAS GENÉRICAS ═══
+// Recibe un doc de users/{email} (post-fase 1). Lee display.jobTitle,
+// identity.country (ISO), identity.name.
 function generateHeroicBio(person) {
-  const role = (person.role || '').toLowerCase();
-  const country = person.country || 'tierras lejanas';
+  const jobTitle = person.display?.jobTitle || '';
+  const role = jobTitle.toLowerCase();
+  const countryIso = person.identity?.country || '';
+  const countryName = countryLabel(countryIso) || 'tierras lejanas';
+  const name = person.identity?.name || '';
 
   // Identidad secreta (basada en el rol)
-  let identidad = person.role || 'Héroe del equipo';
+  let identidad = jobTitle || 'Héroe del equipo';
 
   // Superpoder según el rol
   let superpoder = "Aportando su energía única al equipo Hero";
@@ -182,9 +159,9 @@ function generateHeroicBio(person) {
   else if (role.includes('hr') || role.includes('human')) formacion = "Psicología, Recursos Humanos o Administración";
 
   // Origen
-  let origen = country;
-  const flagEmoji = getFlagEmoji(country);
-  if (flagEmoji) origen = `${flagEmoji} ${country}`;
+  let origen = countryName;
+  const flagEmoji = getFlagEmoji(countryIso);
+  if (flagEmoji) origen = `${flagEmoji} ${countryName}`;
 
   // Frase icónica (rotativa según rol)
   const frasesHeroicas = [
@@ -197,7 +174,7 @@ function generateHeroicBio(person) {
     "La excelencia no es un acto, es un hábito heroico.",
     "Los héroes no nacen, se forjan día a día.",
   ];
-  const idx = (person.name || '').charCodeAt(0) % frasesHeroicas.length;
+  const idx = (name || '').charCodeAt(0) % frasesHeroicas.length;
   const frase = frasesHeroicas[idx] || frasesHeroicas[0];
 
   return {
@@ -216,6 +193,9 @@ const ICONS = {
   cake: `<svg viewBox="0 0 24 24" fill="none"><path d="M20 21v-8H4v8M2 21h20M12 3v4M8 7h8a4 4 0 014 4v2H4v-2a4 4 0 014-4z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
 };
 
+// Array de docs users/{email} — cada item = { _email, identity, display, access, prefs, meta }
+// Se conserva el nombre "members" por familiaridad; NO es la vieja shape de
+// shared/team.members[] — la migración de fase 1 lo pasó a la colección users/.
 let members = [];
 let isAdmin = false;
 let filter = "";
@@ -255,20 +235,29 @@ onAuthStateChanged(auth, async (user) => {
 document.getElementById("btn-logout").addEventListener("click", () => signOut(auth).then(() => location.href = "index.html"));
 
 async function loadTeam() {
+  const grid = document.getElementById("team-grid");
   try {
-    const snap = await getDoc(doc(db, "shared", "team"));
-    if (snap.exists() && Array.isArray(snap.data().members)) {
-      const excluded = new Set(EXCLUDED_NAMES.map(normName));
-      members = snap.data().members.filter(m => !excluded.has(normName(m.name)));
-    } else {
-      members = [];
-      document.getElementById("team-grid").innerHTML = '<p class="empty">Aún no se ha cargado el equipo.</p>';
+    // getAllUsers ya excluye meta.excluded=true (Luis Ernesto Gutiérrez etc.)
+    members = await getAllUsers({ includeExcluded: false });
+    // Orden estable: por nombre (mantiene la sensación de la lista vieja que
+    // era array ordenado por como se agregaron)
+    members.sort((a, b) => (a.identity?.name || "").localeCompare(b.identity?.name || ""));
+    if (!members.length) {
+      grid.replaceChildren();
+      const p = document.createElement("p");
+      p.className = "empty";
+      p.textContent = "Aún no se ha cargado el equipo.";
+      grid.appendChild(p);
       return;
     }
     renderGrid();
   } catch (e) {
     console.error(e);
-    document.getElementById("team-grid").innerHTML = `<p class="empty">Error: ${e.message}</p>`;
+    grid.replaceChildren();
+    const p = document.createElement("p");
+    p.className = "empty";
+    p.textContent = "Error: " + e.message;
+    grid.appendChild(p);
   }
 }
 
@@ -300,28 +289,52 @@ function wireHandlers() {
 function renderGrid() {
   const grid = document.getElementById("team-grid");
   const filtered = filter
-    ? members.filter(m => (m.name || '').toLowerCase().includes(filter) || (m.role || '').toLowerCase().includes(filter))
+    ? members.filter(m => (m.identity?.name || '').toLowerCase().includes(filter)
+                       || (m.display?.jobTitle || '').toLowerCase().includes(filter))
     : members;
   document.getElementById("team-count-num").textContent = filtered.length;
 
   if (!filtered.length) {
-    grid.innerHTML = `
-      <div class="team-empty">
-        <div class="team-empty-icon"><i data-lucide="${filter ? 'search-x' : 'users'}"></i></div>
-        <div class="team-empty-title">${filter ? 'Sin resultados' : 'Aún no hay miembros'}</div>
-        <div class="team-empty-desc">${filter ? `No encontramos héroes con <strong>"${filter}"</strong>.` : 'Cuando un admin agregue al equipo, aparecerán aquí.'}</div>
-      </div>`;
+    grid.replaceChildren();
+    const wrap = document.createElement("div");
+    wrap.className = "team-empty";
+    const icon = document.createElement("div");
+    icon.className = "team-empty-icon";
+    const i = document.createElement("i");
+    i.setAttribute("data-lucide", filter ? "search-x" : "users");
+    icon.appendChild(i);
+    const title = document.createElement("div");
+    title.className = "team-empty-title";
+    title.textContent = filter ? "Sin resultados" : "Aún no hay miembros";
+    const desc = document.createElement("div");
+    desc.className = "team-empty-desc";
+    if (filter) {
+      desc.append(
+        document.createTextNode("No encontramos héroes con "),
+        Object.assign(document.createElement("strong"), { textContent: `"${filter}"` }),
+        document.createTextNode(".")
+      );
+    } else {
+      desc.textContent = "Cuando un admin agregue al equipo, aparecerán aquí.";
+    }
+    wrap.append(icon, title, desc);
+    grid.appendChild(wrap);
     if (window.refreshIcons) window.refreshIcons();
     return;
   }
-  grid.innerHTML = '';
+  grid.replaceChildren();
   filtered.forEach((m, i) => grid.appendChild(buildCard(m, i)));
   if (window.refreshIcons) window.refreshIcons();
 }
 
 function buildCard(person, idx) {
   const realIdx = members.indexOf(person);
-  const flag = getFlag(person.country);
+  const name = person.identity?.name || "";
+  const jobTitle = person.display?.jobTitle || "";
+  const photo = person.identity?.photo || "";
+  const countryIso = person.identity?.country || "";
+  const countryName = countryLabel(countryIso);
+  const flagUrl = countryIso ? countryFlagUrl(countryIso) : "";
 
   const card = document.createElement('div');
   card.className = 'team-card card-outer';
@@ -329,22 +342,57 @@ function buildCard(person, idx) {
   card.setAttribute('tabindex', '0');
   card.dataset.idx = realIdx;
 
-  const adminActions = isAdmin ? `
-    <div class="card-admin-actions">
-      <button class="card-adm-btn edit" data-idx="${realIdx}" title="Editar miembro"><i data-lucide="edit-3"></i></button>
-      <button class="card-adm-btn del" data-idx="${realIdx}" title="Eliminar"><i data-lucide="x"></i></button>
-    </div>` : '';
+  const img = document.createElement("img");
+  img.className = "card-photo";
+  img.src = photo;
+  img.alt = name;
+  img.loading = "lazy";
+  img.addEventListener("error", () => {
+    img.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=06a3b6&color=fff&size=300`;
+  });
+  card.appendChild(img);
 
-  card.innerHTML = `
-    <img class="card-photo" src="${person.photo}" alt="${person.name}" loading="lazy"
-         onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=06a3b6&color=fff&size=300'"/>
-    ${flag ? `<div class="card-flag"><img src="${flag}" alt="${person.country}"/></div>` : ''}
-    ${adminActions}
-    <div class="card-footer">
-      <div class="card-name">${person.name}</div>
-      <div class="card-role">${person.role || ''}</div>
-    </div>
-  `;
+  if (flagUrl) {
+    const flagWrap = document.createElement("div");
+    flagWrap.className = "card-flag";
+    const flagImg = document.createElement("img");
+    flagImg.src = flagUrl;
+    flagImg.alt = countryName;
+    flagWrap.appendChild(flagImg);
+    card.appendChild(flagWrap);
+  }
+
+  if (isAdmin) {
+    const actions = document.createElement("div");
+    actions.className = "card-admin-actions";
+    const btnEdit = document.createElement("button");
+    btnEdit.className = "card-adm-btn edit";
+    btnEdit.dataset.idx = realIdx;
+    btnEdit.title = "Editar miembro";
+    const iEdit = document.createElement("i");
+    iEdit.setAttribute("data-lucide", "edit-3");
+    btnEdit.appendChild(iEdit);
+    const btnDel = document.createElement("button");
+    btnDel.className = "card-adm-btn del";
+    btnDel.dataset.idx = realIdx;
+    btnDel.title = "Eliminar";
+    const iDel = document.createElement("i");
+    iDel.setAttribute("data-lucide", "x");
+    btnDel.appendChild(iDel);
+    actions.append(btnEdit, btnDel);
+    card.appendChild(actions);
+  }
+
+  const footer = document.createElement("div");
+  footer.className = "card-footer";
+  const nameEl = document.createElement("div");
+  nameEl.className = "card-name";
+  nameEl.textContent = name;
+  const roleEl = document.createElement("div");
+  roleEl.className = "card-role";
+  roleEl.textContent = jobTitle;
+  footer.append(nameEl, roleEl);
+  card.appendChild(footer);
 
   card.addEventListener('click', (e) => {
     if (e.target.closest('.card-adm-btn')) {
@@ -374,9 +422,19 @@ function openProfile(idx) {
   if (!p) return;
   currentProfileIdx = idx;
 
+  const name = p.identity?.name || "";
+  const photo = p.identity?.photo || "";
+  const jobTitle = p.display?.jobTitle || "";
+  const countryIso = p.identity?.country || "";
+  const countryName = countryLabel(countryIso);
+  const flagUrl = countryIso ? countryFlagUrl(countryIso) : "";
+  const emails = Array.isArray(p.identity?.emails) ? p.identity.emails : [];
+  const phones = Array.isArray(p.identity?.phones) ? p.identity.phones : [];
+  const birthdate = p.identity?.birthdate || "";
+
   // Merge bio: usar las guardadas, y para cualquier campo vacío, usar la genérica
   const generic = generateHeroicBio(p);
-  const bio = p.bio || {};
+  const bio = p.display?.bio || {};
   const merged = {
     identidad: bio.identidad || generic.identidad,
     origen: bio.origen || generic.origen,
@@ -387,14 +445,21 @@ function openProfile(idx) {
 
   const overlay = document.getElementById("hero-profile");
 
-  document.getElementById("hp-avatar").src = p.photo || '';
-  document.getElementById("hp-avatar").onerror = function(){ this.src=`https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=06a3b6&color=fff&size=300`; };
-  const flagUrl = getFlag(p.country);
-  document.getElementById("hp-flag").innerHTML = flagUrl
-    ? `<img src="${flagUrl}" alt="${p.country || ''}">`
-    : '';
-  document.getElementById("hp-name").textContent = p.name || '—';
-  document.getElementById("hp-role").textContent = p.role || '—';
+  const avatarEl = document.getElementById("hp-avatar");
+  avatarEl.src = photo;
+  avatarEl.onerror = function(){ this.src=`https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=06a3b6&color=fff&size=300`; };
+
+  const flagEl = document.getElementById("hp-flag");
+  flagEl.replaceChildren();
+  if (flagUrl) {
+    const flagImg = document.createElement("img");
+    flagImg.src = flagUrl;
+    flagImg.alt = countryName;
+    flagEl.appendChild(flagImg);
+  }
+
+  document.getElementById("hp-name").textContent = name || '—';
+  document.getElementById("hp-role").textContent = jobTitle || '—';
 
   // Rellenar campos
   overlay.querySelector('[data-field="identidad"]').textContent = merged.identidad;
@@ -403,22 +468,51 @@ function openProfile(idx) {
   overlay.querySelector('[data-field="union"]').textContent = merged.union;
   overlay.querySelector('[data-field="frase"]').textContent = merged.frase;
 
-  // Contactos (email y phone pueden venir como string o array)
-  const contacts = [];
-  const asList = (v) => v == null ? [] : (Array.isArray(v) ? v : [v]);
-  asList(p.email).filter(e => e).forEach(e => {
-    contacts.push(`<div class="hp-contact-row">${ICONS.email}<a href="mailto:${e}">${e}</a></div>`);
+  // Contactos (DOM API — evita innerHTML con userdata)
+  const contactsList = document.getElementById("hp-contacts-list");
+  contactsList.replaceChildren();
+  const makeContactRow = (svgKey, contentBuilder) => {
+    const row = document.createElement("div");
+    row.className = "hp-contact-row";
+    // Los ICONS ya son SVG estáticos (constantes hardcoded), no untrusted
+    const iconWrap = document.createElement("span");
+    iconWrap.innerHTML = ICONS[svgKey];
+    row.appendChild(iconWrap.firstElementChild);
+    contentBuilder(row);
+    return row;
+  };
+  emails.filter(Boolean).forEach(e => {
+    contactsList.appendChild(makeContactRow("email", (row) => {
+      const a = document.createElement("a");
+      a.href = `mailto:${e}`;
+      a.textContent = e;
+      row.appendChild(a);
+    }));
   });
-  asList(p.phone).filter(ph => ph).forEach(ph => {
-    contacts.push(`<div class="hp-contact-row">${ICONS.phone}<a href="tel:${ph.replace(/\s|\(|\)|-/g,'')}" class="mono">${ph}</a></div>`);
+  phones.filter(Boolean).forEach(ph => {
+    contactsList.appendChild(makeContactRow("phone", (row) => {
+      const a = document.createElement("a");
+      a.href = `tel:${ph.replace(/\s|\(|\)|-/g,'')}`;
+      a.className = "mono";
+      a.textContent = ph;
+      row.appendChild(a);
+    }));
   });
-  if (p.birthdate && /^\d{2}-\d{2}$/.test(p.birthdate)) {
-    const [mm, dd] = p.birthdate.split('-');
-    contacts.push(`<div class="hp-contact-row">${ICONS.cake}<span>🎂 ${parseInt(dd)} ${MONTHS[parseInt(mm)-1]}</span></div>`);
+  if (birthdate && /^\d{2}-\d{2}$/.test(birthdate)) {
+    const [mm, dd] = birthdate.split('-');
+    contactsList.appendChild(makeContactRow("cake", (row) => {
+      const span = document.createElement("span");
+      span.textContent = `🎂 ${parseInt(dd)} ${MONTHS[parseInt(mm)-1]}`;
+      row.appendChild(span);
+    }));
   }
-  document.getElementById("hp-contacts-list").innerHTML = contacts.length
-    ? contacts.join('')
-    : `<div class="hp-contact-row" style="opacity:.5;">Sin información de contacto</div>`;
+  if (!contactsList.children.length) {
+    const empty = document.createElement("div");
+    empty.className = "hp-contact-row";
+    empty.style.opacity = ".5";
+    empty.textContent = "Sin información de contacto";
+    contactsList.appendChild(empty);
+  }
 
   overlay.classList.add("open");
   document.body.style.overflow = "hidden";
@@ -439,11 +533,22 @@ function closeProfile() {
 // distintos, lo que resultaba confuso.
 function openMemberModal(idx) {
   const editing = idx !== null && idx >= 0;
-  const m = editing ? members[idx] : { name:'', role:'', email:[''], phone:[''], country:'Venezuela', photo:'', birthdate:'', bio:null };
-  const [bm, bd] = (m.birthdate || '').split('-');
-  const bio = m.bio || {};
+  // Extrae valores del doc user/{email} en variables cortas para el HTML del modal.
+  // En modo "nuevo" los defaults van vacíos (país Venezuela como sugerencia).
+  const m = editing ? members[idx] : null;
+  const nameVal      = m?.identity?.name || '';
+  const jobTitleVal  = m?.display?.jobTitle || '';
+  const photoVal     = m?.identity?.photo || '';
+  const countryIso   = m?.identity?.country || (editing ? '' : 'VE');
+  const countryVal   = countryLabel(countryIso) || (editing ? '' : 'Venezuela');
+  const emailsArr    = Array.isArray(m?.identity?.emails) ? m.identity.emails : [];
+  const phonesArr    = Array.isArray(m?.identity?.phones) ? m.identity.phones : [];
+  const birthdateVal = m?.identity?.birthdate || '';
+  const bio          = m?.display?.bio || {};
+  const originalEmail = m?._email || null;  // docId — para detectar rename del primary email
+  const [bm, bd] = (birthdateVal).split('-');
   // Los placeholders de la ficha se calculan solo si el miembro existe
-  // (necesitamos country, role, name para generarlos).
+  // (necesitamos country, jobTitle, name para generarlos).
   const generic = editing ? generateHeroicBio(m) : { identidad:'', origen:'', superpoder:'', frase:'' };
   // Recordamos si el modal fue abierto desde el perfil grande, para
   // reabrirlo despues de guardar (o cancelar).
@@ -452,7 +557,7 @@ function openMemberModal(idx) {
   const esc = (s) => (s == null ? "" : String(s)).replace(/"/g, "&quot;").replace(/&/g, "&amp;");
 
   const dialog = document.createElement("sl-dialog");
-  dialog.label = editing ? `✎ Editar miembro · ${m.name}` : "✦ Nuevo miembro";
+  dialog.label = editing ? `✎ Editar miembro · ${nameVal}` : "✦ Nuevo miembro";
   dialog.className = "member-edit-dialog";
   dialog.innerHTML = `
     <div class="member-form">
@@ -460,7 +565,7 @@ function openMemberModal(idx) {
       <div class="member-photo-uploader" id="m-photo-uploader">
         <div class="member-photo-avatar">
           <img id="m-photo-img" alt="Foto del miembro"
-               src="${esc(m.photo || '')}"
+               src="${esc(photoVal)}"
                onerror="this.style.opacity='.3';this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2394a3b8%22 stroke-width=%221.5%22><circle cx=%2212%22 cy=%228%22 r=%224%22/><path d=%22M4 20c0-4 4-6 8-6s8 2 8 6%22/></svg>'"/>
           <div class="member-photo-overlay">
             <i data-lucide="camera"></i>
@@ -474,15 +579,15 @@ function openMemberModal(idx) {
       </div>
 
       <sl-input id="m-name" label="Nombre completo"
-        value="${esc(m.name || '')}" maxlength="60" required clearable></sl-input>
+        value="${esc(nameVal)}" maxlength="60" required clearable></sl-input>
 
       <sl-input id="m-role" label="Rol / Cargo"
-        value="${esc(m.role || '')}" maxlength="60" clearable></sl-input>
+        value="${esc(jobTitleVal)}" maxlength="60" clearable></sl-input>
 
       <label class="m-native-field">
         <span class="m-native-label">País</span>
         <input id="m-country" type="text" class="m-native-input"
-          value="${esc(m.country || '')}" maxlength="40"
+          value="${esc(countryVal)}" maxlength="40"
           list="m-country-suggestions"
           placeholder="Ej: Venezuela, España, Colombia…" autocomplete="off">
         <datalist id="m-country-suggestions">
@@ -552,8 +657,8 @@ function openMemberModal(idx) {
   if (window.refreshIcons) window.refreshIcons();
 
   // Setear valores que no van bien como atributo (textareas, selects iniciales)
-  dialog.querySelector("#m-emails").value = (m.email || []).join("\n");
-  dialog.querySelector("#m-phones").value = (m.phone || []).join("\n");
+  dialog.querySelector("#m-emails").value = emailsArr.join("\n");
+  dialog.querySelector("#m-phones").value = phonesArr.join("\n");
 
   // <select> nativos del cumpleaños — se pueden setear directo.
   // Antes eran <sl-select> pero cerraban el sl-dialog al hacer una seleccion
@@ -655,11 +760,14 @@ function openMemberModal(idx) {
     const originalLabel = saveBtn.textContent;
     const bmo = dialog.querySelector("#m-bmonth").value || "";
     const bdy = dialog.querySelector("#m-bday").value || "";
-    const birthdate = (bmo && bdy) ? `${bmo}-${bdy}` : null;
+    const birthdate = (bmo && bdy) ? `${bmo}-${bdy}` : "";
 
     // Recomponer la bio a partir del modal si estamos editando.
-    // Nota v2.18.1: el campo 'origen' se removio del modal — se autopobla
-    // desde person.country via generateHeroicBio, asi que no lo persistimos.
+    // Nota: el campo 'origen' se removio del modal — se autopobla desde
+    // identity.country via generateHeroicBio, asi que no lo persistimos.
+    // Estructura fija del subdoc bio (identidad/superpoder/frase/union) — si
+    // se limpia, guardamos objeto vacío en vez de null para no romper reglas.
+    const emptyBio = { identidad: "", superpoder: "", frase: "", union: "" };
     let newBio = null;
     if (editing) {
       const bioFields = {
@@ -669,7 +777,7 @@ function openMemberModal(idx) {
         frase: (dialog.querySelector("#bio-frase").value || "").trim(),
       };
       const allEmpty = Object.values(bioFields).every(v => !v);
-      newBio = (allEmpty || bioCleared) ? null : bioFields;
+      newBio = (allEmpty || bioCleared) ? emptyBio : { ...emptyBio, ...bioFields };
     }
 
     const name = (dialog.querySelector("#m-name").value || "").trim();
@@ -679,9 +787,35 @@ function openMemberModal(idx) {
       return;
     }
 
-    // Subir la foto si hay una pendiente. Ocurre ANTES del setDoc para
-    // que si falla el upload no persistamos referencia a un archivo inexistente.
-    let photoPath = (m.photo || "").trim();
+    const emailsList = (dialog.querySelector("#m-emails").value || "")
+      .split("\n").map(x => x.trim().toLowerCase()).filter(Boolean);
+    const phonesList = (dialog.querySelector("#m-phones").value || "")
+      .split("\n").map(x => x.trim()).filter(Boolean);
+    const primaryEmail = emailsList[0];
+    const jobTitle = (dialog.querySelector("#m-role").value || "").trim();
+    const countryStr = (dialog.querySelector("#m-country").value || "").trim();
+    const countryIsoResolved = countryStr ? nameToIso(countryStr) : null;
+    if (countryStr && !countryIsoResolved) {
+      heroToast.error(`País "${countryStr}" no reconocido. Usa un nombre estándar (Venezuela, Colombia, etc.)`);
+      return;
+    }
+
+    if (!primaryEmail) {
+      heroToast.error("Al menos un email es requerido (el primero será el ID del doc en users/)");
+      return;
+    }
+
+    // En edit, el email principal define el docId — si el usuario lo cambia,
+    // sería un rename del doc (borrar+crear). Preferimos bloquearlo y pedir
+    // a IT que lo maneje aparte para evitar perder audit-log historial.
+    if (editing && originalEmail && primaryEmail !== originalEmail.toLowerCase()) {
+      heroToast.error("No se puede cambiar el email principal desde aquí. Contacta a IT si es necesario renombrar el doc.");
+      return;
+    }
+
+    // Subir la foto si hay una pendiente. Ocurre ANTES del write para que si
+    // falla el upload no persistamos referencia a un archivo inexistente.
+    let photoPath = photoVal;
     if (pendingPhotoFile) {
       saveBtn.disabled = true;
       saveBtn.textContent = "Subiendo foto…";
@@ -699,29 +833,46 @@ function openMemberModal(idx) {
       saveBtn.textContent = "Guardando…";
     }
 
-    const nuevo = {
-      name,
-      role: (dialog.querySelector("#m-role").value || "").trim(),
-      photo: photoPath,
-      country: (dialog.querySelector("#m-country").value || "").trim(),
-      email: (dialog.querySelector("#m-emails").value || "").split("\n").map(x => x.trim()).filter(Boolean),
-      phone: (dialog.querySelector("#m-phones").value || "").split("\n").map(x => x.trim()).filter(Boolean),
-      birthdate,
-      bio: newBio,
-    };
-
-    if (editing) members[idx] = nuevo;
-    else members.push(nuevo);
-
     try {
-      await setDoc(doc(db, "shared", "team"), { members });
+      if (editing) {
+        // updateUserFields con dot paths — solo toca los campos declarados,
+        // el resto (access.role, access.updatedBy, prefs.*, meta.*) queda intacto
+        await updateUserFields(originalEmail, {
+          "identity.name": name,
+          "identity.photo": photoPath,
+          "identity.country": countryIsoResolved,
+          "identity.birthdate": birthdate,
+          "identity.phones": phonesList,
+          "identity.emails": emailsList,
+          "display.jobTitle": jobTitle,
+          "display.bio": newBio || emptyBio,
+        });
+        // Reflejo local (evita refetch)
+        const cur = members[idx];
+        cur.identity = { ...(cur.identity || {}), name, photo: photoPath,
+                         country: countryIsoResolved, birthdate,
+                         phones: phonesList, emails: emailsList };
+        cur.display = { ...(cur.display || {}), jobTitle, bio: newBio || emptyBio };
+      } else {
+        const created = await createUser(primaryEmail, {
+          name,
+          photo: photoPath,
+          country: countryIsoResolved,
+          birthdate,
+          phones: phonesList,
+          emails: emailsList,
+          jobTitle,
+        });
+        members.push(created);
+        members.sort((a, b) => (a.identity?.name || "").localeCompare(b.identity?.name || ""));
+      }
       dialog._savedFlag = true;
       dialog.hide();
       renderGrid();
-      heroToast.success(editing ? "Cambios guardados" : `${nuevo.name} agregado al equipo`);
-      // Si veniamos del perfil grande, reabrirlo con la data actualizada.
+      heroToast.success(editing ? "Cambios guardados" : `${name} agregado al equipo`);
       if (cameFromProfile) openProfile(idx);
     } catch (e) {
+      console.error("[equipo save]", e);
       heroToast.error("Error guardando: " + e.message);
       saveBtn.disabled = false;
       saveBtn.textContent = originalLabel;
@@ -735,17 +886,21 @@ function openMemberModal(idx) {
 
 async function deleteMember(idx) {
   const m = members[idx];
+  const displayName = m?.identity?.name || m?._email || "este miembro";
   const ok = await heroConfirm({
     title: "Eliminar miembro",
-    message: `¿Eliminar a ${m.name}? Esta acción no se puede deshacer.`,
+    message: `¿Eliminar a ${displayName}? Esta acción no se puede deshacer.`,
     confirmLabel: "Eliminar",
     variant: "danger"
   });
   if (!ok) return;
-  members.splice(idx, 1);
   try {
-    await setDoc(doc(db, "shared", "team"), { members });
+    await deleteUser(m._email);
+    members.splice(idx, 1);
     renderGrid();
-    heroToast.success(`${m.name} eliminado`);
-  } catch (e) { heroToast.error("No se pudo eliminar: " + e.message); }
+    heroToast.success(`${displayName} eliminado`);
+  } catch (e) {
+    console.error("[equipo delete]", e);
+    heroToast.error("No se pudo eliminar: " + e.message);
+  }
 }
