@@ -4,7 +4,6 @@
 // Página personal del usuario logueado. Muestra:
 //   - Hero header con foto, nombre, cargo, rol y email.
 //   - Información personal (teléfono, país, cumpleaños, tema).
-//   - Sobre mí (bio) con edición inline.
 //   - Actividad reciente (desde audit-log en Firestore).
 //   - Mi asistencia: sección amplia con selector de periodo, 8 KPIs,
 //     3 gráficos y tabla detalle. Reusa js/attendance-stats.js.
@@ -17,7 +16,7 @@ import {
 import { guardPage, filterTopbarByRole } from "./roles.js";
 import { getFreshGooglePhotoURL, getGooglePhotoURL } from "./user-photo.js";
 import { ACTION_LABELS } from "./audit-log.js";
-import { getUserByEmail, updateUserFields, countryLabel, countryFlagUrl } from "./user-store.js";
+import { getUserByEmail, countryLabel, countryFlagUrl } from "./user-store.js";
 import {
   fetchAttendanceEvents,
   computePersonStats, computePeriod,
@@ -119,8 +118,6 @@ onAuthStateChanged(auth, async (user) => {
     loadAttendance(),
   ]);
 
-  // Bind del botón editar bio
-  wireBioEditor();
   wireAttendanceToolbar();
 
   // Handler de cerrar sesión (para el #btn-logout oculto que el dropdown dispara)
@@ -141,7 +138,6 @@ async function loadPersonDoc() {
   }
   renderHero();
   renderInfo();
-  renderBio();
 }
 
 function renderHero() {
@@ -212,87 +208,6 @@ function renderInfo() {
 
   const themeEl = document.getElementById("mp-theme");
   themeEl.textContent = document.body.dataset.theme === "dark" ? "Noche" : "Día";
-}
-
-// ── Sobre mí (bio) con edición inline ─────────────────────────
-// La bio en users/{email} vive en display.bio.superpoder (string). Los otros
-// subcampos (identidad, frase, union) existen en el schema pero mi-perfil NO
-// los edita todavía — solo el "superpoder" que corresponde al textarea único.
-
-function currentBioText() {
-  return currentPerson?.display?.bio?.superpoder || "";
-}
-
-function renderBio() {
-  const bio = currentBioText().trim();
-  const view = document.getElementById("mp-bio-view");
-  if (bio) {
-    view.textContent = bio;
-    view.classList.remove("mp-empty");
-  } else {
-    view.textContent = "Aún no has escrito nada sobre ti. Presiona el lápiz para agregar tu bio.";
-    view.classList.add("mp-empty");
-  }
-}
-
-function wireBioEditor() {
-  const editBtn = document.getElementById("mp-bio-edit");
-  const view    = document.getElementById("mp-bio-view");
-  const editor  = document.getElementById("mp-bio-editor");
-  const input   = document.getElementById("mp-bio-input");
-  const counter = document.getElementById("mp-bio-counter");
-  const cancel  = document.getElementById("mp-bio-cancel");
-  const save    = document.getElementById("mp-bio-save");
-
-  const updateCounter = () => { counter.textContent = `${input.value.length}/500`; };
-
-  editBtn.addEventListener("click", () => {
-    input.value = currentBioText();
-    updateCounter();
-    view.hidden = true;
-    editor.hidden = false;
-    editBtn.hidden = true;
-    input.focus();
-  });
-
-  input.addEventListener("input", updateCounter);
-
-  cancel.addEventListener("click", () => {
-    editor.hidden = true;
-    view.hidden = false;
-    editBtn.hidden = false;
-  });
-
-  save.addEventListener("click", async () => {
-    save.disabled = true;
-    save.textContent = "Guardando...";
-    try {
-      await saveBio(input.value.trim());
-      editor.hidden = true;
-      view.hidden = false;
-      editBtn.hidden = false;
-      renderBio();
-      heroToast.success("Biografía actualizada");
-    } catch (e) {
-      heroToast.error("No se pudo guardar la bio: " + e.message);
-    } finally {
-      save.disabled = false;
-      save.textContent = "Guardar";
-    }
-  });
-}
-
-async function saveBio(newBio) {
-  // Escribe display.bio.superpoder en el doc users/{email} del usuario actual.
-  // La regla de Firestore permite al dueño editar display.* y prefs.*, así
-  // que este write no requiere permisos elevados.
-  const targetEmail = currentPerson?._email || currentUser.email;
-  await updateUserFields(targetEmail, { "display.bio.superpoder": newBio || "" });
-  // Refresh local para reflejar el cambio sin refetch completo
-  if (!currentPerson) currentPerson = { display: { bio: {} } };
-  if (!currentPerson.display) currentPerson.display = {};
-  if (!currentPerson.display.bio) currentPerson.display.bio = {};
-  currentPerson.display.bio.superpoder = newBio || "";
 }
 
 // ── Mi asistencia (vista amplia) ─────────────────────────────

@@ -3298,8 +3298,11 @@ body[data-theme="dark"] .att-break-end:hover {
 .bio-edit-dialog::part(panel),
 .member-edit-dialog::part(panel) {
   border-radius:16px;
-  max-width:560px;
+  max-width:600px;
 }
+/* El body del dialog es el scroll container: fuerza wrap horizontal para
+   que ningún grid-item o placeholder largo genere scroll lateral. */
+.member-edit-dialog::part(body) { overflow-x:hidden; }
 .member-edit-dialog::part(body) {
   padding:20px 24px;
 }
@@ -3322,6 +3325,156 @@ body[data-theme="dark"] .att-break-end:hover {
 
 .bio-form, .member-form {
   display:flex; flex-direction:column; gap:14px;
+}
+
+/* ═══ Secciones del modal de usuario (kicker cyan + separador) ═══ */
+.mf-section {
+  display:flex; flex-direction:column; gap:14px;
+}
+.mf-section + .mf-section {
+  margin-top:6px;
+  padding-top:18px;
+  border-top:1px solid var(--border, #e5eaef);
+}
+.mf-section-kicker {
+  display:flex; align-items:center; gap:10px;
+  font-family:var(--display, "Bricolage Grotesque"), sans-serif;
+  font-size:11px; font-weight:700;
+  letter-spacing:2px; text-transform:uppercase;
+  color:var(--cyan, #06a3b6);
+  margin:0;
+}
+.mf-section-kicker::before {
+  content:"";
+  width:6px; height:6px;
+  border-radius:50%;
+  background:var(--cyan, #06a3b6);
+  box-shadow:0 0 0 3px rgba(6,163,182,.18);
+}
+.mf-section-kicker::after {
+  content:"";
+  flex:1;
+  height:1px;
+  background:linear-gradient(90deg, rgba(6,163,182,.35), transparent);
+}
+
+/* Grid de 2 columnas para pares (nombre+cargo, país+cumpleaños) */
+.mf-grid-2 {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  align-items:start;
+}
+/* Fix crítico: sin esto los items del grid respetan min-content de su
+   contenido (placeholders largos, selects nativos) y expanden el grid
+   más allá del contenedor, disparando scroll horizontal. */
+.mf-grid-2 > * { min-width:0; }
+@media (max-width:640px) {
+  .mf-grid-2 { grid-template-columns:1fr; }
+}
+body[data-theme="dark"] .mf-section + .mf-section {
+  border-top-color:#264452;
+}
+
+/* ═══ Lista dinámica de filas (emails, teléfonos) con botón + ═══ */
+.mf-field-label {
+  display:block;
+  font-size:11px; font-weight:700;
+  letter-spacing:1.5px; text-transform:uppercase;
+  color:var(--muted, #64748b);
+  margin:0 0 6px;
+}
+.mf-input-list {
+  display:flex; flex-direction:column; gap:8px;
+}
+.mf-input-row {
+  display:flex; align-items:stretch; gap:8px;
+}
+.mf-input-row > *:first-child { flex:1; min-width:0; }
+.mf-row-remove {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:32px;
+  padding:0;
+  border:1px solid var(--border, #d8dee6);
+  border-radius:6px;
+  background:#fff;
+  color:var(--muted, #64748b);
+  cursor:pointer;
+  font-size:16px; line-height:1;
+  transition:all .15s;
+}
+.mf-row-remove:hover {
+  color:#c0392b;
+  border-color:#c0392b;
+  background:rgba(192,57,43,.06);
+}
+.mf-row-add {
+  align-self:flex-start;
+  display:inline-flex; align-items:center; gap:6px;
+  margin-top:6px;
+  padding:6px 12px;
+  border:1px dashed var(--border, #d8dee6);
+  border-radius:6px;
+  background:transparent;
+  color:var(--cyan, #06a3b6);
+  cursor:pointer;
+  font-family:var(--sans, "Inter"), sans-serif;
+  font-size:12px; font-weight:600;
+  transition:all .15s;
+}
+.mf-row-add:hover {
+  border-style:solid;
+  border-color:var(--cyan, #06a3b6);
+  background:rgba(6,163,182,.06);
+}
+.mf-row-add svg { width:12px; height:12px; }
+
+/* Input compuesto: prefijo editable + suffix fijo (@heroinsuranceusa.com) */
+.mf-email-input {
+  display:flex; align-items:stretch;
+  border:1px solid var(--border, #d8dee6);
+  border-radius:6px;
+  background:#fff;
+  overflow:hidden;
+  transition:border-color .15s, box-shadow .15s;
+}
+.mf-email-input:focus-within {
+  border-color:var(--cyan, #06a3b6);
+  box-shadow:0 0 0 3px rgba(6,163,182,.18);
+}
+.mf-email-input input {
+  flex:1; min-width:0;
+  padding:8px 12px;
+  border:none; outline:none;
+  background:transparent;
+  font-family:var(--sans, "Inter"), sans-serif;
+  font-size:14px;
+  color:var(--text, #062a33);
+}
+.mf-email-input input:read-only { background:#f7f9fb; cursor:not-allowed; color:var(--muted); }
+.mf-email-suffix {
+  display:flex; align-items:center;
+  padding:0 12px;
+  background:rgba(6,163,182,.08);
+  color:var(--cyan, #06a3b6);
+  font-family:var(--mono, "JetBrains Mono"), monospace;
+  font-size:12.5px; font-weight:600;
+  border-left:1px solid var(--border, #d8dee6);
+  white-space:nowrap;
+}
+
+/* Dark mode */
+body[data-theme="dark"] .mf-row-remove {
+  background:#0f2530; border-color:#264452; color:#a8c5cf;
+}
+body[data-theme="dark"] .mf-email-input {
+  background:#0f2530; border-color:#264452;
+}
+body[data-theme="dark"] .mf-email-input input { color:#e6f0f4; }
+body[data-theme="dark"] .mf-email-input input:read-only { background:rgba(255,255,255,.03); }
+body[data-theme="dark"] .mf-email-suffix {
+  background:rgba(6,163,182,.16);
+  border-left-color:#264452;
 }
 
 /* ═══ Uploader de foto en el modal de miembro ═══ */
@@ -3416,6 +3569,7 @@ body[data-theme="dark"] .member-photo-avatar { background:#1e3a4a; }
   grid-template-columns:1fr 1fr;
   gap:10px;
 }
+.member-bday-row > * { min-width:0; }
 
 /* <select> nativo dentro del modal de miembro. Usado en vez de
    <sl-select> porque Shoelace tiene un bug: seleccionar una opcion

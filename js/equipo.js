@@ -1,14 +1,12 @@
-import { auth, db } from "./firebase-config.js";
+// Módulo Equipo: vista read-only del organigrama. Desde v2.23.3 toda
+// la gestión de usuarios (crear/editar/eliminar/asignar rol) vive en
+// admin.html → tab Usuarios (js/roles-admin.js). Aquí solo se lee.
+
+import { auth } from "./firebase-config.js";
 import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { doc, getDoc }
-  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { isAdmin as isAdminRole } from "./roles.js";
 import { getFreshGooglePhotoURL } from "./user-photo.js";
-import {
-  getAllUsers, createUser, updateUserFields, deleteUser,
-  countryLabel, countryFlagUrl, nameToIso, slugifyName
-} from "./user-store.js";
+import { getAllUsers, countryLabel, countryFlagUrl } from "./user-store.js";
 
 const ALLOWED_DOMAIN = "heroinsuranceusa.com";
 
@@ -35,85 +33,6 @@ const COUNTRIES_SUGGESTED = [
   "Costa Rica", "Panamá", "República Dominicana", "Guatemala", "Nicaragua",
   "El Salvador", "Bolivia", "Paraguay", "Puerto Rico", "Brasil"
 ];
-
-// ═══════════════════════════════════════════
-// Uploader de foto → GitHub API
-// ═══════════════════════════════════════════
-// El token vive en Firestore (shared/config.githubToken), leible solo por
-// it@heroinsuranceusa.com (regla Firestore). Sube la foto al repo, hace
-// commit, y devuelve el path relativo con cache-buster.
-const GH_REPO_OWNER = "it916";
-const GH_REPO_NAME = "hero-hub";
-
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      // dataURL viene como "data:image/jpeg;base64,XXXX"; nos quedamos con XXXX.
-      const result = reader.result.split(",")[1];
-      resolve(result);
-    };
-    reader.onerror = () => reject(new Error("No se pudo leer el archivo"));
-    reader.readAsDataURL(file);
-  });
-}
-
-async function getGithubToken() {
-  const snap = await getDoc(doc(db, "shared", "config"));
-  if (!snap.exists() || !snap.data().githubToken) {
-    throw new Error("Token de GitHub no configurado en Firestore shared/config.githubToken");
-  }
-  return snap.data().githubToken;
-}
-
-async function uploadPhotoToGitHub(file, slug) {
-  const token = await getGithubToken();
-
-  const ext = file.type === "image/png" ? "png"
-            : file.type === "image/webp" ? "webp"
-            : "jpg";
-  const path = `images/team/${slug}.${ext}`;
-  const apiUrl = `https://api.github.com/repos/${GH_REPO_OWNER}/${GH_REPO_NAME}/contents/${path}`;
-
-  // 1) Si el archivo ya existe, GitHub exige el SHA para hacer overwrite.
-  let sha = null;
-  const existingResp = await fetch(apiUrl, {
-    headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" }
-  });
-  if (existingResp.ok) {
-    const existing = await existingResp.json();
-    sha = existing.sha;
-  } else if (existingResp.status !== 404) {
-    const errText = await existingResp.text();
-    throw new Error(`GitHub API ${existingResp.status}: ${errText.slice(0, 200)}`);
-  }
-
-  // 2) Encode + PUT
-  const base64 = await fileToBase64(file);
-  const body = {
-    message: `feat(equipo): foto de ${slug}`,
-    content: base64,
-    branch: "main",
-  };
-  if (sha) body.sha = sha;
-
-  const uploadResp = await fetch(apiUrl, {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/vnd.github+json",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-  if (!uploadResp.ok) {
-    const errText = await uploadResp.text();
-    throw new Error(`GitHub API ${uploadResp.status}: ${errText.slice(0, 200)}`);
-  }
-
-  // 3) Cache-buster para que el navegador cargue la nueva foto tras redeploy.
-  return `${path}?v=${Date.now()}`;
-}
 
 // ═══ GENERADOR DE BIOS HEROICAS GENÉRICAS ═══
 // Recibe un doc de users/{email} (post-fase 1). Lee display.jobTitle,
@@ -197,9 +116,7 @@ const ICONS = {
 // Se conserva el nombre "members" por familiaridad; NO es la vieja shape de
 // shared/team.members[] — la migración de fase 1 lo pasó a la colección users/.
 let members = [];
-let isAdmin = false;
 let filter = "";
-let currentProfileIdx = null;
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -214,16 +131,10 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  // Esperar a que page-guard cargue el rol del usuario
-  const ctx = await window.getPageContext();
-  isAdmin = isAdminRole(ctx.userRole);
-
   document.getElementById("user-avatar").src = await getFreshGooglePhotoURL(user);
-  if (isAdmin) {
-    document.getElementById("btn-add-member").style.display = "inline-flex";
-    document.getElementById("hp-edit-btn").classList.add("visible");
-  }
-  // El botón btn-admin ya fue manejado por page-guard.js (filterTopbarByRole)
+  // Vista 100% read-only desde v2.23.3 — la gestión de usuarios vive en
+  // admin.html → tab Usuarios. Los botones de edición/agregar del HTML
+  // legacy siguen presentes pero permanecen ocultos (display:none por CSS).
   document.getElementById("loading").style.display = "none";
   document.getElementById("dashboard").style.display = "block";
 
@@ -266,23 +177,14 @@ function wireHandlers() {
     filter = e.target.value.toLowerCase().trim();
     renderGrid();
   });
-  document.getElementById("btn-add-member").addEventListener("click", () => openMemberModal(null));
 
-  // Cerrar perfil
+  // Cerrar perfil (X, click en overlay, ESC)
   document.getElementById("hp-close").addEventListener("click", closeProfile);
   document.getElementById("hero-profile").addEventListener("click", (e) => {
     if (e.target.id === "hero-profile") closeProfile();
   });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeProfile();
-  });
-
-  // Admin: editar miembro (modal unificado: datos generales + ficha del heroe).
-  // El perfil grande queda abierto por detras del modal; openMemberModal
-  // detecta que veniamos del perfil (mediante currentProfileIdx) y refresca
-  // el perfil despues del save para reflejar los cambios.
-  document.getElementById("hp-edit-btn").addEventListener("click", () => {
-    if (currentProfileIdx !== null) openMemberModal(currentProfileIdx);
   });
 }
 
@@ -362,27 +264,6 @@ function buildCard(person, idx) {
     card.appendChild(flagWrap);
   }
 
-  if (isAdmin) {
-    const actions = document.createElement("div");
-    actions.className = "card-admin-actions";
-    const btnEdit = document.createElement("button");
-    btnEdit.className = "card-adm-btn edit";
-    btnEdit.dataset.idx = realIdx;
-    btnEdit.title = "Editar miembro";
-    const iEdit = document.createElement("i");
-    iEdit.setAttribute("data-lucide", "edit-3");
-    btnEdit.appendChild(iEdit);
-    const btnDel = document.createElement("button");
-    btnDel.className = "card-adm-btn del";
-    btnDel.dataset.idx = realIdx;
-    btnDel.title = "Eliminar";
-    const iDel = document.createElement("i");
-    iDel.setAttribute("data-lucide", "x");
-    btnDel.appendChild(iDel);
-    actions.append(btnEdit, btnDel);
-    card.appendChild(actions);
-  }
-
   const footer = document.createElement("div");
   footer.className = "card-footer";
   const nameEl = document.createElement("div");
@@ -394,17 +275,7 @@ function buildCard(person, idx) {
   footer.append(nameEl, roleEl);
   card.appendChild(footer);
 
-  card.addEventListener('click', (e) => {
-    if (e.target.closest('.card-adm-btn')) {
-      const btn = e.target.closest('.card-adm-btn');
-      const idx = parseInt(btn.dataset.idx);
-      if (btn.classList.contains('edit')) openMemberModal(idx);
-      else deleteMember(idx);
-      e.stopPropagation();
-      return;
-    }
-    openProfile(realIdx);
-  });
+  card.addEventListener('click', () => openProfile(realIdx));
 
   card.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -420,7 +291,6 @@ function buildCard(person, idx) {
 function openProfile(idx) {
   const p = members[idx];
   if (!p) return;
-  currentProfileIdx = idx;
 
   const name = p.identity?.name || "";
   const photo = p.identity?.photo || "";
@@ -522,385 +392,4 @@ function openProfile(idx) {
 function closeProfile() {
   document.getElementById("hero-profile").classList.remove("open");
   document.body.style.overflow = "";
-  currentProfileIdx = null;
-}
-
-// ═══ MODAL: Editar miembro (admin) — unificado en v2.18.1 ═══
-// Este modal edita AMBAS cosas en un solo lugar: datos generales
-// (nombre, rol, foto, país, cumpleaños, contactos) + ficha del héroe
-// (identidad, origen, superpoder, unión, frase). Antes eran dos modales
-// separados (openMemberModal + openBioEditModal) accesibles desde botones
-// distintos, lo que resultaba confuso.
-function openMemberModal(idx) {
-  const editing = idx !== null && idx >= 0;
-  // Extrae valores del doc user/{email} en variables cortas para el HTML del modal.
-  // En modo "nuevo" los defaults van vacíos (país Venezuela como sugerencia).
-  const m = editing ? members[idx] : null;
-  const nameVal      = m?.identity?.name || '';
-  const jobTitleVal  = m?.display?.jobTitle || '';
-  const photoVal     = m?.identity?.photo || '';
-  const countryIso   = m?.identity?.country || (editing ? '' : 'VE');
-  const countryVal   = countryLabel(countryIso) || (editing ? '' : 'Venezuela');
-  const emailsArr    = Array.isArray(m?.identity?.emails) ? m.identity.emails : [];
-  const phonesArr    = Array.isArray(m?.identity?.phones) ? m.identity.phones : [];
-  const birthdateVal = m?.identity?.birthdate || '';
-  const bio          = m?.display?.bio || {};
-  const originalEmail = m?._email || null;  // docId — para detectar rename del primary email
-  const [bm, bd] = (birthdateVal).split('-');
-  // Los placeholders de la ficha se calculan solo si el miembro existe
-  // (necesitamos country, jobTitle, name para generarlos).
-  const generic = editing ? generateHeroicBio(m) : { identidad:'', origen:'', superpoder:'', frase:'' };
-  // Recordamos si el modal fue abierto desde el perfil grande, para
-  // reabrirlo despues de guardar (o cancelar).
-  const cameFromProfile = editing && (currentProfileIdx === idx);
-
-  const esc = (s) => (s == null ? "" : String(s)).replace(/"/g, "&quot;").replace(/&/g, "&amp;");
-
-  const dialog = document.createElement("sl-dialog");
-  dialog.label = editing ? `✎ Editar miembro · ${nameVal}` : "✦ Nuevo miembro";
-  dialog.className = "member-edit-dialog";
-  dialog.innerHTML = `
-    <div class="member-form">
-      <!-- Uploader de foto (avatar circular + click/drop) -->
-      <div class="member-photo-uploader" id="m-photo-uploader">
-        <div class="member-photo-avatar">
-          <img id="m-photo-img" alt="Foto del miembro"
-               src="${esc(photoVal)}"
-               onerror="this.style.opacity='.3';this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2394a3b8%22 stroke-width=%221.5%22><circle cx=%2212%22 cy=%228%22 r=%224%22/><path d=%22M4 20c0-4 4-6 8-6s8 2 8 6%22/></svg>'"/>
-          <div class="member-photo-overlay">
-            <i data-lucide="camera"></i>
-            <span>Cambiar foto</span>
-          </div>
-        </div>
-        <input type="file" id="m-photo-file" accept="image/jpeg,image/png,image/webp" hidden>
-        <div class="member-photo-caption">
-          <span id="m-photo-caption-text">Click o arrastra una imagen · máx 2 MB · JPG/PNG/WebP</span>
-        </div>
-      </div>
-
-      <sl-input id="m-name" label="Nombre completo"
-        value="${esc(nameVal)}" maxlength="60" required clearable></sl-input>
-
-      <sl-input id="m-role" label="Rol / Cargo"
-        value="${esc(jobTitleVal)}" maxlength="60" clearable></sl-input>
-
-      <label class="m-native-field">
-        <span class="m-native-label">País</span>
-        <input id="m-country" type="text" class="m-native-input"
-          value="${esc(countryVal)}" maxlength="40"
-          list="m-country-suggestions"
-          placeholder="Ej: Venezuela, España, Colombia…" autocomplete="off">
-        <datalist id="m-country-suggestions">
-          ${COUNTRIES_SUGGESTED.map(c => `<option value="${esc(c)}"></option>`).join('')}
-        </datalist>
-      </label>
-
-      <div class="member-bday">
-        <label class="member-bday-label">🎂 Cumpleaños</label>
-        <div class="member-bday-row">
-          <select id="m-bmonth" class="m-native-select">
-            <option value="">— Mes —</option>
-            ${MONTHS.map((x, i) => `<option value="${String(i+1).padStart(2,'0')}">${x}</option>`).join('')}
-          </select>
-          <select id="m-bday" class="m-native-select">
-            <option value="">— Día —</option>
-            ${Array.from({length:31}, (_, i) => i+1).map(d => `<option value="${String(d).padStart(2,'0')}">${d}</option>`).join('')}
-          </select>
-        </div>
-      </div>
-
-      <sl-textarea id="m-emails" label="Emails (uno por línea)"
-        rows="2" resize="vertical"
-        help-text="Separa múltiples emails con saltos de línea."></sl-textarea>
-
-      <sl-textarea id="m-phones" label="Teléfonos (uno por línea)"
-        rows="2" resize="vertical"></sl-textarea>
-
-      ${editing ? `
-      <div class="member-form-divider">
-        <span class="member-form-divider-label">✦ Ficha del héroe · opcional</span>
-        <button type="button" id="bio-clear" class="member-form-divider-btn">
-          <i data-lucide="refresh-cw" style="width:12px;height:12px;"></i>
-          Restablecer a genéricos
-        </button>
-      </div>
-
-      <sl-input id="bio-identidad" label="🛡️ Identidad narrativa (rol heróico)"
-        value="${esc(bio.identidad || '')}"
-        placeholder="${esc(generic.identidad || '')}"
-        clearable></sl-input>
-
-      <sl-textarea id="bio-superpoder" label="⚡ Superpoder"
-        rows="2" resize="vertical"
-        placeholder="${esc(generic.superpoder || '')}"></sl-textarea>
-
-      <sl-input id="bio-union" label="📅 Se unió al equipo"
-        value="${esc(bio.union || '')}"
-        placeholder="Ej: Marzo 2024"
-        clearable></sl-input>
-
-      <sl-textarea id="bio-frase" label="✦ Frase icónica"
-        rows="2" resize="vertical"
-        placeholder="${esc(generic.frase || '')}"></sl-textarea>
-      ` : `
-      <p class="member-form-hint">Después de crear al miembro podrás editar su <strong>ficha del héroe</strong> (identidad, origen, superpoder, frase) desde el mismo modal.</p>
-      `}
-    </div>
-
-    <sl-button slot="footer" id="m-cancel" variant="default">Cancelar</sl-button>
-    <sl-button slot="footer" id="m-save" variant="primary">
-      <i data-lucide="${editing ? 'check' : 'plus'}" slot="prefix" style="width:14px;height:14px;"></i>
-      ${editing ? 'Guardar cambios' : 'Agregar'}
-    </sl-button>
-  `;
-  document.body.appendChild(dialog);
-  if (window.refreshIcons) window.refreshIcons();
-
-  // Setear valores que no van bien como atributo (textareas, selects iniciales)
-  dialog.querySelector("#m-emails").value = emailsArr.join("\n");
-  dialog.querySelector("#m-phones").value = phonesArr.join("\n");
-
-  // <select> nativos del cumpleaños — se pueden setear directo.
-  // Antes eran <sl-select> pero cerraban el sl-dialog al hacer una seleccion
-  // (bug conocido de Shoelace).
-  dialog.querySelector("#m-bmonth").value = bm || "";
-  dialog.querySelector("#m-bday").value = bd || "";
-
-  // Bio: setear los textareas por property (los sl-textarea no aceptan value
-  // como atributo). Solo si estamos editando; en 'nuevo miembro' no hay bio.
-  if (editing) {
-    dialog.querySelector("#bio-superpoder").value = bio.superpoder || "";
-    dialog.querySelector("#bio-frase").value = bio.frase || "";
-  }
-
-  // ── Uploader de foto ─────────────────────────────────────────────
-  // Al seleccionar una imagen (click o drop), guardamos el File en
-  // pendingPhotoFile y mostramos preview. El upload real ocurre al
-  // hacer "Guardar cambios" — asi si el usuario cancela, no subimos nada.
-  let pendingPhotoFile = null;
-  const uploaderEl = dialog.querySelector("#m-photo-uploader");
-  const photoImgEl = dialog.querySelector("#m-photo-img");
-  const photoFileInput = dialog.querySelector("#m-photo-file");
-  const photoCaptionEl = dialog.querySelector("#m-photo-caption-text");
-
-  const handlePhotoFile = (file) => {
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      heroToast.error("Solo imágenes (JPG, PNG, WebP).");
-      return;
-    }
-    if (file.size > 2 * 1024 * 1024) {
-      heroToast.error("La imagen debe pesar menos de 2 MB.");
-      return;
-    }
-    pendingPhotoFile = file;
-    const reader = new FileReader();
-    reader.onload = () => {
-      photoImgEl.src = reader.result;
-      photoImgEl.style.opacity = "1";
-    };
-    reader.readAsDataURL(file);
-    photoCaptionEl.textContent = `${file.name} · listo para subir al guardar`;
-    uploaderEl.classList.add("has-pending");
-  };
-
-  uploaderEl.addEventListener("click", (e) => {
-    // Evitar reabrir el picker si el click nace del input mismo.
-    if (e.target === photoFileInput) return;
-    photoFileInput.click();
-  });
-  photoFileInput.addEventListener("change", (e) => {
-    handlePhotoFile(e.target.files && e.target.files[0]);
-  });
-  uploaderEl.addEventListener("dragover", (e) => {
-    e.preventDefault();
-    uploaderEl.classList.add("dragging");
-  });
-  uploaderEl.addEventListener("dragleave", () => uploaderEl.classList.remove("dragging"));
-  uploaderEl.addEventListener("drop", (e) => {
-    e.preventDefault();
-    uploaderEl.classList.remove("dragging");
-    handlePhotoFile(e.dataTransfer.files && e.dataTransfer.files[0]);
-  });
-
-  // Bandera para saber si el usuario ya restablecio la ficha en esta
-  // sesion del modal. Si es true, al guardar persistimos bio=null.
-  let bioCleared = false;
-
-  dialog.addEventListener("sl-after-hide", () => {
-    dialog.remove();
-    // Si veniamos del perfil grande y no salimos por save, reabrir perfil.
-    if (cameFromProfile && !dialog._savedFlag) openProfile(idx);
-  });
-
-  dialog.querySelector("#m-cancel").addEventListener("click", () => dialog.hide());
-
-  // Restablecer la ficha del héroe (no toca los datos generales).
-  if (editing) {
-    dialog.querySelector("#bio-clear").addEventListener("click", async () => {
-      const ok = await heroConfirm({
-        title: "Restablecer ficha",
-        message: "¿Limpiar todos los campos de la ficha del héroe? Se mostrarán los textos genéricos automáticos.",
-        confirmLabel: "Restablecer",
-        variant: "warning"
-      });
-      if (!ok) return;
-      dialog.querySelector("#bio-identidad").value = "";
-      dialog.querySelector("#bio-origen").value = "";
-      dialog.querySelector("#bio-superpoder").value = "";
-      dialog.querySelector("#bio-union").value = "";
-      dialog.querySelector("#bio-frase").value = "";
-      bioCleared = true;
-      heroToast.info("Ficha restablecida. Haz clic en 'Guardar cambios' para confirmar.");
-    });
-  }
-
-  dialog.querySelector("#m-save").addEventListener("click", async () => {
-    const saveBtn = dialog.querySelector("#m-save");
-    const originalLabel = saveBtn.textContent;
-    const bmo = dialog.querySelector("#m-bmonth").value || "";
-    const bdy = dialog.querySelector("#m-bday").value || "";
-    const birthdate = (bmo && bdy) ? `${bmo}-${bdy}` : "";
-
-    // Recomponer la bio a partir del modal si estamos editando.
-    // Nota: el campo 'origen' se removio del modal — se autopobla desde
-    // identity.country via generateHeroicBio, asi que no lo persistimos.
-    // Estructura fija del subdoc bio (identidad/superpoder/frase/union) — si
-    // se limpia, guardamos objeto vacío en vez de null para no romper reglas.
-    const emptyBio = { identidad: "", superpoder: "", frase: "", union: "" };
-    let newBio = null;
-    if (editing) {
-      const bioFields = {
-        identidad: (dialog.querySelector("#bio-identidad").value || "").trim(),
-        superpoder: (dialog.querySelector("#bio-superpoder").value || "").trim(),
-        union: (dialog.querySelector("#bio-union").value || "").trim(),
-        frase: (dialog.querySelector("#bio-frase").value || "").trim(),
-      };
-      const allEmpty = Object.values(bioFields).every(v => !v);
-      newBio = (allEmpty || bioCleared) ? emptyBio : { ...emptyBio, ...bioFields };
-    }
-
-    const name = (dialog.querySelector("#m-name").value || "").trim();
-    if (!name) {
-      dialog.querySelector("#m-name").focus();
-      heroToast.error("El nombre es requerido");
-      return;
-    }
-
-    const emailsList = (dialog.querySelector("#m-emails").value || "")
-      .split("\n").map(x => x.trim().toLowerCase()).filter(Boolean);
-    const phonesList = (dialog.querySelector("#m-phones").value || "")
-      .split("\n").map(x => x.trim()).filter(Boolean);
-    const primaryEmail = emailsList[0];
-    const jobTitle = (dialog.querySelector("#m-role").value || "").trim();
-    const countryStr = (dialog.querySelector("#m-country").value || "").trim();
-    const countryIsoResolved = countryStr ? nameToIso(countryStr) : null;
-    if (countryStr && !countryIsoResolved) {
-      heroToast.error(`País "${countryStr}" no reconocido. Usa un nombre estándar (Venezuela, Colombia, etc.)`);
-      return;
-    }
-
-    if (!primaryEmail) {
-      heroToast.error("Al menos un email es requerido (el primero será el ID del doc en users/)");
-      return;
-    }
-
-    // En edit, el email principal define el docId — si el usuario lo cambia,
-    // sería un rename del doc (borrar+crear). Preferimos bloquearlo y pedir
-    // a IT que lo maneje aparte para evitar perder audit-log historial.
-    if (editing && originalEmail && primaryEmail !== originalEmail.toLowerCase()) {
-      heroToast.error("No se puede cambiar el email principal desde aquí. Contacta a IT si es necesario renombrar el doc.");
-      return;
-    }
-
-    // Subir la foto si hay una pendiente. Ocurre ANTES del write para que si
-    // falla el upload no persistamos referencia a un archivo inexistente.
-    let photoPath = photoVal;
-    if (pendingPhotoFile) {
-      saveBtn.disabled = true;
-      saveBtn.textContent = "Subiendo foto…";
-      try {
-        const slug = slugifyName(name);
-        photoPath = await uploadPhotoToGitHub(pendingPhotoFile, slug);
-        heroToast.info("Foto subida al repo. Será visible en 1-3 min tras el redeploy de GitHub Pages.");
-      } catch (e) {
-        console.error("[upload photo]", e);
-        heroToast.error("Error subiendo foto: " + e.message);
-        saveBtn.disabled = false;
-        saveBtn.textContent = originalLabel;
-        return;
-      }
-      saveBtn.textContent = "Guardando…";
-    }
-
-    try {
-      if (editing) {
-        // updateUserFields con dot paths — solo toca los campos declarados,
-        // el resto (access.role, access.updatedBy, prefs.*, meta.*) queda intacto
-        await updateUserFields(originalEmail, {
-          "identity.name": name,
-          "identity.photo": photoPath,
-          "identity.country": countryIsoResolved,
-          "identity.birthdate": birthdate,
-          "identity.phones": phonesList,
-          "identity.emails": emailsList,
-          "display.jobTitle": jobTitle,
-          "display.bio": newBio || emptyBio,
-        });
-        // Reflejo local (evita refetch)
-        const cur = members[idx];
-        cur.identity = { ...(cur.identity || {}), name, photo: photoPath,
-                         country: countryIsoResolved, birthdate,
-                         phones: phonesList, emails: emailsList };
-        cur.display = { ...(cur.display || {}), jobTitle, bio: newBio || emptyBio };
-      } else {
-        const created = await createUser(primaryEmail, {
-          name,
-          photo: photoPath,
-          country: countryIsoResolved,
-          birthdate,
-          phones: phonesList,
-          emails: emailsList,
-          jobTitle,
-        });
-        members.push(created);
-        members.sort((a, b) => (a.identity?.name || "").localeCompare(b.identity?.name || ""));
-      }
-      dialog._savedFlag = true;
-      dialog.hide();
-      renderGrid();
-      heroToast.success(editing ? "Cambios guardados" : `${name} agregado al equipo`);
-      if (cameFromProfile) openProfile(idx);
-    } catch (e) {
-      console.error("[equipo save]", e);
-      heroToast.error("Error guardando: " + e.message);
-      saveBtn.disabled = false;
-      saveBtn.textContent = originalLabel;
-    }
-  });
-
-  // Shoelace lazy-registra el custom element en el primer uso; sin esto
-  // el primer click no abre el modal (hay que clickear dos veces).
-  customElements.whenDefined("sl-dialog").then(() => dialog.show());
-}
-
-async function deleteMember(idx) {
-  const m = members[idx];
-  const displayName = m?.identity?.name || m?._email || "este miembro";
-  const ok = await heroConfirm({
-    title: "Eliminar miembro",
-    message: `¿Eliminar a ${displayName}? Esta acción no se puede deshacer.`,
-    confirmLabel: "Eliminar",
-    variant: "danger"
-  });
-  if (!ok) return;
-  try {
-    await deleteUser(m._email);
-    members.splice(idx, 1);
-    renderGrid();
-    heroToast.success(`${displayName} eliminado`);
-  } catch (e) {
-    console.error("[equipo delete]", e);
-    heroToast.error("No se pudo eliminar: " + e.message);
-  }
 }

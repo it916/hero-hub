@@ -1,5 +1,26 @@
 [
   {
+    "id": "2026-07-30-users-fase1-panel-usuarios",
+    "version": "v2.23.3",
+    "date": "2026-07-30",
+    "category": "refactor",
+    "scope": "admin",
+    "audience": "admin",
+    "title": "Panel de Usuarios · toda la gestión de personas en un solo lugar",
+    "items": [
+      "🔀 El tab 'Roles' del admin se renombró a 'Usuarios' (ícono users, heading '👥 Gestión de usuarios'). El módulo Equipo pasó a ser 100% read-only — sin botones de admin, sin lápiz, sin agregar miembros. Toda la creación/edición/eliminación de personas ahora vive en un solo lugar",
+      "🎨 Rediseño del modal de usuario: secciones con kickers cyan (PERSONA · ACCESO · CONTACTO Y ORIGEN · FICHA DEL HÉROE), grid 2-col para pares (nombre+cargo, país+cumpleaños), ancho 600px, sin scroll horizontal",
+      "📧 Emails con prefijo editable + sufijo fijo '@heroinsuranceusa.com' visible; botón + para agregar múltiples; el primer email es readonly en edit (protege el docId único)",
+      "📞 Teléfonos como filas dinámicas con input type=tel (teclado numérico en mobile) + botón + para agregar",
+      "📅 'Se unió al equipo' con input type=month (picker MM/YYYY); persiste como 'Marzo 2024' para display",
+      "🎯 Rol de acceso al Hub como <select> nativo dentro del modal — evita el bug conocido de sl-select cerrando el sl-dialog",
+      "🗑 Botón X en la tabla elimina el doc completo del usuario (no solo el rol) — el mensaje del confirm lo aclara. Row-click abre el modal en modo edit",
+      "🧹 Eliminado el campo 'Superpoder' de la edición (modal admin + mi-perfil): era un texto narrativo cosmético que ya se autogenera por cargo en el perfil grande. Los valores custom pre-existentes se preservan en Firestore",
+      "🧹 Eliminada la sección 'Sobre mí' de mi-perfil.html completa; mi-perfil ya no escribe en users/",
+      "Bump v2.23.2 → v2.23.3"
+    ]
+  },
+  {
     "id": "2026-07-30-users-fase1-equipo",
     "version": "v2.23.2",
     "date": "2026-07-30",
