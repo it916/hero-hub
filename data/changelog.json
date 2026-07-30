@@ -1,5 +1,22 @@
 [
   {
+    "id": "2026-07-30-users-fase1-mi-perfil",
+    "version": "v2.23.1",
+    "date": "2026-07-30",
+    "category": "refactor",
+    "scope": "mi-perfil",
+    "audience": "admin",
+    "title": "Refactor users/{email} · fase 1 · mi-perfil.js consume el nuevo store",
+    "items": [
+      "Nuevo wrapper js/user-store.js: getAllUsers, getUserByEmail, updateUserFields, createUser, deleteUser + helpers countryLabel/countryFlagUrl. Encapsula la colección users/{email} (v2.23.0) para que los consumers no toquen doc/getDoc/setDoc directo",
+      "mi-perfil.js migrado: lee de users/{email} en vez de shared/team, con matching por docId + fallback a identity.emails[] para aliases",
+      "Bio ahora se lee de display.bio.superpoder (donde la fase 0 movió el string legacy) y se escribe con updateUserFields — permiso concedido al dueño por la regla refinada de Firestore (display.* + prefs.* editables por sí mismo)",
+      "Countries: 22 países mapeados en el store (antes eran 8 hardcodeados en mi-perfil); helper único countryFlagUrl(iso) + countryLabel(iso) reemplaza el FLAG_URLS local",
+      "Renderizado de país migrado de innerHTML a DOM API (createElement + textContent) — más seguro y pasa el hook de seguridad",
+      "Bump v2.23.0 → v2.23.1"
+    ]
+  },
+  {
     "id": "2026-07-30-users-migracion-fase0",
     "version": "v2.23.0",
     "date": "2026-07-30",

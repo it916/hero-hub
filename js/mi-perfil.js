@@ -12,29 +12,18 @@
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import {
-  doc, getDoc, setDoc, collection, query, where, orderBy, limit, getDocs
+  collection, query, where, orderBy, limit, getDocs
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { guardPage, filterTopbarByRole } from "./roles.js";
 import { getFreshGooglePhotoURL, getGooglePhotoURL } from "./user-photo.js";
 import { ACTION_LABELS } from "./audit-log.js";
+import { getUserByEmail, updateUserFields, countryLabel, countryFlagUrl } from "./user-store.js";
 import {
   fetchAttendanceEvents,
   computePersonStats, computePeriod,
   fmtTime, fmtHoursMinutes, fmtTimeOfDay,
   renderPersonLineChart, renderPersonDonutChart, renderPersonWeekdayBars,
 } from "./attendance-stats.js";
-
-const FLAG_URLS = {
-  'venezuela': 'https://flagicons.lipis.dev/flags/4x3/ve.svg',
-  'cuba': 'https://flagicons.lipis.dev/flags/4x3/cu.svg',
-  'colombia': 'https://flagicons.lipis.dev/flags/4x3/co.svg',
-  'chile': 'https://flagicons.lipis.dev/flags/4x3/cl.svg',
-  'honduras': 'https://flagicons.lipis.dev/flags/4x3/hn.svg',
-  'estados unidos': 'https://flagicons.lipis.dev/flags/4x3/us.svg',
-  'eeuu': 'https://flagicons.lipis.dev/flags/4x3/us.svg',
-  'us': 'https://flagicons.lipis.dev/flags/4x3/us.svg',
-};
-const getFlagUrl = (c) => c ? (FLAG_URLS[c.toLowerCase().trim()] || null) : null;
 
 const MONTHS_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
                    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -95,7 +84,7 @@ function relativeTime(date) {
 // ── Bootstrap ─────────────────────────────────────────────────────
 
 let currentUser = null;
-let currentMember = null;
+let currentPerson = null;   // doc de users/{email} — nueva fuente de verdad
 let allEvents = [];
 const attCharts = {};
 let fpFrom = null, fpTo = null;
@@ -125,7 +114,7 @@ onAuthStateChanged(auth, async (user) => {
 
   // Cargar todos los datos
   await Promise.all([
-    loadTeamData(),
+    loadPersonDoc(),
     loadActivity(),
     loadAttendance(),
   ]);
@@ -142,21 +131,13 @@ onAuthStateChanged(auth, async (user) => {
   if (window.refreshIcons) window.refreshIcons();
 });
 
-// ── Carga de datos de shared/team.members[user] ────────────────
+// ── Carga del doc users/{email} ────────────────────────────────
 
-async function loadTeamData() {
+async function loadPersonDoc() {
   try {
-    const snap = await getDoc(doc(db, "shared", "team"));
-    if (snap.exists()) {
-      const members = snap.data().members || [];
-      const email = currentUser.email.toLowerCase();
-      currentMember = members.find(m => {
-        const emails = Array.isArray(m.email) ? m.email : [m.email];
-        return emails.some(e => (e || "").toLowerCase() === email);
-      }) || null;
-    }
+    currentPerson = await getUserByEmail(currentUser.email);
   } catch (e) {
-    console.error("[mi-perfil] Error cargando shared/team:", e);
+    console.error("[mi-perfil] Error cargando users/{email}:", e);
   }
   renderHero();
   renderInfo();
@@ -165,11 +146,11 @@ async function loadTeamData() {
 
 function renderHero() {
   const user = currentUser;
-  const name = currentMember?.name || user.displayName || user.email.split("@")[0];
-  const cargo = currentMember?.role || "";
+  const name = currentPerson?.identity?.name || user.displayName || user.email.split("@")[0];
+  const cargo = currentPerson?.display?.jobTitle || "";
   // getGooglePhotoURL prioriza providerData (fresh) sobre user.photoURL (stale cache).
   // El reload() ya lo hizo getFreshGooglePhotoURL en el bootstrap, así que aquí sync está OK.
-  const photo = getGooglePhotoURL(user) || currentMember?.photo || "";
+  const photo = getGooglePhotoURL(user) || currentPerson?.identity?.photo || "";
 
   document.getElementById("mp-name").textContent = name;
   document.getElementById("mp-cargo").textContent = cargo || "—";
@@ -186,19 +167,29 @@ function renderHero() {
 }
 
 function renderInfo() {
-  const m = currentMember;
-  const phone = Array.isArray(m?.phone) ? m.phone.filter(Boolean).join(", ") : (m?.phone || "");
-  const country = m?.country || "";
-  const flagUrl = country ? getFlagUrl(country) : null;
-  const bd = parseBirthdate(m?.birthdate);
+  const identity = currentPerson?.identity || {};
+  const phonesArr = Array.isArray(identity.phones) ? identity.phones.filter(Boolean) : [];
+  const phone = phonesArr.join(", ");
+  const countryIso = identity.country || "";
+  const countryName = countryLabel(countryIso);
+  const flagUrl = countryIso ? countryFlagUrl(countryIso) : null;
+  const bd = parseBirthdate(identity.birthdate);
 
   const phoneEl = document.getElementById("mp-phone");
   phoneEl.textContent = phone || "—";
   if (!phone) phoneEl.classList.add("mp-empty");
 
   const countryEl = document.getElementById("mp-country");
-  if (country) {
-    countryEl.innerHTML = (flagUrl ? `<img src="${flagUrl}" alt="" class="mp-flag">` : "") + escapeHtml(country);
+  countryEl.replaceChildren();
+  if (countryName) {
+    if (flagUrl) {
+      const img = document.createElement("img");
+      img.src = flagUrl;
+      img.alt = "";
+      img.className = "mp-flag";
+      countryEl.appendChild(img);
+    }
+    countryEl.appendChild(document.createTextNode(countryName));
   } else {
     countryEl.textContent = "—";
     countryEl.classList.add("mp-empty");
@@ -224,10 +215,16 @@ function renderInfo() {
 }
 
 // ── Sobre mí (bio) con edición inline ─────────────────────────
+// La bio en users/{email} vive en display.bio.superpoder (string). Los otros
+// subcampos (identidad, frase, union) existen en el schema pero mi-perfil NO
+// los edita todavía — solo el "superpoder" que corresponde al textarea único.
+
+function currentBioText() {
+  return currentPerson?.display?.bio?.superpoder || "";
+}
 
 function renderBio() {
-  const raw = currentMember?.bio;
-  const bio = (typeof raw === "string" ? raw : "").trim();
+  const bio = currentBioText().trim();
   const view = document.getElementById("mp-bio-view");
   if (bio) {
     view.textContent = bio;
@@ -250,8 +247,7 @@ function wireBioEditor() {
   const updateCounter = () => { counter.textContent = `${input.value.length}/500`; };
 
   editBtn.addEventListener("click", () => {
-    const raw = currentMember?.bio;
-    input.value = typeof raw === "string" ? raw : "";
+    input.value = currentBioText();
     updateCounter();
     view.hidden = true;
     editor.hidden = false;
@@ -287,21 +283,16 @@ function wireBioEditor() {
 }
 
 async function saveBio(newBio) {
-  // Lee shared/team, modifica solo la entry del user (matcheada por email),
-  // y reescribe el doc completo con setDoc.
-  const ref = doc(db, "shared", "team");
-  const snap = await getDoc(ref);
-  if (!snap.exists()) throw new Error("El documento shared/team no existe");
-  const members = snap.data().members || [];
-  const email = currentUser.email.toLowerCase();
-  const idx = members.findIndex(m => {
-    const emails = Array.isArray(m.email) ? m.email : [m.email];
-    return emails.some(e => (e || "").toLowerCase() === email);
-  });
-  if (idx < 0) throw new Error("No encontramos tu tarjeta en el equipo");
-  members[idx].bio = newBio || null;
-  await setDoc(ref, { members }, { merge: true });
-  currentMember = members[idx];
+  // Escribe display.bio.superpoder en el doc users/{email} del usuario actual.
+  // La regla de Firestore permite al dueño editar display.* y prefs.*, así
+  // que este write no requiere permisos elevados.
+  const targetEmail = currentPerson?._email || currentUser.email;
+  await updateUserFields(targetEmail, { "display.bio.superpoder": newBio || "" });
+  // Refresh local para reflejar el cambio sin refetch completo
+  if (!currentPerson) currentPerson = { display: { bio: {} } };
+  if (!currentPerson.display) currentPerson.display = {};
+  if (!currentPerson.display.bio) currentPerson.display.bio = {};
+  currentPerson.display.bio.superpoder = newBio || "";
 }
 
 // ── Mi asistencia (vista amplia) ─────────────────────────────
