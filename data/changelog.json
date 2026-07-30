@@ -1,5 +1,25 @@
 [
   {
+    "id": "2026-07-30-users-migracion-fase0",
+    "version": "v2.23.0",
+    "date": "2026-07-30",
+    "category": "refactor",
+    "scope": "admin",
+    "audience": "admin",
+    "title": "Migración de datos · fase 0 del refactor a users/{email}",
+    "items": [
+      "🗃 Nueva sección 'Sistema · Migración de datos' en el sidebar de admin.html — solo visible al rol IT. Consolida shared/team.members[] + shared/roles.users{} en una colección única users/{email} que va a ser la nueva fuente de verdad de personas",
+      "Panel con 3 pasos: (1) descargar backup JSON del estado actual, (2) preview dry-run que cruza data, aplica normalizaciones y muestra tabla con warnings, (3) ejecutar con doble heroConfirm + log en vivo + audit-log de la operación",
+      "Normalizaciones aplicadas en el payload: rol legacy (directivo/rrhh → interno), país (Venezuela/Cuba/etc → ISO alpha-2), bio string suelta → objeto {identidad, superpoder, frase, union}, emails a lowercase, exclusión de Luis Ernesto Gutiérrez del Equipo materializada como meta.excluded=true",
+      "Cleanup previo a la migración: consolidar aliases (Oscar Palacios recibe life@; Marge Sulbarán recibe msulbaran@; Jeyxi Suárez pasa a jeyxisuarez@ liberando concierge@ que queda para Erick Merlos) y alta de Cristina Jaimes",
+      "Nueva feature flag USE_USERS_COLLECTION en js/firebase-config.js — de momento en false. Cuando se active en fase 1, equipo.js/mi-perfil.js/roles-admin.js pasan a leer de la nueva colección",
+      "Se agrega la acción users.migration al sistema de audit-log",
+      "Regla de Firestore agregada: users/{email} lectura para cualquier @heroinsuranceusa autenticado, escritura solo it@ (se refinará en fase 1)",
+      "shared/team y shared/roles NO se borran — se deprecan en fase 1.5 tras validar campo por campo",
+      "Bump v2.22.1 → v2.23.0"
+    ]
+  },
+  {
     "id": "2026-07-28-it-console-bienvenida-hub",
     "version": "v2.22.1",
     "date": "2026-07-28",

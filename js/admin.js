@@ -41,6 +41,14 @@ onAuthStateChanged(auth, async (user) => {
 
   // Exponer email del admin actual para roles-admin.js
   window._currentAdminEmail = user.email;
+
+  // Tabs restringidos al rol IT (o cuenta it@ que entra como admin por legacy).
+  // Migración de datos es housekeeping técnico — no debería aparecerle al resto
+  // de admins para evitar disparos accidentales.
+  const isIT = userRole.role === "IT" || user.email === "it@heroinsuranceusa.com";
+  if (isIT) {
+    document.querySelectorAll(".only-it").forEach(el => { el.style.display = ""; });
+  }
 });
 
 // ══ SPOTLIGHT ══

@@ -21,3 +21,8 @@ scratch_parse_contracting.js
 
 # Excel maestro de URLs de reportes de Gilbana — no va al repo.
 URLS_INGRESOS_2026.xlsx
+
+# Backups descargados desde el panel de migración de datos (contienen data
+# personal del equipo — emails, teléfonos, bios). Se generan localmente cuando
+# se corre el migrador y no aportan al código.
+hero-hub-backup-*.json
