@@ -546,6 +546,13 @@ function openUserModal(user) {
             Agregar otro email
           </button>
         </div>
+        <label class="mf-checkbox">
+          <input type="checkbox" id="m-excluded">
+          <span class="mf-checkbox-body">
+            <span class="mf-checkbox-label">Ocultar del módulo Equipo</span>
+            <span class="mf-checkbox-hint">Para empleados en período de prueba, cuentas técnicas o ex-empleados con acceso residual. Sigue pudiendo entrar al Hub y marcar asistencia, pero no aparece en la vista pública del organigrama.</span>
+          </span>
+        </label>
       </div>
 
       <div class="mf-section">
@@ -613,6 +620,7 @@ function openUserModal(user) {
   dialog.querySelector("#m-bmonth").value = bm || "";
   dialog.querySelector("#m-bday").value = bd || "";
   dialog.querySelector("#m-access-role").value = roleVal;
+  dialog.querySelector("#m-excluded").checked = user?.meta?.excluded === true;
   if (editing) {
     // bio.frase se setea por atributo `value=` en el HTML
     // bio.union se parsea de "Marzo 2024" a "2024-03" para el input type=month
@@ -811,6 +819,7 @@ function openUserModal(user) {
     }
 
     const newRole = dialog.querySelector("#m-access-role").value || null;
+    const newExcluded = dialog.querySelector("#m-excluded").checked;
 
     let photoPath = photoVal;
     if (pendingPhotoFile) {
@@ -843,6 +852,7 @@ function openUserModal(user) {
           "display.jobTitle": jobTitle,
           "display.bio": newBio || emptyBio,
           "access.role": newRole,
+          "meta.excluded": newExcluded,
         });
         user.identity = { ...(user.identity || {}), name, photo: photoPath,
                           country: countryIsoResolved, birthdate,
@@ -852,6 +862,8 @@ function openUserModal(user) {
         user.access.role = newRole;
         user.access.updatedBy = currentAdminEmail;
         user.access.updatedAt = { toDate: () => new Date() };
+        if (!user.meta) user.meta = {};
+        user.meta.excluded = newExcluded;
         if (oldRole !== newRole) {
           logEvent(ACTIONS.ROLE_UPDATE, originalEmail, {
             from: ROLES[oldRole]?.label || oldRole || "(sin rol)",
@@ -865,6 +877,7 @@ function openUserModal(user) {
           country: countryIsoResolved, birthdate,
           phones: phonesPayload, emails: emailsPayload,
           jobTitle, role: newRole,
+          excluded: newExcluded,
         });
         users.push(created);
         users.sort((a, b) => (a.identity?.name || "").localeCompare(b.identity?.name || ""));

@@ -3429,6 +3429,48 @@ body[data-theme="dark"] .mf-section + .mf-section {
 }
 .mf-row-add svg { width:12px; height:12px; }
 
+/* Checkbox destacado (ej. "Ocultar del módulo Equipo") */
+.mf-checkbox {
+  display:flex; align-items:flex-start;
+  gap:10px;
+  padding:10px 12px;
+  background:rgba(6,163,182,.04);
+  border:1px solid var(--border, #d8dee6);
+  border-radius:8px;
+  cursor:pointer;
+  transition:background .15s, border-color .15s;
+}
+.mf-checkbox:hover {
+  background:rgba(6,163,182,.08);
+  border-color:var(--cyan, #06a3b6);
+}
+.mf-checkbox input[type="checkbox"] {
+  margin:3px 0 0;
+  cursor:pointer;
+  accent-color:var(--cyan, #06a3b6);
+}
+.mf-checkbox-body { flex:1; min-width:0; }
+.mf-checkbox-label {
+  font-family:var(--sans, "Inter"), sans-serif;
+  font-size:13px; font-weight:600;
+  color:var(--text, #062a33);
+  line-height:1.35;
+}
+.mf-checkbox-hint {
+  display:block;
+  margin-top:2px;
+  font-size:11.5px; font-weight:400;
+  color:var(--muted, #64748b);
+  line-height:1.4;
+}
+body[data-theme="dark"] .mf-checkbox {
+  background:rgba(6,163,182,.08);
+  border-color:#264452;
+}
+body[data-theme="dark"] .mf-checkbox:hover {
+  background:rgba(6,163,182,.14);
+}
+
 /* Input compuesto: prefijo editable + suffix fijo (@heroinsuranceusa.com) */
 .mf-email-input {
   display:flex; align-items:stretch;

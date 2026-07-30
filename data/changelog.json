@@ -1,5 +1,21 @@
 [
   {
+    "id": "2026-07-30-toggle-excluded",
+    "version": "v2.23.5",
+    "date": "2026-07-30",
+    "category": "feat",
+    "scope": "admin",
+    "audience": "admin",
+    "title": "Toggle 'Ocultar del módulo Equipo' en modal de Usuario",
+    "items": [
+      "Nuevo checkbox destacado en la sección Acceso del modal de Usuario (admin.html → tab Usuarios) para editar meta.excluded desde el UI. Evita tener que ir a Firestore Console",
+      "Casos de uso: empleados en período de prueba (como Daniela Molina), cuentas técnicas (kaizenteam@), ex-empleados con acceso residual, cualquier persona que necesite acceso al Hub pero no aparecer en la vista pública del organigrama",
+      "Al marcar: el usuario sigue pudiendo loguearse y marcar asistencia, pero desaparece del grid de Equipo. Al desmarcar: aparece",
+      "Persiste en meta.excluded via updateUserFields (edit) o createUser con initial.excluded (nuevo)",
+      "Bump v2.23.4 → v2.23.5"
+    ]
+  },
+  {
     "id": "2026-07-30-users-fase1-guard-auth",
     "version": "v2.23.4",
     "date": "2026-07-30",
