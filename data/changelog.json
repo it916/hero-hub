@@ -1,5 +1,22 @@
 [
   {
+    "id": "2026-08-04-attendance-transitions-crossdevice",
+    "version": "v2.24.0",
+    "date": "2026-08-04",
+    "category": "feat",
+    "scope": "asistencia",
+    "audience": "all",
+    "title": "Mi Asistencia · validación de transiciones + sincronización cross-device",
+    "items": [
+      "🔒 Ya no se puede marcar 'Entrada' por error dos veces. Después de la Entrada solo aparecen habilitados 'Break' y 'Salida'. Después de 'Salida' o 'Ausencia' los botones quedan bloqueados hasta el día siguiente. Después de 'Inicio Break' solo se habilita 'Fin Break' (=Volver)",
+      "🖥️📱 El último registro ahora se ve igual en TODOS los dispositivos donde estés logueado. Si marcas la Entrada desde el celular, la computadora la refleja en segundos. Antes vivía solo en localStorage y no cruzaba entre dispositivos",
+      "⚙️ Detrás: nueva función subscribeLastEvent en attendance-store.js con Firestore onSnapshot; máquina de transiciones válidas en attendance.js; auth.js espera al primer snapshot antes de decidir si mostrar el modal de inicio de jornada (timeout 2s → fallback a cache local)",
+      "🚫 Se descontinuaron los eventos 'Corte Luz Inicio' y 'Corte Luz Fin'. Ya no se registran ni se muestran en KPIs (Mi perfil), tiles del dashboard admin ni donuts. Los eventos históricos permanecen en Firestore por auditoría pero se ignoran en cálculos",
+      "🧹 admin.html: se retiró el tile 'Sin luz' del dashboard y la sección 'Cortes de luz'. mi-perfil.html: se quitó la columna 'Cortes' de la tabla y el KPI 'Cortes luz' (se añade 'Salida prom' en su lugar)",
+      "Bump v2.23.5 → v2.24.0"
+    ]
+  },
+  {
     "id": "2026-07-30-toggle-excluded",
     "version": "v2.23.5",
     "date": "2026-07-30",

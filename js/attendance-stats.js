@@ -17,7 +17,6 @@ import { fetchAttendance } from "./attendance-store.js";
 export const STATUS_META = {
   "trabajando":   { label: "Trabajando", color: "#10b981", icon: "check-circle-2" },
   "break":        { label: "En break",   color: "#06a3b6", icon: "coffee" },
-  "sin-luz":      { label: "Sin luz",    color: "#f59e0b", icon: "zap-off" },
   "fuera":        { label: "Fuera",      color: "#94a3b8", icon: "log-out" },
   "ausencia":     { label: "Ausencia",   color: "#64748b", icon: "calendar-x" },
   "sin-registro": { label: "Sin registro hoy", color: "#cbd5e1", icon: "circle" },
@@ -159,16 +158,15 @@ export function computePersonStats(events, email, rangeStart, rangeEnd) {
 
   const dailyStats = [];
   let totalMs = 0, totalBreaks = 0, totalBreakMs = 0;
-  let totalOutages = 0, totalOutageMs = 0;
   let totalAbsences = 0, activeDays = 0;
   const entradaTimes = [], salidaTimes = [];
   const weekdayHours = [0, 0, 0, 0, 0, 0, 0];
 
   for (const [dayKey, { date: dayDate, events: evs }] of byDay) {
     let worked = 0, breaksCount = 0, breaksMs = 0;
-    let outages = 0, outagesMs = 0, absent = false;
+    let absent = false;
     let firstEntrada = null, lastSalida = null;
-    let workStart = null, breakStart = null, outageStart = null;
+    let workStart = null, breakStart = null;
 
     const dayEnd = new Date(dayDate);
     dayEnd.setHours(23, 59, 59, 999);
@@ -188,14 +186,6 @@ export function computePersonStats(events, email, rangeStart, rangeEnd) {
           }
           workStart = ev._date;
           break;
-        case "Corte Luz Fin":
-          if (outageStart) {
-            outages++;
-            outagesMs += ev._date - outageStart;
-            outageStart = null;
-          }
-          workStart = ev._date;
-          break;
         case "Salida":
           lastSalida = ev._date;
           if (workStart) { worked += ev._date - workStart; workStart = null; }
@@ -204,13 +194,10 @@ export function computePersonStats(events, email, rangeStart, rangeEnd) {
           breakStart = ev._date;
           if (workStart) { worked += ev._date - workStart; workStart = null; }
           break;
-        case "Corte Luz Inicio":
-          outageStart = ev._date;
-          if (workStart) { worked += ev._date - workStart; workStart = null; }
-          break;
         case "Ausencia":
           absent = true;
           break;
+        // "Corte Luz *" (histórico) se ignora — descontinuado v2.24.0.
       }
     }
 
@@ -220,16 +207,10 @@ export function computePersonStats(events, email, rangeStart, rangeEnd) {
       breaksCount++;
       breaksMs += cutoff - breakStart;
     }
-    if (outageStart && cutoff > outageStart) {
-      outages++;
-      outagesMs += cutoff - outageStart;
-    }
 
     totalMs += worked;
     totalBreaks += breaksCount;
     totalBreakMs += breaksMs;
-    totalOutages += outages;
-    totalOutageMs += outagesMs;
     if (absent) totalAbsences++;
     if (firstEntrada || worked > 0) activeDays++;
     if (firstEntrada) entradaTimes.push(firstEntrada);
@@ -240,7 +221,7 @@ export function computePersonStats(events, email, rangeStart, rangeEnd) {
       dayKey, date: dayDate,
       entrada: firstEntrada, salida: lastSalida,
       worked, breaksCount, breaksMs,
-      outages, outagesMs, absent, ongoing,
+      absent, ongoing,
     });
   }
 
@@ -250,7 +231,7 @@ export function computePersonStats(events, email, rangeStart, rangeEnd) {
     avgWorkPerDay: activeDays > 0 ? totalMs / activeDays : 0,
     totalBreaks, totalBreakMs,
     avgBreakDuration: totalBreaks > 0 ? totalBreakMs / totalBreaks : 0,
-    totalOutages, totalOutageMs, totalAbsences,
+    totalAbsences,
     avgEntrada: avgTimeOfDay(entradaTimes),
     avgSalida: avgTimeOfDay(salidaTimes),
     weekdayHours,
@@ -277,12 +258,12 @@ export function computeCurrentStateByPerson(events, today) {
     switch (last.tipo) {
       case "Entrada":
       case "Fin Break":
-      case "Corte Luz Fin":    state = "trabajando"; break;
-      case "Inicio Break":     state = "break"; break;
-      case "Corte Luz Inicio": state = "sin-luz"; break;
-      case "Salida":           state = "fuera"; break;
-      case "Ausencia":         state = "ausencia"; break;
-      default:                 state = "sin-registro";
+      case "Corte Luz Fin":  state = "trabajando"; break; // legacy — histórico
+      case "Inicio Break":   state = "break"; break;
+      case "Corte Luz Inicio": state = "trabajando"; break; // legacy — histórico se trata como si estuviera trabajando
+      case "Salida":         state = "fuera"; break;
+      case "Ausencia":       state = "ausencia"; break;
+      default:               state = "sin-registro";
     }
 
     let entradaTime = null, breakStart = null, breakEnd = null, salidaTime = null;
@@ -385,16 +366,15 @@ export function renderPersonDonutChart(canvasEl, prevChart, stats) {
   const donutData = [
     stats.totalMs / 3600000,
     stats.totalBreakMs / 3600000,
-    stats.totalOutageMs / 3600000,
   ];
   if (prevChart) prevChart.destroy();
   return new Chart(canvasEl, {
     type: "doughnut",
     data: {
-      labels: ["Trabajado", "Break", "Sin luz"],
+      labels: ["Trabajado", "Break"],
       datasets: [{
         data: donutData,
-        backgroundColor: [STATUS_META.trabajando.color, STATUS_META.break.color, STATUS_META["sin-luz"].color],
+        backgroundColor: [STATUS_META.trabajando.color, STATUS_META.break.color],
         borderWidth: 2,
         borderColor: "#fff"
       }]

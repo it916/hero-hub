@@ -137,7 +137,7 @@
           <div class="ad-toolbar">
             <div>
               <h2 style="margin:0;">📈 Dashboard de Asistencia</h2>
-              <p class="admin-note" style="margin:4px 0 0;">Estado del equipo, cortes de luz, ausencias y horas trabajadas.</p>
+              <p class="admin-note" style="margin:4px 0 0;">Estado del equipo, ausencias y horas trabajadas.</p>
             </div>
             <div class="ad-toolbar-actions">
               <select id="ad-period" class="ad-select">
@@ -175,11 +175,6 @@
                   <div class="ad-counter-value" id="ad-count-break">0</div>
                   <div class="ad-counter-label">En break</div>
                 </div>
-                <div class="ad-counter ad-c-power">
-                  <div class="ad-counter-icon"><i data-lucide="zap-off"></i></div>
-                  <div class="ad-counter-value" id="ad-count-power">0</div>
-                  <div class="ad-counter-label">Sin luz</div>
-                </div>
                 <div class="ad-counter ad-c-out">
                   <div class="ad-counter-icon"><i data-lucide="log-out"></i></div>
                   <div class="ad-counter-value" id="ad-count-out">0</div>
@@ -205,15 +200,10 @@
 
             <section class="ad-section">
               <div class="section-label"><span class="kicker-dot"></span>Horas trabajadas · <span id="ad-hours-period-label">hoy</span></div>
-              <p class="ad-hint">No incluye breaks ni cortes de luz. Calculado a partir de los eventos Entrada / Salida / Break / Corte Luz registrados.</p>
+              <p class="ad-hint">No incluye breaks. Calculado a partir de los eventos Entrada / Salida / Break registrados.</p>
               <div class="ad-bars-box">
                 <canvas id="ad-hours-bars"></canvas>
               </div>
-            </section>
-
-            <section class="ad-section">
-              <div class="section-label"><span class="kicker-dot"></span>Cortes de luz · <span id="ad-power-period-label">hoy</span></div>
-              <div class="ad-list" id="ad-power-list"></div>
             </section>
 
             <section class="ad-section">
@@ -526,7 +516,7 @@
     </div><!-- /.admin-shell -->
 
     <footer class="hero-footer">
-      <span>HERO HUB · ADMIN v2.23.5</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+      <span>HERO HUB · ADMIN v2.24.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
     </footer>
 
     <!-- ══ MODAL: Estadísticas detalladas por persona ══ -->
@@ -592,7 +582,6 @@
                   <th>Salida</th>
                   <th>Trabajado</th>
                   <th>Breaks</th>
-                  <th>Cortes</th>
                   <th>Ausencia</th>
                 </tr>
               </thead>

@@ -3,13 +3,13 @@
 // ═══════════════════════════════════════════
 // Lee los registros de la colección `attendance` de Firestore (desde
 // v2.18.0), agrega los datos en memoria y renderiza:
-//   - 4 contadores de estado actual
+//   - 3 contadores de estado actual (Trabajando · En break · Fuera)
 //   - Lista de equipo en vivo
 //   - Donut de distribución (Chart.js)
 //   - Barras de horas trabajadas por persona (Chart.js)
-//   - Lista de cortes de luz
 //   - Lista de ausencias
 //   - Modal por persona con stats detalladas
+// (En v2.24.0 se retiró la sección "Cortes de luz" — descontinuado.)
 //
 // Vive como tab dentro de admin.html. La verificación de rol admin
 // la hace admin.js antes de invocar initAsistenciaDashboard().
@@ -147,18 +147,17 @@ function computeHoursWorked(events, rangeStart, rangeEnd, now) {
       switch (ev.tipo) {
         case "Entrada":
         case "Fin Break":
-        case "Corte Luz Fin":
           workStart = ev._date;
           break;
         case "Salida":
         case "Inicio Break":
-        case "Corte Luz Inicio":
           if (workStart) {
             totalMs += ev._date - workStart;
             workStart = null;
           }
           break;
         // Ausencia no afecta horas trabajadas
+        // "Corte Luz *" (histórico) se ignora — descontinuado v2.24.0.
       }
     }
     // Si quedó tramo abierto, contar hasta NOW (o fin de rango)
@@ -169,49 +168,6 @@ function computeHoursWorked(events, rangeStart, rangeEnd, now) {
     result.push({ email, name: name || email, hoursMs: totalMs });
   }
   return result.sort((a, b) => b.hoursMs - a.hoursMs);
-}
-
-// ── Cálculos: cortes de luz (pares Inicio/Fin) ─────────────────────
-function computePowerOutages(events, rangeStart, rangeEnd) {
-  const byEmail = new Map();
-  for (const ev of events) {
-    if (!ev.email) continue;
-    if (ev.tipo !== "Corte Luz Inicio" && ev.tipo !== "Corte Luz Fin") continue;
-    const d = parseEventDate(ev);
-    if (!d) continue;
-    if (!byEmail.has(ev.email)) byEmail.set(ev.email, []);
-    byEmail.get(ev.email).push({ ...ev, _date: d });
-  }
-
-  const outages = [];
-  for (const [email, evs] of byEmail) {
-    evs.sort((a, b) => a._date - b._date);
-    let openStart = null;
-    for (const ev of evs) {
-      if (ev.tipo === "Corte Luz Inicio") {
-        openStart = ev;
-      } else if (ev.tipo === "Corte Luz Fin" && openStart) {
-        if (openStart._date >= rangeStart && openStart._date <= rangeEnd) {
-          outages.push({
-            email, name: openStart.nombre,
-            start: openStart._date, end: ev._date,
-            durationMs: ev._date - openStart._date,
-            ongoing: false,
-          });
-        }
-        openStart = null;
-      }
-    }
-    if (openStart && openStart._date >= rangeStart && openStart._date <= rangeEnd) {
-      outages.push({
-        email, name: openStart.nombre,
-        start: openStart._date, end: null,
-        durationMs: Date.now() - openStart._date,
-        ongoing: true,
-      });
-    }
-  }
-  return outages.sort((a, b) => b.start - a.start);
 }
 
 // ── Cálculos: ausencias (últimos N días) ──────────────────────────
@@ -253,7 +209,6 @@ function renderAll() {
   document.getElementById("ad-period-label").textContent =
     periodSel === "today" ? "Hoy" : (periodSel === "month" ? "Este mes" : "Esta semana");
   document.getElementById("ad-hours-period-label").textContent = periodLabel;
-  document.getElementById("ad-power-period-label").textContent = periodLabel;
 
   // Estado actual (siempre HOY, independiente del selector)
   const states = computeCurrentStateByPerson(allEvents, now);
@@ -265,10 +220,6 @@ function renderAll() {
   const hours = computeHoursWorked(allEvents, rangeStart, rangeEnd, now);
   renderHoursBars(hours);
 
-  // Cortes de luz dentro del rango
-  const outages = computePowerOutages(allEvents, rangeStart, rangeEnd);
-  renderPowerList(outages);
-
   // Ausencias últimos 30 días (siempre)
   const absences = computeAbsences(allEvents, 30);
   renderAbsenceList(absences);
@@ -277,11 +228,10 @@ function renderAll() {
 }
 
 function renderCounters(states) {
-  const counts = { trabajando: 0, break: 0, "sin-luz": 0, fuera: 0, ausencia: 0 };
+  const counts = { trabajando: 0, break: 0, fuera: 0, ausencia: 0 };
   states.forEach(s => { if (counts[s.state] !== undefined) counts[s.state]++; });
   document.getElementById("ad-count-working").textContent = counts.trabajando;
   document.getElementById("ad-count-break").textContent = counts.break;
-  document.getElementById("ad-count-power").textContent = counts["sin-luz"];
   document.getElementById("ad-count-out").textContent = counts.fuera + counts.ausencia;
 }
 
@@ -331,15 +281,14 @@ function renderTeamList(states) {
 }
 
 function renderDonut(states) {
-  const counts = { trabajando: 0, break: 0, "sin-luz": 0, fuera: 0, ausencia: 0 };
+  const counts = { trabajando: 0, break: 0, fuera: 0, ausencia: 0 };
   states.forEach(s => { if (counts[s.state] !== undefined) counts[s.state]++; });
 
-  const labels = ["Trabajando", "Break", "Sin luz", "Fuera", "Ausencia"];
-  const data = [counts.trabajando, counts.break, counts["sin-luz"], counts.fuera, counts.ausencia];
+  const labels = ["Trabajando", "Break", "Fuera", "Ausencia"];
+  const data = [counts.trabajando, counts.break, counts.fuera, counts.ausencia];
   const colors = [
     STATUS_META.trabajando.color,
     STATUS_META.break.color,
-    STATUS_META["sin-luz"].color,
     STATUS_META.fuera.color,
     STATUS_META.ausencia.color,
   ];
@@ -380,25 +329,6 @@ function renderHoursBars(hours) {
       }
     }
   });
-}
-
-function renderPowerList(outages) {
-  const list = document.getElementById("ad-power-list");
-  if (!outages.length) {
-    list.innerHTML = `<div class="ad-empty">— Sin cortes de luz en este período —</div>`;
-    return;
-  }
-  list.innerHTML = outages.map(o => `
-    <div class="ad-power-item ${o.ongoing ? "ongoing" : ""}">
-      <div class="ad-power-icon"><i data-lucide="zap-off"></i></div>
-      <div class="ad-power-name">${escapeHtml(o.name)}</div>
-      <div class="ad-power-times">
-        ${fmtDateShort(o.start)} · ${fmtTime(o.start)}
-        ${o.ongoing ? `<span class="ad-ongoing">→ en curso</span>` : `→ ${fmtTime(o.end)}`}
-      </div>
-      <div class="ad-power-duration">${fmtHoursMinutes(o.durationMs)}</div>
-    </div>
-  `).join("");
 }
 
 function renderAbsenceList(absences) {
@@ -589,9 +519,9 @@ function renderPersonKPIs(stats) {
     { label: "Prom/día", value: fmtHoursMinutes(stats.avgWorkPerDay) },
     { label: "Breaks", value: stats.totalBreaks },
     { label: "Brk-prom", value: fmtHoursMinutes(stats.avgBreakDuration) },
-    { label: "Cortes luz", value: stats.totalOutages },
     { label: "Ausencias", value: stats.totalAbsences },
     { label: "Entrada prom", value: fmtTimeOfDay(stats.avgEntrada) },
+    { label: "Salida prom", value: fmtTimeOfDay(stats.avgSalida) },
   ];
   document.getElementById("ad-pm-kpis").innerHTML = items.map(k => `
     <div class="ad-pm-kpi">
@@ -604,14 +534,13 @@ function renderPersonKPIs(stats) {
 function renderPersonTable(stats) {
   const tbody = document.getElementById("ad-pm-detail-tbody");
   if (!stats.dailyStats.length) {
-    tbody.innerHTML = `<tr><td colspan="7" class="cell-dim" style="text-align:center;padding:24px;">Sin registros en este periodo.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="cell-dim" style="text-align:center;padding:24px;">Sin registros en este periodo.</td></tr>`;
     return;
   }
   tbody.innerHTML = stats.dailyStats.map(d => {
     const dateStr = d.date.toLocaleDateString("es", { day: "2-digit", month: "2-digit", year: "2-digit" });
     const dim = `<span class="cell-dim">—</span>`;
     const breaksCell = d.breaksCount ? `${d.breaksCount} (${fmtHoursMinutes(d.breaksMs)})` : dim;
-    const outagesCell = d.outages ? `${d.outages} (${fmtHoursMinutes(d.outagesMs)})` : dim;
     const absentCell = d.absent ? `<span class="cell-absent">Sí</span>` : dim;
     let workedCell = dim;
     if (d.worked > 0) {
@@ -625,7 +554,6 @@ function renderPersonTable(stats) {
       <td>${d.salida ? fmtTime(d.salida) : dim}</td>
       <td>${workedCell}</td>
       <td>${breaksCell}</td>
-      <td>${outagesCell}</td>
       <td>${absentCell}</td>
     </tr>`;
   }).join("");

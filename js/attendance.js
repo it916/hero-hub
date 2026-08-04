@@ -5,20 +5,24 @@
 // la colección `attendance` de Firestore (a través de attendance-store.js).
 //
 // Tipos registrados:
-//   Entrada · Salida · Inicio Break · Fin Break
-//   Corte Luz Inicio · Corte Luz Fin · Ausencia
+//   Entrada · Salida · Inicio Break · Fin Break · Ausencia
+//   (Los tipos "Corte Luz *" se descontinuaron el 2026-08-04 — v2.24.0.)
 //
-// El último evento se guarda en localStorage para mostrar el estado
-// actual al recargar la página (sin hacer read a Firestore).
+// FUENTE DE VERDAD: Firestore. Nos suscribimos al último evento del
+// usuario vía onSnapshot, por lo que si marca desde otro device el
+// estado se sincroniza en las pestañas abiertas.
 //
-// Historia: hasta v2.17.1 este módulo escribía a un Google Sheet vía
-// Apps Script. En v2.18.0 migramos a Firestore por escalabilidad —
-// el Sheet había pasado los 1000 registros y el doGet se estaba
-// volviendo lento.
+// localStorage["hh-attendance-last"] se mantiene solo como cache de
+// pre-render, para no mostrar "cargando" al abrir la página mientras
+// Firestore responde. Se sobreescribe con lo que traiga el snapshot.
+//
+// Historia: hasta v2.17.1 escribíamos a un Google Sheet vía Apps Script.
+// En v2.18.0 migramos a Firestore. En v2.24.0 la lectura pasó también
+// a Firestore (antes solo localStorage) + máquina de transiciones válidas.
 // ═══════════════════════════════════════════
 
 import { auth } from "./firebase-config.js";
-import { writeAttendance } from "./attendance-store.js";
+import { writeAttendance, subscribeLastEvent } from "./attendance-store.js";
 
 const STORAGE_KEY = "hh-attendance-last";
 const TICK_MS = 30_000;
@@ -29,14 +33,50 @@ let tickerInterval = null;
 
 // Mapa tipo → cómo se describe el estado vivo que provoca esa marcación
 const STATUS_FOR_TYPE = {
-  "Entrada":           { state: "trabajando", verb: "Trabajando" },
-  "Salida":            { state: "fuera",      verb: "Jornada terminada" },
-  "Inicio Break":      { state: "break",      verb: "En break" },
-  "Fin Break":         { state: "trabajando", verb: "Trabajando" },
-  "Corte Luz Inicio":  { state: "sin-luz",    verb: "Sin luz" },
-  "Corte Luz Fin":     { state: "trabajando", verb: "Trabajando" },
-  "Ausencia":          { state: "ausencia",   verb: "Ausencia reportada" },
+  "Entrada":      { state: "trabajando", verb: "Trabajando" },
+  "Salida":       { state: "fuera",      verb: "Jornada terminada" },
+  "Inicio Break": { state: "break",      verb: "En break" },
+  "Fin Break":    { state: "trabajando", verb: "Trabajando" },
+  "Ausencia":     { state: "ausencia",   verb: "Ausencia reportada" },
 };
+
+// ── Máquina de estados de transiciones válidas ──────────────────────
+// Dado el último evento del día actual, ¿qué tipos puede marcar el usuario?
+// Al cambiar de día se resetea a "sin registro" (Entrada + Ausencia).
+const TRANSITIONS = {
+  __none__:       new Set(["Entrada", "Ausencia"]),
+  "Entrada":      new Set(["Salida", "Inicio Break"]),
+  "Fin Break":    new Set(["Salida", "Inicio Break"]),
+  "Inicio Break": new Set(["Fin Break"]),
+  "Salida":       new Set([]),
+  "Ausencia":     new Set([]),
+};
+
+// Motivo por tipo bloqueado. Se muestra como title del botón y como toast si el click cuela.
+const BLOCK_REASON = {
+  "Entrada":      "Ya marcaste tu Entrada hoy.",
+  "Salida":       "No puedes marcar Salida antes de la Entrada.",
+  "Inicio Break": "Solo puedes iniciar break si estás trabajando.",
+  "Fin Break":    "Solo puedes terminar break si estás en break.",
+  "Ausencia":     "No puedes reportar ausencia si ya marcaste asistencia hoy.",
+};
+
+// Estado en memoria — la fuente de verdad tras el primer snapshot de Firestore.
+// { type, timestamp: ISO string, absenceDate?, reason? }
+let currentState = null;
+
+// Se resuelve cuando llegue el primer snapshot (o timeout / falla).
+// auth.js espera esta promesa antes de decidir si abrir el modal de inicio de jornada.
+let _readyResolve = null;
+window.hhAttendanceReady = new Promise((resolve) => { _readyResolve = resolve; });
+let _readySettled = false;
+function _markReady(reason) {
+  if (_readySettled) return;
+  _readySettled = true;
+  _readyResolve && _readyResolve(reason);
+}
+
+let _unsubSnapshot = null;
 
 function statusFeedbackEl() { return document.getElementById("attendanceStatus"); }
 
@@ -87,14 +127,14 @@ function formatElapsedShort(start, now) {
 
 function startStatusTicker() {
   if (tickerInterval) return;
-  tickerInterval = setInterval(refreshStatusFromStorage, TICK_MS);
+  tickerInterval = setInterval(refreshStatusView, TICK_MS);
 }
 function stopStatusTicker() {
   if (tickerInterval) { clearInterval(tickerInterval); tickerInterval = null; }
 }
 
-// ── localStorage: último evento ────────────────────────────────────
-function loadLast() {
+// ── localStorage: cache de pre-render (NO fuente de verdad) ────────
+function loadCache() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
@@ -104,9 +144,10 @@ function loadLast() {
   } catch { return null; }
 }
 
-function saveLast(type, timestamp, extra = {}) {
+function saveCache(state) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ type, timestamp, ...extra }));
+    if (state) localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    else localStorage.removeItem(STORAGE_KEY);
   } catch {}
 }
 
@@ -116,66 +157,122 @@ function isSameLocalDay(isoA, isoB) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
-function refreshStatusFromStorage() {
+// ── Cálculo de transiciones válidas ────────────────────────────────
+export function computeAllowedTypes(state, now = new Date()) {
+  if (!state) return TRANSITIONS.__none__;
+  if (!isSameLocalDay(state.timestamp, now.toISOString())) return TRANSITIONS.__none__;
+  return TRANSITIONS[state.type] || TRANSITIONS.__none__;
+}
+
+// ── UI: sincroniza botones (habilitado/deshabilitado + title) ──────
+function refreshButtonsState() {
+  const allowed = computeAllowedTypes(currentState);
+
+  document.querySelectorAll("button[data-att-type]").forEach(btn => {
+    _applyButtonState(btn, allowed, btn.dataset.attType);
+  });
+
+  const btnAus = document.getElementById("btnAusencia");
+  if (btnAus) _applyButtonState(btnAus, allowed, "Ausencia");
+
+  // Botón break proxy del HQCC — activo si Inicio Break O Fin Break están permitidos.
+  const btnBreak = document.getElementById("hqcc-break");
+  if (btnBreak) {
+    const canStartBreak = allowed.has("Inicio Break");
+    const canEndBreak = allowed.has("Fin Break");
+    const active = canStartBreak || canEndBreak;
+    btnBreak.disabled = !active;
+    btnBreak.classList.toggle("is-blocked", !active);
+    if (!active) {
+      btnBreak.title = BLOCK_REASON["Inicio Break"];
+    } else {
+      btnBreak.title = canEndBreak ? "Terminar break" : "Iniciar break";
+    }
+  }
+}
+
+function _applyButtonState(btn, allowedSet, type) {
+  if (!type) return;
+  const allowed = allowedSet.has(type);
+  btn.disabled = !allowed;
+  btn.classList.toggle("is-blocked", !allowed);
+  if (!allowed) {
+    btn.title = BLOCK_REASON[type] || "No disponible en este momento.";
+  } else {
+    btn.removeAttribute("title");
+  }
+}
+
+// ── UI: status bar y título de pestaña ─────────────────────────────
+function refreshStatusView() {
   const elState = document.getElementById("attStatusValue");
   const elLast  = document.getElementById("attLastValue");
-  if (!elState || !elLast) return;
 
-  const last = loadLast();
-  if (!last) {
-    elState.textContent = "— sin registro hoy —";
-    elLast.textContent = "—";
+  if (!currentState) {
+    if (elState) elState.textContent = "— sin registro hoy —";
+    if (elLast) elLast.textContent = "—";
     document.title = ORIGINAL_TITLE;
     stopStatusTicker();
+    refreshButtonsState();
     return;
   }
 
-  const d = new Date(last.timestamp);
+  const d = new Date(currentState.timestamp);
   const now = new Date();
-  const meta = STATUS_FOR_TYPE[last.type] || { verb: last.type };
-  const today = isSameLocalDay(last.timestamp, now.toISOString());
+  const meta = STATUS_FOR_TYPE[currentState.type] || { verb: currentState.type };
+  const today = isSameLocalDay(currentState.timestamp, now.toISOString());
 
-  // Estado vivo: si la última acción es de hoy, refleja el estado actual.
-  // Si es de otro día, mostramos "— sin registro hoy —" y dejamos "último" como referencia.
-  if (today) {
-    if (meta.state === "fuera") {
-      elState.textContent = `${meta.verb} a las ${formatTime(d)}`;
-      document.title = ORIGINAL_TITLE;
-      stopStatusTicker();
-    } else if (meta.state === "ausencia") {
-      elState.textContent = `Ausencia reportada`;
-      document.title = ORIGINAL_TITLE;
-      stopStatusTicker();
-    } else {
-      // Estados activos (trabajando, break, sin-luz): mostramos elapsed
-      // en el status bar para que el tiempo transcurrido sea visible.
-      elState.textContent = `${meta.verb} desde ${formatTime(d)} · ${formatElapsed(d, now)}`;
-
-      // Tab title: solo en estados cortos que se olvidan (break / sin-luz).
-      // Trabajando NO modifica el title — el nudge para Salida vive en el status bar.
-      if (meta.state === "break") {
-        document.title = `⏰ En break (${formatElapsedShort(d, now)}) — Hero Hub`;
-      } else if (meta.state === "sin-luz") {
-        document.title = `⚡ Sin luz (${formatElapsedShort(d, now)}) — Hero Hub`;
-      } else {
+  if (elState && elLast) {
+    if (today) {
+      if (meta.state === "fuera") {
+        elState.textContent = `${meta.verb} a las ${formatTime(d)}`;
         document.title = ORIGINAL_TITLE;
+        stopStatusTicker();
+      } else if (meta.state === "ausencia") {
+        elState.textContent = `Ausencia reportada`;
+        document.title = ORIGINAL_TITLE;
+        stopStatusTicker();
+      } else {
+        elState.textContent = `${meta.verb} desde ${formatTime(d)} · ${formatElapsed(d, now)}`;
+        if (meta.state === "break") {
+          document.title = `⏰ En break (${formatElapsedShort(d, now)}) — Hero Hub`;
+        } else {
+          document.title = ORIGINAL_TITLE;
+        }
+        startStatusTicker();
       }
-
-      startStatusTicker();
+    } else {
+      elState.textContent = "— sin registro hoy —";
+      document.title = ORIGINAL_TITLE;
+      stopStatusTicker();
     }
-  } else {
-    elState.textContent = "— sin registro hoy —";
-    document.title = ORIGINAL_TITLE;
-    stopStatusTicker();
+    elLast.textContent = `${currentState.type} · ${formatDateLong(d)} · ${formatTime(d)}`;
   }
 
-  elLast.textContent = `${last.type} · ${formatDateLong(d)} · ${formatTime(d)}`;
+  refreshButtonsState();
+}
+
+// ── Aplicar un nuevo estado (llamado por snapshot o por escritura local) ──
+function applyState(newState) {
+  currentState = newState;
+  saveCache(newState);
+  refreshStatusView();
+  if (window.hqccSyncBreak) window.hqccSyncBreak();
 }
 
 // ── Registro del evento (Firestore) ────────────────────────────────
 async function recordAttendance(type, btn, extras = {}) {
   const user = auth.currentUser;
   if (!user) { setFeedback("Sesión expirada. Recarga la página.", "err"); return; }
+
+  // Validación de transición: si el tipo NO está permitido, no escribimos.
+  const allowed = computeAllowedTypes(currentState);
+  if (!allowed.has(type)) {
+    const reason = BLOCK_REASON[type] || "No disponible en este momento.";
+    if (typeof heroToast !== "undefined") heroToast.info(reason);
+    setFeedback(reason, "err");
+    return;
+  }
 
   btn.classList.add("is-loading");
   btn.disabled = true;
@@ -191,15 +288,18 @@ async function recordAttendance(type, btn, extras = {}) {
       reason: extras.reason,
     });
     setFeedback(`✓ ${type} registrada a las ${formatTime(now)}`, "ok");
-    saveLast(type, now.toISOString(), extras);
+
+    // Optimistic update: aplicamos el estado nuevo YA para que la UI reaccione
+    // sin esperar al round-trip del snapshot. El snapshot llegará después
+    // y confirmará este estado.
+    applyState({ type, timestamp: now.toISOString(), ...extras });
+
     // Persistimos aparte el día de la primera Entrada para que
     // checkDailyPopup pueda detectarla aunque después se marquen Break/Salida
-    // y "hh-attendance-last" ya no sea "Entrada".
+    // y el estado actual ya no sea "Entrada".
     if (type === "Entrada") {
       try { localStorage.setItem("hh-attendance-entry-day", now.toISOString().slice(0, 10)); } catch {}
     }
-    refreshStatusFromStorage();
-    if (window.hqccSyncBreak) window.hqccSyncBreak();
 
     // Modal de break: se abre al iniciar y se cierra al terminar.
     if (type === "Inicio Break") openBreakModal(now);
@@ -225,7 +325,9 @@ async function recordAttendance(type, btn, extras = {}) {
     }
   } finally {
     btn.classList.remove("is-loading");
-    btn.disabled = false;
+    // No reactivamos btn.disabled aquí — refreshButtonsState (llamado
+    // desde applyState o desde el próximo snapshot) decide si va habilitado.
+    refreshButtonsState();
   }
 }
 
@@ -327,35 +429,33 @@ function openAbsenceModal(triggerBtn) {
 // En el banner HQ Command Center, el break tiene un solo botón visible
 // (#hqcc-break) que hace de proxy a los dos ocultos (#hqcc-break-in /
 // #hqcc-break-out) — que ya están cableados por data-att-type arriba.
-// El label se sincroniza leyendo el último evento de localStorage.
+// El label se sincroniza leyendo el estado actual en memoria.
 function initHqccBreakToggle() {
   const btn = document.getElementById("hqcc-break");
   if (!btn) return;
   const label = btn.querySelector(".hqcc-break-label");
 
   const onBreakNow = () => {
-    const last = loadLast();
-    if (!last) return false;
-    if (last.type !== "Inicio Break") return false;
-    return isSameLocalDay(last.timestamp, new Date().toISOString());
+    if (!currentState) return false;
+    if (currentState.type !== "Inicio Break") return false;
+    return isSameLocalDay(currentState.timestamp, new Date().toISOString());
   };
 
   const sync = () => {
     const on = onBreakNow();
     btn.classList.toggle("on", on);
-    // Labels cortos porque el botón vive en un grid de 3 columnas junto a Entrada/Salida.
     if (label) label.textContent = on ? "Volver" : "Break";
   };
 
   btn.addEventListener("click", () => {
+    // Si el proxy está bloqueado por transición, no hacemos nada.
+    if (btn.disabled) return;
     const proxyId = onBreakNow() ? "hqcc-break-out" : "hqcc-break-in";
     const proxy = document.getElementById(proxyId);
     if (proxy) proxy.click();
-    // Le damos un tick para que recordAttendance guarde en localStorage antes de releer
     setTimeout(sync, 80);
   });
 
-  window.addEventListener("storage", sync);
   window.hqccSyncBreak = sync;
   sync();
 }
@@ -450,6 +550,29 @@ function closeBreakModal() {
 window.openBreakModal = openBreakModal;
 window.closeBreakModal = closeBreakModal;
 
+// ── Suscripción a Firestore ────────────────────────────────────────
+function startSubscription(user) {
+  if (_unsubSnapshot) { _unsubSnapshot(); _unsubSnapshot = null; }
+  _unsubSnapshot = subscribeLastEvent({ email: user.email }, (evt, err) => {
+    if (err) {
+      // Si Firestore falla, mantenemos el cache y liberamos la promesa
+      // para que auth.js no quede colgado esperando.
+      _markReady({ ok: false, err });
+      return;
+    }
+    const newState = evt
+      ? {
+          type: evt.type,
+          timestamp: evt.timestamp.toISOString(),
+          absenceDate: evt.absenceDate,
+          reason: evt.reason,
+        }
+      : null;
+    applyState(newState);
+    _markReady({ ok: true });
+  });
+}
+
 // ── Init ───────────────────────────────────────────────────────────
 function init() {
   // Botones genéricos: data-att-type indica qué tipo registrar
@@ -462,19 +585,44 @@ function init() {
   const btnAusencia = document.getElementById("btnAusencia");
   if (btnAusencia) {
     btnAusencia.addEventListener("click", () => {
+      const allowed = computeAllowedTypes(currentState);
+      if (!allowed.has("Ausencia")) {
+        if (typeof heroToast !== "undefined") heroToast.info(BLOCK_REASON["Ausencia"]);
+        return;
+      }
       btnAusencia.disabled = true;
       openAbsenceModal(btnAusencia);
     });
   }
 
   initHqccBreakToggle();
-  refreshStatusFromStorage();
+
+  // Pinta con cache mientras carga el snapshot.
+  const cached = loadCache();
+  if (cached) currentState = cached;
+  refreshStatusView();
 
   // Si al cargar la página el usuario ya está en break hoy, reabre el modal.
-  const last = loadLast();
-  if (last && last.type === "Inicio Break" && isSameLocalDay(last.timestamp, new Date().toISOString())) {
-    openBreakModal(last.timestamp);
+  if (currentState && currentState.type === "Inicio Break"
+      && isSameLocalDay(currentState.timestamp, new Date().toISOString())) {
+    openBreakModal(currentState.timestamp);
   }
+
+  // Cuando auth tenga usuario, arrancamos la suscripción a Firestore.
+  if (auth.currentUser) {
+    startSubscription(auth.currentUser);
+  } else {
+    const unsub = auth.onAuthStateChanged(user => {
+      if (user) {
+        startSubscription(user);
+        unsub();
+      }
+    });
+  }
+
+  // Safety net: si Firestore tarda demasiado en responder, liberamos la
+  // promesa hhAttendanceReady igual — auth.js caerá al fallback de cache.
+  setTimeout(() => _markReady({ ok: false, reason: "timeout" }), 3500);
 }
 
 if (document.readyState === "loading") {

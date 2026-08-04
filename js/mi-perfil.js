@@ -318,9 +318,9 @@ function renderAttendanceKPIs(stats) {
     { label: "Prom/día",      value: fmtHoursMinutes(stats.avgWorkPerDay) },
     { label: "Breaks",        value: stats.totalBreaks },
     { label: "Brk-prom",      value: fmtHoursMinutes(stats.avgBreakDuration) },
-    { label: "Cortes luz",    value: stats.totalOutages },
     { label: "Ausencias",     value: stats.totalAbsences },
     { label: "Entrada prom",  value: fmtTimeOfDay(stats.avgEntrada) },
+    { label: "Salida prom",   value: fmtTimeOfDay(stats.avgSalida) },
   ];
   document.getElementById("mp-att-kpis").innerHTML = items.map(k => `
     <div class="mp-att-kpi">
@@ -333,14 +333,13 @@ function renderAttendanceKPIs(stats) {
 function renderAttendanceTable(stats) {
   const tbody = document.getElementById("mp-att-detail-tbody");
   if (!stats.dailyStats.length) {
-    tbody.innerHTML = `<tr><td colspan="7" class="mp-att-cell-dim" style="text-align:center;padding:24px;">Sin registros en este periodo.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="mp-att-cell-dim" style="text-align:center;padding:24px;">Sin registros en este periodo.</td></tr>`;
     return;
   }
   tbody.innerHTML = stats.dailyStats.map(d => {
     const dateStr = d.date.toLocaleDateString("es", { day: "2-digit", month: "2-digit", year: "2-digit" });
     const dim = `<span class="mp-att-cell-dim">—</span>`;
     const breaksCell = d.breaksCount ? `${d.breaksCount} (${fmtHoursMinutes(d.breaksMs)})` : dim;
-    const outagesCell = d.outages ? `${d.outages} (${fmtHoursMinutes(d.outagesMs)})` : dim;
     const absentCell = d.absent ? `<span class="mp-att-cell-absent">Sí</span>` : dim;
     let workedCell = dim;
     if (d.worked > 0) {
@@ -354,7 +353,6 @@ function renderAttendanceTable(stats) {
       <td>${d.salida ? fmtTime(d.salida) : dim}</td>
       <td>${workedCell}</td>
       <td>${breaksCell}</td>
-      <td>${outagesCell}</td>
       <td>${absentCell}</td>
     </tr>`;
   }).join("");

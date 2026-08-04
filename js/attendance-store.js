@@ -21,7 +21,7 @@
 
 import { auth, db } from "./firebase-config.js";
 import {
-  collection, addDoc, setDoc, doc, getDocs, query, where, orderBy, Timestamp
+  collection, addDoc, setDoc, doc, getDocs, query, where, orderBy, limit, onSnapshot, Timestamp
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const COLLECTION = "attendance";
@@ -116,6 +116,62 @@ function docToPlainEvent(data) {
     tipo: data.type,
     fechaObjetivo: data.absenceDate || null,
     motivo: data.reason || null,
+  };
+}
+
+// Devuelve el evento más reciente del usuario (o null si nunca marcó).
+// Formato crudo del doc — no aplica docToPlainEvent porque los callers
+// (attendance.js) quieren el objeto original con Timestamp y tipos nativos.
+//   { id, type, timestamp: Date, email, name, absenceDate, reason }
+export async function fetchLastEvent({ email }) {
+  if (!email) throw new Error("email es obligatorio");
+  const q = query(
+    collection(db, COLLECTION),
+    where("email", "==", email),
+    orderBy("timestamp", "desc"),
+    limit(1)
+  );
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  return _rawEventFromDoc(snap.docs[0]);
+}
+
+// Suscribe al último evento del usuario en tiempo real. Cada vez que
+// cambia (marca nueva desde cualquier device), el callback recibe el
+// evento actualizado (o null si aún no existe).
+// Devuelve la función de unsubscribe.
+export function subscribeLastEvent({ email }, callback) {
+  if (!email) throw new Error("email es obligatorio");
+  const q = query(
+    collection(db, COLLECTION),
+    where("email", "==", email),
+    orderBy("timestamp", "desc"),
+    limit(1)
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      if (snap.empty) { callback(null); return; }
+      callback(_rawEventFromDoc(snap.docs[0]));
+    },
+    (err) => {
+      console.error("subscribeLastEvent:", err);
+      callback(null, err);
+    }
+  );
+}
+
+function _rawEventFromDoc(docSnap) {
+  const data = docSnap.data();
+  const ts = data.timestamp instanceof Timestamp ? data.timestamp.toDate() : new Date(data.timestamp);
+  return {
+    id: docSnap.id,
+    type: data.type,
+    timestamp: ts,
+    email: data.email,
+    name: data.name,
+    absenceDate: data.absenceDate || null,
+    reason: data.reason || null,
   };
 }
 

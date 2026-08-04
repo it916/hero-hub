@@ -238,9 +238,11 @@ function updateDateTime() {
 }
 
 // ══ MODAL INICIO DE JORNADA (antes: pop-up mensaje del día) ══
-// Se muestra si el usuario abre el Hub y aún no ha marcado Entrada hoy.
-// La condición se lee de localStorage (hh-attendance-last) que attendance.js
-// mantiene actualizado — evitamos un read extra a Firestore.
+// Se muestra si el usuario abre el Hub y aún no ha marcado asistencia hoy.
+// Desde v2.24.0 esperamos a window.hhAttendanceReady (que attendance.js
+// resuelve tras el primer snapshot de Firestore) para decidir con la
+// verdad del backend, no solo con el cache local. Si Firestore tarda
+// demasiado, caemos al fallback de localStorage.
 
 function _isSameLocalDay(isoA, isoB) {
   const a = new Date(isoA);
@@ -250,7 +252,7 @@ function _isSameLocalDay(isoA, isoB) {
       && a.getDate() === b.getDate();
 }
 
-function _hasEntradaToday() {
+function _hasAttendanceToday() {
   try {
     // Flag persistente: cada vez que se marca Entrada, attendance.js escribe
     // aquí el día (YYYY-MM-DD). Esto sobrevive a Break/Salida posteriores.
@@ -258,20 +260,28 @@ function _hasEntradaToday() {
     const todayKey = new Date().toISOString().slice(0, 10);
     if (entryDay === todayKey) return true;
 
-    // Fallback para usuarios que ya marcaron Entrada hoy pero antes de este
-    // fix (no tienen el flag nuevo): si el último evento es Entrada de hoy,
-    // también cuenta.
+    // Fallback: si el último evento cacheado es de hoy Y es de tipo activo,
+    // cuenta como que ya marcó algo hoy.
     const raw = localStorage.getItem("hh-attendance-last");
     if (!raw) return false;
     const last = JSON.parse(raw);
-    if (last.type !== "Entrada") return false;
+    if (!last.type) return false;
     return _isSameLocalDay(last.timestamp, new Date().toISOString());
   } catch { return false; }
 }
 
 async function checkDailyPopup() {
   try {
-    if (_hasEntradaToday()) return;
+    // Esperar el primer snapshot de asistencia (o timeout) para que la
+    // decisión use la verdad de Firestore. Timeout 2s → fallback cache.
+    if (window.hhAttendanceReady && typeof window.hhAttendanceReady.then === "function") {
+      await Promise.race([
+        window.hhAttendanceReady,
+        new Promise(r => setTimeout(r, 2000)),
+      ]);
+    }
+
+    if (_hasAttendanceToday()) return;
 
     // Si el usuario está en Break, attendance.js abrirá el break-modal.
     // No mostrar el modal de inicio de jornada encima.
