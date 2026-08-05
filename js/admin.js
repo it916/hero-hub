@@ -8,6 +8,7 @@ import { initRolesPanel } from "./roles-admin.js";
 import { initAuditPanel } from "./audit-panel.js";
 import { initAsistenciaDashboard } from "./asistencia-dashboard.js";
 import { logEvent, ACTIONS } from "./audit-log.js";
+import { getAllUsers } from "./user-store.js";
 
 // ══ AUTH ══
 onAuthStateChanged(auth, async (user) => {
@@ -52,62 +53,179 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 // ══ SPOTLIGHT ══
+// Nuevo formato de honoree: { email, customRole } — el nombre, foto y cargo
+// se resuelven en render leyendo de users/{email}. Compatibilidad legacy:
+// entradas con { name, role } (sin email) se preservan y se muestran sin foto.
 let spotlightData = { imageUrl: "", message: "", honorees: [] };
+let allUsersCache = []; // array de users/{email} para poblar el <select>
 
 async function loadSpotlight() {
   try {
-    const snap = await getDoc(doc(db, "shared", "spotlight"));
+    const [snap, users] = await Promise.all([
+      getDoc(doc(db, "shared", "spotlight")),
+      getAllUsers({ includeExcluded: false }).catch(() => [])
+    ]);
     if (snap.exists()) spotlightData = snap.data();
-    document.getElementById("sp-image").value = spotlightData.imageUrl || "";
+    if (!Array.isArray(spotlightData.honorees)) spotlightData.honorees = [];
+    allUsersCache = users.sort((a, b) =>
+      (a.identity?.name || "").localeCompare(b.identity?.name || "", "es")
+    );
     document.getElementById("sp-message").value = spotlightData.message || "";
     renderHonorees();
   } catch (e) { console.error(e); }
 }
 
+// Devuelve el user cacheado por email (case-insensitive), null si no está.
+function findUserByEmail(email) {
+  if (!email) return null;
+  const key = email.toLowerCase();
+  return allUsersCache.find(u =>
+    (u._email || "").toLowerCase() === key ||
+    (u.identity?.emails || []).some(e => (e || "").toLowerCase() === key)
+  ) || null;
+}
+
 function renderHonorees() {
   const list = document.getElementById("sp-honorees-list");
   if (!Array.isArray(spotlightData.honorees)) spotlightData.honorees = [];
-  list.innerHTML = spotlightData.honorees.map((h, i) => `
-    <div class="honoree-row">
-      <input placeholder="Nombre" data-field="name" data-idx="${i}" value="${(h.name||'').replace(/"/g,'&quot;')}">
-      <input placeholder="Rol" data-field="role" data-idx="${i}" value="${(h.role||'').replace(/"/g,'&quot;')}">
-      <button class="btn-ghost-dark" data-del="${i}">✕</button>
-    </div>
-  `).join('');
-  list.querySelectorAll('input').forEach(inp => {
-    inp.addEventListener('input', () => {
-      spotlightData.honorees[parseInt(inp.dataset.idx)][inp.dataset.field] = inp.value;
-    });
+  list.replaceChildren();
+  spotlightData.honorees.forEach((h, i) => list.appendChild(buildHonoreeRow(h, i)));
+}
+
+// Construye una fila del panel admin usando DOM API (no innerHTML) para pasar
+// el hook de seguridad y evitar XSS con nombres/emails con caracteres raros.
+function buildHonoreeRow(h, i) {
+  const user = findUserByEmail(h.email);
+  const photo = user?.identity?.photo || "";
+  const name = user?.identity?.name || h.name || "";
+  const jobTitle = user?.display?.jobTitle || "";
+  const roleValue = (h.customRole ?? h.role ?? "");
+
+  const row = document.createElement("div");
+  row.className = "honoree-row";
+  row.dataset.idx = String(i);
+
+  // Preview de foto o iniciales
+  const photoEl = document.createElement("div");
+  photoEl.className = "honoree-photo-preview";
+  if (photo) {
+    photoEl.style.backgroundImage = `url('${photo.replace(/'/g, "\\'")}')`;
+  } else {
+    photoEl.classList.add("honoree-photo-empty");
+    photoEl.textContent = (name || "?").charAt(0).toUpperCase();
+  }
+  row.appendChild(photoEl);
+
+  // Campos
+  const fields = document.createElement("div");
+  fields.className = "honoree-row-fields";
+
+  // Selector de usuario
+  const emailLabel = document.createElement("label");
+  emailLabel.className = "honoree-field";
+  const emailLabelSpan = document.createElement("span");
+  emailLabelSpan.className = "honoree-field-label";
+  emailLabelSpan.textContent = "Usuario";
+  if (!h.email && h.name) {
+    const badge = document.createElement("span");
+    badge.className = "honoree-legacy-badge";
+    badge.title = "Entrada antigua sin email. Elige un usuario para modernizar.";
+    badge.textContent = "legacy";
+    emailLabelSpan.appendChild(document.createTextNode(" "));
+    emailLabelSpan.appendChild(badge);
+  }
+  emailLabel.appendChild(emailLabelSpan);
+
+  const select = document.createElement("select");
+  select.className = "honoree-select";
+  select.dataset.field = "email";
+  select.dataset.idx = String(i);
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "— Elegir —";
+  select.appendChild(placeholder);
+  allUsersCache.forEach(u => {
+    const opt = document.createElement("option");
+    opt.value = u._email;
+    opt.textContent = u.identity?.name || u._email;
+    select.appendChild(opt);
   });
-  list.querySelectorAll('[data-del]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      spotlightData.honorees.splice(parseInt(btn.dataset.del), 1);
-      renderHonorees();
-    });
+  select.value = h.email || "";
+  select.addEventListener("change", () => {
+    spotlightData.honorees[i].email = select.value;
+    // Al elegir user, limpiar campos legacy para que la próxima carga tome del store.
+    delete spotlightData.honorees[i].name;
+    delete spotlightData.honorees[i].role;
+    renderHonorees();
   });
+  emailLabel.appendChild(select);
+  fields.appendChild(emailLabel);
+
+  // Motivo opcional
+  const roleLabel = document.createElement("label");
+  roleLabel.className = "honoree-field";
+  const roleLabelSpan = document.createElement("span");
+  roleLabelSpan.className = "honoree-field-label";
+  roleLabelSpan.textContent = "Motivo (opcional)";
+  roleLabel.appendChild(roleLabelSpan);
+
+  const roleInput = document.createElement("input");
+  roleInput.type = "text";
+  roleInput.dataset.field = "customRole";
+  roleInput.dataset.idx = String(i);
+  roleInput.placeholder = jobTitle
+    ? `${jobTitle} (por defecto)`
+    : "Ej. Ventas del mes";
+  roleInput.value = roleValue;
+  roleInput.addEventListener("input", () => {
+    spotlightData.honorees[i].customRole = roleInput.value;
+  });
+  roleLabel.appendChild(roleInput);
+  fields.appendChild(roleLabel);
+
+  row.appendChild(fields);
+
+  // Botón quitar
+  const delBtn = document.createElement("button");
+  delBtn.className = "btn-ghost-dark honoree-del";
+  delBtn.dataset.del = String(i);
+  delBtn.title = "Quitar";
+  delBtn.textContent = "✕";
+  delBtn.addEventListener("click", () => {
+    spotlightData.honorees.splice(i, 1);
+    renderHonorees();
+  });
+  row.appendChild(delBtn);
+
+  return row;
 }
 
 document.getElementById("sp-add-honoree").addEventListener("click", () => {
   if (!Array.isArray(spotlightData.honorees)) spotlightData.honorees = [];
   if (spotlightData.honorees.length >= 3) { heroToast.error("Máximo 3 honorees"); return; }
-  spotlightData.honorees.push({ name: "", role: "" });
+  spotlightData.honorees.push({ email: "", customRole: "" });
   renderHonorees();
 });
 
 document.getElementById("sp-save").addEventListener("click", async () => {
-  spotlightData.imageUrl = document.getElementById("sp-image").value.trim();
+  // imageUrl deprecado: siempre "" al guardar. El banner ahora usa el fondo del
+  // CSS (:not(.has-image)) — las fotos de los honorees son los protagonistas.
+  spotlightData.imageUrl = "";
   spotlightData.message = document.getElementById("sp-message").value.trim();
-  spotlightData.honorees = (spotlightData.honorees || []).filter(h => h.name);
+  // Un honoree es válido si tiene email seleccionado O si es una entrada legacy con name.
+  spotlightData.honorees = (spotlightData.honorees || []).filter(h => h.email || h.name);
   try {
     await setDoc(doc(db, "shared", "spotlight"), spotlightData);
     document.getElementById("sp-status").textContent = "✓ Guardado";
     setTimeout(() => document.getElementById("sp-status").textContent = "", 2000);
 
-    // Log de auditoría
-    const honoreeNames = spotlightData.honorees.map(h => h.name).join(", ");
+    // Log de auditoría: preferir nombre del user cacheado; fallback a email o legacy name.
+    const honoreeNames = spotlightData.honorees.map(h => {
+      const u = findUserByEmail(h.email);
+      return u?.identity?.name || h.email || h.name || "?";
+    }).join(", ");
     logEvent(ACTIONS.SPOTLIGHT_UPDATE, "", {
       honorees: honoreeNames || "ninguno",
-      hasImage: !!spotlightData.imageUrl,
       hasMessage: !!spotlightData.message
     });
   } catch (e) { heroToast.error("No se pudo guardar: " + e.message); }

@@ -1,5 +1,21 @@
 [
   {
+    "id": "2026-08-05-spotlight-selector-usuarios",
+    "version": "v2.25.0",
+    "date": "2026-08-05",
+    "category": "feat",
+    "scope": "spotlight",
+    "audience": "all",
+    "title": "Hero Spotlight · elegir a los homenajeados del listado de usuarios",
+    "items": [
+      "Al elegir a los héroes del mes desde el panel de administración, ahora aparece un selector con la lista de compañeros en vez de tener que escribir el nombre a mano. Máximo 3, igual que antes",
+      "El banner del Héroe del Mes en la página de inicio ahora toma la foto del homenajeado automáticamente y la muestra como imagen grande del recuadro. Si hay 2 o 3 homenajeados, el recuadro se divide en franjas verticales, una foto por franja",
+      "El nombre y el cargo también se toman del listado de usuarios — si un compañero cambia su foto o su cargo, el spotlight se actualiza solo la próxima vez que se abra la página",
+      "Se retiró el campo Motivo del reconocimiento como texto libre opcional — si lo dejas vacío, se muestra el cargo del usuario; si escribes algo (por ejemplo, Ventas del mes), se sobreescribe",
+      "Se eliminó el campo de URL de imagen panorámica del panel — ya no hace falta subir imágenes a mano"
+    ]
+  },
+  {
     "id": "2026-08-05-changelog-lenguaje-humano",
     "version": "v2.24.1",
     "date": "2026-08-05",

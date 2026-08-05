@@ -285,6 +285,17 @@ body[data-theme="dark"] .hero-topbar { background:rgba(15,42,51,.92); }
 .spotlight-honorees { display:flex; flex-direction:column; gap:6px; }
 .spotlight-honorees[data-count="2"], .spotlight-honorees[data-count="3"] { gap:4px; }
 .honoree-item { display:flex; flex-direction:column; }
+
+/* Fotos del/los honorees como imagen grande del banner. Cuando hay 2-3
+   fotos, se dividen en franjas verticales; con 1, la franja ocupa todo. */
+.spotlight-image { display:flex; }
+.spotlight-image-slice {
+  flex:1; height:100%;
+  background-size:cover; background-position:center 20%; background-repeat:no-repeat;
+}
+.spotlight-image-slice + .spotlight-image-slice {
+  border-left:1px solid rgba(0,0,0,.25);
+}
 .honoree-name-display {
   font-family:var(--display); font-style:italic; font-weight:900; line-height:1.05;
   letter-spacing:-.03em; text-shadow:0 4px 20px rgba(0,0,0,.5);
@@ -363,9 +374,52 @@ body[data-theme="dark"] .hero-topbar { background:rgba(15,42,51,.92); }
 
 /* Honorees admin */
 .sp-preview { width:100%; height:200px; background-size:cover; background-position:center 25%; border-radius:14px; border:1px solid var(--border); margin-top:8px; margin-bottom:18px; }
-.honoree-row { display:grid; grid-template-columns:32px 1fr 1fr auto; gap:10px; align-items:center; margin-bottom:10px; padding:12px; background:var(--paper); border-radius:12px; border:1px solid var(--border); }
+.honoree-row {
+  display:grid; grid-template-columns:56px 1fr auto; gap:14px; align-items:center;
+  margin-bottom:10px; padding:14px; background:var(--paper);
+  border-radius:12px; border:1px solid var(--border);
+}
 .honoree-num { width:32px; height:32px; border-radius:50%; background:var(--cyan); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px; }
-.honoree-row input { margin-top:0; padding:10px 12px; }
+.honoree-photo-preview {
+  width:56px; height:56px; border-radius:50%;
+  background-size:cover; background-position:center;
+  border:2px solid var(--border-2);
+}
+.honoree-photo-preview.honoree-photo-empty {
+  background:var(--paper); color:var(--muted);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--display); font-weight:800; font-size:24px;
+  border-style:dashed;
+}
+.honoree-row-fields { display:grid; grid-template-columns:1fr 1fr; gap:12px; min-width:0; }
+.honoree-field { display:flex; flex-direction:column; gap:4px; margin:0; text-transform:none; letter-spacing:0; }
+.honoree-field-label {
+  font-size:10.5px; font-weight:700; color:var(--muted);
+  letter-spacing:1px; text-transform:uppercase;
+  display:flex; align-items:center; gap:6px;
+}
+.honoree-legacy-badge {
+  display:inline-flex; align-items:center; padding:2px 7px; border-radius:6px;
+  background:rgba(245,184,48,.18); color:#a06904;
+  font-size:9px; font-weight:800; letter-spacing:1px; text-transform:uppercase;
+  border:1px solid rgba(245,184,48,.4);
+}
+.honoree-row select.honoree-select,
+.honoree-row input {
+  margin-top:0; padding:10px 12px;
+  border:1.5px solid var(--border-2); border-radius:10px;
+  font-family:inherit; font-size:13px;
+  background:var(--card); color:var(--text);
+  width:100%; box-sizing:border-box;
+}
+.honoree-row select.honoree-select:focus,
+.honoree-row input:focus { outline:none; border-color:var(--cyan); }
+.honoree-del {
+  align-self:center;
+  width:36px; height:36px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; line-height:1;
+}
 .honoree-row .btn-small-danger { margin:0; }
 
 /* RESPONSIVE */
@@ -382,8 +436,9 @@ body[data-theme="dark"] .hero-topbar { background:rgba(15,42,51,.92); }
 @media (max-width:600px) {
   .topbar-meta .meta-chip:not(.mono) { display:none; }
   .tools-grid { grid-template-columns:repeat(3,1fr); }
-  .honoree-row { grid-template-columns:32px 1fr auto; }
-  .honoree-row .honoree-role { grid-column:2/4; margin-top:8px; }
+  .honoree-row { grid-template-columns:48px 1fr auto; gap:10px; padding:10px; }
+  .honoree-photo-preview { width:48px; height:48px; font-size:20px; }
+  .honoree-row-fields { grid-template-columns:1fr; gap:8px; }
 }
 /* ═══════════════════════════════════════════
    AGREGAR ESTO AL FINAL DE tu css/styles.css
@@ -2605,16 +2660,6 @@ body[data-theme="dark"] .ad-power-item.ongoing  {
 .msg-row-text { color:var(--text); font-size:13.5px; margin-bottom:4px; }
 .msg-row-meta { font-family:var(--mono); font-size:11px; color:var(--muted); }
 
-/* Honoree row */
-.honoree-row {
-  display:grid; grid-template-columns:1fr 1fr auto;
-  gap:8px; margin-bottom:6px;
-}
-.honoree-row input {
-  padding:8px 12px; border:1px solid var(--border);
-  border-radius:8px; font-family:inherit; font-size:13px;
-  background:var(--card); color:var(--text);
-}
 /* ═══════════════════════════════════════════
    AGREGAR AL FINAL DE css/styles.css
    Hero Hub v5.0 — Rediseño de Index

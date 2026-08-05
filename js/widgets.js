@@ -1,5 +1,6 @@
 import { db, auth } from "./firebase-config.js";
 import { doc, updateDoc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getAllUsers } from "./user-store.js";
 
 const ARSENAL_DEFAULT = {
   google: [
@@ -33,16 +34,19 @@ const ARSENAL_DEFAULT = {
 const ADMIN_EMAILS = ["it@heroinsuranceusa.com"];
 
 let SHARED_DATA = { spotlight:{imageUrl:'',message:'',honorees:[]}, messages:[], team:[] };
+let ALL_USERS = []; // cache de users/{email} para resolver foto/nombre/cargo por email en el banner Spotlight
 let currentUserData = null;
 let isAdmin = false;
 
 async function loadSharedData() {
   try {
-    const [sp, ms, tm] = await Promise.all([
+    const [sp, ms, tm, users] = await Promise.all([
       getDoc(doc(db, "shared", "spotlight")),
       getDoc(doc(db, "shared", "messages")),
-      getDoc(doc(db, "shared", "team"))
+      getDoc(doc(db, "shared", "team")),
+      getAllUsers({ includeExcluded: false }).catch(() => [])
     ]);
+    ALL_USERS = users || [];
     if (sp.exists()) {
       const d = sp.data();
       if (d.honorees) SHARED_DATA.spotlight = { imageUrl:d.imageUrl||'', message:d.message||'', honorees:d.honorees||[] };
@@ -185,6 +189,11 @@ function openAddToolModal(group) {
 }
 
 // ═══ SPOTLIGHT ═══
+// Cada honoree puede venir como:
+//   - Formato nuevo: { email, customRole? } — resolvemos foto/nombre/cargo desde ALL_USERS
+//   - Formato legacy: { name, role? } — matcheamos por nombre contra el store
+// La foto del user va como IMAGEN GRANDE de fondo del banner (dividida en
+// columnas si hay 2-3 honorees). En el content solo aparece nombre + cargo.
 function renderSpotlight() {
   const s = SHARED_DATA.spotlight;
   const banner = document.getElementById('spotlight-banner');
@@ -192,24 +201,113 @@ function renderSpotlight() {
   const honoreesEl = document.getElementById('sp-honorees');
   const msgEl = document.getElementById('sp-message');
 
+  // Resolver cada honoree contra el store (una vez, para reusar en bg + text)
+  const resolved = (s.honorees || []).map(resolveHonoree);
+
+  // Fondo: 1 foto = una franja; 2-3 fotos = columnas verticales. Si nadie tiene foto,
+  // limpiamos el bg y el CSS :not(.has-image) toma control (gradient teal + acento dorado).
   if (imgBg) {
-    if (s.imageUrl) { imgBg.style.backgroundImage = `url(${s.imageUrl})`; banner?.classList.add('has-image'); }
-    else { imgBg.style.backgroundImage = ''; banner?.classList.remove('has-image'); }
-  }
-  if (honoreesEl) {
-    if (s.honorees?.length) {
-      honoreesEl.dataset.count = s.honorees.length;
-      honoreesEl.innerHTML = s.honorees.map(h => `
-        <div class="honoree-item">
-          <div class="honoree-name-display">${h.name || ''}</div>
-          ${h.role ? `<div class="honoree-role-display">${h.role}</div>` : ''}
-        </div>
-      `).join('');
+    imgBg.replaceChildren();
+    imgBg.style.backgroundImage = '';
+    const withPhoto = resolved.filter(r => r.photo);
+    if (withPhoto.length) {
+      imgBg.dataset.count = String(withPhoto.length);
+      withPhoto.forEach(r => {
+        const slice = document.createElement('div');
+        slice.className = 'spotlight-image-slice';
+        slice.style.backgroundImage = `url('${r.photo.replace(/'/g, "\\'")}')`;
+        imgBg.appendChild(slice);
+      });
+      banner?.classList.add('has-image');
     } else {
-      honoreesEl.innerHTML = '<div class="honoree-name-display">—</div>';
+      delete imgBg.dataset.count;
+      banner?.classList.remove('has-image');
+    }
+  }
+
+  if (honoreesEl) {
+    honoreesEl.replaceChildren();
+    if (resolved.length) {
+      honoreesEl.dataset.count = resolved.length;
+      resolved.forEach(r => honoreesEl.appendChild(buildHonoreeDisplay(r)));
+    } else {
+      const empty = document.createElement('div');
+      empty.className = 'honoree-name-display';
+      empty.textContent = '—';
+      honoreesEl.appendChild(empty);
+      delete honoreesEl.dataset.count;
     }
   }
   if (msgEl) msgEl.textContent = s.message || '';
+}
+
+// Resuelve un honoree raw ({email, customRole} o legacy {name, role}) a un
+// objeto plano { name, photo, displayRole } listo para render.
+function resolveHonoree(h) {
+  let user = h.email ? findUserByEmail(h.email) : null;
+  if (!user && h.name) user = findUserByName(h.name);
+  if (!user && (h.email || h.name)) {
+    console.info('[spotlight] honoree sin match en users:', h.email || h.name);
+  }
+  const name = user?.identity?.name || h.name || '';
+  const photo = user?.identity?.photo || '';
+  const jobTitle = user?.display?.jobTitle || '';
+  // customRole tiene prioridad; si está vacío, cae al cargo del user; si no, al role legacy.
+  const displayRole = (h.customRole || '').trim() || jobTitle || h.role || '';
+  return { name, photo, displayRole };
+}
+
+// Construye un .honoree-item (solo texto: nombre + cargo). Sin miniatura —
+// la foto vive en el fondo del banner.
+function buildHonoreeDisplay(r) {
+  const item = document.createElement('div');
+  item.className = 'honoree-item';
+
+  const nameEl = document.createElement('div');
+  nameEl.className = 'honoree-name-display';
+  nameEl.textContent = r.name || '—';
+  item.appendChild(nameEl);
+
+  if (r.displayRole) {
+    const roleEl = document.createElement('div');
+    roleEl.className = 'honoree-role-display';
+    roleEl.textContent = r.displayRole;
+    item.appendChild(roleEl);
+  }
+
+  return item;
+}
+
+// Busca un user en el cache por email (docId o alias en identity.emails[]).
+function findUserByEmail(email) {
+  if (!email) return null;
+  const key = email.toLowerCase();
+  return ALL_USERS.find(u =>
+    (u._email || "").toLowerCase() === key ||
+    (u.identity?.emails || []).some(e => (e || "").toLowerCase() === key)
+  ) || null;
+}
+
+// Fallback para honorees legacy que solo tienen name (sin email). Matchea
+// case-insensitive + sin acentos + tolerante a orden ("Marge Sulbarán" ==
+// "Marge Sulbaran" == "SULBARAN, Marge"). Solo se usa cuando findUserByEmail
+// falla — no toca la ruta feliz del formato nuevo.
+function findUserByName(name) {
+  if (!name) return null;
+  const norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z\s]/g, '').trim();
+  const target = norm(name);
+  if (!target) return null;
+  // Match exacto primero
+  let hit = ALL_USERS.find(u => norm(u.identity?.name) === target);
+  if (hit) return hit;
+  // Match por primer nombre + primer apellido (tolerante a "Marge Sulbarán" vs "Marge de los Ángeles Sulbarán")
+  const parts = target.split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return null;
+  const [first, last] = [parts[0], parts[parts.length - 1]];
+  return ALL_USERS.find(u => {
+    const uparts = norm(u.identity?.name).split(/\s+/).filter(Boolean);
+    return uparts[0] === first && uparts[uparts.length - 1] === last;
+  }) || null;
 }
 
 // ═══ CUMPLEAÑOS (desde shared/team) ═══
