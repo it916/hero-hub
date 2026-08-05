@@ -1,19 +1,32 @@
 [
   {
+    "id": "2026-08-05-changelog-lenguaje-humano",
+    "version": "v2.24.1",
+    "date": "2026-08-05",
+    "category": "docs",
+    "scope": "changelog",
+    "audience": "all",
+    "title": "Changelog · lenguaje más claro y digerible para todo el equipo",
+    "items": [
+      "Reescribimos las 75 entradas del historial de cambios con un lenguaje más simple. Fuera nombres técnicos de archivos, funciones y detalles internos que no aportaban a entender qué cambió para ti",
+      "Cada bullet ahora explica qué pasó y para qué te sirve, no cómo se hizo por dentro",
+      "Los emojis decorativos que sobraban se retiraron. Solo quedan los que refuerzan la idea (por ejemplo, ☕ para break, 🎂 para cumpleaños)",
+      "El historial completo queda con el mismo tono, más fácil de hojear"
+    ]
+  },
+  {
     "id": "2026-08-04-attendance-transitions-crossdevice",
     "version": "v2.24.0",
     "date": "2026-08-04",
     "category": "feat",
     "scope": "asistencia",
     "audience": "all",
-    "title": "Mi Asistencia · validación de transiciones + sincronización cross-device",
+    "title": "Mi Asistencia · botones más inteligentes y sincronización entre dispositivos",
     "items": [
-      "🔒 Ya no se puede marcar 'Entrada' por error dos veces. Después de la Entrada solo aparecen habilitados 'Break' y 'Salida'. Después de 'Salida' o 'Ausencia' los botones quedan bloqueados hasta el día siguiente. Después de 'Inicio Break' solo se habilita 'Fin Break' (=Volver)",
-      "🖥️📱 El último registro ahora se ve igual en TODOS los dispositivos donde estés logueado. Si marcas la Entrada desde el celular, la computadora la refleja en segundos. Antes vivía solo en localStorage y no cruzaba entre dispositivos",
-      "⚙️ Detrás: nueva función subscribeLastEvent en attendance-store.js con Firestore onSnapshot; máquina de transiciones válidas en attendance.js; auth.js espera al primer snapshot antes de decidir si mostrar el modal de inicio de jornada (timeout 2s → fallback a cache local)",
-      "🚫 Se descontinuaron los eventos 'Corte Luz Inicio' y 'Corte Luz Fin'. Ya no se registran ni se muestran en KPIs (Mi perfil), tiles del dashboard admin ni donuts. Los eventos históricos permanecen en Firestore por auditoría pero se ignoran en cálculos",
-      "🧹 admin.html: se retiró el tile 'Sin luz' del dashboard y la sección 'Cortes de luz'. mi-perfil.html: se quitó la columna 'Cortes' de la tabla y el KPI 'Cortes luz' (se añade 'Salida prom' en su lugar)",
-      "Bump v2.23.5 → v2.24.0"
+      "Ya no se puede marcar dos veces la misma acción por error. Después de Entrada solo se habilitan Break y Salida. Después de Salida o Ausencia los botones quedan en pausa hasta el día siguiente. Después de Inicio de Break solo se habilita Volver del Break",
+      "Tu asistencia ahora se ve igual en todos tus dispositivos al mismo tiempo. Si marcas Entrada desde el celular, la computadora lo refleja en segundos",
+      "Se retiró el registro de Corte de Luz — dejó de usarse. Los cortes viejos siguen guardados pero ya no aparecen en estadísticas ni en el dashboard de administración",
+      "En Mi Perfil se reemplazó la columna Cortes por Salida promedio"
     ]
   },
   {
@@ -23,13 +36,11 @@
     "category": "feat",
     "scope": "admin",
     "audience": "admin",
-    "title": "Toggle 'Ocultar del módulo Equipo' en modal de Usuario",
+    "title": "Modal de Usuario · nueva opción para ocultar del módulo Equipo",
     "items": [
-      "Nuevo checkbox destacado en la sección Acceso del modal de Usuario (admin.html → tab Usuarios) para editar meta.excluded desde el UI. Evita tener que ir a Firestore Console",
-      "Casos de uso: empleados en período de prueba (como Daniela Molina), cuentas técnicas (kaizenteam@), ex-empleados con acceso residual, cualquier persona que necesite acceso al Hub pero no aparecer en la vista pública del organigrama",
-      "Al marcar: el usuario sigue pudiendo loguearse y marcar asistencia, pero desaparece del grid de Equipo. Al desmarcar: aparece",
-      "Persiste en meta.excluded via updateUserFields (edit) o createUser con initial.excluded (nuevo)",
-      "Bump v2.23.4 → v2.23.5"
+      "Nuevo interruptor destacado en la sección Acceso del modal de Usuario para ocultar a una persona del módulo Equipo sin quitarle acceso al Hub",
+      "Casos de uso: empleados en período de prueba, cuentas técnicas, ex-empleados con acceso residual, cualquier persona que necesite entrar al Hub pero no aparecer en el organigrama público",
+      "Al activarlo, la persona sigue pudiendo iniciar sesión y marcar asistencia normalmente, pero desaparece del grid de Equipo. Al desactivarlo, vuelve a aparecer"
     ]
   },
   {
@@ -39,16 +50,13 @@
     "category": "refactor",
     "scope": "seguridad",
     "audience": "admin",
-    "title": "Guard de auth migrado a users/ — cierra gap de seguridad",
+    "title": "Seguridad · eliminar un usuario ahora le revoca el acceso al instante",
     "items": [
-      "🔒 js/roles.js (guardPage) ahora lee el rol desde users/{email}.access.role en vez de shared/roles.users{}. Antes había un gap: eliminar un usuario desde el panel Usuarios borraba el doc pero el usuario seguía pudiendo loguearse porque shared/roles quedaba con la entry",
-      "✅ Ahora deleteUser() del panel Usuarios revoca acceso al Hub inmediatamente (el usuario necesita cerrar sesión + reintentar por el cache de rol)",
-      "✅ Se rechaza el acceso si access.active === false (usuario desactivado explícitamente) o si no existe doc en users/",
-      "🔑 Backdoor legacy conservado: it@heroinsuranceusa.com siempre entra como admin (recovery si algo se rompe)",
-      "🧑‍💼 Daniela Molina (dmolina@) creada como doc en users/ con meta.excluded=true — puede loguearse y marcar asistencia pero no aparece en Equipo (patrón para empleados en período de prueba). Mismo mecanismo que Luis Ernesto Gutiérrez",
-      "🧹 Removido el feature flag USE_USERS_COLLECTION de firebase-config.js (ya nadie lo consultaba)",
-      "📌 Estado post-Fase 1: shared/team y shared/roles quedan huérfanos en Firestore (sin lectores). Se borrarán en Fase 1.5 tras validar 1-2 semanas en producción",
-      "Bump v2.23.3 → v2.23.4"
+      "Antes: eliminar un usuario desde el panel de Usuarios borraba el registro pero la persona seguía pudiendo iniciar sesión hasta que se limpiara una segunda tabla. Era un hueco de seguridad",
+      "Ahora: eliminar un usuario revoca su acceso al Hub inmediatamente. Basta con que cierre sesión y ya no puede volver a entrar",
+      "Se rechaza el acceso también si el usuario fue desactivado explícitamente, o si no tiene registro creado",
+      "La cuenta it@heroinsuranceusa.com siempre puede entrar como admin — es el acceso de rescate por si algo se rompe",
+      "Daniela Molina creada con la opción de ocultar del módulo Equipo — puede iniciar sesión y marcar asistencia pero no aparece en el organigrama (mismo patrón que Luis Ernesto Gutiérrez, para períodos de prueba)"
     ]
   },
   {
@@ -60,16 +68,13 @@
     "audience": "admin",
     "title": "Panel de Usuarios · toda la gestión de personas en un solo lugar",
     "items": [
-      "🔀 El tab 'Roles' del admin se renombró a 'Usuarios' (ícono users, heading '👥 Gestión de usuarios'). El módulo Equipo pasó a ser 100% read-only — sin botones de admin, sin lápiz, sin agregar miembros. Toda la creación/edición/eliminación de personas ahora vive en un solo lugar",
-      "🎨 Rediseño del modal de usuario: secciones con kickers cyan (PERSONA · ACCESO · CONTACTO Y ORIGEN · FICHA DEL HÉROE), grid 2-col para pares (nombre+cargo, país+cumpleaños), ancho 600px, sin scroll horizontal",
-      "📧 Emails con prefijo editable + sufijo fijo '@heroinsuranceusa.com' visible; botón + para agregar múltiples; el primer email es readonly en edit (protege el docId único)",
-      "📞 Teléfonos como filas dinámicas con input type=tel (teclado numérico en mobile) + botón + para agregar",
-      "📅 'Se unió al equipo' con input type=month (picker MM/YYYY); persiste como 'Marzo 2024' para display",
-      "🎯 Rol de acceso al Hub como <select> nativo dentro del modal — evita el bug conocido de sl-select cerrando el sl-dialog",
-      "🗑 Botón X en la tabla elimina el doc completo del usuario (no solo el rol) — el mensaje del confirm lo aclara. Row-click abre el modal en modo edit",
-      "🧹 Eliminado el campo 'Superpoder' de la edición (modal admin + mi-perfil): era un texto narrativo cosmético que ya se autogenera por cargo en el perfil grande. Los valores custom pre-existentes se preservan en Firestore",
-      "🧹 Eliminada la sección 'Sobre mí' de mi-perfil.html completa; mi-perfil ya no escribe en users/",
-      "Bump v2.23.2 → v2.23.3"
+      "El tab Roles del panel admin se renombró a Usuarios. Ahora es el único lugar donde se crean, editan y eliminan personas. El módulo Equipo pasó a ser solo de consulta — sin botones de admin, sin lápiz, sin agregar miembros",
+      "Rediseño del modal de usuario: secciones ordenadas (Persona · Acceso · Contacto y Origen · Ficha del Héroe), campos pareados en dos columnas cuando aplica (nombre + cargo, país + cumpleaños)",
+      "Emails con prefijo editable y el sufijo @heroinsuranceusa.com visible; botón + para agregar múltiples; el primer email queda bloqueado al editar (para no romper la identidad de la cuenta)",
+      "Teléfonos como filas dinámicas con botón + para agregar; en móvil abre teclado numérico",
+      "Se unió al equipo · nuevo selector de mes y año (por ejemplo, Marzo 2024)",
+      "Botón × en la tabla elimina el registro completo del usuario (no solo el rol). Un click sobre la fila abre el modal en modo edición",
+      "Se retiró el campo Superpoder de la edición — era un texto suelto que ya se genera automáticamente desde el cargo en el perfil grande. Los valores personalizados que ya existían se conservan"
     ]
   },
   {
@@ -79,15 +84,12 @@
     "category": "refactor",
     "scope": "equipo",
     "audience": "admin",
-    "title": "Refactor users/{email} · fase 1 · equipo.js consume el store",
+    "title": "Equipo · migración de datos a la nueva fuente única",
     "items": [
-      "equipo.js migrado a user-store: grid, filtro, perfil heroico y modal admin (crear/editar/eliminar) leen y escriben en users/{email} en vez de shared/team.members[]",
-      "Toda la lógica de rendering pasa de innerHTML a DOM API (createElement + textContent) — pasa el hook de seguridad y evita XSS teóricos con nombres/emails",
-      "user-store.js extendido con nameToIso (nombre en español/inglés → ISO alpha-2) y slugifyName exportado. Emojis de bandera ahora indexados por ISO",
-      "Modal: input de país acepta nombre libre pero al guardar se convierte a ISO; si el nombre no matchea ningún ISO conocido, error explícito antes del write",
-      "Modal en modo edit: bloquea el cambio del email principal (docId único) — si se cambia se muestra error pidiendo hacerlo desde IT (evita rename desincronizado)",
-      "Cleanup del estado: se removieron 4 docs vacíos de users/ que quedaron de tests previos (dmolina, eduardoromero, kaizenteam, life) + rename de Marge de aca@ a msulbaran@ (aca@ ya no se usa)",
-      "Bump v2.23.1 → v2.23.2"
+      "El módulo Equipo ahora lee y escribe en la nueva colección unificada de usuarios en vez de la lista aislada anterior. Sin cambios visibles para el usuario final",
+      "El campo País acepta nombre libre; al guardar se convierte al código estándar del país (para mostrar la bandera correcta). Si el nombre no matchea ningún país conocido, se avisa con un error claro antes de guardar",
+      "Al editar un usuario, el email principal queda bloqueado — si hay que cambiarlo, se pide hacerlo desde IT para evitar desincronizaciones",
+      "Limpieza: se removieron cuatro registros vacíos que quedaron de pruebas anteriores, más un cambio de email de Marge Sulbarán"
     ]
   },
   {
@@ -97,14 +99,11 @@
     "category": "refactor",
     "scope": "mi-perfil",
     "audience": "admin",
-    "title": "Refactor users/{email} · fase 1 · mi-perfil.js consume el nuevo store",
+    "title": "Mi Perfil · migración a la nueva fuente única de usuarios",
     "items": [
-      "Nuevo wrapper js/user-store.js: getAllUsers, getUserByEmail, updateUserFields, createUser, deleteUser + helpers countryLabel/countryFlagUrl. Encapsula la colección users/{email} (v2.23.0) para que los consumers no toquen doc/getDoc/setDoc directo",
-      "mi-perfil.js migrado: lee de users/{email} en vez de shared/team, con matching por docId + fallback a identity.emails[] para aliases",
-      "Bio ahora se lee de display.bio.superpoder (donde la fase 0 movió el string legacy) y se escribe con updateUserFields — permiso concedido al dueño por la regla refinada de Firestore (display.* + prefs.* editables por sí mismo)",
-      "Countries: 22 países mapeados en el store (antes eran 8 hardcodeados en mi-perfil); helper único countryFlagUrl(iso) + countryLabel(iso) reemplaza el FLAG_URLS local",
-      "Renderizado de país migrado de innerHTML a DOM API (createElement + textContent) — más seguro y pasa el hook de seguridad",
-      "Bump v2.23.0 → v2.23.1"
+      "Mi Perfil ahora lee de la colección unificada de usuarios. Sin cambios visibles para el usuario final",
+      "Ampliada la lista de países soportados de 8 a 22, con banderas actualizadas",
+      "Preparación para permitir que cada persona edite su propia biografía y preferencias con permisos ajustados"
     ]
   },
   {
@@ -114,17 +113,13 @@
     "category": "refactor",
     "scope": "admin",
     "audience": "admin",
-    "title": "Migración de datos · fase 0 del refactor a users/{email}",
+    "title": "Migración de datos · consolidación de personas y roles en una sola fuente",
     "items": [
-      "🗃 Nueva sección 'Sistema · Migración de datos' en el sidebar de admin.html — solo visible al rol IT. Consolida shared/team.members[] + shared/roles.users{} en una colección única users/{email} que va a ser la nueva fuente de verdad de personas",
-      "Panel con 3 pasos: (1) descargar backup JSON del estado actual, (2) preview dry-run que cruza data, aplica normalizaciones y muestra tabla con warnings, (3) ejecutar con doble heroConfirm + log en vivo + audit-log de la operación",
-      "Normalizaciones aplicadas en el payload: rol legacy (directivo/rrhh → interno), país (Venezuela/Cuba/etc → ISO alpha-2), bio string suelta → objeto {identidad, superpoder, frase, union}, emails a lowercase, exclusión de Luis Ernesto Gutiérrez del Equipo materializada como meta.excluded=true",
-      "Cleanup previo a la migración: consolidar aliases (Oscar Palacios recibe life@; Marge Sulbarán recibe msulbaran@; Jeyxi Suárez pasa a jeyxisuarez@ liberando concierge@ que queda para Erick Merlos) y alta de Cristina Jaimes",
-      "Nueva feature flag USE_USERS_COLLECTION en js/firebase-config.js — de momento en false. Cuando se active en fase 1, equipo.js/mi-perfil.js/roles-admin.js pasan a leer de la nueva colección",
-      "Se agrega la acción users.migration al sistema de audit-log",
-      "Regla de Firestore agregada: users/{email} lectura para cualquier @heroinsuranceusa autenticado, escritura solo it@ (se refinará en fase 1)",
-      "shared/team y shared/roles NO se borran — se deprecan en fase 1.5 tras validar campo por campo",
-      "Bump v2.22.1 → v2.23.0"
+      "Nueva sección Sistema · Migración de datos en el panel admin, visible solo para IT. Consolida las dos tablas separadas de personas (Equipo y Roles) en una única fuente de verdad",
+      "Panel de tres pasos: descargar respaldo del estado actual, ver una previsualización con los cambios y advertencias, ejecutar con doble confirmación y registro en vivo de la operación",
+      "Normalizaciones automáticas: roles antiguos (directivo, rrhh) migrados a interno; países convertidos a código estándar; biografías sueltas convertidas a estructura por campos; emails en minúsculas",
+      "Limpieza previa: consolidación de emails alternos (Oscar Palacios, Marge Sulbarán, Jeyxi Suárez) y alta de Cristina Jaimes",
+      "Los datos originales no se borran — solo se dejan de leer. Se eliminarán después de dos semanas de validación en producción"
     ]
   },
   {
@@ -134,16 +129,13 @@
     "category": "feat",
     "scope": "it-console",
     "audience": "admin",
-    "title": "IT Console · botón para enviar bienvenida al Hub tras consents de HR",
+    "title": "IT Console · botón para enviar email de bienvenida al Hub",
     "items": [
-      "✉ Nuevo botón 'Enviar bienvenida al Hub' en el modal de Usuarios Workspace del IT Console, entre 'Enviar / Offboarding' y 'Eliminar cuenta'",
-      "Diseñado para dispararse una vez que HR ya firmó los consents del empleado nuevo — el correo va al @heroinsuranceusa.com corporativo (que ya está activo tras el onboarding de Workspace) con un mensaje cálido firmado por Jesús Gutiérrez, CEO",
-      "Diseño alineado al design system del Hub (docs/design-system.md): fondo paper #f0f4f8, card blanco radius 22px con sombra suave, tipografía Bricolage Grotesque para titulares + Inter para body + JetBrains Mono para URLs, único acento cyan. Sin colores por sección, sin emojis decorativos, sin sellos. Se siente como una página del Hub en formato email",
-      "Estructura del email: (1) header con logo + wordmark 'HERO HUB', (2) hero con H1 grande 'Bienvenido al equipo, {Nombre}.' + intro cálida + CTA pill al Hub, (3) sección 'DENTRO DEL HUB' con las 4 secciones más relevantes para arrancar (Equipo, Agencias, Portales, Onboarding) — cada una con su ícono Lucide del topbar del Hub (users, network, shield, rocket) como PNG hospedado en el repo (images/icons/lucide/*.png a 88px 2x-retina para nitidez) en un tile cuadrado cyan-tenue de 42×42, (4) firma del CEO con foto redonda de Jesús Gutiérrez (images/team/jesus-gutierrez.jpg) al lado + Bricolage 20px + rol Inter uppercase, (5) footer discreto fuera del card",
-      "🛡 Logo servido desde el propio repo (images/logo-shield-only.png vía hub.heroinsuranceusa.com) en vez de ibb.co que estaba corrupto",
-      "Confirm previo con heroConfirm para evitar envíos accidentales; auditado en audit-log como 'Bienvenida al Hub enviada a X'",
-      "Reusa endpoint /email genérico del Worker (destino interno @hero) — sin cambios en backend",
-      "Bump v2.22.0 → v2.22.1"
+      "Nuevo botón Enviar bienvenida al Hub en el modal de Usuarios del IT Console, entre Enviar Offboarding y Eliminar cuenta",
+      "Diseñado para dispararse una vez que HR firmó los consentimientos del empleado nuevo — el correo va al @heroinsuranceusa.com corporativo con un mensaje cálido firmado por Jesús Gutiérrez, CEO",
+      "Diseño alineado al design system del Hub: fondo claro, tarjeta blanca con sombra suave, un solo acento cyan. Sin colores por sección, sin emojis decorativos. Se siente como una página del Hub en formato email",
+      "Estructura del email: portada con logo y titular grande de bienvenida, sección Dentro del Hub con los cuatro accesos clave para arrancar (Equipo, Agencias, Portales, Onboarding) y firma del CEO con foto",
+      "Confirmación previa antes de enviar para evitar envíos accidentales; queda registrado en la auditoría"
     ]
   },
   {
@@ -153,17 +145,14 @@
     "category": "feat",
     "scope": "dashboard",
     "audience": "all",
-    "title": "Nuevo flujo: modal de inicio de jornada + modal bloqueante de break",
+    "title": "Nuevo flujo de inicio de jornada y ventana bloqueante de break",
     "items": [
-      "🌅 El pop-up 'Mensaje del día' se transforma en un modal de inicio de jornada. Aparece al abrir el Hub si aún no marcaste Entrada hoy — con saludo personalizado, botón verde 'Iniciar mi día' (mismo verde que Entrada del HQCC), botón para entrar a la Oficina Virtual (Gather Town) y el mensaje del día abajo",
-      "✅ Al marcar Entrada desde el modal, transiciona a una vista de confirmación con checkmark animado + barra de progreso de 5 segundos + auto-cierre. También funciona si marcas Entrada directamente desde el botón del HQCC estando el modal abierto",
-      "☕ Al hacer click en Break aparece un modal bloqueante con emoji café flotante, contador vivo mm:ss del tiempo transcurrido, y botón 'Terminar break'. No se puede cerrar con X ni con ESC — solo terminando el break. Perfecto para que no se olvide de volver",
-      "⏰ Si el break pasa los 30 minutos, el timer se pone amarillo pulsante y aparece un toast recordatorio (una sola vez por día)",
-      "🔁 Si recargas la página estando en break, el modal reaparece automáticamente con el contador continuando desde el timestamp real — sobrevive al refresh",
-      "🎨 Detalle visual: el emoji café flota suavemente con 3 líneas de vapor animadas subiendo. Los modales cálidos ahora usan emoji + microanimación en vez del ícono Lucide plano",
-      "🗑 Se retira el sistema de reacciones con emoji (😎❤️🔥) del pop-up viejo — no era muy usado y el flujo ahora es acción, no interacción social",
-      "🔧 Fix: la lógica de 'ya marcó Entrada hoy' ahora persiste en un flag separado (hh-attendance-entry-day) — antes solo miraba el último evento, así que si marcabas Break después de Entrada, el modal reaparecía",
-      "Bump v2.21.9 → v2.22.0"
+      "El pop-up Mensaje del día se transforma en una ventana de inicio de jornada. Aparece al abrir el Hub si aún no marcaste Entrada — con saludo personalizado, botón verde Iniciar mi día, acceso a la Oficina Virtual y el mensaje del día abajo",
+      "Al marcar Entrada desde ahí, pasa a una vista de confirmación con checkmark animado y cierre automático a los 5 segundos",
+      "☕ Al hacer click en Break aparece una ventana bloqueante con contador vivo del tiempo transcurrido y botón Terminar break. No se puede cerrar con × ni con ESC — solo terminando el break. Así no se te olvida volver",
+      "Si el break pasa los 30 minutos, el contador se pone amarillo y aparece un recordatorio (una sola vez por día)",
+      "Si recargas la página estando en break, la ventana reaparece con el contador continuando desde el momento real en que empezó",
+      "Se retiró el sistema de reacciones con emoji del pop-up viejo — no era muy usado y el nuevo flujo es acción, no interacción social"
     ]
   },
   {
@@ -173,13 +162,10 @@
     "category": "fix",
     "scope": "it-console",
     "audience": "admin",
-    "title": "IT Console · fix del modal de backfill que no se veía",
+    "title": "IT Console · arreglo de la ventana de backfill que no aparecía",
     "items": [
-      "🐛 Fix: al hacer click en 'Poblar correo personal' desde la tabla Usuarios, el modal no aparecía. Los warnings de form fields sin id/name subían con cada click — señal de que el JS SÍ ejecutaba pero el modal quedaba invisible",
-      "🔧 Causa: el modal estaba insertado dentro del bloque <div class='page' id='page-solicitudes'> que tiene display:none cuando no es la página activa. Al abrirlo desde la página Usuarios, el modal cambiaba su propio display:block pero heredaba el display:none del contenedor padre",
-      "✨ Fix: movido a nivel raíz del body (fuera de cualquier .page), junto al toast global. Ahora puede abrirse desde cualquier página del IT Console",
-      "🎗 z-index del backfill-modal bumpeado a 1000 (era 300) para asegurar que quede encima del user-modal si ya estaba abierto",
-      "Bump v2.21.8 → v2.21.9"
+      "Antes: al hacer click en Poblar correo personal desde la tabla de Usuarios, la ventana no se veía aunque el botón parecía ejecutar",
+      "Ahora: la ventana se abre correctamente desde cualquier página del IT Console"
     ]
   },
   {
@@ -189,16 +175,12 @@
     "category": "feat",
     "scope": "it-console",
     "audience": "admin",
-    "title": "IT Console · utility para poblar correo personal masivamente",
+    "title": "IT Console · utilidad para completar correos personales en lote",
     "items": [
-      "🔄 Nuevo botón 'Poblar correo personal' en la toolbar de Usuarios. Abre un modal con lista de todos los usuarios de Workspace + input por fila para completar el correo personal que falta",
-      "🎯 Filtro 'Solo faltantes' (default) muestra las cuentas sin correo personal registrado en Firestore. Al cambiarlo a 'Todos' se ven también las que ya tienen registrado (para editar)",
-      "💾 Dirty tracking + batch save: el botón muestra 'Guardar N cambios' con contador en vivo. Solo escribe a Firestore los registros que cambiaron. Badge 'Sin guardar' aparece en cada fila modificada hasta que se guarda",
-      "🧠 Cruza allUsers (Workspace) con shared/workspaceUsers/byEmail (Firestore) en paralelo con Promise.all al abrir el modal — rápido para ~20 usuarios internos",
-      "📝 Guarda además de personalEmail, metadata createdBy='backfill' + updatedAt para trazabilidad de dónde vino cada registro",
-      "🎨 Cada fila muestra el avatar de iniciales (mismo patrón que la tabla Usuarios) para identificar rápido",
-      "🛡 Si guarda con errores, muestra count en el toast + warns en la consola. No aborta el batch por un fallo individual",
-      "Bump v2.21.7 → v2.21.8"
+      "Nuevo botón Poblar correo personal en la barra de Usuarios. Abre una ventana con la lista de todos los usuarios de Workspace y un campo por fila para completar el correo personal que falta",
+      "Filtro Solo faltantes (por defecto) muestra únicamente las cuentas sin correo personal registrado. Se puede cambiar a Todos para ver también las que ya tienen registrado (por si hay que corregir)",
+      "El botón muestra en vivo cuántos cambios hay pendientes de guardar. Al guardar, solo escribe los registros modificados. Cada fila con cambios muestra una etiqueta Sin guardar hasta que se confirma",
+      "Si algún registro falla al guardar, se muestra el conteo en el aviso y el resto sí se guarda"
     ]
   },
   {
@@ -208,14 +190,12 @@
     "category": "feat",
     "scope": "it-console",
     "audience": "admin",
-    "title": "IT Console · reactivación con confirmación + email al usuario",
+    "title": "IT Console · reactivación con confirmación previa y aviso al usuario",
     "items": [
-      "✅ Al reactivar una cuenta suspendida ahora aparece un heroConfirm ('¿Reactivar la cuenta?') antes de tocar Workspace. Elimina el riesgo de reactivación accidental por click distraído",
-      "📧 Se envía email al correo personal del usuario avisando 'Tu cuenta ya está activa nuevamente'. Cierra el loop del email de suspensión que prometía la posibilidad de reactivación — el usuario no queda esperando confirmación",
-      "🎨 Nuevo template buildEmailReactivation: header verde, badge REACTIVADA, texto amistoso, CTA Iniciar sesión a mail.google.com, contacto IT",
-      "📋 Nueva 7ª tab 'Reactivación de cuenta' en la pestaña Plantillas del IT Console para preview del template",
-      "🛡 Si no tenemos el correo personal del usuario en Firestore, el restore igualmente sucede (no bloqueamos por un email) pero se registra un warn en el log — util para casos de reactivación técnica sin usuario detrás",
-      "Bump v2.21.6 → v2.21.7"
+      "Al reactivar una cuenta suspendida ahora aparece una confirmación antes de proceder. Elimina el riesgo de reactivar por error con un click distraído",
+      "Se envía email al correo personal del usuario avisando Tu cuenta ya está activa nuevamente. Cierra el ciclo del email de suspensión que prometía la posibilidad de reactivación",
+      "Nueva plantilla de email de reactivación (header verde, badge REACTIVADA, texto amistoso, botón para iniciar sesión) y una nueva pestaña de previsualización en Plantillas",
+      "Si no tenemos el correo personal del usuario en el sistema, la reactivación se hace igual (no se bloquea por el email), pero queda una advertencia en el registro — útil para reactivaciones técnicas sin usuario detrás"
     ]
   },
   {
@@ -225,15 +205,14 @@
     "category": "feat",
     "scope": "it-console",
     "audience": "admin",
-    "title": "IT Console · selector de motivo al suspender cuenta (con pre-selección según último login)",
+    "title": "IT Console · selector de motivo al suspender cuenta",
     "items": [
-      "🎯 Al suspender una cuenta ahora aparece un modal para elegir el motivo antes de tocar Workspace. Opciones: 'Cuenta inactiva — nunca ha iniciado sesión', 'sin login en los últimos 3 meses', 'sin login en los últimos 6 meses', 'Fin de contrato', 'Renuncia', 'Solicitud de la administración', 'Otro' (con textarea libre)",
-      "🧠 Pre-selección inteligente: el modal detecta el ultimoLogin del usuario y marca el motivo probable — nunca ha entrado → 'nunca ha iniciado sesión'; >6 meses → '6 meses'; >3 meses → '3 meses'. Ahorra clicks cuando el motivo evidente es la inactividad",
-      "📧 El motivo elegido aparece TAL CUAL en el email al correo personal del usuario, dentro de un bloque destacado 'Motivo'. Ya no es genérico 'por decisión de la administración' — el usuario sabe exactamente por qué se suspendió su cuenta",
-      "💾 Se guarda suspendedReason (texto) + suspendedReasonKey (código) en Firestore shared/workspaceUsers para trazabilidad histórica y para poder analizar patrones (ej. cuántas suspensiones fueron por inactividad vs fin de contrato)",
-      "🔗 Desde el modal de baja de solicitud (suspenderDesdeSolicitud): el modal detecta si la solicitud menciona 'renuncia' o 'contrato' y lo pre-selecciona; sino cae al motivo por login. Consistencia entre los 2 flujos de suspensión",
-      "🛡 Si Fernando cancela el modal del motivo, se aborta toda la acción — no queremos suspender sin motivo consistente con lo que se le mandará al usuario",
-      "Bump v2.21.5 → v2.21.6"
+      "Al suspender una cuenta ahora aparece una ventana para elegir el motivo antes de proceder. Opciones: Cuenta inactiva (nunca ha iniciado sesión), sin login en los últimos 3 meses, sin login en los últimos 6 meses, Fin de contrato, Renuncia, Solicitud de la administración, Otro (con campo libre)",
+      "Preselección automática según la actividad del usuario: nunca ha entrado → nunca ha iniciado sesión; más de 6 meses inactivo → 6 meses; más de 3 meses → 3 meses. Ahorra clicks cuando el motivo evidente es la inactividad",
+      "El motivo elegido aparece tal cual en el email al correo personal del usuario, en un bloque destacado. Ya no es genérico por decisión de la administración — el usuario sabe exactamente por qué se suspendió su cuenta",
+      "El motivo queda guardado para trazabilidad histórica y análisis (por ejemplo, cuántas suspensiones fueron por inactividad vs fin de contrato)",
+      "Desde el flujo de baja por solicitud: la ventana detecta si la solicitud menciona renuncia o contrato y preselecciona el motivo. Consistencia entre los dos caminos de suspensión",
+      "Si se cancela la ventana del motivo, se aborta toda la acción — no se suspende sin motivo consistente"
     ]
   },
   {
@@ -243,16 +222,13 @@
     "category": "feat",
     "scope": "it-console",
     "audience": "admin",
-    "title": "IT Console · notificación de suspensión al usuario + pestaña Plantillas + alerta de eliminaciones",
+    "title": "IT Console · aviso automático de suspensión, pestaña Plantillas y alerta de eliminaciones",
     "items": [
-      "📧 Al suspender una cuenta de Workspace (desde el modal de Usuarios o desde una solicitud de baja), se envía automáticamente un email al correo personal del empleado avisando que su cuenta fue suspendida y que si no solicita reactivación en los próximos 7 días la cuenta será eliminada permanentemente. Incluye CTA 'Solicitar reactivación' con mailto pre-llenado a IT",
-      "🗄 Nueva colección Firestore shared/workspaceUsers/byEmail/{email} donde se guarda personalEmail + cargo + area al crear cuenta. Se usa después al suspender. Si no tenemos el personalEmail (para cuentas viejas), se pide con un prompt y se guarda para siguientes acciones (backfill on-demand)",
-      "⚠ Chip nuevo en el dashboard del IT Console: 'N cuentas suspendidas cumplen 7 días'. Aparece cuando alguna cuenta suspendida ya cumplió su plazo de eliminación programada y necesita revisión manual. Trackea scheduledDeletionAt y respeta reactivatedAt (si Fernando restaura la cuenta, sale del chip)",
-      "🔄 Al restaurar una cuenta (action=restore), se limpia scheduledDeletionAt del Firestore para que salga del chip",
-      "🎨 Nueva pestaña 'Plantillas de email' bajo el grupo Sistema del sidebar. Muestra los 6 templates que dispara el IT Console (onboarding empleado/agente ES/EN, reset, suspensión) con datos de ejemplo en un iframe. Panel lateral con asunto, from, to, endpoint, cuándo se dispara, secciones y datos de ejemplo. Botones 'Abrir en pestaña' y 'Copiar HTML' para inspeccionar el rendering exacto",
-      "🎨 Nuevo template buildEmailSuspension con header rojo, badge 'CUENTA SUSPENDIDA', advertencia amarilla del plazo de 7 días y CTA de mailto para solicitar reactivación",
-      "🔒 Reusa el endpoint /email/onboarding del Worker que ya acepta destinos externos (@gmail, @yahoo). Sin cambios en el Worker",
-      "Bump v2.21.4 → v2.21.5"
+      "Al suspender una cuenta de Workspace, se envía automáticamente un email al correo personal del empleado avisando que su cuenta fue suspendida y que si no solicita reactivación en los próximos 7 días la cuenta será eliminada permanentemente. Incluye botón Solicitar reactivación",
+      "El correo personal, cargo y área ahora se guardan al crear la cuenta para poder notificar después. Si no lo tenemos (para cuentas viejas), se pide una sola vez y queda guardado para siguientes acciones",
+      "Nuevo indicador en el dashboard del IT Console: N cuentas suspendidas cumplen 7 días. Aparece cuando alguna cuenta suspendida ya cumplió su plazo de eliminación programada y necesita revisión manual. Si Fernando restaura la cuenta, sale automáticamente del indicador",
+      "Nueva pestaña Plantillas de email bajo el grupo Sistema del menú lateral. Muestra las plantillas que dispara el IT Console (onboarding empleado/agente en español e inglés, reset, suspensión) con datos de ejemplo. Botones Abrir en pestaña y Copiar HTML para inspeccionarlas",
+      "Nueva plantilla de suspensión con header rojo, badge Cuenta Suspendida, advertencia amarilla del plazo de 7 días y botón para solicitar reactivación"
     ]
   },
   {
@@ -262,17 +238,15 @@
     "category": "feat",
     "scope": "it-console",
     "audience": "admin",
-    "title": "IT Console · tabla Usuarios estilo Google Workspace + fix del modal de confirmación",
+    "title": "IT Console · tabla de Usuarios estilo Google Workspace",
     "items": [
-      "👥 Tabla de Usuarios rediseñada con look similar a Google Workspace Admin: avatar de iniciales con color determinista por nombre + nombre + cargo + email en la primera columna. Nuevas columnas: Departamento, Rol (Super Admin / Delegated Admin / Usuario). Se removió la columna 'Creado' — sigue accesible desde el modal individual",
-      "🔍 La búsqueda ahora incluye cargo y departamento (además de nombre y email) — puedes buscar 'CEO' o 'Operaciones' y filtra las filas correspondientes",
-      "🎯 Nuevo filtro 'Rol' junto a los filtros OU y 2FA — útil para ver solo los administradores del dominio",
-      "🎗 Anillo cyan alrededor del avatar cuando el usuario tiene contraseña temporal (changePasswordAtNextLogin) — señal visual para spotear altas recientes que aún no completaron su primer login",
-      "🏷 Chip '(+N aliases)' junto al email cuando el usuario tiene aliases configurados en Workspace; el tooltip muestra la lista completa",
-      "🛈 Tooltip del estado ahora muestra el motivo de suspensión si existe (viene de suspensionReason de la Admin API)",
-      "🐛 Fix del modal de confirmación al eliminar/suspender usuario: aparecía detrás del modal padre. Causa: z-index del heroConfirm local (200) menor al de user-modal (300 !important). Cambiado a 1000",
-      "🔒 Backend: /users del Worker ahora usa projection=full para traer cargo/departamento/aliases/isAdmin/isDelegatedAdmin/suspensionReason/changePasswordAtNextLogin en la misma llamada — sin costo extra de quota más allá de un JSON más grande",
-      "Bump v2.21.3 → v2.21.4 (agrupa el fix del z-index + la tabla enriquecida)"
+      "Tabla de Usuarios rediseñada con estilo similar al panel de Google Workspace: avatar de iniciales con color por nombre + nombre + cargo + email en la primera columna. Nuevas columnas: Departamento y Rol (Super Admin / Delegated Admin / Usuario). Se removió la columna Creado — sigue accesible desde el modal individual",
+      "La búsqueda ahora incluye cargo y departamento (además de nombre y email) — puedes buscar CEO u Operaciones y aparecen las filas correspondientes",
+      "Nuevo filtro por Rol junto a los filtros existentes — útil para ver solo los administradores del dominio",
+      "Anillo cyan alrededor del avatar cuando el usuario tiene contraseña temporal — señal visual para spotear altas recientes que aún no completaron su primer login",
+      "Etiqueta (+N aliases) junto al email cuando el usuario tiene alias configurados; el tooltip muestra la lista completa",
+      "El tooltip del estado ahora muestra el motivo de suspensión si existe",
+      "Arreglo: la confirmación al eliminar o suspender un usuario aparecía detrás de la ventana padre y no se veía. Ahora aparece siempre por encima"
     ]
   },
   {
@@ -282,15 +256,12 @@
     "category": "feat",
     "scope": "it-console",
     "audience": "admin",
-    "title": "Solicitudes · notificaciones automáticas al solicitante en cada cambio de estado (Fase C)",
+    "title": "Solicitudes de cuenta · aviso automático al solicitante en cada cambio de estado",
     "items": [
-      "📬 Cuando un autorizador aprueba una solicitud, el solicitante recibe automáticamente un email 'Tu solicitud fue autorizada' con el nombre del autorizador y la referencia. Antes solo IT era notificado",
-      "📬 Cuando IT rechaza una solicitud, el solicitante recibe un email 'Tu solicitud fue rechazada' con motivo opcional. El rechazo ahora tiene un prompt para escribir el motivo antes de rechazar",
-      "📬 Cuando IT procesa una solicitud de BAJA (suspender cuenta), el solicitante recibe email 'La cuenta fue suspendida'. En altas ya llegaba desde /create-user; ese comportamiento se mantiene",
-      "🎨 Los emails al solicitante siguen el design system de Hero (header cyan/verde/rojo según estado, referencia visible, contacto de IT)",
-      "🔒 Backend: /solicitud-cuenta/autorizar y /alta-agente/resolver ahora disparan la notificación desde el Worker (fuente única). El endpoint /resolver acepta `motivo` (para rechazos) y `skipSolicitanteNotif` (para evitar duplicar cuando /create-user ya notificó)",
-      "🧹 Se retiró el sendViaResend inline del rechazarSolicitud del frontend — la notificación ya no vive en el Hub; el Worker se encarga",
-      "Bump v2.21.1 → v2.21.2"
+      "Cuando un autorizador aprueba una solicitud, el solicitante recibe automáticamente un email Tu solicitud fue autorizada con el nombre del autorizador y la referencia. Antes solo IT era notificado",
+      "Cuando IT rechaza una solicitud, el solicitante recibe un email Tu solicitud fue rechazada con motivo opcional. Al rechazar ahora se pide escribir el motivo",
+      "Cuando IT procesa una solicitud de baja (suspender cuenta), el solicitante recibe email La cuenta fue suspendida. Para altas ya llegaba desde antes",
+      "Los emails al solicitante siguen el mismo estilo Hero (color según estado, referencia visible, contacto de IT)"
     ]
   },
   {
@@ -300,14 +271,12 @@
     "category": "feat",
     "scope": "it-console",
     "audience": "admin",
-    "title": "IT Console · botón 'Reenviar' para solicitudes pendientes (Fase D)",
+    "title": "IT Console · botón para reenviar solicitudes pendientes",
     "items": [
-      "📩 Nuevo botón 'Reenviar' en cada fila de solicitud pendiente del IT Console (sección Solicitudes). Regenera los links de autorización con nuevo exp de 7 días y manda el email a los 3 autorizadores otra vez",
-      "🛡 Solo aparece si la solicitud está en estado 'pendiente' — si ya fue autorizada, procesada o rechazada, no tiene sentido reenviar y el botón no se muestra",
-      "🏷 Los emails de reenvío llegan con banner naranja 'REENVÍO' y subject '[ALTA/BAJA · Reenvío]' para que los autorizadores no lo confundan con un duplicado por bug",
-      "📊 El KV registra reenviosCount, ultimoReenvio y linkExpiresAt en cada solicitud — útil para auditoría y para el próximo dashboard del solicitante (Fase C)",
-      "🔒 Backend: nuevo endpoint POST /solicitud-cuenta/reenviar en el Worker, protegido por HERO_TOKEN + rate limit 5/min por IP + dedupByBody",
-      "Bump v2.21.0 → v2.21.1"
+      "Nuevo botón Reenviar en cada fila de solicitud pendiente del IT Console. Regenera los links de autorización con un nuevo plazo de 7 días y manda el email a los tres autorizadores otra vez",
+      "Solo aparece si la solicitud está en estado pendiente — si ya fue autorizada, procesada o rechazada, el botón no se muestra",
+      "Los emails de reenvío llegan con un banner naranja REENVÍO y un asunto con la marca [Reenvío] para que los autorizadores no lo confundan con un duplicado",
+      "Se registra la cantidad de reenvíos, la fecha del último y la nueva fecha de expiración — útil para auditoría"
     ]
   },
   {
@@ -317,16 +286,14 @@
     "category": "feat",
     "scope": "solicitud-cuenta",
     "audience": "team",
-    "title": "Solicitud de correos migrada al Hero Hub · Fase A de la iniciativa de solicitudes",
+    "title": "Solicitud de correos ahora vive dentro del Hero Hub",
     "items": [
-      "📥 El formulario de alta/baja de cuentas corporativas ahora vive dentro del Hero Hub como página nativa: solicitud-cuenta.html. Reemplaza al sitio anterior alojado aparte en it916.github.io/alta-agentes",
-      "🎨 Rediseñado con el design system oficial del Hub (Hero Light + Inter/Bricolage) — antes usaba una paleta royal blue que se sentía como un producto distinto",
-      "🔒 Ahora el formulario está detrás del auth del Hub: solo puede llenarlo alguien con cuenta @heroinsuranceusa.com autenticado. Los datos del solicitante (nombre + email corporativo) se auto-completan desde la sesión — no se pueden spoofear ni tipear mal",
-      "🎯 Toda solicitud queda trazada al empleado autenticado que la envió; nada de campos manuales para el solicitante",
-      "🔗 El sitio viejo (it916.github.io/alta-agentes) ahora muestra un banner 'Página movida' con redirección automática a los 6s al nuevo URL — se mantendrá vivo 2-3 meses para links compartidos por email antiguos",
-      "🚫 El rol 'agente' NO tiene acceso a esta página (los agentes no piden altas/bajas — es tarea de líderes)",
-      "🔧 Sin cambios en el Worker: sigue recibiendo POST /solicitud-cuenta con el mismo payload. Preparado para la Fase B (email de confirmación al solicitante), Fase D (reenvío de links expirados) y Fase C (notificaciones automáticas de cambio de estado)",
-      "Bump v2.20.5 → v2.21.0"
+      "El formulario de alta y baja de cuentas corporativas ahora vive dentro del Hero Hub como página propia. Reemplaza al sitio anterior que estaba alojado aparte",
+      "Rediseñado con el estilo oficial del Hub — antes usaba una paleta azul que se sentía como un producto distinto",
+      "Ahora el formulario requiere iniciar sesión con cuenta @heroinsuranceusa.com para llenarlo. Los datos del solicitante se completan automáticamente desde la sesión — no se pueden falsear ni escribir mal",
+      "Toda solicitud queda trazada al empleado autenticado que la envió; se acaban los campos manuales para el solicitante",
+      "El sitio viejo muestra un banner Página movida con redirección automática a los 6 segundos al nuevo URL — se mantendrá vivo 2-3 meses para respaldar links compartidos por email antes",
+      "El rol agente no tiene acceso a esta página (los agentes no piden altas ni bajas — es tarea de líderes)"
     ]
   },
   {
@@ -336,13 +303,11 @@
     "category": "fix",
     "scope": "it-console",
     "audience": "admin",
-    "title": "IT Console · orden del auditLog al crear usuario desde solicitud",
+    "title": "IT Console · orden correcto del registro de auditoría al crear usuario",
     "items": [
-      "🐛 Fix: cuando se creaba un usuario en Workspace desde una solicitud autorizada, la Auditoría solo registraba 'solicitud procesada' pero NO 'usuario creado'. Causa: el auditLog vivía DESPUÉS del envío del email de onboarding — si ese envío fallaba (como pasaba antes del fix del /email/onboarding en v2.20.4), el throw saltaba directo al catch y se saltaba el registro de la creación",
-      "🔧 Reordenado el flujo de crearUsuarioDesdeModal: el auditLog corre INMEDIATAMENTE después del /create-user, antes que cualquier operación que pueda tirar. Así la creación queda registrada aunque el resolverSolicitud o el email de onboarding fallen",
-      "🛡 El envío del email de onboarding ahora vive en su propio try/catch anidado — un fallo del email (Resend caído, rate limit, network) no bloquea el resto del flujo ni ensucia el toast",
-      "🎯 Toast honesto: si el usuario se crea pero el onboarding falla, muestra 'Usuario creado ✓ · onboarding pendiente' con el motivo del error, en lugar del 'Error' genérico que hacía parecer que todo falló",
-      "Bump v2.20.4 → v2.20.5"
+      "Antes: cuando se creaba un usuario en Workspace desde una solicitud autorizada, la Auditoría a veces solo registraba solicitud procesada pero no usuario creado (si el envío del email de bienvenida fallaba en el mismo instante, se saltaba el registro)",
+      "Ahora: la creación del usuario queda registrada inmediatamente después de crear la cuenta, aunque después falle el envío del email de bienvenida",
+      "Si el usuario se crea pero el onboarding falla, el aviso muestra Usuario creado ✓ · onboarding pendiente con el motivo del error — en lugar del Error genérico que hacía parecer que todo falló"
     ]
   },
   {
@@ -352,14 +317,12 @@
     "category": "fix",
     "scope": "it-console",
     "audience": "admin",
-    "title": "IT Console · fix del email de onboarding al empleado nuevo (dominios externos)",
+    "title": "IT Console · arreglo del email de onboarding al correo personal del empleado",
     "items": [
-      "🐛 Fix del bug donde al crear una cuenta de Google Workspace desde una solicitud autorizada aparecía un toast de error diciendo 'Destino fuera de dominio @heroinsuranceusa.com', PERO la cuenta sí se creaba en Workspace (por eso llegaba la notificación de Google). El error era el envío del email de onboarding a la dirección personal del empleado (@gmail u otro dominio externo)",
-      "🔧 Causa raíz: el endpoint /email del Worker restringe el destino a @heroinsuranceusa como medida defensiva contra bugs del frontend que pudieran mandar spam a clientes por accidente. El caso de uso del onboarding (mandar credenciales al correo personal del empleado nuevo) rompe esa regla POR DISEÑO — todavía no tiene acceso a su @heroinsuranceusa",
-      "✨ Solución: nuevo endpoint POST /email/onboarding en el Worker con protección propia (HERO_TOKEN gate ya heredado + rate limit 10/min + dedupByBody + log de auditoría). Acepta destinos externos por diseño. El From sigue restringido a @heroinsuranceusa para evitar spoofing",
-      "📤 Los 4 call sites de onboarding en el frontend cambiaron a la nueva función sendOnboardingViaResend: creación desde solicitud, creación manual con auto-send, envío manual de onboarding del módulo Crear Usuario, y el módulo Onboarding dedicado",
-      "🔒 Los otros 3 call sites de sendViaResend (reset de contraseña + rechazo de solicitud) siguen usando /email — van a correos corporativos internos",
-      "Bump v2.20.3 → v2.20.4"
+      "Antes: al crear una cuenta de Google Workspace desde una solicitud autorizada aparecía un aviso de error diciendo Destino fuera de dominio @heroinsuranceusa.com, pero la cuenta sí se creaba (llegaba la notificación de Google). El error real era el envío del email de bienvenida a la dirección personal del empleado (@gmail u otro dominio externo)",
+      "Causa: el sistema de correos del Hub bloquea por defecto envíos a direcciones fuera de la empresa como medida contra spam accidental. El caso del onboarding (mandar credenciales al correo personal del empleado nuevo) rompe esa regla a propósito",
+      "Solución: nuevo camino específico para el email de onboarding, con permisos y protecciones propias, que sí acepta direcciones externas. El remitente sigue siendo @heroinsuranceusa.com",
+      "Los otros envíos (reset de contraseña, rechazo de solicitud) siguen yendo por el canal corporativo restringido"
     ]
   },
   {
@@ -369,12 +332,11 @@
     "category": "refactor",
     "scope": "gcal",
     "audience": "admin",
-    "title": "Calendario · cleanup del diagnostic logging + hardening del refresh del token",
+    "title": "Calendario · limpieza del logging de diagnóstico y endurecimiento del refresh",
     "items": [
-      "🧹 Retirado `window._gcalLog` y los 12 call sites de `gcalLog(...)` que se dejaron temporalmente en v2.20.1 para diagnosticar el popup residual. Confirmado en 5 días de uso que no hubo más popups — el logger cumplió su función",
-      "🔒 Mutex de refresh: el widget ya no dispara dos fetches simultáneos a Google Calendar cuando `init()` y el evento `hero-gcal-token-ready` coinciden en el mismo tick (login fresh). Guardia booleana `refreshInFlight` con reset en `finally`",
-      "🛡 `localStorage.setItem` del token ahora está envuelto en try/catch — si el storage está lleno o la pestaña es modo incógnito con storage bloqueado, el widget sigue funcionando con el token en memoria en vez de romperse silenciosamente",
-      "Bump v2.20.2 → v2.20.3"
+      "Se retiró el logging de diagnóstico que se dejó temporalmente para investigar el pop-up residual. Confirmado en 5 días de uso que no hubo más pop-ups — cumplió su función",
+      "El widget ya no dispara dos llamadas simultáneas a Google Calendar cuando el login coincide con el arranque de la página",
+      "Si el navegador tiene el almacenamiento local lleno o bloqueado (por ejemplo, modo incógnito estricto), el widget sigue funcionando con el token en memoria en vez de romperse en silencio"
     ]
   },
   {
@@ -384,20 +346,17 @@
     "category": "feat",
     "scope": "finanzas",
     "audience": "admin",
-    "title": "Finanzas · Reportes de Pago — email con branding + tabla clickeable + pestañas laterales del modal",
+    "title": "Finanzas · email al broker con branding Hero, tabla clickeable y pestañas laterales",
     "items": [
-      "✉ Email al broker rediseñado con branding Hero Light: header blanco + logo grande + banda cyan fina como separador + card blanca con resumen ejecutivo (# reporte, periodo, cantidad de ingresos, total destacado en cyan). Estilos inline (los clientes de correo tipo Outlook strippean el <style> del head)",
-      "El email deja el detalle línea por línea de los ingresos SOLO en el PDF adjunto — el cuerpo del email es un resumen breve, no compite visualmente con el PDF",
-      "Disclaimer de confidencialidad agregado al footer del email (CONFIDENTIALITY NOTICE en inglés — solo el destinatario debe leer el contenido)",
-      "🖱 Tabla de Reportes: columna de acciones eliminada. Click en cualquier lugar de la fila → abre el modal Ver reporte (con cursor:pointer para señal visual)",
-      "🎨 Modal Ver reporte con pestañas externas animadas al costado derecho (solo para borradores): pestaña cyan con ✎ arriba, pestaña roja con 🗑 abajo. Colapsadas por default (~44px, solo ícono), expanden al hover mostrando el label (Editar / Eliminar). Aisla visualmente la acción destructiva del resto del footer",
-      "El footer del modal quedó limpio: solo Descargar PDF · Enviar por email · Marcar como pagado (los 3 botones frecuentes)",
-      "Botón Cerrar del modal eliminado — la X del sl-dialog cumple esa función",
-      "En pantallas <900px las pestañas se ocultan (evitan salirse de la vista); si se vuelve caso real de uso en tablet/mobile, agregar fallback al footer",
-      "🏷 Columna 'Cliente' de la tabla del reporte generado renombrada a 'Descripción' — refleja mejor el contenido del campo (que ya venía de descripcionTransaccion internamente)",
-      "💳 Zelle agregado como método de pago (junto a Cheque, Transferencia, Efectivo, Otro) — visible en el wizard Nuevo Reporte y en el modal Marcar como Pagado",
-      "🔧 Fix del chip de estado ('Borrador' / 'Enviado' / 'Pagado') en el reporte: antes flotaba con position:absolute y se superponía sobre el # RP-YYYY-###. Ahora vive dentro del bloque meta del header, arriba del número, alineado a la derecha. Sigue oculto en el PDF",
-      "Bump v2.20.1 → v2.20.2"
+      "Email al broker rediseñado con estilo Hero: header blanco con logo grande, banda cyan como separador, tarjeta con resumen ejecutivo (número de reporte, periodo, cantidad de ingresos, total destacado en cyan)",
+      "El detalle línea por línea de los ingresos queda solo en el PDF adjunto — el cuerpo del email es un resumen breve, no compite visualmente con el PDF",
+      "Aviso de confidencialidad agregado al pie del email (en inglés, para el destinatario)",
+      "En la tabla de Reportes, la columna de acciones desaparece. Ahora un click en cualquier parte de la fila abre la ventana Ver reporte",
+      "Ventana Ver reporte con pestañas al costado derecho (solo para borradores): pestaña cyan con lápiz arriba (Editar), pestaña roja con basurero abajo (Eliminar). Se ven colapsadas por defecto y se expanden al pasar el mouse. Separa visualmente la acción destructiva del resto",
+      "El pie de la ventana queda limpio: solo Descargar PDF, Enviar por email y Marcar como pagado",
+      "La columna Cliente de la tabla del reporte se renombró a Descripción — refleja mejor el contenido del campo",
+      "Zelle agregado como método de pago (junto a Cheque, Transferencia, Efectivo, Otro)",
+      "Arreglo: el chip de estado (Borrador / Enviado / Pagado) del reporte antes se superponía sobre el número. Ahora vive dentro del bloque de datos, sin choques visuales"
     ]
   },
   {
@@ -407,13 +366,11 @@
     "category": "fix",
     "scope": "gcal",
     "audience": "all",
-    "title": "Calendario · fin del popup residual del tile 'Próximo meeting'",
+    "title": "Calendario · fin del pop-up residual del recuadro Próximo meeting",
     "items": [
-      "🩹 Fix del popup que aparecía y se cerraba solo al abrir el Hub — pasaba cuando el token de Google Calendar en localStorage estaba expirado (más de ~55 min desde la última visita) y el widget intentaba renovarlo silenciosamente",
-      "El refresh silencioso usaba `prompt: \"\"` en Google Identity Services, que le permite a Google mostrar UI a discreción. Ahora usa `prompt: \"none\"` — cero UI garantizada",
-      "Si por alguna razón Google no puede renovar sin popup (ej. consent revocado manualmente, cambio de contraseña de tu cuenta corporativa, etc.), el tile cae a estado 'Reconectar cuenta' con un botón visible. Click → consent normal con user activation, sin flash sorpresivo",
-      "Logging interno de diagnóstico agregado (`window._gcalLog` con las últimas 50 entradas del ciclo del widget) — se queda 1-2 semanas para validar en distintos escenarios de cold start y después se limpia",
-      "Bump v2.20.0 → v2.20.1"
+      "Antes: al abrir el Hub después de un rato sin usarlo, aparecía y se cerraba solo un pop-up de Google — pasaba cuando el acceso al calendario había expirado y el sistema intentaba renovarlo silenciosamente",
+      "Ahora: la renovación es completamente silenciosa. Cero ventanas visibles",
+      "Si por alguna razón Google no puede renovar solo (por ejemplo, si revocaste el permiso manualmente o cambiaste tu contraseña corporativa), el recuadro muestra Reconectar cuenta con un botón claro — click y listo, sin sorpresas"
     ]
   },
   {
@@ -423,25 +380,18 @@
     "category": "feat",
     "scope": "finanzas",
     "audience": "admin",
-    "title": "Finanzas · Reportes de Pago — mes contable + fix del PDF + label 'Guardar reporte'",
+    "title": "Finanzas · Reportes de Pago con mes contable y descarga en PDF arreglada",
     "items": [
-      "🗓 Nuevo campo obligatorio 'Mes contable del reporte' en el wizard (paso 2). Es el mes al que se atribuye contablemente el reporte — independiente de la fecha en que llegó el ingreso de los carriers y de la fecha en que se paga al broker",
-      "El mes contable aparece prominente en el PDF y en el modal Ver (bloque grande destacado), y como columna nueva en la tabla de reportes",
-      "Al elegir mes contable, el rango de ingresos se precarga automáticamente al primer y último día de ese mes — se puede overridear manualmente si el pago cruzó meses (ej. carrier deposita en marzo comisiones de febrero)",
-      "El bloque de info del reporte pasa de 2 a 3 columnas: 'Pagar a' · 'Mes contable' · 'Ingresos del periodo'",
-      "🖨 Fix del 'Descargar PDF': el diálogo salía en blanco porque el approach previo usaba `window.print()` + `@media print` sobre el documento host, y el `sl-dialog` (position:fixed + backdrop) interfería con el layout de impresión",
-      "Ahora el reporte se renderiza dentro de un iframe oculto con dimensiones reales de Letter (off-screen) y disparamos `print()` sobre su contentWindow. El sl-dialog no interfiere porque el iframe tiene su propio document aislado",
-      "El CSS crítico del reporte va inline en el iframe para no depender del fetch async de finanzas.css que a veces no terminaba antes del print()",
-      "Al iniciar la impresión, cambiamos temporalmente el `document.title` del Hub al # del reporte para que el diálogo 'Guardar como PDF' sugiera el nombre correcto (ej. `Reporte RP-2026-001.pdf`) — se restaura tras cerrar el diálogo",
-      "Label del botón: 'Guardar borrador' → 'Guardar reporte' (y el toast de confirmación en consecuencia). El reporte sigue creándose en estado Borrador; solo cambió el label",
-      "✉ Enviar por email rediseñado — antes se abría el cliente nativo de correo (mailto:). Ahora el envío es directo desde el sistema, sin cliente intermedio",
-      "El botón 'Enviar por email' abre un modal para elegir el destinatario: viene pre-poblado con el email guardado del broker (si existe) pero es editable — puedes mandar el reporte a cualquier dirección (contador, asistente, dirección alterna)",
-      "El PDF del reporte se genera en el navegador con jsPDF + html2canvas y se manda al Worker en base64. El Worker lo adjunta al correo via Resend y envía desde la cuenta única del sistema (`reports@heroinsuranceusa.com` o similar)",
-      "El cuerpo del email es HTML con branding Hero Light, tabla de ingresos y total. El PDF adjunto es el reporte completo formateado",
-      "Nuevas librerías CDN en finanzas.html: jsPDF 2.5.1 + html2canvas 1.4.1 (~250KB combinado, solo se cargan en este módulo)",
-      "Requiere que el Worker de Cloudflare tenga el endpoint nuevo `/finanzas/send-consolidated-report`. Si no está deployado, el envío falla con toast informativo",
-      "Los reportes ya guardados antes de este bump aparecen con '—' en la columna 'Mes contable' hasta que se editen y se les asigne uno",
-      "Bump v2.19.2 → v2.20.0"
+      "Nuevo campo obligatorio Mes contable del reporte en el paso 2 del asistente. Es el mes al que se atribuye contablemente el reporte — independiente de cuándo llegaron los ingresos y de cuándo se paga al broker",
+      "El mes contable aparece destacado en el PDF y en la ventana Ver, y como columna nueva en la tabla de reportes",
+      "Al elegir mes contable, el rango de ingresos se rellena automáticamente al primer y último día de ese mes — se puede cambiar manualmente si el pago cruzó meses (por ejemplo, el carrier deposita en marzo comisiones de febrero)",
+      "El bloque de información del reporte pasa de 2 a 3 columnas: Pagar a · Mes contable · Ingresos del periodo",
+      "Arreglo importante del Descargar PDF: antes el diálogo de impresión salía en blanco. Ahora el reporte se genera correctamente y el archivo sugerido tiene el número del reporte (por ejemplo, Reporte RP-2026-001.pdf)",
+      "El botón Guardar borrador cambió a Guardar reporte (el reporte sigue creándose en estado Borrador; solo cambió la etiqueta)",
+      "Enviar por email rediseñado — antes se abría el cliente de correo del sistema. Ahora el envío es directo desde el Hub, sin cliente intermedio",
+      "El botón Enviar por email abre una ventana para elegir destinatario: pre-llenado con el email del broker (si existe) pero editable — puedes mandar el reporte a cualquier dirección (contador, asistente, dirección alterna)",
+      "El PDF del reporte se genera en el navegador y se manda como adjunto. El cuerpo del email es HTML con branding Hero y tabla de ingresos. El PDF completo va adjunto",
+      "Los reportes ya guardados antes de este cambio aparecen con — en la columna Mes contable hasta que se editen y se les asigne uno"
     ]
   },
   {
@@ -451,19 +401,17 @@
     "category": "feat",
     "scope": "finanzas",
     "audience": "admin",
-    "title": "Finanzas · Reportes de Pago — wizard, acciones y PDF",
+    "title": "Finanzas · Reportes de Pago con asistente, acciones y PDF",
     "items": [
-      "El botón 'Nuevo reporte' abre un wizard de 5 pasos: destinatario → periodo → ingresos a incluir → detalles del pago → preview",
-      "Paso 3 detecta automáticamente todos los ingresos con payout al destinatario dentro del periodo elegido, con checkbox por línea para excluir manualmente si hace falta. Muestra chip vivo con # seleccionados y total del payout consolidado",
-      "Paso 5 renderiza el reporte formateado tal como se verá al guardar (branding Hero Light, tabla, KPIs, notas)",
-      "El botón 'Guardar borrador' persiste en Firestore con estado 'borrador' y reserva el correlativo RP-YYYY-### via runTransaction",
-      "En la tabla, cada reporte tiene acciones: Ver 👁 (siempre), Editar ✎ y Eliminar ✕ (solo si está en Borrador)",
-      "Modal Ver: muestra el reporte formateado + 3 botones: Descargar PDF, Enviar por email, Marcar como pagado",
-      "Descargar PDF: usa window.print() + CSS @media print — sale limpio con logo Hero, tabla de ingresos y total. El usuario elige 'Guardar como PDF' desde el diálogo del navegador",
-      "Enviar por email: abre el cliente de correo con destinatario/asunto/cuerpo prellenados (mailto:). Después pregunta si se envió correctamente para marcar el reporte como 'Enviado'",
-      "Marcar como pagado: modal con selector de método (Cheque/Transferencia/Efectivo/Otro), fecha del pago y referencia (# cheque, ACH ID, etc.). El reporte pasa a estado 'Pagado' y no se puede editar/eliminar más",
-      "Nuevas acciones en el audit-log: finanzas.reporte.add/edit/delete/send/pay",
-      "Bump v2.19.1 → v2.19.2"
+      "El botón Nuevo reporte abre un asistente de 5 pasos: destinatario → periodo → ingresos a incluir → detalles del pago → previsualización",
+      "Paso 3 detecta automáticamente todos los ingresos con pago al destinatario dentro del periodo elegido, con casilla por línea para excluir manualmente si hace falta. Muestra en vivo el número de seleccionados y el total consolidado",
+      "Paso 5 muestra el reporte formateado tal como se verá al guardar (con branding Hero, tabla, KPIs, notas)",
+      "El botón Guardar borrador crea el reporte en estado Borrador y reserva el número consecutivo (RP-YYYY-###)",
+      "En la tabla, cada reporte tiene acciones: Ver (siempre), Editar y Eliminar (solo si está en Borrador)",
+      "Ventana Ver: muestra el reporte formateado más 3 botones: Descargar PDF, Enviar por email y Marcar como pagado",
+      "Descargar PDF usa la impresión del navegador — sale limpio con logo, tabla y total. El usuario elige Guardar como PDF desde el diálogo",
+      "Enviar por email abre el cliente de correo con destinatario, asunto y cuerpo pre-llenados. Después pregunta si se envió correctamente para marcar el reporte como Enviado",
+      "Marcar como pagado abre una ventana con selector de método (Cheque / Transferencia / Efectivo / Otro), fecha del pago y referencia (# cheque, ID de transferencia, etc.). El reporte pasa a estado Pagado y ya no se puede editar ni eliminar"
     ]
   },
   {
@@ -473,16 +421,14 @@
     "category": "feat",
     "scope": "finanzas",
     "audience": "admin",
-    "title": "Finanzas · Reportes de Pago — skeleton del nuevo módulo",
+    "title": "Finanzas · esqueleto inicial del módulo Reportes de Pago",
     "items": [
-      "Se agregó el segmento 'Reportes de Pago' al sidebar de Finanzas (grupo Reportes, ícono de recibo)",
-      "La sección muestra la tabla de reportes generados con columnas: # Reporte, Fecha, Destinatario, Periodo, # Ingresos, Total, Estado y acciones",
-      "Filtros: búsqueda por texto (número/destinatario/referencia/notas), estado (Borrador/Enviado/Pagado), destinatario y periodo (mes o rango custom)",
-      "Estados con badge de color: Borrador (gris), Enviado (cyan Hero), Pagado (verde)",
-      "Numeración correlativa RP-YYYY-###: la utilidad `nextNumeroReporte` corre en runTransaction de Firestore sobre `finanzas-config/reportes-contador` para evitar colisiones si dos personas generan reportes al mismo tiempo. Reinicia a 001 al cambiar de año",
-      "Colección Firestore: `finanzas-reportes-pago` (todavía vacía; queda lista para el wizard del próximo bump)",
-      "El botón 'Nuevo reporte' y las acciones Ver/Editar/Eliminar ya están bindeadas — al pulsarlas muestran un toast informando que el wizard llega en el próximo commit",
-      "Bump v2.19.0 → v2.19.1"
+      "Se agregó el segmento Reportes de Pago al menú lateral de Finanzas (grupo Reportes)",
+      "La sección muestra la tabla de reportes con columnas: # Reporte, Fecha, Destinatario, Periodo, # Ingresos, Total, Estado y acciones",
+      "Filtros: búsqueda por texto (número, destinatario, referencia o notas), estado (Borrador / Enviado / Pagado), destinatario y periodo (mes o rango personalizado)",
+      "Estados con etiquetas de color: Borrador (gris), Enviado (cyan Hero), Pagado (verde)",
+      "Numeración consecutiva RP-YYYY-### garantizada aunque dos personas generen reportes al mismo tiempo. Reinicia a 001 al cambiar de año",
+      "El botón Nuevo reporte y las acciones Ver/Editar/Eliminar ya están conectadas — al pulsarlas muestran un aviso informando que el asistente llega en el próximo cambio"
     ]
   },
   {
@@ -492,14 +438,13 @@
     "category": "refactor",
     "scope": "finanzas",
     "audience": "admin",
-    "title": "Finanzas · Egresos retirado (preparación para Reportes de Pago)",
+    "title": "Finanzas · retiro del segmento Egresos (preparación para Reportes de Pago)",
     "items": [
-      "Se retiró el segmento 'Egresos' del módulo de Finanzas — venía funcionando pero no estaba encajando con el flujo real de pagos, que se hacen por conjuntos de ingresos consolidados por destinatario",
-      "El item 'Egresos' del sidebar y toda la sección desaparecieron. También se limpiaron el radio 'Egresos' del Wizard Exportar y el KPI 'Egresos' del Dashboard",
-      "El hero KPI del Dashboard pasó de 'Neto real' a 'Ganancia Hero' (Bruto − Pagado a brokers). Se promovió al hero y salió del strip de métricas para no duplicarlo",
-      "Los datos históricos de la colección `finanzas-egresos` en Firestore quedan intactos (no se borra nada), solo dejamos de leerlos y escribirlos desde el módulo",
-      "Esto abre paso al nuevo segmento 'Reportes de Pago' que llega en el próximo bump — el reemplazo consolidado por destinatario (agencia o broker/agente) que agrupa ingresos de varios carriers en un solo reporte",
-      "Bump v2.18.3 → v2.19.0"
+      "Se retiró el segmento Egresos del módulo Finanzas — funcionaba pero no encajaba con el flujo real de pagos, que se hacen por conjuntos de ingresos consolidados por destinatario",
+      "El item Egresos del menú lateral y toda la sección desaparecieron. También se limpiaron la opción Egresos del asistente de Exportar y el KPI Egresos del Dashboard",
+      "El KPI principal del Dashboard pasó de Neto Real a Ganancia Hero (Bruto − Pagado a brokers). Se promovió al lugar principal y salió de la fila de métricas para no duplicarlo",
+      "Los datos históricos de egresos quedan intactos — solo se deja de leerlos desde el módulo",
+      "Esto abre paso al nuevo segmento Reportes de Pago que llega en el próximo cambio — el reemplazo consolidado por destinatario que agrupa ingresos de varios carriers en un solo reporte"
     ]
   },
   {
@@ -509,14 +454,13 @@
     "category": "refactor",
     "scope": "changelog",
     "audience": "all",
-    "title": "Changelog · Paginación + colapso de versiones antiguas",
+    "title": "Changelog · paginación y colapso de versiones antiguas",
     "items": [
-      "La página de changelog venía creciendo mucho (47 entradas hoy) y se estaba volviendo un scroll infinito",
-      "Ahora las 3 versiones más recientes aparecen expandidas por default; las anteriores se muestran colapsadas (solo pill de versión + resumen + flecha)",
-      "Click en el header de una versión colapsada para verla completa",
+      "La página de Changelog venía creciendo mucho y se estaba volviendo un scroll infinito",
+      "Ahora las 3 versiones más recientes aparecen abiertas por defecto; las anteriores se muestran cerradas (solo etiqueta de versión, resumen y flecha)",
+      "Click en una versión cerrada para verla completa",
       "Nuevo paginador al pie: 10 versiones por página, con navegación numerada y flechas anterior/siguiente. Al cambiar de página hace scroll suave al inicio",
-      "Los filtros por categoría (Nuevo, Arreglos, Mejoras…) resetean a la página 1 automáticamente",
-      "Bump v2.18.2 → v2.18.3"
+      "Los filtros por categoría (Nuevo, Arreglos, Mejoras…) vuelven automáticamente a la página 1"
     ]
   },
   {
@@ -526,14 +470,11 @@
     "category": "fix",
     "scope": "hub",
     "audience": "all",
-    "title": "Hub · Adiós al popup recurrente 'Reconectar con Google Calendar'",
+    "title": "Hub · adiós al pop-up recurrente de Reconectar con Google Calendar",
     "items": [
-      "El widget 'Próximo meeting' del banner HQ Command Center a veces pedía reconectar la cuenta con Google Calendar cada cierto tiempo — molestaba tener que autorizar de nuevo cada 55 min de uso continuo (más aún al abrir el Hub en pestañas nuevas o después de cambiar de red)",
-      "Causa: Firebase Auth signInWithPopup con prompt:'none' abre una ventana visible ~200-500ms, aunque sea 'silenciosa'. Es una limitación de la librería, no del código",
-      "Fix: migramos el refresh del token de Firebase Auth a Google Identity Services (GIS). GIS usa un iframe oculto en vez de popup — cero ventanas visibles cuando ya diste consent al inicio del día",
-      "El login inicial sigue pasando por Firebase Auth (como siempre); GIS solo maneja las renovaciones silenciosas posteriores",
-      "El botón 'Reconectar' del widget también migró a GIS — el consent screen ahora es más rápido y consistente",
-      "Bump v2.18.1 → v2.18.2"
+      "Antes: el recuadro Próximo meeting del banner principal pedía reconectar la cuenta con Google Calendar cada cierto tiempo — molestaba tener que autorizar de nuevo cada 55 minutos de uso continuo",
+      "Ahora: la renovación del permiso es completamente invisible cuando ya diste consentimiento al inicio del día. Cero ventanas emergentes",
+      "El botón Reconectar del recuadro también quedó más rápido y consistente"
     ]
   },
   {
@@ -543,16 +484,14 @@
     "category": "feat",
     "scope": "equipo",
     "audience": "admin",
-    "title": "Equipo · Modal de edición rediseñado + uploader de foto directo al repo",
+    "title": "Equipo · modal de edición unificado y subida de foto directa al repositorio",
     "items": [
-      "Se unificaron los dos modales de edición del equipo (datos generales + ficha del héroe) en uno solo — antes había ambigüedad porque los dos botones ✎ (uno en la tarjeta, otro en el perfil grande) abrían modales distintos",
-      "Foto del miembro: nuevo uploader con avatar grande + click/drag&drop. Al guardar sube directo al repo (images/team/{slug}.{ext}) vía la GitHub API — ya no hay que agregar la foto manualmente",
-      "El uploader valida tipo (JPG/PNG/WebP) y peso (< 2MB) antes de subir. Muestra preview inmediato antes de commitear",
-      "País: input de texto libre con autocompletado (Venezuela, Cuba, España, etc.) — antes era un dropdown fijo de 5 países. Ahora se puede agregar cualquier origen",
-      "Se eliminó el campo 'Origen' de la ficha del héroe — era redundante con el país (que ya autopobla el origen narrativo con la bandera del país)",
-      "Fix: los <sl-select> del modal (país, mes, día del cumpleaños) cerraban el dialog al hacer una selección (bug de Shoelace). Reemplazados por <select> y <input> nativos con la misma estética",
-      "El campo 'birthdate' de Erick que motivó la migración ahora se puede editar sin que el modal se cierre",
-      "Bump v2.18.0 → v2.18.1"
+      "Se unificaron los dos modales de edición del equipo (datos generales y ficha del héroe) en uno solo — antes había ambigüedad porque los dos botones ✎ (uno en la tarjeta, otro en el perfil grande) abrían modales distintos",
+      "Foto del miembro: nuevo cargador con avatar grande y click o arrastrar y soltar. Al guardar sube directo al repositorio de imágenes — ya no hay que agregar la foto manualmente",
+      "El cargador valida tipo (JPG, PNG, WebP) y peso (menos de 2 MB) antes de subir. Muestra vista previa inmediata antes de confirmar",
+      "País: campo de texto libre con autocompletado (Venezuela, Cuba, España, etc.) — antes era una lista fija de 5 países. Ahora se puede agregar cualquier origen",
+      "Se eliminó el campo Origen de la ficha del héroe — era redundante con el país (que ya genera el origen narrativo con la bandera del país)",
+      "Arreglo: los selectores del modal (país, mes, día del cumpleaños) cerraban el modal al hacer una selección. Reemplazados por selectores estándar con la misma estética"
     ]
   },
   {
@@ -562,16 +501,14 @@
     "category": "feat",
     "scope": "asistencia",
     "audience": "admin",
-    "title": "Asistencia · Migración de Google Sheets a Firestore",
+    "title": "Asistencia · migración de Google Sheets a la base del Hub",
     "items": [
-      "El sistema de asistencia estaba llegando a los 1000 registros en el Google Sheet y el dashboard admin se iba a poner cada vez más lento (el Apps Script bajaba todo el Sheet en cada carga)",
-      "Migramos toda la data (registros históricos) a la colección 'attendance' de Firestore, misma base que usa audit-log, finanzas y roles",
+      "El sistema de asistencia estaba llegando a los 1000 registros en la hoja de cálculo y el dashboard admin se iba a poner cada vez más lento",
+      "Migramos toda la data histórica a la base de datos principal del Hub, la misma que ya usan la auditoría, Finanzas y Roles",
       "Los botones de Mi Asistencia (Entrada, Salida, Break, etc.) siguen funcionando exactamente igual desde el punto de vista del usuario — solo cambió a dónde se guardan los datos",
-      "Dashboard admin: por default ahora carga solo los últimos 30 días (mucho más rápido que antes) + nuevo botón 'Histórico completo' cuando HR necesite ver data más vieja",
-      "Vista 'Mi Asistencia' en Mi perfil: cada usuario ahora ve todos sus eventos históricos, filtrados server-side (solo trae los suyos)",
-      "El Google Sheet queda como respaldo histórico read-only. El Apps Script sigue vivo pero ya no recibe escrituras nuevas",
-      "Nueva página admin-only /migrar-asistencia.html usada una única vez para migrar los ~1000 registros históricos (idempotente vía docIds determinísticos). Se puede borrar del repo en una limpieza futura",
-      "Bump v2.17.1 → v2.18.0"
+      "Dashboard admin: por defecto ahora carga solo los últimos 30 días (mucho más rápido que antes) y hay un nuevo botón Histórico completo para cuando HR necesite ver data más vieja",
+      "Vista Mi Asistencia en Mi Perfil: cada usuario ahora ve todos sus eventos históricos, solo los suyos",
+      "La hoja de cálculo original queda como respaldo solo de lectura"
     ]
   },
   {
@@ -581,13 +518,11 @@
     "category": "fix",
     "scope": "asistencia",
     "audience": "all",
-    "title": "Asistencia · Fix del mensaje falso 'No se pudo registrar' cuando sí se registraba",
+    "title": "Asistencia · arreglo del mensaje falso No se pudo registrar cuando sí se registraba",
     "items": [
-      "Los botones de Mi Asistencia (Entrada, Salida, Break) a veces mostraban 'No se pudo registrar. Reintenta.' aunque la fila SÍ quedaba guardada en el Google Sheet",
-      "Causa: Apps Script responde con un redirect 302 sin headers CORS. El navegador intentaba seguirlo, la lectura fallaba por CORS y el fetch lanzaba excepción — pero el appendRow ya se había ejecutado del lado de Apps Script",
-      "Fix: el POST ahora usa mode:'no-cors' (fire-and-forget). El registro llega igual, y la UI ya no muestra un falso error",
-      "Fix menor: el toggle de Break en el banner HQ Command Center llamaba a una función inexistente (readLast) — corregido a loadLast; el botón 'Volver del break' ahora funciona correctamente",
-      "Bump v2.17.0 → v2.17.1"
+      "Antes: los botones de Mi Asistencia (Entrada, Salida, Break) a veces mostraban No se pudo registrar. Reintenta aunque el registro sí quedaba guardado",
+      "Ahora: el registro llega igual y ya no aparece el falso error",
+      "Arreglo menor: el botón Volver del Break del banner principal no funcionaba — ya está corregido"
     ]
   },
   {
@@ -597,15 +532,14 @@
     "category": "feat",
     "scope": "finanzas",
     "audience": "admin",
-    "title": "Finanzas · El import de Excel ahora detecta filas modificadas (no solo nuevas)",
+    "title": "Finanzas · el import de Excel ahora detecta filas modificadas (no solo nuevas)",
     "items": [
-      "Antes: el import solo detectaba filas nuevas (por fecha + descripción de depósito + monto). Si el Excel actualizaba otros campos de filas ya existentes, esos cambios se descartaban en silencio",
-      "Ahora: el diff clasifica en 3 categorías — Nuevos (se crean), Modificados (se actualizan) y Sin cambios (se ignoran)",
-      "Preview muestra qué campos cambian en cada fila modificada, con valor anterior tachado en gris y valor nuevo en verde",
-      "Campos comparados: tipo de pago, categoría, descripción de transacción, notas y payouts. Los campos que el Excel no puede setear (carrier, URL del archivo original) se preservan intactos",
-      "Payouts: merge inteligente. Excel manda para el saldo. Si un payout ya tiene URL de Drive en Firestore (viene del import de URLs), esa URL se preserva. Broker y tipo asignados manualmente también se preservan",
-      "El apply corre en 2 fases: primero crea los nuevos, después actualiza los modificados en batches de 400. El status muestra progreso de ambas fases",
-      "Bump v2.16.0 → v2.17.0"
+      "Antes: el import de Excel solo detectaba filas nuevas. Si el Excel actualizaba otros campos de filas ya existentes, esos cambios se descartaban en silencio",
+      "Ahora: la comparación clasifica cada fila en tres categorías — Nuevos (se crean), Modificados (se actualizan) y Sin cambios (se ignoran)",
+      "La previsualización muestra qué campos cambian en cada fila modificada, con el valor anterior tachado en gris y el valor nuevo en verde",
+      "Campos comparados: tipo de pago, categoría, descripción, notas y pagos a brokers. Los campos que el Excel no puede setear (carrier, URL del archivo original) se preservan intactos",
+      "Pagos a brokers: fusión inteligente. El Excel decide el saldo. Si un pago ya tiene URL del reporte cargada en el sistema (desde el import de URLs), esa URL se preserva. Broker y tipo asignados manualmente también se preservan",
+      "El apply corre en dos fases: primero crea los nuevos, después actualiza los modificados. El estado muestra el progreso de ambas"
     ]
   },
   {
@@ -617,20 +551,19 @@
     "audience": "all",
     "title": "Hub · HQ Command Center — banner unificado del dashboard",
     "items": [
-      "Nuevo banner 'HQ Command Center' que integra saludo, clima, fecha/hora, oficina virtual, asistencia y próximo meeting en un solo bloque",
-      "Ribbon superior: avatar con anillo cyan, saludo dinámico según hora del día ('Buenos días/tardes/noches, [nombre]!'), y fecha/hora con la hora protagonista en mono grande con gradiente cyan",
-      "Tile 'Oficina Virtual': CTA directa a Gather Town con acento cyan",
-      "Tile 'Mi Asistencia' compacto: Entrada, Salida y un botón toggle de Break — los 3 en una sola fila",
-      "Tile 'Próximo meeting': próximo evento del Google Calendar con badge dinámico ('En 15 min' / 'En curso' / 'Hoy' / 'Mañana'), hora, título y botón directo para unirse",
-      "Panel 'Mi asistencia' del dashboard limpio: se quitaron los grupos 'Corte de luz' y 'Ausencia' que ya no se usan a diario",
-      "'Reportar ausencia' se movió a Mi perfil → sección 'Mi asistencia' (arriba a la derecha, junto al selector de periodo)",
-      "Módulo 'Calendario' renombrado a 'Calendario de Entrenamientos' para dejar claro qué es",
-      "Nuevo módulo de acceso 'Solicitud de correos' (antes vivía como hub-card en el cuartel general)",
-      "Sección 'Tu cuartel general' simplificada: se eliminaron las 4 hub-cards grandes (Equipo, Portales, Solicitud de correos, Reuniones) que casi no se usaban. La sección ahora se llama 'Arsenal del héroe' y contiene solo los accesos directos administrados desde admin.html",
-      "Eliminada la sección 'Búsqueda web' del dashboard (el input de Google que redirigía a nueva pestaña)",
+      "Nuevo banner HQ Command Center que integra saludo, fecha, hora, oficina virtual, asistencia y próximo meeting en un solo bloque",
+      "Franja superior: avatar con anillo cyan, saludo dinámico según hora del día (Buenos días/tardes/noches, [nombre]!) y fecha y hora con la hora protagonista en tipografía grande con gradiente cyan",
+      "Recuadro Oficina Virtual: acceso directo a Gather Town con acento cyan",
+      "Recuadro Mi Asistencia compacto: Entrada, Salida y un botón para Break — los tres en una sola fila",
+      "Recuadro Próximo meeting: próximo evento del Google Calendar con etiqueta dinámica (En 15 min / En curso / Hoy / Mañana), hora, título y botón directo para unirse",
+      "Panel Mi Asistencia del dashboard limpio: se quitaron los grupos Corte de Luz y Ausencia que ya no se usan a diario",
+      "Reportar ausencia se movió a Mi Perfil → sección Mi Asistencia (arriba a la derecha, junto al selector de periodo)",
+      "Módulo Calendario renombrado a Calendario de Entrenamientos para dejar claro qué es",
+      "Nuevo módulo de acceso Solicitud de correos (antes vivía como tarjeta en el cuartel general)",
+      "Sección Tu cuartel general simplificada: se eliminaron las 4 tarjetas grandes (Equipo, Portales, Solicitud de correos, Reuniones) que casi no se usaban. La sección ahora se llama Arsenal del héroe y contiene solo los accesos directos administrados desde admin",
+      "Eliminada la sección Búsqueda web del dashboard",
       "La sección aparte de meetings desaparece — todo vive en el banner",
-      "Fix: el token del calendario ahora persiste en localStorage en vez de sessionStorage — deja de abrirse la ventanita de autorización cada vez que abres el Hub en pestaña nueva o reabres el navegador",
-      "Bump v2.15.0 → v2.16.0"
+      "Arreglo: el permiso para leer el calendario ahora se recuerda entre sesiones — deja de abrirse la ventanita de autorización cada vez que abres el Hub en pestaña nueva"
     ]
   },
   {
@@ -640,15 +573,13 @@
     "category": "feat",
     "scope": "hub",
     "audience": "all",
-    "title": "Hub · Widget de meetings de Google Calendar en el dashboard",
+    "title": "Hub · recuadro de meetings de Google Calendar en el dashboard",
     "items": [
-      "Nueva sección en el dashboard: 'Próximos meetings' junto a 'Mi asistencia' en un grid de 2 columnas",
-      "Consume Google Calendar API con el scope calendar.readonly (agregado al login flow de auth.js)",
-      "Muestra meetings de hoy y mañana agrupados, con hora, título, badge dinámico ('En 15 min' / 'En curso') y botón para unirse al link real (Zoom, Meet, Teams, etc.)",
-      "Refresh automático cada 5 min + al recuperar foco de pestaña",
-      "Estados: loading (shimmer), ready, empty ('Sin meetings próximos ✨'), reconnect (permiso vencido) y error con reintento",
-      "Refresh silencioso del token via signInWithPopup con prompt=none — el usuario casi no ve el reconnect",
-      "Bump v2.14.0 → v2.15.0"
+      "Nueva sección en el dashboard: Próximos meetings junto a Mi Asistencia, en dos columnas",
+      "Se conecta a Google Calendar (solo lectura) y muestra meetings de hoy y mañana agrupados, con hora, título, etiqueta dinámica (En 15 min / En curso) y botón para unirse al link real (Zoom, Meet, Teams, etc.)",
+      "Se actualiza automáticamente cada 5 minutos y al volver a la pestaña",
+      "Estados: cargando, listo, sin meetings próximos, reconectar cuenta (permiso vencido) y error con reintento",
+      "Renovación silenciosa del permiso — el usuario casi no ve el paso de reconexión"
     ]
   },
   {
@@ -658,14 +589,13 @@
     "category": "feat",
     "scope": "hub",
     "audience": "admin",
-    "title": "Hub · Refactor del Design System",
+    "title": "Hub · documentación oficial del Design System",
     "items": [
-      "Documento oficial del Design System publicado en docs/design-system.md (tokens, componentes, convenciones, checklist)",
-      "Sistema global de toasts (heroToast) disponible en las 16 páginas del Hub: heroToast.success/error/info/neutral con auto-dismiss y variantes",
-      "Nueva escala de spacing tokenizada en :root — --s-1..8 (4/8/12/16/20/24/32/40) lista para usar en módulos nuevos",
-      "Modo oscuro cubierto en 5 gaps de agencias.css (border del tree, tabs de vista, hint del canvas, nodos on_hold)",
-      "Accesibilidad: regla global @media (prefers-reduced-motion: reduce) que respeta la preferencia del usuario de reducir animaciones (WCAG 2.3.3)",
-      "Bump v2.13.1 → v2.14.0"
+      "Documento oficial del Design System publicado (tokens, componentes, convenciones, checklist) — sirve como referencia para cualquier UI nueva",
+      "Sistema global de avisos disponible en las 16 páginas del Hub: con variantes de éxito, error, información y neutro, y cierre automático",
+      "Nueva escala de espaciado tokenizada — lista para usar en módulos nuevos",
+      "Modo oscuro cubierto en 5 vacíos que quedaban en la vista de Agencias",
+      "Accesibilidad: regla global que respeta la preferencia del usuario de reducir animaciones"
     ]
   },
   {
@@ -675,12 +605,11 @@
     "category": "fix",
     "scope": "finanzas",
     "audience": "admin",
-    "title": "Finanzas · Fix divisor huérfano en el strip de métricas en móvil",
+    "title": "Finanzas · arreglo del divisor sobrante en la fila de métricas en móvil",
     "items": [
-      "En pantallas ≤560px, la strip pasa a 2 columnas y la 5ta métrica queda sola en su fila",
-      "El divisor vertical derecho se mostraba igual bajo la 5ta métrica, sin nada a la derecha que separar",
-      "Se ajustó la regla para que `:last-child` también quite el `border-right` dentro del media query",
-      "Bump v2.13.0 → v2.13.1"
+      "En pantallas pequeñas, la fila de métricas del Dashboard pasa a 2 columnas y la quinta métrica queda sola en su fila",
+      "El divisor vertical del lado derecho quedaba visible debajo de esa quinta métrica, sin nada al lado que separar",
+      "Ahora se oculta correctamente"
     ]
   },
   {
@@ -690,14 +619,13 @@
     "category": "feat",
     "scope": "finanzas",
     "audience": "admin",
-    "title": "Finanzas · Dashboard rediseñado con Hero KPI + strip de métricas",
+    "title": "Finanzas · Dashboard rediseñado con KPI principal destacado",
     "items": [
-      "Los 6 KPIs del Dashboard estaban todos con el mismo peso visual y se sentía saturado",
-      "Ahora el 'Neto Real' es el protagonista arriba: card grande con gradiente cyan y valor de 44px, con el subtítulo 'Ganancia menos egresos del periodo'",
-      "Las 5 métricas de apoyo (Bruto, Pagado, Ganancia, Egresos, Ingresos) quedan en una strip compacta debajo, separadas por divisores verticales sutiles",
-      "Responsive: 5 columnas → 3 columnas en pantallas <1000px → 2 columnas en móviles",
-      "Cuando el Neto Real es negativo se pinta en rojo suave (#fee2e2) que contrasta con el gradiente cyan sin chocar",
-      "Bump v2.12.3 → v2.13.0"
+      "Antes: los 6 KPIs del Dashboard tenían todos el mismo peso visual y se sentía saturado",
+      "Ahora el Neto Real es el protagonista arriba: tarjeta grande con gradiente cyan y valor de 44 px, con el subtítulo Ganancia menos egresos del periodo",
+      "Las 5 métricas de apoyo (Bruto, Pagado, Ganancia, Egresos, Ingresos) quedan en una fila compacta debajo, separadas por divisores sutiles",
+      "Responsive: 5 columnas en escritorio → 3 columnas en pantallas medianas → 2 columnas en móvil",
+      "Cuando el Neto Real es negativo se pinta en rojo suave que contrasta con el cyan sin chocar"
     ]
   },
   {
@@ -707,13 +635,12 @@
     "category": "feat",
     "scope": "finanzas",
     "audience": "admin",
-    "title": "Finanzas · Contador de paginación arriba de la tabla de Ingresos",
+    "title": "Finanzas · contador de paginación arriba de la tabla de Ingresos",
     "items": [
-      "Nueva línea de contexto arriba de la tabla del tab Ingresos: 'Mostrando X–Y de Total · Página N de M'",
+      "Nueva línea arriba de la tabla del tab Ingresos: Mostrando X–Y de Total · Página N de M",
       "Se actualiza en tiempo real al cambiar de página, filtrar o cargar datos nuevos",
-      "Se oculta automáticamente cuando hay 1 sola página o 0 resultados para no distraer",
-      "Motivación: evitar que se pierda de vista que hay más registros más allá de la primera página (la barra de paginación de Tabulator abajo era fácil de pasar por alto)",
-      "Bump v2.12.2 → v2.12.3"
+      "Se oculta cuando hay una sola página o cero resultados",
+      "Motivación: evitar que se pierda de vista que hay más registros que los visibles en la primera página"
     ]
   },
   {
@@ -723,12 +650,10 @@
     "category": "fix",
     "scope": "mi-perfil",
     "audience": "team",
-    "title": "Mi perfil · El loader de 'Mi asistencia' no desaparecía tras cargar los datos",
+    "title": "Mi Perfil · el mensaje de carga de Mi Asistencia no desaparecía",
     "items": [
-      "En la sección 'Mi asistencia' de mi-perfil.html el mensaje 'Cargando tu asistencia…' seguía visible incluso cuando los KPIs, gráficos y la tabla ya se habían renderizado correctamente",
-      "Causa: la clase `.mp-att-loading` en styles.css definía `display: flex`, que ganaba en especificidad sobre el atributo HTML `hidden` (por defecto `display: none`)",
-      "Fix: agregada la regla `.mp-att-loading[hidden] { display: none; }` para respetar el atributo `hidden` cuando el JS lo activa",
-      "Bump v2.12.1 → v2.12.2"
+      "Antes: en la sección Mi Asistencia de Mi Perfil, el mensaje Cargando tu asistencia… seguía visible incluso después de que los KPIs, gráficos y la tabla ya estaban en pantalla",
+      "Ahora: el mensaje desaparece correctamente cuando la carga termina"
     ]
   },
   {
@@ -738,11 +663,10 @@
     "category": "refactor",
     "scope": "finanzas",
     "audience": "admin",
-    "title": "Finanzas · Cleanup del script temporal de migración de carriers",
+    "title": "Finanzas · limpieza del script temporal de migración de carriers",
     "items": [
-      "Eliminada la función `migrarCarriersHistoricos` y su exposición en `window.__migrarCarriersHistoricos` de js/finanzas.js — ya cumplió su propósito de poblar el campo `carrier` en los 233 ingresos históricos",
-      "Se retiran también las reglas de matcheo (`CARRIER_MATCH_RULES`) y el helper `matchCarrier`, que solo eran usados por esa migración",
-      "Bump v2.12.0 → v2.12.1"
+      "Se eliminó el script que se usó una única vez para poblar el campo carrier en los 233 ingresos históricos — ya cumplió su propósito",
+      "Se retiran también las reglas de matcheo asociadas, que solo servían para esa migración"
     ]
   },
   {
@@ -752,17 +676,16 @@
     "category": "feat",
     "scope": "finanzas",
     "audience": "team",
-    "title": "Finanzas · Exportar rediseñado como wizard multi-paso con preview en vivo",
+    "title": "Finanzas · Exportar rediseñado como asistente paso a paso con previsualización en vivo",
     "items": [
-      "El tab Exportar se convirtió en un wizard de 7 pasos: (1) qué exportar · (2) periodo · (3) tipo de pago y categoría · (4) carriers · (5) destinatarios · (6) columnas · (7) formato y descarga",
-      "Barra de progreso arriba con los 7 pasos numerados: cyan cuando está activo, checkmark verde cuando se completa, punteado gris cuando no aplica al dataset elegido",
-      "Los pasos que no aplican al dataset se saltan automáticamente al presionar 'Siguiente' (ej: Payouts salta 'Egresos', Egresos salta 'Carriers' y 'Destinatarios')",
+      "El tab Exportar se convirtió en un asistente de 7 pasos: qué exportar → periodo → tipo de pago y categoría → carriers → destinatarios → columnas → formato y descarga",
+      "Barra de progreso arriba con los 7 pasos numerados: cyan cuando está activo, verde con checkmark cuando se completa, punteado gris cuando no aplica al dataset elegido",
+      "Los pasos que no aplican al dataset se saltan automáticamente (por ejemplo, Payouts salta Egresos; Egresos salta Carriers y Destinatarios)",
       "Se puede volver a un paso ya visitado clickeando su número en la barra de progreso",
-      "Preview persistente abajo del wizard con: nombre del archivo dinámico (ej. hero-finanzas-ingresos-enero-2026.xlsx), badges con los filtros aplicados (periodo, tipo de pago, categoría, carriers, etc.), tabla mock con 3 filas ficticias que refleja exactamente las columnas seleccionadas y el conteo real de registros que se van a exportar",
-      "Filtros combinables: periodo, tipo de pago, categoría, carrier, tipo de destinatario (agencia/broker), destinatario específico y tipo de gasto — todos con chips clickeables para marcar/desmarcar individualmente",
-      "Selección de columnas con checkboxes por dataset + botones 'Marcar todo' / 'Ninguna'",
-      "El resumen ejecutivo (imprimir/PDF) queda separado del wizard como acción independiente abajo",
-      "Bump v2.11.0 → v2.12.0"
+      "Previsualización persistente debajo del asistente con: nombre del archivo dinámico (por ejemplo, hero-finanzas-ingresos-enero-2026.xlsx), etiquetas con los filtros aplicados, tabla de muestra con 3 filas ficticias que refleja exactamente las columnas seleccionadas y el conteo real de registros que se van a exportar",
+      "Filtros combinables: periodo, tipo de pago, categoría, carrier, tipo de destinatario (agencia o broker), destinatario específico y tipo de gasto — todos con etiquetas clickeables para marcar/desmarcar individualmente",
+      "Selección de columnas con casillas por dataset y botones Marcar todo / Ninguna",
+      "El resumen ejecutivo (para imprimir en PDF) queda separado del asistente como acción independiente abajo"
     ]
   },
   {
@@ -772,17 +695,15 @@
     "category": "feat",
     "scope": "finanzas",
     "audience": "team",
-    "title": "Finanzas · Módulo de Egresos y KPI de Neto Real",
+    "title": "Finanzas · módulo de Egresos y KPI de Neto Real",
     "items": [
-      "Nueva sección 'Egresos' en el sidebar de Finanzas para registrar gastos operativos (servicios, nómina, renta, oficina, marketing, tecnología, profesional, etc.)",
-      "Cada egreso: fecha, tipo de gasto (catálogo editable con '+ Agregar nuevo'), descripción, monto y notas opcionales",
+      "Nueva sección Egresos en el menú lateral de Finanzas para registrar gastos operativos (servicios, nómina, renta, oficina, marketing, tecnología, profesional, etc.)",
+      "Cada egreso: fecha, tipo de gasto (catálogo editable con + Agregar nuevo), descripción, monto y notas opcionales",
       "Filtros por periodo (Todo · meses · Personalizado) y por tipo de gasto",
       "Dashboard actualizado: pasó de 4 a 6 KPIs — Bruto · Pagado · Ganancia · Egresos · Neto Real (Ganancia − Egresos, destacado) · Ingresos",
-      "Neto real se pinta rojo cuando es negativo",
-      "Exportar Egresos en CSV y Excel — misma card que ingresos/payouts, con formato moneda automático",
-      "Todas las acciones sobre egresos quedan registradas en el audit-log (add/edit/delete)",
-      "Requiere agregar regla Firestore para la colección finanzas-egresos (isAdminOrFinanzas)",
-      "Bump v2.10.0 → v2.11.0"
+      "El Neto Real se pinta en rojo cuando es negativo",
+      "Exportar Egresos en CSV y Excel — misma tarjeta que ingresos y pagos a brokers, con formato moneda automático",
+      "Todas las acciones sobre egresos quedan registradas en la auditoría"
     ]
   },
   {
@@ -792,14 +713,13 @@
     "category": "feat",
     "scope": "finanzas",
     "audience": "team",
-    "title": "Finanzas · Fase 2: importar Excel, exportar a .xlsx, dropdowns simplificados",
+    "title": "Finanzas · importar desde Excel, exportar a xlsx y filtros simplificados",
     "items": [
-      "Nuevo tab 'Importar' en Finanzas con dos cards: importar ingresos desde INGRESOS 2026.xlsx (match por fecha + descripción + monto para evitar duplicados) y aplicar URLs de reportes desde URLS_INGRESOS_2026.xlsx",
-      "Exportar ahora también genera archivos .xlsx nativos (además del CSV): incluye formato moneda automático en las columnas Monto/Pagado/Ganancia/Saldo",
-      "Los 4 dropdowns de periodo (Dashboard, Ingresos, Comparativas, Exportar) se simplificaron a: Todo (default) · Enero–Diciembre · Personalizado",
-      "Todas las fechas visibles en Finanzas usan formato MM/DD/YYYY (incluyendo el modal en modo lectura, con span estático que no depende del navegador)",
-      "Fix: el summary bar de Ingresos ya no queda en cero al filtrar por primera vez por un mes o carrier (race condition con Tabulator resuelto)",
-      "Bump v2.9.0 → v2.10.0"
+      "Nuevo tab Importar en Finanzas con dos tarjetas: importar ingresos desde el Excel oficial (evitando duplicados con comparación por fecha, descripción y monto), y aplicar URLs de reportes desde el Excel de URLs",
+      "Exportar ahora también genera archivos .xlsx nativos (además de CSV), con formato moneda automático en las columnas Monto, Pagado, Ganancia y Saldo",
+      "Los 4 selectores de periodo (Dashboard, Ingresos, Comparativas, Exportar) se simplificaron a: Todo (por defecto) · Enero–Diciembre · Personalizado",
+      "Todas las fechas visibles en Finanzas usan formato MM/DD/YYYY consistente",
+      "Arreglo: la barra de totales de Ingresos ya no queda en cero al filtrar por primera vez por un mes o carrier"
     ]
   },
   {
@@ -809,17 +729,17 @@
     "category": "feat",
     "scope": "finanzas",
     "audience": "team",
-    "title": "Finanzas · Fase 1: Carrier, tipo de destinatario y modal de ingreso rediseñado",
+    "title": "Finanzas · nueva columna Carrier, tipo de destinatario y modal de ingreso rediseñado",
     "items": [
-      "Nueva columna 'Carrier' en cada ingreso con catálogo editable — filtrable en la tabla y en el modal (con opción '+ Agregar nuevo')",
-      "Cada payout ahora distingue si el destinatario es Agencia o Broker/Agente (Family se paga a la agencia y ella distribuye)",
-      "El tab 'Brokers' pasó a llamarse 'Agencias' — la tabla ahora unifica agencias y brokers/agentes con badge de tipo y chips de filtro",
-      "Modal de agencia/broker con radios visuales de tipo y labels renombrados (Nombre, Email opcional, Teléfono opcional, Observaciones)",
-      "Modal de ingreso ahora abre en modo LECTURA por defecto: los campos están read-only y arriba a la derecha aparece un botón lápiz 'Editar' para modificarlo",
-      "Cada payout dentro del modal en modo lectura tiene su propio botón ✉ 'Enviar/Reenviar' — ya no hace falta cerrar el modal para enviar el reporte",
-      "Filtro 'Broker' renombrado a 'Destinatario' con opciones agrupadas por tipo (Agencias / Brokers/Agentes)",
-      "Exportar CSVs incluye ahora columnas Carrier, Tipo destinatario, Email enviado a y Fecha de envío",
-      "Historial: los 233 ingresos migrados y las agencias existentes se muestran como tipo 'agencia' por defecto (editable desde el modal)"
+      "Nueva columna Carrier en cada ingreso con catálogo editable — filtrable en la tabla y en el modal (con opción + Agregar nuevo)",
+      "Cada pago a broker ahora distingue si el destinatario es Agencia o Broker/Agente (Family se paga a la agencia y ella distribuye)",
+      "El tab Brokers pasó a llamarse Agencias — la tabla ahora unifica agencias y brokers/agentes con etiqueta de tipo y filtros",
+      "Modal de agencia/broker con selectores visuales de tipo y campos renombrados (Nombre, Email opcional, Teléfono opcional, Observaciones)",
+      "El modal de ingreso ahora abre en modo lectura por defecto: los campos están bloqueados y arriba a la derecha aparece un botón lápiz Editar para modificarlo",
+      "Cada pago dentro del modal en modo lectura tiene su propio botón ✉ Enviar / Reenviar — ya no hace falta cerrar el modal para enviar el reporte al broker",
+      "Filtro Broker renombrado a Destinatario con opciones agrupadas por tipo (Agencias / Brokers/Agentes)",
+      "Exportar CSVs incluye ahora columnas Carrier, Tipo de destinatario, Email enviado a y Fecha de envío",
+      "Historial: los 233 ingresos migrados y las agencias existentes se muestran como tipo agencia por defecto (editable desde el modal)"
     ]
   },
   {
@@ -829,15 +749,15 @@
     "category": "feat",
     "scope": "contracting",
     "audience": "team",
-    "title": "Nueva guía: Contracting con Carriers (prueba interna)",
+    "title": "Nueva guía · Contracting con Carriers",
     "items": [
-      "Nueva página contracting.html accesible desde Guías con procedimientos paso a paso por carrier: cómo iniciar contracting, transfers, EFT changes, demographic changes, add non-resident state, assignment of commissions y AOC changes",
-      "Prueba inicial con 4 carriers de muestra (Aetna, Aetna ACA, Ambetter ACA, Anthem Blue Cross y Amerigroup) — escalable a los ~55 carriers restantes en próximas iteraciones",
-      "Layout de dos columnas: sidebar sticky con lista de carriers y contenido principal con carrier cards y sub-secciones colapsables",
-      "Toggle ES/EN en la esquina superior (arranca en español) — la preferencia se recuerda entre visitas",
+      "Nueva página de Contracting accesible desde Guías, con procedimientos paso a paso por carrier: cómo iniciar contracting, transfers, cambios de EFT, cambios demográficos, agregar estados no residentes, cesión de comisiones y cambios de AOC",
+      "Prueba inicial con 4 carriers de muestra (Aetna, Aetna ACA, Ambetter ACA, Anthem Blue Cross y Amerigroup) — escalable a los aproximadamente 55 carriers restantes en próximas iteraciones",
+      "Layout de dos columnas: menú lateral fijo con la lista de carriers y contenido principal con tarjetas por carrier y sub-secciones que se pueden colapsar",
+      "Interruptor ES/EN en la esquina superior (arranca en español) — la preferencia se recuerda entre visitas",
       "Contenido adaptado a Hero: referencias a AGA reemplazadas por Hero Insurance USA, contactos apuntan a María Lo Monaco (contractingsupport@heroinsuranceusa.com)",
-      "Visible para los roles admin, interno, finanzas e IT. Agentes no ven esta guía (no gestionan contracting directamente)",
-      "Tile destacado en Guías con banner degradado en cyan Hero anunciando la novedad"
+      "Visible para los roles admin, interno, finanzas e IT. Los agentes no ven esta guía (no gestionan contracting directamente)",
+      "Tile destacado en Guías con banner en cyan Hero anunciando la novedad"
     ]
   },
   {
@@ -847,14 +767,14 @@
     "category": "feat",
     "scope": "mi-perfil",
     "audience": "all",
-    "title": "Sección \"Mi asistencia\" amplia en Mi perfil",
+    "title": "Mi Perfil · sección Mi Asistencia ampliada",
     "items": [
-      "Nueva sección debajo del grid con tus estadísticas completas de asistencia: horas trabajadas, días activos, promedio por día, breaks (cantidad y duración promedio), cortes de luz, ausencias y hora de entrada promedio",
+      "Nueva sección con tus estadísticas completas de asistencia: horas trabajadas, días activos, promedio por día, breaks (cantidad y duración promedio), ausencias y hora de entrada promedio",
       "Selector de periodo: Mes actual, Mes pasado, Últimos 30 días, Últimos 90 días, Todo el historial o rango personalizado",
-      "Tres gráficos: horas trabajadas por día (línea), distribución de tiempo (donut) y horas por día de semana (barras)",
-      "Tabla de detalle por día con entrada, salida, horas trabajadas, breaks, cortes y ausencias",
-      "El card antiguo \"Estadísticas del mes\" se retiró — la sub-línea 'en N días' del cumpleaños se movió al card Información personal",
-      "Diseño respeta modo día/noche y es responsive: KPIs colapsan a 2 columnas y los gráficos a una sola columna en mobile"
+      "Tres gráficos: horas trabajadas por día (línea), distribución de tiempo (dona) y horas por día de semana (barras)",
+      "Tabla de detalle por día con entrada, salida, horas trabajadas, breaks y ausencias",
+      "La tarjeta antigua Estadísticas del mes se retiró — la línea de en N días del cumpleaños se movió a la tarjeta Información personal",
+      "Diseño respeta modo día/noche y es responsive: KPIs colapsan a 2 columnas y los gráficos a una sola columna en móvil"
     ]
   },
   {
@@ -866,10 +786,9 @@
     "audience": "all",
     "title": "Búsqueda web integrada al dashboard",
     "items": [
-      "Nueva sección 'Búsqueda web' en el dashboard, entre 'Mi asistencia' y 'Módulos de acceso'",
-      "Input estilo pill con lupa e integración a Google: al escribir y presionar Enter se abre google.com/search con tu consulta en una nueva pestaña",
-      "Diseño coherente con Hero Light, con dark mode y responsive en pantallas chicas",
-      "Sin dependencias externas ni scripts de terceros — la búsqueda se abre en el buscador nativo del sistema"
+      "Nueva sección Búsqueda web en el dashboard, entre Mi Asistencia y Módulos de Acceso",
+      "Campo de búsqueda estilo pastilla con lupa: al escribir y presionar Enter se abre google.com en una nueva pestaña con tu consulta",
+      "Diseño coherente con el estilo del Hub, con modo oscuro y responsive"
     ]
   },
   {
@@ -879,12 +798,12 @@
     "category": "feat",
     "scope": "ui",
     "audience": "all",
-    "title": "Pop-up para felicitar al cumpleañero desde el día anterior",
+    "title": "🎂 Pop-up para felicitar al cumpleañero desde el día anterior",
     "items": [
       "Al entrar al Hub, si algún compañero cumple hoy o mañana, aparece un pop-up invitándote a dejarle una felicitación",
-      "Textarea con contador de 0/400 y picker rápido de 10 emojis populares (🎂🎉🎈🎊✨💝🙌🥳❤️🌟) que se insertan en la posición del cursor",
-      "El botón 'Publicar felicitación' guarda el mensaje directo en la tarjeta colectiva del cumpleañero",
-      "El botón 'Ahora no' cierra sin escribir; en ambos casos no se vuelve a abrir en el mismo día por ese cumpleaños",
+      "Campo de texto con contador de 0/400 y selector rápido de 10 emojis populares (🎂🎉🎈🎊✨💝🙌🥳❤️🌟) que se insertan en la posición del cursor",
+      "El botón Publicar felicitación guarda el mensaje directo en la tarjeta colectiva del cumpleañero",
+      "El botón Ahora no cierra sin escribir; en ambos casos no se vuelve a abrir en el mismo día por ese cumpleaños",
       "Al día siguiente, si el cumpleaños sigue vigente y aún no has escrito, el pop-up reaparece",
       "El cumpleañero no ve este pop-up: sigue viendo el suyo propio con la tarjeta colectiva completa"
     ]
@@ -896,15 +815,15 @@
     "category": "feat",
     "scope": "ui",
     "audience": "all",
-    "title": "Página \"Mi perfil\" con bio editable, estadísticas del mes y actividad reciente",
+    "title": "Nueva página Mi Perfil con biografía editable, estadísticas y actividad reciente",
     "items": [
-      "Click en 'Mi perfil' del menú del avatar ahora abre una página completa (mi-perfil.html) en lugar del modal anterior",
-      "Hero con foto grande de 160 px, nombre, cargo, badge del rol del sistema y email en JetBrains Mono",
-      "Card de información personal: teléfono, país con bandera SVG, cumpleaños en español y tema actual",
-      "Card 'Sobre mí' con bio editable inline — botón de lápiz abre un textarea con contador y guardado directo a shared/team",
-      "Card 'Estadísticas del mes': días marcados de entrada, descansos tomados y días para tu cumpleaños",
-      "Card 'Actividad reciente' con los últimos 10 eventos del audit-log del usuario (link 'Ver todo' visible solo para admins)",
-      "Diseño responsive: grid 2×2 en escritorio, columna única en mobile"
+      "Click en Mi Perfil del menú del avatar ahora abre una página completa en lugar del modal anterior",
+      "Portada con foto grande, nombre, cargo, etiqueta del rol y email",
+      "Tarjeta de información personal: teléfono, país con bandera, cumpleaños en español y tema actual",
+      "Tarjeta Sobre mí con biografía editable — un botón de lápiz abre un campo de texto con contador y guardado directo",
+      "Tarjeta Estadísticas del mes: días marcados de entrada, breaks tomados y días para tu cumpleaños",
+      "Tarjeta Actividad reciente con los últimos 10 eventos tuyos registrados en el Hub (link Ver todo visible solo para admins)",
+      "Diseño responsive: grid 2×2 en escritorio, columna única en móvil"
     ]
   },
   {
@@ -916,10 +835,9 @@
     "audience": "all",
     "title": "Menú del avatar disponible en todas las páginas del Hub",
     "items": [
-      "El menú desplegable del avatar (Mi perfil, Admin, toggle día/noche, Cerrar sesión) ahora vive en las 11 páginas del Hero Hub",
-      "Nuevo módulo compartido js/user-menu.js que se auto-inicializa con onAuthStateChanged en cada página",
+      "El menú desplegable del avatar (Mi Perfil, Admin, cambio de tema día/noche, Cerrar sesión) ahora vive en las 11 páginas del Hero Hub",
       "Los botones sueltos de Admin del topbar quedaron consolidados en el menú del avatar en todas las páginas",
-      "La foto del usuario se replica automáticamente al header del menú usando MutationObserver"
+      "La foto del usuario se replica automáticamente al header del menú"
     ]
   },
   {
@@ -929,12 +847,12 @@
     "category": "feat",
     "scope": "ui",
     "audience": "all",
-    "title": "Menú de usuario en el avatar y botón volver al Hub en IT Console",
+    "title": "Menú de usuario en el avatar y botón Volver al Hub en el IT Console",
     "items": [
-      "Nuevo menú desplegable al hacer click en el avatar: header con foto, nombre, email y rol; enlaces a Mi perfil, Admin (solo admins) y Cerrar sesión",
-      "Toggle día/noche movido al menú del avatar",
-      "Botón 'Volver al Hero Hub' agregado al topbar del IT Console",
-      "Se eliminó el modal de Configuración: solo tenía el toggle de tema, ahora directo desde el menú",
+      "Nuevo menú desplegable al hacer click en el avatar: encabezado con foto, nombre, email y rol; enlaces a Mi Perfil, Admin (solo admins) y Cerrar sesión",
+      "El interruptor día/noche pasó al menú del avatar",
+      "Nuevo botón Volver al Hero Hub en el topbar del IT Console",
+      "Se eliminó la ventana de Configuración: solo tenía el interruptor de tema, ahora directo desde el menú",
       "Se eliminaron del topbar del Hub los botones sueltos de Admin y Configuración — todo consolidado en el menú del avatar"
     ]
   },
@@ -945,17 +863,14 @@
     "category": "feat",
     "scope": "dashboard",
     "audience": "all",
-    "title": "Nuevo segmento \"Módulos de Acceso\" con diseño tech y efecto 3D",
+    "title": "Nueva sección Módulos de Acceso con diseño tech y efecto 3D",
     "items": [
       "Nueva sección arriba del Cuartel General con 4 tiles horizontales: Base de Datos, Finanzas, IT Console y Calendario",
-      "Diseño tipo terminal con dots pattern de fondo, glow radial del color del módulo y LED indicador en la esquina",
-      "Efecto tilt 3D con vanilla-tilt.js: los tiles rotan siguiendo el cursor con perspectiva y brillo holográfico",
-      "Ícono y nombre flotan sobre el tile gracias a translateZ (efecto de levitación)",
-      "Glow neón fuerte debajo de cada tile con el color propio del módulo, intensificado en hover",
-      "Línea de roles con acceso mostrada en cada tile (JetBrains Mono, tono muted)",
-      "Colores neón por módulo: cyan, ámbar, indigo y verde",
-      "Respeta prefers-reduced-motion",
-      "Librería nueva: vanilla-tilt@1.8.1 via CDN"
+      "Diseño tipo terminal con patrón de puntos de fondo, brillo del color del módulo y LED indicador en la esquina",
+      "Efecto de inclinación 3D: los tiles rotan siguiendo el cursor con perspectiva y brillo holográfico",
+      "El ícono y el nombre flotan sobre el tile (efecto de levitación)",
+      "Cada tile muestra la línea de roles con acceso",
+      "Colores por módulo: cyan, ámbar, indigo y verde"
     ]
   },
   {
@@ -965,15 +880,15 @@
     "category": "feat",
     "scope": "it-console",
     "audience": "admin",
-    "title": "Integración del IT Console al Hero Hub",
+    "title": "IT Console integrado al Hero Hub",
     "items": [
-      "El IT Console (antes en it916.github.io/hero-it-console) ahora vive como página nativa del Hub: it-console.html",
-      "Nueva tarjeta 'IT CONSOLE' en el dashboard (indigo, ícono terminal), visible solo para admin e IT",
-      "Nuevo rol 'IT' asignable desde el panel admin — hereda visibilidad de interno + acceso a la consola",
-      "Auth híbrida: la consola reutiliza la sesión Firebase del Hub vía nuevo endpoint POST /auth/hub-login del Worker (whitelist IT_EMAILS)",
-      "Tema día/noche sincronizado entre Hub y Console (misma key hero-theme, mismo selector body)",
-      "Todos los módulos del Console operativos: Home, Solicitudes, Soporte (Tickets/Toolbox/Dispositivos/Licencias), Usuarios, Auditoría, Logs, Configuración",
-      "El deploy anterior de GitHub Pages queda como backup 1-2 semanas antes de apagarse"
+      "El IT Console (antes en un sitio aparte) ahora vive como página nativa del Hub",
+      "Nueva tarjeta IT CONSOLE en el dashboard (indigo, ícono terminal), visible solo para admin e IT",
+      "Nuevo rol IT asignable desde el panel admin — hereda visibilidad del rol interno más el acceso al Console",
+      "Sesión compartida: entras una vez al Hub y ya estás dentro del Console (usa el mismo login de Firebase)",
+      "Tema día/noche sincronizado entre Hub y Console",
+      "Todos los módulos del Console operativos: Home, Solicitudes, Soporte (Tickets, Toolbox, Dispositivos, Licencias), Usuarios, Auditoría, Logs, Configuración",
+      "El sitio anterior queda como respaldo por 1-2 semanas antes de apagarse"
     ]
   },
   {
@@ -985,12 +900,12 @@
     "audience": "admin",
     "title": "Manual del módulo Finanzas para el usuario final",
     "items": [
-      "Nueva página finanzas-manual.html con 12 secciones (bienvenida, acceso, registro de ingresos, brokers, comisiones, dashboard, comparativas, exportar, envío de reportes, FAQ, contacto)",
-      "Sidebar sticky con scroll-spy: la sección visible se resalta en el índice",
-      "Callouts diferenciados para consejos, atenciones y notas",
+      "Nueva página de manual con 12 secciones (bienvenida, acceso, registro de ingresos, brokers, comisiones, dashboard, comparativas, exportar, envío de reportes, preguntas frecuentes, contacto)",
+      "Menú lateral fijo con seguimiento del scroll: la sección visible se resalta en el índice",
+      "Notas visuales diferenciadas para consejos, advertencias e información",
       "Compatible con modo oscuro",
-      "Acceso desde el botón ? en el header de finanzas.html",
-      "Gated por rol finanzas + admin"
+      "Acceso desde el botón ? en el encabezado de Finanzas",
+      "Disponible para los roles finanzas y admin"
     ]
   },
   {
@@ -1002,14 +917,13 @@
     "audience": "admin",
     "title": "Envío de reportes de comisión por email a brokers",
     "items": [
-      "Botón ✉ en cada fila de la Lista de Ingresos con payouts",
-      "Si el ingreso tiene 1 payout: mini-dialog con resumen + email destinatario editable",
-      "Si tiene 2+ payouts: modal con todos los payouts, cada uno con su input de email",
-      "El email destinatario se puede escribir libremente — pre-llenado con el del broker si está registrado",
-      "Template Hero Light branded (cyan + logo) con detalle de la comisión y el payout",
-      "Persistencia de emailSentAt / emailSentTo por payout (visible al reabrir)",
-      "Audit log: nueva acción FINANZAS_EMAIL_SEND registra cada envío",
-      "Backend: Cloudflare Worker compartido con IT Console, auth con Firebase ID token"
+      "Botón ✉ en cada fila de la Lista de Ingresos con pagos a brokers",
+      "Si el ingreso tiene 1 pago: mini-ventana con resumen y email del destinatario editable",
+      "Si tiene 2 o más pagos: ventana con todos los pagos, cada uno con su propio campo de email",
+      "El email del destinatario se puede escribir libremente — pre-llenado con el del broker si está registrado",
+      "Plantilla Hero (cyan y logo) con detalle de la comisión y el pago",
+      "Se guarda la fecha y dirección de envío por cada pago (visible al reabrir el ingreso)",
+      "Cada envío queda registrado en la auditoría"
     ]
   },
   {
@@ -1019,12 +933,12 @@
     "category": "feat",
     "scope": "finanzas",
     "audience": "admin",
-    "title": "Comparativas + Exportar en Finanzas",
+    "title": "Comparativas y Exportar en Finanzas",
     "items": [
-      "Comparativas: bar agrupado Bruto/Pagado/Ganancia por mes, líneas por tipo de pago, stacked bar de payouts por broker",
-      "Exportar a CSV: lista de ingresos (13 columnas) y detalle de payouts (8 columnas), con BOM UTF-8 para Excel",
-      "Reporte ejecutivo: vista de impresión con KPIs + tabla mes a mes (Guardar como PDF desde el navegador)",
-      "Rango personalizado disponible en ambos tabs (Flatpickr con locale ES)"
+      "Comparativas: barras agrupadas de Bruto, Pagado y Ganancia por mes; líneas por tipo de pago; barras apiladas de pagos por broker",
+      "Exportar a CSV: lista de ingresos (13 columnas) y detalle de pagos (8 columnas), compatible con Excel en español",
+      "Reporte ejecutivo: vista de impresión con KPIs y tabla mes a mes (Guardar como PDF desde el navegador)",
+      "Rango personalizado disponible en ambos tabs (con selector de fechas en español)"
     ]
   },
   {
@@ -1034,15 +948,15 @@
     "category": "feat",
     "scope": "finanzas",
     "audience": "admin",
-    "title": "Dashboard de Finanzas + rango personalizado",
+    "title": "Dashboard de Finanzas con rango personalizado",
     "items": [
-      "Dashboard con 4 KPIs (Bruto, Pagado, Ganancia, # Ingresos) y 4 gráficos Chart.js",
-      "Línea Bruto vs Ganancia por mes",
-      "Donut de distribución por categoría (COMISSION/OVERRIDES/HERO)",
-      "Bar horizontal Top 10 carriers por monto",
-      "Donut Top brokers por payouts",
+      "Dashboard con 4 KPIs (Bruto, Pagado, Ganancia, # Ingresos) y 4 gráficos",
+      "Línea de Bruto vs Ganancia por mes",
+      "Dona de distribución por categoría (COMISSION / OVERRIDES / HERO)",
+      "Barras horizontales del Top 10 de carriers por monto",
+      "Dona de Top brokers por pagos",
       "Selector de periodo (Año actual / Este mes / Mes pasado / Año anterior / Todo / Personalizado)",
-      "Rango personalizado con date pickers (Flatpickr, locale ES) en Dashboard y Lista de Ingresos"
+      "Rango personalizado con selectores de fecha (en español) en Dashboard y Lista de Ingresos"
     ]
   },
   {
@@ -1052,11 +966,11 @@
     "category": "feat",
     "scope": "finanzas",
     "audience": "admin",
-    "title": "Migración histórica de ingresos ENE-MAY 2026",
+    "title": "Migración histórica de ingresos de enero a mayo 2026",
     "items": [
-      "233 ingresos del Excel original importados a Firestore",
+      "233 ingresos del Excel original importados al sistema",
       "Bruto total $364,410 · Pagado $38,461 · Ganancia $325,949",
-      "Carriers nuevos agregados automáticamente al dropdown: CIGNA, OSCAR",
+      "Carriers nuevos agregados automáticamente al catálogo: CIGNA, OSCAR",
       "Saldos del Excel (negativos) convertidos a positivos siguiendo la convención del modal de captura"
     ]
   },
@@ -1069,13 +983,13 @@
     "audience": "admin",
     "title": "Nuevo módulo de Finanzas",
     "items": [
-      "Tabla de Comisiones: CRUD de tasas por carrier, origen y agente",
-      "Brokers: registro de receptores de payouts (nombre, email, teléfono)",
-      "Modal de captura de ingresos con payouts dinámicos y cálculo automático de ganancia",
-      "Descripción de depósito como dropdown con 18 carriers preseed + opción de agregar nuevos",
-      "Lista de ingresos: filtros por periodo, tipo, categoría y broker + summary con totales en vivo",
-      "Toggle Día/Noche disponible en el header de Finanzas",
-      "Mejoras de dark mode en todas las tablas Tabulator del Hub (Roles y Log incluidos)"
+      "Tabla de Comisiones: crear, editar y eliminar tasas por carrier, origen y agente",
+      "Brokers: registro de receptores de pagos (nombre, email, teléfono)",
+      "Modal de captura de ingresos con pagos dinámicos y cálculo automático de ganancia",
+      "Descripción de depósito como lista desplegable con 18 carriers pre-cargados y opción de agregar nuevos",
+      "Lista de ingresos: filtros por periodo, tipo, categoría y broker, más una barra de totales en vivo",
+      "Interruptor día/noche disponible en el encabezado de Finanzas",
+      "Mejoras de modo oscuro en todas las tablas del Hub (Roles y Log incluidos)"
     ]
   },
   {
@@ -1085,10 +999,10 @@
     "category": "feat",
     "scope": "admin",
     "audience": "admin",
-    "title": "Rango personalizado en estadísticas por persona",
+    "title": "Estadísticas por persona · rango personalizado",
     "items": [
-      "Nueva opción \"Rango personalizado\" en el selector de periodo del popup de detalle",
-      "Date pickers con calendario en español para elegir desde y hasta",
+      "Nueva opción Rango personalizado en el selector de periodo del pop-up de detalle",
+      "Selectores de fecha con calendario en español para elegir desde y hasta",
       "KPIs, gráficos y tabla se actualizan automáticamente al cambiar las fechas",
       "Las fechas se restringen entre sí para evitar rangos inválidos"
     ]
@@ -1102,13 +1016,13 @@
     "audience": "admin",
     "title": "Estadísticas detalladas por persona en el Dashboard de Asistencia",
     "items": [
-      "Click sobre cualquier persona en \"Estado por persona\" abre un popup grande con su perfil",
+      "Click sobre cualquier persona en Estado por persona abre un pop-up grande con su perfil",
       "Selector de periodo: mes actual, mes pasado, últimos 30 días, últimos 90 días o todo el historial",
-      "KPIs: horas trabajadas, días activos, promedio por día, breaks, cortes de luz, ausencias, hora promedio de entrada",
+      "KPIs: horas trabajadas, días activos, promedio por día, breaks, ausencias, hora promedio de entrada",
       "Gráfico de línea: horas trabajadas día a día",
-      "Donut: distribución de tiempo (trabajado vs break vs sin luz)",
+      "Dona: distribución del tiempo (trabajado vs break)",
       "Barras: horas trabajadas por día de la semana",
-      "Tabla detallada con entrada, salida, horas, breaks, cortes y ausencias por cada día del periodo"
+      "Tabla detallada con entrada, salida, horas, breaks y ausencias por cada día del periodo"
     ]
   },
   {
@@ -1118,10 +1032,10 @@
     "category": "fix",
     "scope": "admin",
     "audience": "admin",
-    "title": "Métricas: chart de actividad diaria + tracking de páginas nuevas",
+    "title": "Métricas · gráfico de actividad diaria y seguimiento de páginas nuevas",
     "items": [
-      "Las barras del gráfico \"Actividad diaria\" ahora reflejan el conteo real (antes salían todas planas por un mismatch UTC vs local)",
-      "Tracker actualizado para registrar visitas a Grabaciones, Reuniones y Changelog (antes esas 3 páginas no figuraban en métricas)",
+      "Las barras del gráfico Actividad diaria ahora reflejan el conteo real (antes salían todas planas por un desfase de zona horaria)",
+      "El seguimiento ahora registra visitas a Grabaciones, Reuniones y Changelog (antes esas 3 páginas no aparecían en métricas)",
       "Pequeño ajuste visual: los días sin actividad ya no muestran una barrita falsa"
     ]
   },
@@ -1131,12 +1045,13 @@
     "date": "2026-06-11",
     "category": "refactor",
     "scope": "performance",
+    "audience": "all",
     "title": "Navegación entre páginas más rápida",
     "items": [
-      "Eliminado el flash de \"Verificando acceso\" al cambiar de página",
-      "Tu rol se cachea localmente tras la primera visita en el dispositivo",
-      "page-guard sigue validando en background — la seguridad no cambia",
-      "Al cerrar sesión se limpia el cache automáticamente"
+      "Se eliminó el destello de Verificando acceso al cambiar de página",
+      "Tu rol se recuerda localmente tras la primera visita en el dispositivo",
+      "La verificación de seguridad sigue corriendo en segundo plano — la seguridad no cambia",
+      "Al cerrar sesión, esa memoria se limpia automáticamente"
     ]
   },
   {
@@ -1145,13 +1060,14 @@
     "date": "2026-06-11",
     "category": "feat",
     "scope": "changelog",
-    "title": "Nueva página de Changelog + banner de novedades",
+    "audience": "all",
+    "title": "Nueva página de Changelog y banner de novedades",
     "items": [
       "Página dedicada con el historial de cambios y mejoras del Hub",
       "Filtros por categoría: Nuevo, Arreglos, Mejoras, Diseño, Mantenimiento",
       "Banner cyan en el dashboard que avisa cuando hay novedades sin leer",
-      "El banner se apaga al hacer clic (lleva al changelog) o con la ×",
-      "Estado por usuario sincronizado en Firestore: lo ves una sola vez sin importar el dispositivo"
+      "El banner se apaga al hacer click (lleva al Changelog) o con la ×",
+      "El estado se sincroniza por usuario: lo ves una sola vez sin importar el dispositivo"
     ]
   },
   {
@@ -1161,10 +1077,10 @@
     "category": "feat",
     "scope": "asistencia",
     "audience": "team",
-    "title": "Contador en vivo y recordatorio en el tab",
+    "title": "Contador en vivo y recordatorio en el tab del navegador",
     "items": [
       "Contador en tiempo real desde tu hora de entrada del día",
-      "El título del tab del navegador se vuelve dinámico para recordarte cuando hay un break activo"
+      "El título del tab del navegador cambia cuando hay un break activo — así no se te olvida"
     ]
   },
   {
@@ -1176,9 +1092,9 @@
     "audience": "team",
     "title": "Nueva estructura del dashboard principal",
     "items": [
-      "Onboarding sale del cuartel general para no saturar la vista",
-      "Cuartel general y Arsenal del Héroe unificados en una sola sección",
-      "Botón \"Entrar a Oficina Virtual\" destacado en el banner de bienvenida"
+      "Onboarding sale del Cuartel General para no saturar la vista",
+      "Cuartel General y Arsenal del Héroe unificados en una sola sección",
+      "Botón Entrar a Oficina Virtual destacado en el banner de bienvenida"
     ]
   },
   {
@@ -1187,9 +1103,10 @@
     "date": "2026-06-08",
     "category": "feat",
     "scope": "grabaciones",
+    "audience": "all",
     "title": "Grilla de grabaciones con miniaturas",
     "items": [
-      "Página de grabaciones rediseñada con vista tipo grilla",
+      "Página de Grabaciones rediseñada con vista de grilla",
       "Miniaturas en vivo desde la carpeta de Drive del equipo"
     ]
   },
@@ -1204,7 +1121,7 @@
     "items": [
       "Resúmenes automáticos de las reuniones diarias del equipo",
       "Dos vistas disponibles: Lista cronológica y Calendario",
-      "Disponible desde el menú Recursos y desde el cuartel general"
+      "Disponible desde el menú Recursos y desde el Cuartel General"
     ]
   },
   {
@@ -1214,10 +1131,10 @@
     "category": "feat",
     "scope": "integraciones",
     "audience": "team",
-    "title": "Sincronización con Fathom + traducción al español",
+    "title": "Sincronización con Fathom y traducción al español",
     "items": [
-      "Apps Script que importa cada reunión grabada en Fathom",
-      "Traducción automática de los resúmenes al español"
+      "Cada reunión grabada en Fathom se importa automáticamente",
+      "Los resúmenes se traducen al español automáticamente"
     ]
   },
   {
@@ -1252,9 +1169,10 @@
     "date": "2026-06-03",
     "category": "feat",
     "scope": "roles",
+    "audience": "all",
     "title": "Vista simplificada para el rol Agente",
     "items": [
-      "Se ocultan secciones internas (asistencia, onboarding, portales del cuartel) para el rol \"agente\"",
+      "Se ocultan secciones internas (asistencia, onboarding, portales del cuartel) para el rol agente",
       "El agente solo ve lo relevante para su día a día"
     ]
   },
@@ -1267,7 +1185,7 @@
     "audience": "team",
     "title": "Tab Hero y edición compartida en Portales",
     "items": [
-      "Nuevo tab \"Hero\" para portales internos del equipo",
+      "Nuevo tab Hero para portales internos del equipo",
       "Los portales se pueden editar de forma compartida",
       "Modal de edición más cómodo y accesible"
     ]
@@ -1281,7 +1199,7 @@
     "audience": "team",
     "title": "Diseño unificado del banner de cumpleaños",
     "items": [
-      "La fecha y el contador de días se ven igual en light y dark mode",
+      "La fecha y el contador de días se ven igual en modo día y modo noche",
       "La píldora de días destaca correctamente sobre el fondo oscuro"
     ]
   }
