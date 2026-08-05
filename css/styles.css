@@ -10553,3 +10553,103 @@ body[data-theme="dark"] .sc-field textarea:focus {
   background:var(--card); border-color:var(--cyan-bright);
   box-shadow:0 0 0 3px rgba(25,205,235,.18);
 }
+
+/* ═══════════════════════════════════════════
+   CAMPAÑA · comercial de Hero en el landing
+   Poster + overlay con botón play cyan.
+   La sección se auto-oculta después de la fecha en data-expires.
+   ═══════════════════════════════════════════ */
+.campaign-video[hidden] { display:none; }
+.campaign-video-player {
+  position:relative;
+  border-radius:22px;
+  overflow:hidden;
+  background:#000;
+  box-shadow:var(--shadow);
+  border:1px solid var(--border);
+  aspect-ratio:16 / 9;
+  max-width:100%;
+}
+.campaign-video-player video {
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  background:#000;
+}
+.campaign-play-btn {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:16px;
+  background:linear-gradient(180deg, rgba(0,0,0,.35) 0%, rgba(0,0,0,.68) 100%);
+  border:none; cursor:pointer; padding:32px 24px;
+  color:#fff;
+  transition:background .2s ease;
+  text-align:center;
+}
+.campaign-play-btn:hover { background:linear-gradient(180deg, rgba(0,0,0,.28) 0%, rgba(0,0,0,.62) 100%); }
+.campaign-play-btn:focus-visible {
+  outline:3px solid var(--cyan);
+  outline-offset:-4px;
+}
+
+/* Eyebrow "✦ Nuevo" */
+.campaign-play-eyebrow {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:6px 16px; border-radius:999px;
+  background:rgba(6,163,182,.85);
+  color:#fff;
+  font-family:var(--sans);
+  font-size:11px; font-weight:800;
+  letter-spacing:3px; text-transform:uppercase;
+  box-shadow:0 6px 18px rgba(6,163,182,.4);
+  backdrop-filter:blur(6px);
+}
+
+/* Título grande protagonista */
+.campaign-play-title {
+  font-family:var(--display);
+  font-style:italic; font-weight:900;
+  font-size:clamp(32px, 5vw, 64px);
+  line-height:1.02;
+  letter-spacing:-.02em;
+  color:#fff;
+  text-shadow:0 6px 28px rgba(0,0,0,.65), 0 2px 8px rgba(0,0,0,.4);
+  max-width:900px;
+}
+
+/* Ícono play (círculo cyan) */
+.campaign-play-icon {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:78px; height:78px;
+  padding-left:5px; /* óptico: el triángulo se ve centrado */
+  border-radius:50%;
+  background:var(--cyan);
+  color:#fff;
+  box-shadow:0 12px 32px rgba(0,0,0,.4), 0 0 0 6px rgba(255,255,255,.18);
+  transition:transform .18s ease, box-shadow .18s ease;
+  margin-top:4px;
+}
+.campaign-play-btn:hover .campaign-play-icon {
+  transform:scale(1.08);
+  box-shadow:0 14px 40px rgba(0,0,0,.48), 0 0 0 8px rgba(255,255,255,.25);
+}
+
+/* Sub-línea explicativa */
+.campaign-play-sub {
+  font-family:var(--sans);
+  font-size:12px; font-weight:600;
+  letter-spacing:1.5px;
+  color:rgba(255,255,255,.85);
+  text-shadow:0 2px 8px rgba(0,0,0,.6);
+}
+
+@media (max-width:600px) {
+  .campaign-play-btn { gap:12px; padding:20px 16px; }
+  .campaign-play-eyebrow { font-size:10px; letter-spacing:2px; padding:5px 12px; }
+  .campaign-play-title { font-size:clamp(24px, 7vw, 34px); }
+  .campaign-play-icon { width:62px; height:62px; }
+  .campaign-play-icon svg { width:28px; height:28px; }
+  .campaign-play-sub { font-size:11px; letter-spacing:1px; }
+}

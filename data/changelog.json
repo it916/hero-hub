@@ -1,5 +1,19 @@
 [
   {
+    "id": "2026-08-05-comercial-hero-landing",
+    "version": "v2.26.0",
+    "date": "2026-08-05",
+    "category": "feat",
+    "scope": "landing",
+    "audience": "all",
+    "title": "Nuevo comercial de Hero en la página de inicio",
+    "items": [
+      "Nuevo recuadro con el comercial de 30 segundos de Hero en la página de inicio, debajo del banner de asistencia",
+      "Al abrir el Hub verás una imagen estática del comercial con un botón grande de reproducir — el video solo se descarga cuando lo tocas, así que no consume datos si prefieres saltártelo",
+      "El comercial permanecerá visible en la página de inicio durante los próximos 30 días y luego se retirará solo"
+    ]
+  },
+  {
     "id": "2026-08-05-spotlight-selector-usuarios",
     "version": "v2.25.0",
     "date": "2026-08-05",

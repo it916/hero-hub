@@ -26,3 +26,8 @@ URLS_INGRESOS_2026.xlsx
 # personal del equipo — emails, teléfonos, bios). Se generan localmente cuando
 # se corre el migrador y no aportan al código.
 hero-hub-backup-*.json
+
+# Fuentes originales de video (MOV desde cámara/edición) — para web solo va la
+# versión MP4 comprimida generada con ffmpeg. Los MOV los conservamos fuera
+# del repo (viven en Drive) porque pesan 3-4 veces más y no aportan al deploy.
+videos/*.mov

@@ -27,6 +27,7 @@
 <!-- Google Identity Services · usado por calendar-widget.js para refresh silencioso del token de Google Calendar (sin popup recurrente) -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script defer src="js/calendar-widget.js"></script>
+<script defer src="js/campaign-video.js"></script>
 
 <!-- Shoelace · component library (modal "Agregar acceso" del arsenal) -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css">
@@ -233,6 +234,27 @@
     </section>
 
     <div class="connector"></div>
+
+    <!-- ══ CAMPAÑA · comercial de Hero (visible hasta data-expires; después se oculta solo) ══ -->
+    <section class="section fade-in campaign-video" id="sec-campaign-video" data-expires="2026-09-04" hidden>
+      <div class="campaign-video-player" id="campaign-player">
+        <video id="campaign-video-el"
+               poster="videos/comercial-hero-evtv-poster.jpg"
+               preload="none"
+               playsinline>
+          <source src="videos/comercial-hero-evtv.mp4" type="video/mp4">
+          Tu navegador no soporta la reproducción de video.
+        </video>
+        <button type="button" class="campaign-play-btn" id="campaign-play-btn" aria-label="Reproducir comercial de Hero">
+          <span class="campaign-play-eyebrow">✦ Nuevo</span>
+          <span class="campaign-play-title">Comercial de Hero</span>
+          <span class="campaign-play-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="36" height="36"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
+          </span>
+          <span class="campaign-play-sub">Toca para reproducir · 30 s</span>
+        </button>
+      </div>
+    </section>
 
     <!-- ══ MÓDULOS DE ACCESO — Launcher moderno para los 4 módulos principales ══ -->
     <section class="section fade-in" id="sec-access-modules">
@@ -528,7 +550,7 @@
   </div>
 
   <footer class="hero-footer">
-    <span>HERO HUB · v2.25.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+    <span>HERO HUB · v2.26.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
   </footer>
 </div>
 
