@@ -134,14 +134,13 @@ const pageLabels = {
   'onboarding': 'Enviar Onboarding',
   'toolbox': 'Soporte · Toolbox',
   'dispositivos': 'Soporte · Dispositivos',
-  'licencias': 'Soporte · Licencias',
   'plantillas': 'Plantillas de email'
 };
 
-// Las 4 sub-páginas del módulo Soporte comparten una sola entrada del sidebar
+// Las 3 sub-páginas del módulo Soporte comparten una sola entrada del sidebar
 // (la de Tickets, que es el tab default). Cuando navegamos a cualquiera de ellas
 // queremos que ese nav-item quede resaltado.
-const SOPORTE_TABS = ['tickets', 'toolbox', 'dispositivos', 'licencias'];
+const SOPORTE_TABS = ['tickets', 'toolbox', 'dispositivos'];
 
 // ── Sidebar móvil ─────────────────────────────────────────────
 function toggleSidebar() {
@@ -192,7 +191,6 @@ function showPage(id) {
     'offboarding':  () => { if (!window._workspaceUsers) loadUsers(); renderOffboardingSteps(); _consumePreselectedUser('offboarding'); },
     'onboarding':   () => _consumePreselectedUser('onboarding'),
     'reset':        () => _consumePreselectedUser('reset'),
-    'licencias':    () => loadLicencias(),
     'toolbox':      () => loadToolbox(),
     'logs':         () => renderSessionLogs(),
     'config':       () => loadConfig(),
@@ -361,14 +359,6 @@ async function runGlobalSearch() {
     window._workspaceUsers.forEach(u => {
       if ((u.nombre||'').toLowerCase().includes(q) || (u.email||'').toLowerCase().includes(q))
         found.push({ type:'<iconify-icon icon="tabler:user"></iconify-icon> Usuario', title: u.nombre, sub: u.email + ' · ' + u.estado, action: "showPage('usuarios')" });
-    });
-  }
-  // Licencias — útil para "¿dónde guardé el password de X?"
-  if (typeof allLicencias !== 'undefined' && Array.isArray(allLicencias)) {
-    allLicencias.forEach(l => {
-      const blob = (l.nombre + ' ' + (l.plan||'') + ' ' + (l.notas||'')).toLowerCase();
-      if (blob.includes(q))
-        found.push({ type:'<iconify-icon icon="tabler:license"></iconify-icon> Licencia', title: l.nombre, sub: (l.plan || 'sin plan') + ' · ' + (l.estado || 'activa'), action: "showPage('licencias')" });
     });
   }
   // Auditoría — buscar en descripción/detalle de entradas recientes
@@ -666,16 +656,14 @@ function addLog(message, type = 'info', consoleId = null) {
   // pesado el panel Logs cuando se renderiza por completo.
   if (sessionLogs.length > SESSION_LOGS_MAX) sessionLogs.splice(0, sessionLogs.length - SESSION_LOGS_MAX);
   sessionActionCount++;
-  document.getElementById('stat-logs').textContent = sessionActionCount;
   const line = `<div class="log-line"><span class="log-time">${t}</span><span class="log-msg ${type}">${escHtml(message)}</span></div>`;
   const fullLog = document.getElementById('log-full');
-  if (fullLog.querySelector('.log-empty')) fullLog.innerHTML = '';
-  fullLog.insertAdjacentHTML('beforeend', line);
-  fullLog.scrollTop = fullLog.scrollHeight;
-  const dashLog = document.getElementById('log-dashboard');
-  if (dashLog.querySelector('.log-empty')) dashLog.innerHTML = '';
-  dashLog.insertAdjacentHTML('beforeend', line);
-  dashLog.scrollTop = dashLog.scrollHeight;
+  if (fullLog) {
+    const empty = fullLog.querySelector('.log-empty');
+    if (empty) empty.remove();
+    fullLog.insertAdjacentHTML('beforeend', line);
+    fullLog.scrollTop = fullLog.scrollHeight;
+  }
   if (consoleId) {
     const specific = document.getElementById(consoleId);
     if (specific) {
@@ -908,7 +896,7 @@ function clearForm(prefix) {
 }
 
 function clearAllLogs() {
-  ['log-full','log-dashboard','log-emp','log-agt','log-rst'].forEach(id => {
+  ['log-full','log-emp','log-agt','log-rst'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = '<div class="log-empty"><div class="log-empty-icon"><iconify-icon icon="tabler:trash"></iconify-icon></div><div class="log-empty-text">Logs limpiados</div></div>';
   });
@@ -2304,8 +2292,7 @@ function exportAuditCSV() {
 
 // ── Módulo "Home" — cola priorizada + lanzador ────────────────
 // Vista consolidada: tickets prioritarios abiertos + solicitudes que esperan
-// a IT + licencias por vencer. Una sola página para que Fernando entre y sepa
-// qué hacer primero sin navegar 3 secciones distintas.
+// a IT. Una sola página para que Fernando entre y sepa qué hacer primero.
 async function loadHome() {
   // Saludo dinámico según la hora ET
   const hET = new Date().toLocaleString('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false });
@@ -2314,23 +2301,20 @@ async function loadHome() {
   const auth = (() => { try { return JSON.parse(sessionStorage.getItem('hero_auth') || '{}'); } catch { return {}; } })();
   const nombre = (auth.nombre || '').split(' ')[0] || 'Fernando';
   const saludoEl = document.getElementById('home-saludo');
-  if (saludoEl) saludoEl.textContent = saludo + ', ' + nombre + ' — esto necesita tu atención ahora.';
+  if (saludoEl) saludoEl.textContent = saludo + ', ' + nombre;
 
-  // Skeletons en las 3 secciones mientras carga
+  // Skeletons en las 2 secciones mientras carga
   renderSkeleton(document.getElementById('md-tickets'), { type: 'card', rows: 2 });
   renderSkeleton(document.getElementById('md-sols'),    { type: 'card', rows: 2 });
-  renderSkeleton(document.getElementById('md-lics'),    { type: 'card', rows: 2 });
 
-  let tickets = [], sols = [], lics = [];
+  let tickets = [], sols = [];
   try {
-    const [t, s, l] = await Promise.all([
+    const [t, s] = await Promise.all([
       authFetch(WORKER_URL + '/ticket'),
       authFetch(WORKER_URL + '/alta-agente'),
-      authFetch(WORKER_URL + '/licencia'),
     ]);
     if (t.ok) tickets = (await t.json()).tickets || [];
     if (s.ok) sols    = (await s.json()).solicitudes || [];
-    if (l.ok) lics    = (await l.json()).licencias || [];
   } catch (e) {
     addLog('Home: error cargando datos: ' + e.message, 'warn');
   }
@@ -2350,22 +2334,14 @@ async function loadHome() {
     .filter(s => s.estado === 'pendiente' || s.estado === 'autorizada')
     .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 
-  // 3. Licencias que vencen dentro de 30 días (o ya vencidas)
-  const today = Date.now();
-  const licsVencer = lics
-    .filter(l => l.vencimiento && (new Date(l.vencimiento).getTime() - today) < 30 * 86400000)
-    .sort((a, b) => new Date(a.vencimiento) - new Date(b.vencimiento));
-
   // Stats
   const setStat = (id, n) => { const el = document.getElementById(id); if (el) el.textContent = n; };
   setStat('home-stat-tickets', ticketsPri.length);
   setStat('home-stat-sols',    solsAccion.length);
-  setStat('home-stat-lics',    licsVencer.length);
 
   // Render cada sección (con empty state propio)
   _renderHomeTickets(ticketsPri);
   _renderHomeSols(solsAccion);
-  _renderHomeLics(licsVencer);
 
   // Alerta de cuentas suspendidas próximas a eliminar (background — no bloquea
   // el render del home si Firestore tarda o falla).
@@ -2457,29 +2433,6 @@ function _renderHomeSols(items) {
       +     '<span style="font-family:var(--mono);font-size:10px;color:' + estadoColor + ';">' + estadoBadge + '</span>'
       +     '<span style="font-family:var(--mono);font-size:10px;color:var(--hero-text-muted);">⏱ ' + elapsed + '</span>'
       +   '</div>'
-      + '</div>'
-      + '</div>';
-  }).join('');
-}
-
-function _renderHomeLics(items) {
-  const el = document.getElementById('md-lics');
-  if (!items.length) {
-    renderEmpty(el, { icon: '<iconify-icon icon="tabler:circle-check" style="color:var(--hero-success);"></iconify-icon>', message: 'Ninguna licencia vence en los próximos 30 días.' });
-    return;
-  }
-  const today = Date.now();
-  el.innerHTML = items.map(l => {
-    const days = Math.ceil((new Date(l.vencimiento).getTime() - today) / 86400000);
-    const badgeColor = days < 0 ? 'var(--hero-danger)' : days <= 7 ? 'var(--hero-danger)' : 'var(--hero-warning)';
-    const badgeText  = days < 0 ? 'VENCIDA' : days === 0 ? 'VENCE HOY' : days === 1 ? 'Vence mañana' : 'Vence en ' + days + ' días';
-    return '<div class="action-card" style="cursor:pointer;padding:14px;" onclick="showPage(\'licencias\')">'
-      + '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">'
-      +   '<div style="min-width:0;flex:1;">'
-      +     '<div style="font-size:13px;font-weight:600;color:var(--hero-text-primary);">' + escHtml(l.nombre) + '</div>'
-      +     '<div style="font-size:11px;color:var(--hero-text-muted);margin-top:2px;">' + escHtml(l.plan || 'sin plan') + (l.costo > 0 ? ' · $' + Number(l.costo).toFixed(2) + '/mes' : '') + '</div>'
-      +   '</div>'
-      +   '<span style="font-family:var(--mono);font-size:10px;font-weight:700;color:' + badgeColor + ';">' + badgeText + '</span>'
       + '</div>'
       + '</div>';
   }).join('');
@@ -3899,6 +3852,14 @@ const INT_TIPO_COLOR = {
 };
 
 async function loadDevices(forceFresh = false) {
+  // Si ya hay devices en cache (p.ej. porque el módulo Equipo Interno los
+  // pobló al entrar primero a Usuarios), evitamos el segundo fetch al Worker.
+  // Refrescar → forceFresh=true (botón "Refrescar" y auto-refresh explícitos).
+  if (!forceFresh && Array.isArray(allDevices) && allDevices.length) {
+    filterDevices();
+    setLastUpdated('devices-last-updated');
+    return;
+  }
   renderSkeleton(document.getElementById('dev-grid'), { type: 'card', rows: 4 });
   try {
     const url = WORKER_URL + '/device?withZoho=1' + (forceFresh ? '&fresh=1' : '');
@@ -3957,7 +3918,9 @@ function renderDeviceGrid(devices) {
       +   '<span style="font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(0,0,0,0.06);color:' + eColor + ';">' + escHtml(d.estado) + '</span>'
       + '</div>'
       + '<div style="font-size:14px;font-weight:600;color:var(--hero-text-primary);margin-bottom:3px;">' + escHtml(d.nombre) + '</div>'
-      + '<div style="font-size:12px;color:var(--hero-text-body);margin-bottom:8px;">' + escHtml(d.usuario || 'Sin usuario asignado') + '</div>'
+      + (d.usuario
+          ? '<div style="font-size:12px;color:var(--hero-primary);margin-bottom:8px;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="event.stopPropagation();openInternalMemberByOwnerName(\'' + escJs(d.usuario) + '\')" title="Ver ficha de esta persona"><iconify-icon icon="tabler:user" style="font-size:11px;"></iconify-icon> ' + escHtml(d.usuario) + '</div>'
+          : '<div style="font-size:12px;color:var(--hero-text-muted);margin-bottom:8px;font-style:italic;">Sin usuario asignado</div>')
       + '<div style="display:flex;gap:12px;font-size:11px;color:var(--hero-text-muted);">'
       +   '<span>' + escHtml(soDisplay) + '</span>'
       +   '<span style="margin-left:auto;">' + intCount + ' interv.</span>'
@@ -4011,6 +3974,21 @@ async function openDeviceDetail(id) {
 
   document.getElementById('dev-list-view').style.display = 'none';
   document.getElementById('dev-detail-view').style.display = 'block';
+
+  // Botón "Volver a {persona}" — solo si el user llegó desde la ficha del
+  // Equipo Interno (js/it-team-panel.js setea window._returnToInternalMember).
+  const returnCtx = window._returnToInternalMember;
+  const returnBtn = document.getElementById('dev-return-to-member-btn');
+  const returnLbl = document.getElementById('dev-return-to-member-label');
+  if (returnBtn && returnLbl) {
+    if (returnCtx && returnCtx.name) {
+      returnLbl.textContent = 'Volver a ' + returnCtx.name;
+      returnBtn.style.display = '';
+    } else {
+      returnBtn.style.display = 'none';
+      returnLbl.textContent = '';
+    }
+  }
   const isOnline = (device.zohoStatus || '').toLowerCase() === 'online';
   const dotColor = isOnline ? 'var(--hero-success)' : 'var(--hero-text-muted)';
   const dotGlow  = isOnline ? '0 0 6px var(--hero-success)' : 'none';
@@ -4045,7 +4023,7 @@ async function openDeviceDetail(id) {
   document.getElementById('dev-detail-info').innerHTML =
     '<div style="display:grid;gap:6px;">'
     + liveRows
-    + row('Usuario', escHtml(device.usuario || '—'))
+    + row('Usuario', escHtml(device.usuario || '—') + (device.usuario ? ' <button onclick="openInternalMemberByOwnerName(\'' + escJs(device.usuario) + '\')" class="btn btn-secondary" style="padding:2px 8px;font-size:11px;margin-left:8px;vertical-align:middle;" title="Ver ficha de esta persona"><iconify-icon icon="tabler:user"></iconify-icon> Ver ficha</button>' : ''))
     + row('Tipo', escHtml(device.tipo))
     + row('SO (registrado)', escHtml(device.so || '—'))
     + row('GCPW', device.gcpw ? '<span style="color:var(--hero-primary);"><iconify-icon icon="tabler:check"></iconify-icon> Activado</span>' : '<span style="color:var(--hero-text-muted);"><iconify-icon icon="tabler:x"></iconify-icon> No activado</span>')
@@ -4102,6 +4080,11 @@ function closeDeviceDetail() {
   document.getElementById('dev-list-view').style.display = 'block';
   currentDeviceId = null;
   currentDevice = null;
+  // Al cerrar con "← Volver" normal, descartamos el contexto de retorno
+  // para no mostrar el botón fantasma si el user reabre otra ficha después.
+  window._returnToInternalMember = null;
+  const rb = document.getElementById('dev-return-to-member-btn');
+  if (rb) rb.style.display = 'none';
 }
 
 async function registrarIntervencion() {
@@ -4438,7 +4421,6 @@ function _shortcutsHelp() {
       +     '<kbd>g t</kbd><span>Soporte · Tickets</span>'
       +     '<kbd>g k</kbd><span>Soporte · Toolbox</span>'
       +     '<kbd>g d</kbd><span>Soporte · Dispositivos</span>'
-      +     '<kbd>g l</kbd><span>Soporte · Licencias</span>'
       +     '<kbd>g a</kbd><span>Auditoría</span>'
       +     '<kbd>g r</kbd><span>Reset contraseña</span>'
       +     '<kbd>Esc</kbd><span>Cerrar modal</span>'
@@ -4481,7 +4463,7 @@ function installKeyboardShortcuts() {
     if (lastG && Date.now() - lastG < 800) {
       // g m mantiene Home por memoria muscular (era 'Mi día'). g d ahora es
       // Dispositivos (sub-tab de Soporte). Home usa g h.
-      const map = { h:'dashboard', m:'dashboard', t:'tickets', s:'solicitudes', u:'usuarios', l:'licencias', a:'auditoria', r:'reset', k:'toolbox', d:'dispositivos' };
+      const map = { h:'dashboard', m:'dashboard', t:'tickets', s:'solicitudes', u:'usuarios', a:'auditoria', r:'reset', k:'toolbox', d:'dispositivos' };
       if (map[e.key]) {
         e.preventDefault();
         showPage(map[e.key]);
@@ -4518,7 +4500,6 @@ const OB_STEPS = [
 
 let obSelectedUser = null;
 let obStepStatus   = {};
-let editingLicId   = null;
 
 function renderOffboardingSteps() {
   OB_STEPS.forEach(s => { if (!obStepStatus[s.id]) obStepStatus[s.id] = 'pending'; });
@@ -4961,532 +4942,6 @@ function guardarComoToolbox() {
   document.getElementById('tbx-f-titulo').value = (t.asunto || '').slice(0, 120);
   document.getElementById('tbx-f-contenido').value = contenidoSugerido;
   document.getElementById('tbx-f-tags').value = (t.categoria || '').toLowerCase();
-}
-
-// ── Módulo Licencias & Software ───────────────────────────────
-let allLicencias = [];
-
-async function loadLicencias() {
-  renderSkeleton(document.getElementById('lic-grid'), { type: 'card', rows: 4 });
-  try {
-    const r = await authFetch(WORKER_URL + '/licencia');
-    const d = await r.json();
-    allLicencias = d.licencias || [];
-    renderLicencias();
-  } catch(e) {
-    renderError(document.getElementById('lic-grid'), e, loadLicencias);
-  }
-}
-
-function renderLicencias() {
-  const grid = document.getElementById('lic-grid');
-  const count = document.getElementById('lic-count');
-  if (count) count.textContent = allLicencias.length + ' licencia' + (allLicencias.length !== 1 ? 's' : '');
-  if (!allLicencias.length) {
-    grid.innerHTML = '<div class="info-box" style="text-align:center;padding:40px;grid-column:1/-1;"><div style="font-size:32px;opacity:0.3;margin-bottom:12px;"><iconify-icon icon="tabler:license"></iconify-icon></div><div style="font-family:var(--mono);font-size:12px;color:var(--hero-text-muted);">Sin licencias registradas. Agrega la primera con el botón Nueva licencia.</div></div>';
-    return;
-  }
-  const today = new Date();
-  grid.innerHTML = allLicencias.map(l => {
-    const estadoColor = { activa: 'var(--hero-success)', trial: 'var(--hero-warning)', vencida: 'var(--hero-danger)', cancelada: 'var(--hero-text-muted)' }[l.estado] || 'var(--hero-text-muted)';
-    // Days until expiry
-    let expiryBadge = '';
-    if (l.vencimiento) {
-      const days = Math.ceil((new Date(l.vencimiento) - today) / 86400000);
-      if (days < 0)  expiryBadge = '<span style="font-size:10px;color:var(--hero-danger);font-weight:700;">VENCIDA</span>';
-      else if (days <= 30) expiryBadge = '<span style="font-size:10px;color:var(--hero-warning);font-weight:700;">Vence en ' + days + ' días</span>';
-      else expiryBadge = '<span style="font-size:10px;color:var(--hero-text-muted);">Vence ' + new Date(l.vencimiento).toLocaleDateString('es-MX') + '</span>';
-    }
-    return '<div class="action-card" style="--card-color:' + estadoColor + ';">'
-      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">'
-      + '<div style="font-size:15px;font-weight:700;color:var(--hero-text-primary);">' + escHtml(l.nombre) + '</div>'
-      + '<span style="font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(0,0,0,0.05);color:' + estadoColor + ';">' + escHtml(l.estado) + '</span>'
-      + '</div>'
-      + (l.plan ? '<div style="font-size:12px;color:var(--hero-text-muted);margin-bottom:4px;">Plan: ' + escHtml(l.plan) + '</div>' : '')
-      + '<div style="display:flex;gap:16px;font-size:12px;color:var(--hero-text-muted);margin-bottom:10px;">'
-      + (l.costo > 0 ? '<span><iconify-icon icon="tabler:cash"></iconify-icon> $' + Number(l.costo).toFixed(2) + '/mes</span>' : '')
-      + (l.usuarios > 0 ? '<span><iconify-icon icon="tabler:user"></iconify-icon> ' + l.usuarios + ' usuarios</span>' : '')
-      + '</div>'
-      + (expiryBadge ? '<div style="margin-bottom:10px;">' + expiryBadge + '</div>' : '')
-      + (l.notas ? '<div style="font-size:11px;color:var(--hero-text-muted);margin-bottom:12px;">' + escHtml(l.notas) + '</div>' : '')
-      + ((l.credUsuario || l.credPassword || l.codigoLicencia)
-        ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">'
-          + (l.credUsuario || l.credPassword ? '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(6,163,182,0.08);color:var(--hero-primary);"><iconify-icon icon="tabler:lock"></iconify-icon> Credenciales</span>' : '')
-          + (l.codigoLicencia ? '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(6,163,182,0.08);color:var(--hero-primary);"><iconify-icon icon="tabler:key"></iconify-icon> Código</span>' : '')
-          + '</div>'
-        : '')
-      + '<div style="display:flex;gap:8px;">'
-      + '<button onclick="editLicencia(\'' + escJs(l.id) + '\')" class="btn btn-secondary" style="flex:1;font-size:12px;"><iconify-icon icon="tabler:pencil"></iconify-icon> Editar</button>'
-      + ((l.credUsuario || l.credPassword || l.codigoLicencia)
-        ? '<button onclick="verCredenciales(\'' + escJs(l.id) + '\')" class="btn btn-secondary" style="font-size:12px;padding:8px 12px;" title="Ver credenciales"><iconify-icon icon="tabler:lock"></iconify-icon></button>'
-        : '')
-      + '<button onclick="deleteLicencia(\'' + escJs(l.id) + '\',\'' + escJs(l.nombre) + '\')" class="btn btn-danger" style="font-size:12px;padding:8px 10px;"><iconify-icon icon="tabler:trash"></iconify-icon></button>'
-      + '</div></div>';
-  }).join('');
-}
-
-function showLicenciaForm(lic = null) {
-  editingLicId = lic ? lic.id : null;
-  document.getElementById('lic-modal-title').textContent    = lic ? 'Editar licencia' : 'Nueva licencia';
-  document.getElementById('lic-f-nombre').value             = lic ? lic.nombre         : '';
-  document.getElementById('lic-f-plan').value               = lic ? lic.plan           : '';
-  document.getElementById('lic-f-tipo-sub').value           = lic ? (lic.tipoSub||'mensual') : 'mensual';
-  document.getElementById('lic-f-costo').value              = lic ? lic.costo          : '';
-  document.getElementById('lic-f-usuarios').value           = lic ? lic.usuarios       : '';
-  document.getElementById('lic-f-vencimiento').value        = lic ? (lic.vencimiento||'') : '';
-  document.getElementById('lic-f-estado').value             = lic ? lic.estado         : 'activa';
-  document.getElementById('lic-f-cred-usuario').value       = lic ? (lic.credUsuario||'') : '';
-  document.getElementById('lic-f-cred-password').value      = lic ? (lic.credPassword||'') : '';
-  document.getElementById('lic-f-codigo').value             = lic ? (lic.codigoLicencia||'') : '';
-  document.getElementById('lic-f-notas').value              = lic ? lic.notas          : '';
-  // Reset password visibility
-  const pwd = document.getElementById('lic-f-cred-password');
-  if (pwd) pwd.type = 'password';
-  document.getElementById('lic-modal').style.display = 'block';
-}
-
-function toggleLicPassword() {
-  const input = document.getElementById('lic-f-cred-password');
-  const btn   = document.getElementById('btn-toggle-lic-pwd');
-  if (input.type === 'password') { input.type = 'text';     btn.innerHTML = '<iconify-icon icon="tabler:eye-off"></iconify-icon>'; }
-  else                           { input.type = 'password'; btn.innerHTML = '<iconify-icon icon="tabler:eye"></iconify-icon>';  }
-}
-
-function verCredenciales(id) {
-  const l = allLicencias.find(x => x.id === id);
-  if (!l) return;
-
-  const rows = [
-    l.credUsuario    ? ['<iconify-icon icon="tabler:user"></iconify-icon> Usuario',          l.credUsuario,    false] : null,
-    l.credPassword   ? ['<iconify-icon icon="tabler:key"></iconify-icon> Contraseña',        l.credPassword,   true]  : null,
-    l.codigoLicencia ? ['<iconify-icon icon="tabler:lock-square"></iconify-icon> Código de licencia', l.codigoLicencia, false] : null,
-  ].filter(Boolean);
-
-  if (!rows.length) { showToast('Esta licencia no tiene credenciales guardadas'); return; }
-
-  const rowsHtml = rows.map(function(row) {
-    const label = row[0], value = row[1], isPassword = row[2];
-    // escHtml cubre comillas, < > & ' — el browser decodifica entidades al
-    // leer dataset.val, así que toggleCredVal y el copiado recuperan el valor
-    // original sin entidades residuales.
-    const safeAttr = escHtml(value);
-    return '<div style="margin-bottom:14px;">'
-      + '<div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--hero-primary);margin-bottom:5px;">' + label + '</div>'
-      + '<div style="display:flex;align-items:center;gap:8px;">'
-      + '<code data-val="' + safeAttr + '" style="flex:1;background:var(--hero-bg);border:1px solid var(--hero-border);border-radius:6px;padding:8px 12px;font-family:var(--mono);font-size:13px;color:var(--hero-text-primary);display:block;overflow-wrap:anywhere;">'
-      + (isPassword ? '••••••••' : escHtml(value))
-      + '</code>'
-      + (isPassword
-        ? '<button data-val="' + safeAttr + '" onclick="toggleCredVal(this)" style="background:transparent;border:1px solid var(--hero-border);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:14px;color:var(--hero-text-muted);"><iconify-icon icon="tabler:eye"></iconify-icon></button>'
-        : '')
-      + '<button data-val="' + safeAttr + '" onclick="navigator.clipboard.writeText(this.dataset.val);showToast(\'Copiado\')" style="background:transparent;border:1px solid var(--hero-border);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:14px;color:var(--hero-text-muted);"><iconify-icon icon="tabler:copy"></iconify-icon></button>'
-      + '</div></div>';
-  }).join('');
-
-  // Create modal if doesn't exist
-  let modal = document.getElementById('cred-view-modal');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'cred-view-modal';
-    modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(26,39,51,0.5);z-index:200;overflow-y:auto;padding:24px;';
-    modal.innerHTML =
-      '<div style="background:#ffffff;border:1px solid rgba(6,163,182,0.3);border-radius:16px;max-width:460px;margin:0 auto;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.2);">'
-      + '<div style="background:linear-gradient(135deg,#06a3b6,#048395);padding:18px 24px;display:flex;justify-content:space-between;align-items:center;">'
-      + '<div id="cred-modal-title" style="font-size:15px;font-weight:700;color:#fff;"></div>'
-      + '<button onclick="document.getElementById(\'cred-view-modal\').style.display=\'none\'" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:30px;height:30px;border-radius:6px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;"><iconify-icon icon="tabler:x"></iconify-icon></button>'
-      + '</div>'
-      + '<div id="cred-modal-body" style="padding:20px 24px;"></div>'
-      + '<div style="padding:0 24px 20px;display:flex;gap:8px;">'
-      + '<button onclick="copyAllCreds()" class="btn btn-primary" style="flex:1;font-size:12px;"><iconify-icon icon="tabler:copy"></iconify-icon> Copiar todo</button>'
-      + '<button onclick="document.getElementById(\'cred-view-modal\').style.display=\'none\'" class="btn btn-secondary" style="font-size:12px;">Cerrar</button>'
-      + '</div></div>';
-    document.body.appendChild(modal);
-  }
-
-  modal._licId = id;
-  document.getElementById('cred-modal-title').innerHTML = '<iconify-icon icon="tabler:lock"></iconify-icon> ' + escHtml(l.nombre);
-  document.getElementById('cred-modal-body').innerHTML = rowsHtml;
-  modal.style.display = 'block';
-}
-
-function toggleCredVal(btn) {
-  const code = btn.previousElementSibling;
-  const val  = btn.dataset.val;
-  if (code.textContent === '••••••••') {
-    code.textContent = val;
-    btn.innerHTML    = '<iconify-icon icon="tabler:eye-off"></iconify-icon>';
-  } else {
-    code.textContent = '••••••••';
-    btn.innerHTML    = '<iconify-icon icon="tabler:eye"></iconify-icon>';
-  }
-}
-
-function copyAllCreds() {
-  const modal = document.getElementById('cred-view-modal');
-  const l = allLicencias.find(x => x.id === modal._licId);
-  if (!l) return;
-  const text = [
-    l.credUsuario    ? 'Usuario: '    + l.credUsuario    : '',
-    l.credPassword   ? 'Contrasena: ' + l.credPassword   : '',
-    l.codigoLicencia ? 'Codigo: '     + l.codigoLicencia : '',
-  ].filter(Boolean).join('\n');
-  navigator.clipboard.writeText(text).catch(()=>{});
-  showToast('Credenciales copiadas');
-}
-
-
-function editLicencia(id) {
-  const lic = allLicencias.find(l => l.id === id);
-  if (lic) showLicenciaForm(lic);
-}
-function closeLicenciaModal() {
-  document.getElementById('lic-modal').style.display = 'none';
-  editingLicId = null;
-}
-async function saveLicencia() {
-  const nombre = document.getElementById('lic-f-nombre').value.trim();
-  if (!nombre) { showToast('El nombre es obligatorio'); return; }
-  const btn = document.getElementById('btn-lic-save');
-  btn.disabled = true; btn.innerHTML = '<l-ring size="14" stroke="2" speed="0.7" color="#06a3b6"></l-ring>';
-  try {
-    const r = await authFetch(WORKER_URL + '/licencia', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: editingLicId || undefined,
-        nombre,
-        plan:        document.getElementById('lic-f-plan').value.trim(),
-        costo:       parseFloat(document.getElementById('lic-f-costo').value) || 0,
-        usuarios:    parseInt(document.getElementById('lic-f-usuarios').value) || 0,
-        vencimiento: document.getElementById('lic-f-vencimiento').value || null,
-        estado:      document.getElementById('lic-f-estado').value,
-        notas:       document.getElementById('lic-f-notas').value.trim(),
-      })
-    });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.error || 'Error');
-    showToast(editingLicId ? 'Licencia actualizada' : 'Licencia agregada');
-    auditLog('licencia', (editingLicId ? 'Licencia actualizada: ' : 'Licencia agregada: ') + nombre);
-    closeLicenciaModal();
-    loadLicencias();
-  } catch(e) { showToast('Error: ' + e.message); }
-  btn.disabled = false; btn.innerHTML = '<iconify-icon icon="tabler:device-floppy"></iconify-icon> Guardar';
-}
-async function deleteLicencia(id, nombre) {
-  if (!(await heroConfirm({
-    title: '¿Eliminar licencia?',
-    body: 'Vas a eliminar "' + nombre + '". Esta acción no se puede deshacer.',
-    confirmText: 'Eliminar', destructive: true,
-  }))) return;
-  try {
-    await authFetch(WORKER_URL + '/licencia/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
-    showToast('Licencia eliminada');
-    auditLog('licencia', 'Licencia eliminada: ' + nombre);
-    loadLicencias();
-  } catch(e) { showToast('Error: ' + e.message); }
-}
-
-// ── Integración Office Manager App ───────────────────────────
-// Lee Firestore del Office Manager App (solo lectura, no modifica nada)
-const OM_PROJECT = 'office-manager-app-b82c1';
-const OM_API_URL = 'https://firestore.googleapis.com/v1/projects/' + OM_PROJECT + '/databases/(default)/documents/';
-
-async function loadOfficeStatus() {
-  const card = document.getElementById('office-status-card');
-  if (!card) return;
-  try {
-    const r = await fetch(OM_API_URL + 'asistencia');
-    const d = await r.json();
-    if (!d.documents) { card.innerHTML = '<div style="font-size:12px;color:var(--hero-text-muted);text-align:center;padding:16px;">Sin datos de asistencia hoy</div>'; return; }
-    const today = new Date().toLocaleDateString('es-MX', { timeZone: 'America/New_York' });
-    const hoy = d.documents.filter(doc => {
-      const f = doc.fields;
-      return f && f.fecha && f.fecha.stringValue && f.fecha.stringValue.startsWith(today);
-    });
-    if (!hoy.length) { card.innerHTML = '<div style="font-size:12px;color:var(--hero-text-muted);text-align:center;padding:16px;">Sin registros hoy (' + today + ')</div>'; return; }
-    card.innerHTML = hoy.map(doc => {
-      const f = doc.fields;
-      const nombre  = f.nombre?.stringValue || 'Desconocido';
-      const entrada = f.entrada?.stringValue || '—';
-      const salida  = f.salida?.stringValue  || 'Activo';
-      const isActive = !f.salida?.stringValue;
-      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--hero-border);">'
-        + '<div style="display:flex;align-items:center;gap:8px;">'
-        + '<div style="width:6px;height:6px;border-radius:50%;background:' + (isActive ? 'var(--hero-success)' : 'var(--hero-text-muted)') + ';flex-shrink:0;"></div>'
-        + '<span style="font-size:13px;color:var(--hero-text-primary);">' + escHtml(nombre) + '</span></div>'
-        + '<div style="font-family:var(--mono);font-size:11px;color:var(--hero-text-muted);">' + escHtml(entrada) + (isActive ? ' →' : ' → ' + escHtml(salida)) + '</div>'
-        + '</div>';
-    }).join('');
-  } catch(e) {
-    card.innerHTML = '<div style="font-size:12px;color:var(--hero-text-muted);text-align:center;padding:16px;">No se pudo cargar (verifica acceso Firestore)</div>';
-  }
-}
-
-// ── Reporte mensual IT ────────────────────────────────────────
-// Genera un CSV con todas las secciones operativas del mes seleccionado:
-// resumen ejecutivo + tickets + solicitudes + intervenciones + auditoría +
-// licencias activas + Toolbox. Si una sección falla (Worker/red), el resto sigue.
-async function generateMonthlyReport() {
-  const monthInput = document.getElementById('report-month').value;
-  if (!monthInput) { showToast('Selecciona un mes primero'); return; }
-
-  const [year, month] = monthInput.split('-').map(Number);
-  const label = new Date(year, month - 1).toLocaleDateString('es-MX', { month: 'long', year: 'numeric' });
-  const fmtDate = ts => ts ? new Date(ts).toLocaleDateString('es-MX', { timeZone: 'America/New_York', year:'numeric', month:'short', day:'numeric' }) : '';
-  const fmtDateTime = ts => ts ? new Date(ts).toLocaleString('es-MX', { timeZone: 'America/New_York' }) : '';
-  const inMonth = ts => {
-    if (!ts) return false;
-    const d = new Date(ts);
-    return d.getFullYear() === year && d.getMonth() + 1 === month;
-  };
-
-  showToast('Generando reporte de ' + label + '...');
-
-  // Buffer para resumen ejecutivo: lo armamos al final con counts reales
-  // pero lo concatenamos al inicio del CSV final.
-  const summary = {};
-  let sections = '';
-
-  // ── Tickets ──────────────────────────────────────────────────
-  try {
-    const tResp = await authFetch(WORKER_URL + '/ticket');
-    if (tResp.ok) {
-      const tData = await tResp.json();
-      const tickets = (tData.tickets || []).filter(t => inMonth(t.fecha));
-      const resueltos = tickets.filter(t => t.estado === 'resuelto').length;
-      summary.tickets = { total: tickets.length, resueltos };
-
-      sections += csvRow(['TICKETS DE SOPORTE']);
-      sections += csvRow(['ID', 'Asunto', 'Usuario', 'Email', 'Categoría', 'Prioridad', 'Estado', 'Fecha creación', 'Fecha respuesta']);
-      tickets.forEach(t => {
-        sections += csvRow([
-          t.ticketId || t.id || '',
-          t.asunto || '',
-          t.nombre || '',
-          t.email || '',
-          t.categoria || '',
-          t.prioridad || '',
-          t.estado || '',
-          fmtDate(t.fecha),
-          fmtDate(t.fechaRespuesta),
-        ]);
-      });
-      sections += csvRow(['Total tickets', tickets.length]);
-      sections += csvRow(['Resueltos', resueltos]);
-
-      // Breakdown por categoría
-      const porCat = {};
-      tickets.forEach(t => { porCat[t.categoria || '(sin categoría)'] = (porCat[t.categoria || '(sin categoría)'] || 0) + 1; });
-      Object.keys(porCat).sort().forEach(k => sections += csvRow(['  por categoría · ' + k, porCat[k]]));
-
-      // Breakdown por prioridad
-      const porPri = {};
-      tickets.forEach(t => { porPri[t.prioridad || 'Media'] = (porPri[t.prioridad || 'Media'] || 0) + 1; });
-      ['Urgente', 'Alta', 'Media', 'Baja'].forEach(k => { if (porPri[k]) sections += csvRow(['  por prioridad · ' + k, porPri[k]]); });
-      sections += csvRow([]);
-    }
-  } catch (e) {
-    sections += csvRow(['TICKETS DE SOPORTE — error al cargar']);
-    sections += csvRow([]);
-  }
-
-  // ── Solicitudes (altas/bajas) ────────────────────────────────
-  try {
-    const sResp = await authFetch(WORKER_URL + '/alta-agente');
-    if (sResp.ok) {
-      const sData = await sResp.json();
-      const sols = (sData.solicitudes || []).filter(s => inMonth(s.fecha));
-      const altas = sols.filter(s => (s.tipoSolicitud || 'alta') === 'alta').length;
-      const bajas = sols.filter(s => s.tipoSolicitud === 'baja').length;
-      const procesadas = sols.filter(s => s.estado === 'procesada').length;
-      summary.solicitudes = { total: sols.length, altas, bajas, procesadas };
-
-      sections += csvRow(['SOLICITUDES DE CUENTA (ALTAS / BAJAS)']);
-      sections += csvRow(['Tipo', 'Persona', 'Correo', 'Solicitante', 'Estado', 'Fecha solicitud', 'Autorizada por', 'Fecha autorización']);
-      sols.forEach(s => {
-        const tipo = (s.tipoSolicitud === 'baja' ? 'BAJA' : 'ALTA') + ' / ' + (s.tipoPersona === 'empleado' ? 'empleado' : 'agente');
-        const persona = s.tipoSolicitud === 'baja'
-          ? (s.nombre || '')
-          : ((s.nombre || '') + ' ' + (s.apellido || '')).trim();
-        const correo = s.tipoSolicitud === 'baja' ? (s.correoEliminar || '') : (s.correoPersonal || s.correo || '');
-        sections += csvRow([
-          tipo,
-          persona,
-          correo,
-          s.solicitanteNombre || '',
-          s.estado || 'pendiente',
-          fmtDate(s.fecha),
-          s.autorizadaPor || '',
-          fmtDate(s.autorizadaFecha),
-        ]);
-      });
-      sections += csvRow(['Total solicitudes', sols.length]);
-      sections += csvRow(['  Altas', altas]);
-      sections += csvRow(['  Bajas', bajas]);
-      sections += csvRow(['  Procesadas', procesadas]);
-      sections += csvRow([]);
-    }
-  } catch (e) {
-    sections += csvRow(['SOLICITUDES — error al cargar']);
-    sections += csvRow([]);
-  }
-
-  // ── Intervenciones de dispositivos ───────────────────────────
-  try {
-    const dResp = await authFetch(WORKER_URL + '/device?withZoho=1');
-    if (dResp.ok) {
-      const dData = await dResp.json();
-      const devices = dData.devices || [];
-      const intervencionesMes = [];
-      devices.forEach(dev => {
-        (dev.intervenciones || []).forEach(i => {
-          if (inMonth(i.fecha)) {
-            intervencionesMes.push({ dispositivo: dev.nombre, usuario: dev.usuario || '', ...i });
-          }
-        });
-      });
-      summary.intervenciones = { total: intervencionesMes.length, devicesActivos: devices.filter(d => d.estado === 'activo').length };
-
-      sections += csvRow(['INTERVENCIONES DE DISPOSITIVOS']);
-      sections += csvRow(['Dispositivo', 'Usuario', 'Tipo', 'Descripción', 'Notas', 'Fecha']);
-      intervencionesMes.forEach(i => {
-        sections += csvRow([i.dispositivo, i.usuario, i.tipo, i.descripcion, i.notas || '', fmtDateTime(i.fecha)]);
-      });
-      sections += csvRow(['Total intervenciones', intervencionesMes.length]);
-
-      // Por tipo
-      const porTipo = {};
-      intervencionesMes.forEach(i => { porTipo[i.tipo || '(sin tipo)'] = (porTipo[i.tipo || '(sin tipo)'] || 0) + 1; });
-      Object.keys(porTipo).sort().forEach(k => sections += csvRow(['  ' + k, porTipo[k]]));
-      sections += csvRow([]);
-    }
-  } catch (e) {
-    sections += csvRow(['INTERVENCIONES — error al cargar']);
-    sections += csvRow([]);
-  }
-
-  // ── Auditoría ────────────────────────────────────────────────
-  try {
-    const aResp = await authFetch(WORKER_URL + '/audit?limit=1000');
-    if (aResp.ok) {
-      const aData = await aResp.json();
-      const entradas = (aData.entradas || []).filter(e => inMonth(e.fecha));
-      summary.audit = { total: entradas.length };
-
-      sections += csvRow(['AUDITORÍA DE ACCIONES']);
-      sections += csvRow(['Fecha ET', 'Tipo', 'Descripción', 'Detalle', 'Usuario']);
-      entradas.forEach(e => {
-        sections += csvRow([fmtDateTime(e.fecha), e.tipo, e.descripcion, e.detalle || '', e.usuario || '']);
-      });
-      sections += csvRow(['Total acciones', entradas.length]);
-
-      const porTipo = {};
-      entradas.forEach(e => { porTipo[e.tipo || '(sin tipo)'] = (porTipo[e.tipo || '(sin tipo)'] || 0) + 1; });
-      Object.keys(porTipo).sort().forEach(k => sections += csvRow(['  ' + k, porTipo[k]]));
-      sections += csvRow([]);
-    }
-  } catch (e) {
-    sections += csvRow(['AUDITORÍA — error al cargar']);
-    sections += csvRow([]);
-  }
-
-  // ── Licencias activas + próximas a vencer ────────────────────
-  try {
-    const lResp = await authFetch(WORKER_URL + '/licencia');
-    if (lResp.ok) {
-      const lData = await lResp.json();
-      const lics = lData.licencias || [];
-      const proximas = lics.filter(l => {
-        if (!l.vencimiento) return false;
-        const v = new Date(l.vencimiento);
-        // Vence dentro del mes o anteriores
-        const endOfMonth = new Date(year, month, 0);
-        return v <= endOfMonth;
-      });
-      const costoMensual = lics
-        .filter(l => l.estado === 'activa' && Number(l.costo) > 0)
-        .reduce((acc, l) => {
-          const c = Number(l.costo) || 0;
-          if (l.tipoSub === 'anual') return acc + c / 12;
-          if (l.tipoSub === 'único' || l.tipoSub === 'gratis') return acc;
-          return acc + c;
-        }, 0);
-      summary.licencias = { total: lics.length, proximas: proximas.length, costoMensual };
-
-      sections += csvRow(['LICENCIAS Y SOFTWARE']);
-      sections += csvRow(['Nombre', 'Plan', 'Tipo suscripción', 'Costo', 'Usuarios', 'Vencimiento', 'Estado']);
-      lics.forEach(l => {
-        sections += csvRow([
-          l.nombre || '',
-          l.plan || '',
-          l.tipoSub || '',
-          l.costo != null ? '$' + Number(l.costo).toFixed(2) : '',
-          l.usuarios || 0,
-          fmtDate(l.vencimiento),
-          l.estado || '',
-        ]);
-      });
-      sections += csvRow(['Total licencias', lics.length]);
-      sections += csvRow(['Costo mensual estimado (activas)', '$' + costoMensual.toFixed(2)]);
-      if (proximas.length) {
-        sections += csvRow(['Licencias vencidas o por vencer hasta fin del mes', proximas.length]);
-      }
-      sections += csvRow([]);
-    }
-  } catch (e) {
-    sections += csvRow(['LICENCIAS — error al cargar']);
-    sections += csvRow([]);
-  }
-
-  // ── Toolbox (entradas creadas en el mes) ─────────────────────
-  try {
-    const kResp = await authFetch(WORKER_URL + '/kb');
-    if (kResp.ok) {
-      const kData = await kResp.json();
-      const entradas = (kData.articulos || []).filter(a => inMonth(a.fecha));
-      summary.toolbox = { total: entradas.length };
-
-      sections += csvRow(['TOOLBOX — entradas creadas en el mes']);
-      sections += csvRow(['Título', 'Tipo', 'Lenguaje', 'Tags', 'Ticket origen', 'Fecha creación']);
-      entradas.forEach(a => {
-        sections += csvRow([
-          a.titulo || '',
-          a.tipo || 'proceso',
-          a.lenguaje || '',
-          (a.tags || []).join(', '),
-          a.ticketOrigen || '',
-          fmtDate(a.fecha),
-        ]);
-      });
-      sections += csvRow(['Total entradas nuevas', entradas.length]);
-      sections += csvRow([]);
-    }
-  } catch (e) {
-    sections += csvRow(['Toolbox — error al cargar']);
-    sections += csvRow([]);
-  }
-
-  // ── Header + resumen ejecutivo ───────────────────────────────
-  let header = csvRow(['REPORTE MENSUAL IT — HERO INSURANCE USA']);
-  header += csvRow(['Mes', label.toUpperCase()]);
-  header += csvRow(['Generado', fmtDateTime(Date.now()) + ' ET']);
-  header += csvRow([]);
-  header += csvRow(['RESUMEN EJECUTIVO']);
-  if (summary.tickets)      header += csvRow(['Tickets de soporte', summary.tickets.total + ' (' + summary.tickets.resueltos + ' resueltos)']);
-  if (summary.solicitudes)  header += csvRow(['Solicitudes', summary.solicitudes.total + ' (' + summary.solicitudes.altas + ' altas, ' + summary.solicitudes.bajas + ' bajas, ' + summary.solicitudes.procesadas + ' procesadas)']);
-  if (summary.intervenciones) header += csvRow(['Intervenciones de dispositivos', summary.intervenciones.total]);
-  if (summary.audit)        header += csvRow(['Acciones auditadas', summary.audit.total]);
-  if (summary.licencias)    header += csvRow(['Licencias registradas', summary.licencias.total + ' · costo mensual ~$' + summary.licencias.costoMensual.toFixed(2)]);
-  if (summary.toolbox)      header += csvRow(['Entradas Toolbox nuevas', summary.toolbox.total]);
-  header += csvRow([]);
-
-  const csv = header + sections;
-
-  downloadCsv(csv, 'reporte-IT-' + monthInput + '.csv');
-  showToast('Reporte de ' + label + ' generado');
-  auditLog('reporte', 'Reporte mensual generado: ' + label,
-    'Tickets: ' + (summary.tickets?.total || 0)
-    + ' · Solicitudes: ' + (summary.solicitudes?.total || 0)
-    + ' · Intervenciones: ' + (summary.intervenciones?.total || 0));
 }
 
 // ══════════════════════════════════════════════════════════════

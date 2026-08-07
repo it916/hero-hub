@@ -1,5 +1,22 @@
 [
   {
+    "id": "2026-08-07-it-console-equipo-interno-home-limpio",
+    "version": "v2.27.0",
+    "date": "2026-08-07",
+    "category": "feat",
+    "scope": "it-console",
+    "audience": "admin",
+    "title": "IT Console · nuevo módulo Equipo Interno + Home más limpio",
+    "items": [
+      "El módulo Usuarios ahora tiene un interruptor Google Workspace / Equipo Interno. Al elegir Equipo Interno ves a las personas del equipo (admin, IT, finanzas, interno) con foto, cargo y cuántos dispositivos tienen asignados",
+      "Al abrir la ficha de una persona ves sus dispositivos, el historial completo de intervenciones (todos los equipos juntos, ordenados por fecha) y un bloque de notas IT privadas por persona",
+      "También puedes registrar una intervención rápida desde la ficha de persona sin ir a la ficha del dispositivo",
+      "Navegación cruzada: desde cualquier ficha de dispositivo puedes saltar a la ficha de la persona dueña con un botón. Y al revés, al abrir un dispositivo desde una persona aparece un botón Volver a {nombre} para regresar de un click",
+      "El Home del IT Console se limpió — se retiraron Licencias por vencer, Asistencia hoy, Reporte mensual y el Log de sesión. Ahora muestra solo lo prioritario: tickets urgentes y solicitudes esperando en dos columnas, con el estado del ecosistema abajo",
+      "El módulo de Licencias completo se retiró del IT Console — no se estaba usando"
+    ]
+  },
+  {
     "id": "2026-08-05-comercial-hero-landing",
     "version": "v2.26.0",
     "date": "2026-08-05",

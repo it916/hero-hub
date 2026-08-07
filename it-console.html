@@ -375,6 +375,31 @@ nav { padding: 12px; flex: 1; }
 }
 .soporte-tab iconify-icon { font-size: 14px; }
 
+/* Toggle Workspace / Equipo Interno en el módulo Usuarios */
+.users-view-tab {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--hero-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--hero-font);
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s, color 0.15s;
+}
+.users-view-tab:hover { background: var(--hero-primary-light); color: var(--hero-text-body); }
+.users-view-tab.active {
+  background: var(--hero-card-bg);
+  color: var(--hero-primary);
+  border-color: var(--hero-border-card);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.users-view-tab iconify-icon { font-size: 14px; }
+
 /* ── Cards grid ──────────────────────────────────────────── */
 .cards-grid {
   display: grid;
@@ -514,6 +539,109 @@ nav { padding: 12px; flex: 1; }
 }
 .stat-value { font-size: 22px; font-weight: 700; color: var(--hero-text-primary); line-height: 1; margin-bottom: 4px; }
 .stat-label { font-size: 11px; color: var(--hero-text-muted); }
+
+/* ── Home rediseñado ─────────────────────────────────────── */
+#page-dashboard { max-width: 1080px; margin: 0 auto; }
+
+.home-hero {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 16px; margin-bottom: 20px; padding-bottom: 14px;
+  border-bottom: 1px solid var(--hero-border-card);
+}
+.home-hero-title {
+  font-family: var(--display, 'Bricolage Grotesque'), var(--hero-font);
+  font-size: 22px; font-weight: 700; color: var(--hero-text-primary);
+  line-height: 1.15; letter-spacing: -0.01em;
+}
+.home-hero-sub {
+  font-size: 12px; color: var(--hero-text-muted);
+  margin-top: 4px;
+}
+
+.home-queue {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  margin-bottom: 20px;
+}
+@media (max-width: 820px) { .home-queue { grid-template-columns: 1fr; } }
+
+.home-col {
+  background: var(--hero-bg-card);
+  border: 1px solid var(--hero-border-card);
+  border-radius: var(--hero-radius-card);
+  padding: 14px 16px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+.home-col:hover {
+  border-color: rgba(6,163,182,0.3);
+  box-shadow: 0 4px 16px rgba(6,163,182,0.08);
+}
+.home-col-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-bottom: 10px; margin-bottom: 10px;
+  border-bottom: 1px solid var(--hero-border-card);
+}
+.home-col-title {
+  font-size: 12px; font-weight: 700;
+  color: var(--hero-text-primary);
+  text-transform: uppercase; letter-spacing: 0.8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.home-col-title iconify-icon { color: var(--hero-primary); font-size: 16px; }
+.home-col-count {
+  font-family: var(--mono); font-size: 13px; font-weight: 700;
+  min-width: 26px; height: 22px; padding: 0 8px;
+  border-radius: 11px;
+  background: var(--hero-primary-light);
+  color: var(--hero-primary);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.home-col-body { display: flex; flex-direction: column; gap: 8px; }
+.home-col .action-card { cursor: pointer; }
+.home-col .action-card:hover { border-color: rgba(6,163,182,0.4); }
+
+.home-status {
+  background: var(--hero-bg-card);
+  border: 1px solid var(--hero-border-card);
+  border-radius: var(--hero-radius-card);
+  padding: 12px 16px;
+}
+.home-status-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.home-status-label {
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--hero-primary);
+}
+.btn-link-icon {
+  background: transparent; border: none; cursor: pointer;
+  color: var(--hero-text-muted); font-size: 14px;
+  width: 24px; height: 24px; border-radius: 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.btn-link-icon:hover { background: var(--hero-primary-light); color: var(--hero-primary); }
+.home-status-row {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+}
+@media (max-width: 820px) { .home-status-row { grid-template-columns: repeat(2, 1fr); } }
+.home-status-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px;
+  background: var(--hero-bg-page);
+  border-radius: 8px;
+  min-width: 0;
+}
+.home-status-item .status-dot { flex-shrink: 0; }
+.home-status-name {
+  font-size: 12px; font-weight: 600; color: var(--hero-text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.home-status-detail {
+  font-family: var(--mono); font-size: 10px; color: var(--hero-text-muted);
+  margin-left: auto; flex-shrink: 0;
+}
 
 /* ── Config rows ─────────────────────────────────────────── */
 .config-row {
@@ -1157,13 +1285,16 @@ html { scroll-behavior: smooth; }
 
     <!-- ══ DASHBOARD ══════════════════════════════════════ -->
     <div class="page active" id="page-dashboard">
-      <div class="section-header">
-        <div class="section-title"><span>//</span> Home</div>
-        <div class="section-desc" id="home-saludo">Cola priorizada — qué necesita tu atención ahora.</div>
+      <div class="home-hero">
+        <div>
+          <div class="home-hero-title" id="home-saludo">Buenos días</div>
+          <div class="home-hero-sub">Esto necesita tu atención ahora.</div>
+        </div>
+        <button class="btn btn-secondary" onclick="loadHome()" style="font-size:11px;padding:6px 12px;">↺ Actualizar</button>
       </div>
 
       <!-- Alerta: cuentas suspendidas próximas a eliminar (>=7 días desde la suspensión) -->
-      <div id="home-alert-eliminaciones" style="display:none;background:linear-gradient(135deg,rgba(232,163,23,0.10),rgba(232,163,23,0.05));border:1px solid rgba(232,163,23,0.35);border-left:4px solid #e8a317;border-radius:10px;padding:14px 18px;margin-bottom:16px;display:none;align-items:center;gap:14px;cursor:pointer;" onclick="showPage('usuarios')" title="Ver usuarios y decidir cuáles eliminar">
+      <div id="home-alert-eliminaciones" style="display:none;background:linear-gradient(135deg,rgba(232,163,23,0.10),rgba(232,163,23,0.05));border:1px solid rgba(232,163,23,0.35);border-left:4px solid #e8a317;border-radius:10px;padding:14px 18px;margin-bottom:16px;align-items:center;gap:14px;cursor:pointer;" onclick="showPage('usuarios')" title="Ver usuarios y decidir cuáles eliminar">
         <div style="width:38px;height:38px;flex-shrink:0;background:rgba(232,163,23,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#e8a317;font-size:20px;">
           <iconify-icon icon="tabler:alert-triangle"></iconify-icon>
         </div>
@@ -1176,122 +1307,50 @@ html { scroll-behavior: smooth; }
         <iconify-icon icon="tabler:chevron-right" style="color:var(--hero-text-muted);flex-shrink:0;"></iconify-icon>
       </div>
 
-      <!-- Stats row: lo que requiere acción HOY + actividad de sesión -->
-      <div class="stats-row">
-        <div class="stat-chip" style="cursor:pointer;" onclick="showPage('tickets')">
-          <div class="stat-value" id="home-stat-tickets" style="color:var(--hero-danger);">—</div>
-          <div class="stat-label">Tickets urgentes</div>
+      <!-- Cola priorizada — 2 columnas -->
+      <div class="home-queue">
+        <div class="home-col" onclick="showPage('tickets')">
+          <div class="home-col-header">
+            <div class="home-col-title"><iconify-icon icon="tabler:ticket"></iconify-icon> Tickets urgentes</div>
+            <span class="home-col-count" id="home-stat-tickets">—</span>
+          </div>
+          <div id="md-tickets" class="home-col-body"></div>
         </div>
-        <div class="stat-chip" style="cursor:pointer;" onclick="showPage('solicitudes')">
-          <div class="stat-value" id="home-stat-sols" style="color:var(--hero-warning);">—</div>
-          <div class="stat-label">Solicitudes por procesar</div>
-        </div>
-        <div class="stat-chip" style="cursor:pointer;" onclick="showPage('licencias')">
-          <div class="stat-value" id="home-stat-lics" style="color:var(--hero-primary-text);">—</div>
-          <div class="stat-label">Licencias por vencer</div>
-        </div>
-        <div class="stat-chip">
-          <div class="stat-value" id="stat-logs" style="color:var(--hero-primary);">0</div>
-          <div class="stat-label">Acciones en sesión</div>
+        <div class="home-col" onclick="showPage('solicitudes')">
+          <div class="home-col-header">
+            <div class="home-col-title"><iconify-icon icon="tabler:inbox"></iconify-icon> Solicitudes esperando</div>
+            <span class="home-col-count" id="home-stat-sols">—</span>
+          </div>
+          <div id="md-sols" class="home-col-body"></div>
         </div>
       </div>
 
-      <!-- Cola priorizada -->
-      <div style="margin-bottom:18px;">
-        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;">
-          <h3 style="font-size:14px;font-weight:700;color:var(--hero-text-primary);margin:0;display:flex;align-items:center;gap:8px;"><iconify-icon icon="tabler:ticket"></iconify-icon> Tickets prioritarios abiertos</h3>
-          <button class="btn btn-secondary" onclick="loadHome()" style="font-size:11px;padding:4px 10px;">↺ Actualizar</button>
+      <!-- Estado del ecosistema — fila compacta -->
+      <div class="home-status">
+        <div class="home-status-header">
+          <span class="home-status-label">Estado del ecosistema</span>
+          <button class="btn-link-icon" onclick="checkSystemStatus()" id="btn-check-status" title="Verificar servicios">↺</button>
         </div>
-        <div id="md-tickets" style="display:flex;flex-direction:column;gap:8px;"></div>
-      </div>
-
-      <div style="margin-bottom:18px;">
-        <h3 style="font-size:14px;font-weight:700;color:var(--hero-text-primary);margin:0 0 10px;display:flex;align-items:center;gap:8px;"><iconify-icon icon="tabler:inbox"></iconify-icon> Solicitudes esperando IT</h3>
-        <div id="md-sols" style="display:flex;flex-direction:column;gap:8px;"></div>
-      </div>
-
-      <div style="margin-bottom:24px;">
-        <h3 style="font-size:14px;font-weight:700;color:var(--hero-text-primary);margin:0 0 10px;display:flex;align-items:center;gap:8px;"><iconify-icon icon="tabler:license"></iconify-icon> Licencias próximas a vencer (30 días)</h3>
-        <div id="md-lics" style="display:flex;flex-direction:column;gap:8px;"></div>
-      </div>
-
-      <!-- Estado del ecosistema -->
-      <div class="info-box" style="margin-bottom:20px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-          <div class="info-box-title" style="margin-bottom:0;">Estado del ecosistema</div>
-          <button class="btn btn-secondary" onclick="checkSystemStatus()" id="btn-check-status" style="font-size:11px;padding:5px 10px;">↺ Verificar</button>
-        </div>
-        <div id="system-status-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;">
-          <div class="status-service" data-service="worker">
-            <div class="status-dot" id="dot-worker"></div>
-            <div>
-              <div class="status-name">Cloudflare Worker</div>
-              <div class="status-detail" id="detail-worker">Sin verificar</div>
-            </div>
+        <div class="home-status-row" id="system-status-grid">
+          <div class="home-status-item" data-service="worker">
+            <span class="status-dot" id="dot-worker"></span>
+            <span class="home-status-name">Cloudflare Worker</span>
+            <span class="home-status-detail" id="detail-worker">—</span>
           </div>
-          <div class="status-service" data-service="google">
-            <div class="status-dot" id="dot-google"></div>
-            <div>
-              <div class="status-name">Google Workspace</div>
-              <div class="status-detail" id="detail-google">Sin verificar</div>
-            </div>
+          <div class="home-status-item" data-service="google">
+            <span class="status-dot" id="dot-google"></span>
+            <span class="home-status-name">Google Workspace</span>
+            <span class="home-status-detail" id="detail-google">—</span>
           </div>
-          <div class="status-service" data-service="zoho">
-            <div class="status-dot" id="dot-zoho"></div>
-            <div>
-              <div class="status-name">Zoho Assist</div>
-              <div class="status-detail" id="detail-zoho">Sin verificar</div>
-            </div>
+          <div class="home-status-item" data-service="zoho">
+            <span class="status-dot" id="dot-zoho"></span>
+            <span class="home-status-name">Zoho Assist</span>
+            <span class="home-status-detail" id="detail-zoho">—</span>
           </div>
-          <div class="status-service" data-service="resend">
-            <div class="status-dot" id="dot-resend"></div>
-            <div>
-              <div class="status-name">Resend Email</div>
-              <div class="status-detail" id="detail-resend">Sin verificar</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Asistencia + Reporte -->
-      <div class="panel-grid" style="margin-bottom:20px;">
-        <div class="info-box">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <div class="info-box-title" style="margin-bottom:0;"><iconify-icon icon="tabler:building"></iconify-icon> Asistencia hoy</div>
-            <button class="btn btn-secondary" onclick="loadOfficeStatus()" style="font-size:11px;padding:5px 10px;">↺</button>
-          </div>
-          <div id="office-status-card">
-            <div style="font-size:12px;color:var(--hero-text-muted);text-align:center;padding:16px;">Presiona ↺ para cargar</div>
-          </div>
-          <a href="https://it916.github.io/office-manager-app/" target="_blank" style="display:block;margin-top:12px;font-size:11px;color:var(--hero-primary);text-align:center;">Abrir Office Manager →</a>
-        </div>
-        <div class="info-box">
-          <div class="info-box-title"><iconify-icon icon="tabler:chart-bar"></iconify-icon> Reporte mensual IT</div>
-          <p style="font-size:12px;color:var(--hero-text-muted);margin-bottom:16px;line-height:1.6;">Genera un reporte completo del mes con tickets resueltos, usuarios creados, intervenciones de dispositivos y acciones registradas en Auditoría.</p>
-          <div class="form-group">
-            <label class="form-label">Mes del reporte</label>
-            <input class="form-input" type="month" id="report-month" style="background:var(--hero-card-bg);"/>
-          </div>
-          <button class="btn btn-primary" onclick="generateMonthlyReport()" style="width:100%;margin-top:8px;">
-            <iconify-icon icon="tabler:download"></iconify-icon> Generar reporte CSV
-          </button>
-        </div>
-      </div>
-
-      <!-- Log de sesión -->
-      <div class="log-console">
-        <div class="log-console-header">
-          <span class="log-console-title">LOG DE SESIÓN</span>
-          <div class="log-console-dots">
-            <div class="log-dot" style="background:#f56565"></div>
-            <div class="log-dot" style="background:#f0b429"></div>
-            <div class="log-dot" style="background:#22d87a"></div>
-          </div>
-        </div>
-        <div class="log-body" id="log-dashboard">
-          <div class="log-empty">
-            <div class="log-empty-icon">⬡</div>
-            <div class="log-empty-text">Sin actividad aún en esta sesión</div>
+          <div class="home-status-item" data-service="resend">
+            <span class="status-dot" id="dot-resend"></span>
+            <span class="home-status-name">Resend Email</span>
+            <span class="home-status-detail" id="detail-resend">—</span>
           </div>
         </div>
       </div>
@@ -1385,62 +1444,107 @@ html { scroll-behavior: smooth; }
     <div class="page" id="page-usuarios">
       <div class="section-header">
         <div class="section-title"><span>//</span> Usuarios</div>
-        <div class="section-desc">Gestión completa del ciclo de vida — Workspace, reset, onboarding, offboarding.</div>
+        <div class="section-desc">Gestión completa del ciclo de vida — Workspace, equipo interno, dispositivos.</div>
       </div>
 
-      <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center;">
-        <button class="btn btn-primary" onclick="showPage('crear-usuario')"><iconify-icon icon="tabler:user-plus"></iconify-icon> Nuevo usuario</button>
-        <input class="form-input" id="usr-search" type="text" placeholder="Buscar por nombre o email..."
-          oninput="filterUsers()" style="flex:1; min-width:200px; max-width:360px;"/>
-        <select class="form-input" id="usr-filter-ou" onchange="filterUsers()" style="min-width:200px;">
-          <option value="">OU: Todas</option>
-        </select>
-        <select class="form-input" id="usr-filter-mfa" onchange="filterUsers()" style="min-width:170px;">
-          <option value="">2FA: Todos</option>
-          <option value="no">Sin 2FA</option>
-          <option value="si">Con 2FA</option>
-        </select>
-        <select class="form-input" id="usr-filter-rol" onchange="filterUsers()" style="min-width:170px;">
-          <option value="">Rol: Todos</option>
-          <option value="admin">Super Admin</option>
-          <option value="delegated">Delegated Admin</option>
-          <option value="user">Usuario</option>
-        </select>
-        <button class="btn btn-secondary" onclick="loadUsers()" id="btn-load-users" style="font-size:12px;">
-          ↺ Cargar usuarios
+      <!-- ══ Switch Workspace / Equipo Interno ══ -->
+      <div class="users-view-tabs" role="tablist" style="display:inline-flex; gap:4px; padding:4px; background:var(--hero-bg-page); border:1px solid var(--hero-border-card); border-radius:12px; margin-bottom:20px;">
+        <button type="button" role="tab" class="users-view-tab active" id="uv-tab-workspace" onclick="switchUsersView('workspace')">
+          <iconify-icon icon="tabler:brand-google"></iconify-icon> Google Workspace
         </button>
-        <button class="btn btn-secondary" onclick="openBackfillModal()" id="btn-backfill" style="font-size:12px;" title="Registrar correo personal de usuarios existentes">
-          <iconify-icon icon="tabler:mail-forward"></iconify-icon> Poblar correo personal
+        <button type="button" role="tab" class="users-view-tab" id="uv-tab-internal" onclick="switchUsersView('internal')">
+          <iconify-icon icon="tabler:users-group"></iconify-icon> Equipo Interno (Hero Team)
         </button>
-        <span id="usr-count" style="font-family:var(--mono); font-size:11px; color:var(--hero-text-muted);"></span>
       </div>
 
-      <!-- Tabla -->
-      <div style="background:var(--hero-bg-card); border:1px solid var(--hero-border-card); border-radius:12px; overflow:hidden;">
-        <div style="overflow-x:auto;">
-          <table id="usr-table" style="width:100%; border-collapse:collapse; font-size:14px;">
-            <thead>
-              <tr style="border-bottom:1px solid var(--hero-border); background:var(--hero-bg-page);">
-                <th style="padding:11px 16px; text-align:left; font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--hero-text-muted); font-weight:500; text-transform:uppercase;">Usuario</th>
-                <th style="padding:11px 16px; text-align:left; font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--hero-text-muted); font-weight:500; text-transform:uppercase;">Departamento</th>
-                <th style="padding:11px 16px; text-align:left; font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--hero-text-muted); font-weight:500; text-transform:uppercase;">OU</th>
-                <th style="padding:11px 16px; text-align:left; font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--hero-text-muted); font-weight:500; text-transform:uppercase;">Estado</th>
-                <th style="padding:11px 16px; text-align:center; font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--hero-text-muted); font-weight:500; text-transform:uppercase;" title="Verificación en 2 pasos">2FA</th>
-                <th style="padding:11px 16px; text-align:left; font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--hero-text-muted); font-weight:500; text-transform:uppercase;">Rol</th>
-                <th style="padding:11px 16px; text-align:left; font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--hero-text-muted); font-weight:500; text-transform:uppercase;">Último login</th>
-                <th style="padding:11px 16px; text-align:center; font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--hero-text-muted); font-weight:500; text-transform:uppercase;">Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="usr-tbody">
-              <tr>
-                <td colspan="8" style="padding:48px; text-align:center; color:var(--hero-text-muted); font-family:var(--mono); font-size:12px;">
-                  Presiona "Cargar usuarios" para consultar Workspace
-                </td>
-              </tr>
-            </tbody>
-          </table>
+      <!-- ══ VISTA 1: Google Workspace ══ -->
+      <div id="users-view-workspace">
+        <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center;">
+          <button class="btn btn-primary" onclick="showPage('crear-usuario')"><iconify-icon icon="tabler:user-plus"></iconify-icon> Nuevo usuario</button>
+          <input class="form-input" id="usr-search" type="text" placeholder="Buscar por nombre o email..."
+            oninput="filterUsers()" style="flex:1; min-width:200px; max-width:360px;"/>
+          <select class="form-input" id="usr-filter-ou" onchange="filterUsers()" style="min-width:200px;">
+            <option value="">OU: Todas</option>
+          </select>
+          <select class="form-input" id="usr-filter-mfa" onchange="filterUsers()" style="min-width:170px;">
+            <option value="">2FA: Todos</option>
+            <option value="no">Sin 2FA</option>
+            <option value="si">Con 2FA</option>
+          </select>
+          <select class="form-input" id="usr-filter-rol" onchange="filterUsers()" style="min-width:170px;">
+            <option value="">Rol: Todos</option>
+            <option value="admin">Super Admin</option>
+            <option value="delegated">Delegated Admin</option>
+            <option value="user">Usuario</option>
+          </select>
+          <button class="btn btn-secondary" onclick="loadUsers()" id="btn-load-users" style="font-size:12px;">
+            ↺ Cargar usuarios
+          </button>
+          <button class="btn btn-secondary" onclick="openBackfillModal()" id="btn-backfill" style="font-size:12px;" title="Registrar correo personal de usuarios existentes">
+            <iconify-icon icon="tabler:mail-forward"></iconify-icon> Poblar correo personal
+          </button>
+          <span id="usr-count" style="font-family:var(--mono); font-size:11px; color:var(--hero-text-muted);"></span>
         </div>
-        <div id="usr-pagination" style="display:none;border-top:1px solid var(--hero-border-card);padding:12px 16px;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;"></div>
+
+        <!-- Tabla Workspace -->
+        <div style="background:var(--hero-bg-card); border:1px solid var(--hero-border-card); border-radius:12px; overflow:hidden;">
+          <div style="overflow-x:auto;">
+            <table id="usr-table" style="width:100%; border-collapse:collapse; font-size:14px;">
+              <thead>
+                <tr style="border-bottom:1px solid var(--hero-border); background:var(--hero-bg-page);">
+                  <th style="padding:11px 16px; text-align:left; font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--hero-text-muted); font-weight:500; text-transform:uppercase;">Usuario</th>
+                  <th style="padding:11px 16px; text-align:left; font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--hero-text-muted); font-weight:500; text-transform:uppercase;">Departamento</th>
+                  <th style="padding:11px 16px; text-align:left; font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--hero-text-muted); font-weight:500; text-transform:uppercase;">OU</th>
+                  <th style="padding:11px 16px; text-align:left; font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--hero-text-muted); font-weight:500; text-transform:uppercase;">Estado</th>
+                  <th style="padding:11px 16px; text-align:center; font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--hero-text-muted); font-weight:500; text-transform:uppercase;" title="Verificación en 2 pasos">2FA</th>
+                  <th style="padding:11px 16px; text-align:left; font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--hero-text-muted); font-weight:500; text-transform:uppercase;">Rol</th>
+                  <th style="padding:11px 16px; text-align:left; font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--hero-text-muted); font-weight:500; text-transform:uppercase;">Último login</th>
+                  <th style="padding:11px 16px; text-align:center; font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--hero-text-muted); font-weight:500; text-transform:uppercase;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="usr-tbody">
+                <tr>
+                  <td colspan="8" style="padding:48px; text-align:center; color:var(--hero-text-muted); font-family:var(--mono); font-size:12px;">
+                    Presiona "Cargar usuarios" para consultar Workspace
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="usr-pagination" style="display:none;border-top:1px solid var(--hero-border-card);padding:12px 16px;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;"></div>
+        </div>
+      </div>
+
+      <!-- ══ VISTA 2: Equipo Interno (Hero Team) ══ -->
+      <div id="users-view-internal" hidden>
+        <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center;">
+          <input class="form-input" id="itm-search" type="text" placeholder="Buscar por nombre, cargo o email..."
+            oninput="filterInternalTeam()" style="flex:1; min-width:200px; max-width:360px;"/>
+          <select class="form-input" id="itm-filter-rol" onchange="filterInternalTeam()" style="min-width:180px;">
+            <option value="">Todos los roles</option>
+            <option value="admin">Admin</option>
+            <option value="interno">Interno</option>
+            <option value="IT">IT</option>
+            <option value="finanzas">Finanzas</option>
+          </select>
+          <button class="btn btn-secondary" onclick="loadInternalTeam(true)" id="btn-load-internal" style="font-size:12px;">
+            ↺ Refrescar
+          </button>
+          <span id="itm-count" style="font-family:var(--mono); font-size:11px; color:var(--hero-text-muted);"></span>
+          <span id="itm-last-updated" class="last-updated" style="margin-left:auto;"></span>
+        </div>
+
+        <p style="font-size:12px; color:var(--hero-text-muted); margin-bottom:16px; line-height:1.6;">
+          <iconify-icon icon="tabler:info-circle"></iconify-icon>
+          Lista de personas del equipo Hero (excluye agentes). Los dispositivos se vinculan por coincidencia de nombre con la asignación registrada en Soporte → Dispositivos.
+        </p>
+
+        <div id="itm-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:14px;">
+          <div class="info-box" style="text-align:center; padding:40px; grid-column:1/-1;">
+            <div style="font-size:32px; opacity:0.3; margin-bottom:12px;"><iconify-icon icon="tabler:users-group"></iconify-icon></div>
+            <div style="font-family:var(--mono); font-size:12px; color:var(--hero-text-muted);">Cargando equipo interno...</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1823,7 +1927,6 @@ html { scroll-behavior: smooth; }
           <button onclick="showPage('tickets')" class="soporte-tab active"><iconify-icon icon="tabler:ticket"></iconify-icon> Tickets</button>
           <button onclick="showPage('toolbox')" class="soporte-tab"><iconify-icon icon="tabler:tools"></iconify-icon> Toolbox</button>
           <button onclick="showPage('dispositivos')" class="soporte-tab"><iconify-icon icon="tabler:device-desktop"></iconify-icon> Dispositivos</button>
-          <button onclick="showPage('licencias')" class="soporte-tab"><iconify-icon icon="tabler:license"></iconify-icon> Licencias</button>
         </div>
         <div class="section-desc">Tickets de soporte técnico — vista Kanban o lista, con notificaciones automáticas al usuario.</div>
       </div>
@@ -2051,7 +2154,6 @@ html { scroll-behavior: smooth; }
           <button onclick="showPage('tickets')" class="soporte-tab"><iconify-icon icon="tabler:ticket"></iconify-icon> Tickets</button>
           <button onclick="showPage('toolbox')" class="soporte-tab"><iconify-icon icon="tabler:tools"></iconify-icon> Toolbox</button>
           <button onclick="showPage('dispositivos')" class="soporte-tab active"><iconify-icon icon="tabler:device-desktop"></iconify-icon> Dispositivos</button>
-          <button onclick="showPage('licencias')" class="soporte-tab"><iconify-icon icon="tabler:license"></iconify-icon> Licencias</button>
         </div>
         <div class="section-desc">Inventario unificado con Zoho Assist — estado en tiempo real, metadatos IT e historial de intervenciones.</div>
       </div>
@@ -2094,6 +2196,9 @@ html { scroll-behavior: smooth; }
       <div id="dev-detail-view" style="display:none;">
         <div style="display:flex;gap:10px;align-items:center;margin-bottom:20px;">
           <button class="btn btn-secondary" onclick="closeDeviceDetail()">← Volver</button>
+          <button class="btn btn-primary" id="dev-return-to-member-btn" onclick="returnToInternalMemberFromDevice()" style="display:none;font-size:12px;padding:6px 10px;" title="Regresar a la ficha de la persona">
+            <iconify-icon icon="tabler:user"></iconify-icon> <span id="dev-return-to-member-label"></span>
+          </button>
           <div id="dev-detail-title" style="font-size:16px;font-weight:600;color:var(--hero-text-primary);"></div>
           <button class="btn btn-secondary" onclick="exportDeviceReport()" style="margin-left:auto;">⬇ Exportar reporte</button>
         </div>
@@ -2293,7 +2398,6 @@ html { scroll-behavior: smooth; }
           <button onclick="showPage('tickets')" class="soporte-tab"><iconify-icon icon="tabler:ticket"></iconify-icon> Tickets</button>
           <button onclick="showPage('toolbox')" class="soporte-tab active"><iconify-icon icon="tabler:tools"></iconify-icon> Toolbox</button>
           <button onclick="showPage('dispositivos')" class="soporte-tab"><iconify-icon icon="tabler:device-desktop"></iconify-icon> Dispositivos</button>
-          <button onclick="showPage('licencias')" class="soporte-tab"><iconify-icon icon="tabler:license"></iconify-icon> Licencias</button>
         </div>
         <div class="section-desc">Tus scripts, tips y procesos. Listos para copiar.</div>
       </div>
@@ -2372,121 +2476,6 @@ html { scroll-behavior: smooth; }
             <button class="btn btn-primary" id="btn-tbx-save" onclick="saveToolbox()" style="flex:1;"><iconify-icon icon="tabler:device-floppy"></iconify-icon> Guardar</button>
             <button class="btn btn-danger" id="btn-tbx-del" onclick="deleteToolboxCurrent()" style="display:none;"><iconify-icon icon="tabler:trash"></iconify-icon> Eliminar</button>
             <button class="btn btn-secondary" onclick="closeToolboxModal()">Cancelar</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══ LICENCIAS & SOFTWARE ════════════════════════════ -->
-    <div class="page" id="page-licencias">
-      <div class="section-header">
-        <div class="section-title"><span>//</span> Soporte</div>
-        <div class="soporte-tabs">
-          <button onclick="showPage('tickets')" class="soporte-tab"><iconify-icon icon="tabler:ticket"></iconify-icon> Tickets</button>
-          <button onclick="showPage('toolbox')" class="soporte-tab"><iconify-icon icon="tabler:tools"></iconify-icon> Toolbox</button>
-          <button onclick="showPage('dispositivos')" class="soporte-tab"><iconify-icon icon="tabler:device-desktop"></iconify-icon> Dispositivos</button>
-          <button onclick="showPage('licencias')" class="soporte-tab active"><iconify-icon icon="tabler:license"></iconify-icon> Licencias</button>
-        </div>
-        <div class="section-desc">Registro de licencias activas, fechas de vencimiento y costos.</div>
-      </div>
-
-      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
-        <button class="btn btn-primary" onclick="showLicenciaForm()"><iconify-icon icon="tabler:plus"></iconify-icon> Nueva licencia</button>
-        <span id="lic-count" style="font-family:var(--mono);font-size:11px;color:var(--hero-text-muted);margin-left:auto;"></span>
-      </div>
-
-      <div id="lic-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;">
-        <div class="info-box" style="text-align:center;padding:40px;grid-column:1/-1;">
-          <div style="font-size:36px;opacity:0.3;margin-bottom:12px;"><iconify-icon icon="tabler:license"></iconify-icon></div>
-          <div style="font-family:var(--mono);font-size:12px;color:var(--hero-text-muted);">Cargando licencias...</div>
-        </div>
-      </div>
-
-      <!-- Modal licencia -->
-      <div id="lic-modal" role="dialog" aria-modal="true" aria-labelledby="lic-modal-title" data-close-fn="closeLicenciaModal" style="display:none;position:fixed;inset:0;background:rgba(26,39,51,0.5);z-index:100;overflow-y:auto;padding:24px;">
-        <div style="background:#ffffff;border:1px solid rgba(6,163,182,0.3);border-radius:16px;max-width:540px;margin:0 auto;padding:28px;box-shadow:0 8px 32px rgba(0,0,0,0.15);">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-            <div id="lic-modal-title" style="font-size:15px;font-weight:600;color:var(--hero-text-primary);">Nueva licencia</div>
-            <button onclick="closeLicenciaModal()" aria-label="Cerrar" style="background:transparent;border:1px solid var(--hero-border);color:var(--hero-text-muted);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;"><iconify-icon icon="tabler:x"></iconify-icon></button>
-          </div>
-
-          <!-- Sección: Info general -->
-          <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--hero-primary);margin-bottom:10px;">Información general</div>
-          <div class="form-group">
-            <label class="form-label">Nombre del software *</label>
-            <input class="form-input" id="lic-f-nombre" type="text" placeholder="ej: Zoho Assist, ClickUp, Canva..."/>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div class="form-group">
-              <label class="form-label">Plan / Tier</label>
-              <input class="form-input" id="lic-f-plan" type="text" placeholder="ej: Professional, Team..."/>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Tipo de suscripción</label>
-              <select id="lic-f-tipo-sub" class="form-input" style="background:var(--hero-card-bg);">
-                <option value="mensual">Mensual</option>
-                <option value="anual">Anual</option>
-                <option value="única">Pago único</option>
-                <option value="gratis">Gratis / Trial</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Costo (USD)</label>
-              <input class="form-input" id="lic-f-costo" type="number" placeholder="0.00" step="0.01"/>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Usuarios incluidos</label>
-              <input class="form-input" id="lic-f-usuarios" type="number" placeholder="ej: 5"/>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Fecha de vencimiento</label>
-              <input class="form-input" id="lic-f-vencimiento" type="date"/>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Estado</label>
-              <select id="lic-f-estado" class="form-input" style="background:var(--hero-card-bg);">
-                <option value="activa">Activa</option>
-                <option value="trial">Trial</option>
-                <option value="vencida">Vencida</option>
-                <option value="cancelada">Cancelada</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Sección: Credenciales -->
-          <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--hero-primary);margin:16px 0 10px;">Credenciales de acceso <span style="font-weight:400;color:var(--hero-text-muted);text-transform:none;letter-spacing:0;">(opcional)</span></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div class="form-group">
-              <label class="form-label">Usuario / Email</label>
-              <input class="form-input" id="lic-f-cred-usuario" type="text" placeholder="usuario@heroinsuranceusa.com"/>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Contraseña</label>
-              <div style="position:relative;">
-                <input class="form-input" id="lic-f-cred-password" type="password" placeholder="••••••••" style="padding-right:36px;"/>
-                <button onclick="toggleLicPassword()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;cursor:pointer;font-size:14px;color:var(--hero-text-muted);display:flex;align-items:center;" id="btn-toggle-lic-pwd"><iconify-icon icon="tabler:eye"></iconify-icon></button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Sección: Código de licencia -->
-          <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--hero-primary);margin:16px 0 10px;">Código de licencia <span style="font-weight:400;color:var(--hero-text-muted);text-transform:none;letter-spacing:0;">(opcional)</span></div>
-          <div class="form-group">
-            <input class="form-input" id="lic-f-codigo" type="text" placeholder="ej: XXXX-XXXX-XXXX-XXXX" style="font-family:var(--mono);letter-spacing:1px;"/>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Notas</label>
-            <input class="form-input" id="lic-f-notas" type="text" placeholder="Cuenta asociada, contacto de soporte, URL de acceso..."/>
-          </div>
-
-          <div style="background:rgba(232,163,23,0.08);border:1px solid rgba(232,163,23,0.3);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:11px;color:var(--hero-text-muted);line-height:1.5;">
-            <iconify-icon icon="tabler:lock"></iconify-icon> Las credenciales y el código se guardan en Cloudflare KV cifrado. Solo tú puedes verlos desde esta consola.
-          </div>
-
-          <div style="display:flex;gap:10px;">
-            <button class="btn btn-primary" onclick="saveLicencia()" id="btn-lic-save" style="flex:1;"><iconify-icon icon="tabler:device-floppy"></iconify-icon> Guardar</button>
-            <button class="btn btn-secondary" onclick="closeLicenciaModal()">Cancelar</button>
           </div>
         </div>
       </div>
@@ -2659,6 +2648,94 @@ html { scroll-behavior: smooth; }
   </div>
 </div>
 
+<!-- Modal global: ficha del miembro del Equipo Interno (Hero Team)
+     Vive al nivel raíz del body (fuera de cualquier .page) para que el
+     display:none del contenedor no se herede. -->
+<div id="internal-member-modal" role="dialog" aria-modal="true" aria-labelledby="imm-title" data-close-fn="closeInternalMemberModal" style="display:none;position:fixed;inset:0;background:rgba(26,39,51,0.5);z-index:1000;overflow-y:auto;padding:24px;">
+  <div style="background:var(--hero-bg-card);border:1px solid var(--hero-border-card);border-radius:14px;max-width:820px;margin:24px auto;padding:0;overflow:hidden;">
+
+    <!-- Header con foto + identidad -->
+    <div style="padding:24px 28px;border-bottom:1px solid var(--hero-border-card);display:flex;justify-content:space-between;align-items:flex-start;gap:16px;">
+      <div style="display:flex;gap:16px;align-items:center;min-width:0;">
+        <div id="imm-photo" style="width:64px;height:64px;border-radius:50%;background:var(--hero-bg-page);border:2px solid var(--hero-border-card);background-size:cover;background-position:center;flex-shrink:0;"></div>
+        <div style="min-width:0;">
+          <div id="imm-title" style="font-size:18px;font-weight:700;color:var(--hero-text-primary);line-height:1.2;">—</div>
+          <div id="imm-subtitle" style="font-size:12px;color:var(--hero-text-muted);margin-top:4px;">—</div>
+          <div id="imm-email" style="font-family:var(--mono);font-size:11px;color:var(--hero-primary);margin-top:4px;">—</div>
+        </div>
+      </div>
+      <button onclick="closeInternalMemberModal()" aria-label="Cerrar" style="background:transparent;border:1px solid var(--hero-border-card);color:var(--hero-text-body);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><iconify-icon icon="tabler:x"></iconify-icon></button>
+    </div>
+
+    <!-- Cuerpo scrollable -->
+    <div style="max-height:70vh;overflow-y:auto;padding:20px 24px;">
+
+      <!-- Sección: Dispositivos asignados -->
+      <div class="info-box" style="margin-bottom:14px;">
+        <div class="info-box-title"><iconify-icon icon="tabler:device-desktop"></iconify-icon> Dispositivos asignados</div>
+        <div id="imm-devices" style="margin-top:12px;">
+          <div style="font-family:var(--mono);font-size:12px;color:var(--hero-text-muted);">Cargando…</div>
+        </div>
+      </div>
+
+      <!-- Sección: Registrar intervención rápida (aparece solo si tiene dispositivos) -->
+      <div class="info-box" id="imm-quick-int-wrap" style="margin-bottom:14px;display:none;">
+        <div class="info-box-title"><iconify-icon icon="tabler:tool"></iconify-icon> Registrar intervención</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+          <div class="form-group" style="margin:0;">
+            <label class="form-label" style="font-size:11px;">Dispositivo</label>
+            <select id="imm-int-device" class="form-input" style="font-size:12px;padding:8px 10px;"></select>
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label class="form-label" style="font-size:11px;">Tipo</label>
+            <select id="imm-int-tipo" class="form-input" style="font-size:12px;padding:8px 10px;">
+              <option value="Instalación de software">Instalación de software</option>
+              <option value="Reparación o diagnóstico">Reparación o diagnóstico</option>
+              <option value="Soporte remoto">Soporte remoto</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:10px;">
+          <label class="form-label" style="font-size:11px;">Descripción breve</label>
+          <input id="imm-int-descripcion" class="form-input" type="text" placeholder="ej: Instalé Zoom, actualicé Chrome…" style="font-size:12px;padding:8px 10px;"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px;">Notas adicionales (opcional)</label>
+          <textarea id="imm-int-notas" class="form-input" rows="2" placeholder="Detalles, próximos pasos…" style="resize:vertical;font-size:12px;padding:8px 10px;"></textarea>
+        </div>
+        <button class="btn btn-primary" id="imm-int-save" onclick="registrarIntervencionDesdePersona()" style="font-size:12px;">
+          <iconify-icon icon="tabler:check"></iconify-icon> Registrar
+        </button>
+      </div>
+
+      <!-- Sección: Historial de intervenciones (agregado de todos sus devices) -->
+      <div class="info-box" style="margin-bottom:14px;">
+        <div class="info-box-title"><iconify-icon icon="tabler:history"></iconify-icon> Historial de intervenciones</div>
+        <div id="imm-interventions" style="margin-top:12px;">
+          <div style="font-family:var(--mono);font-size:12px;color:var(--hero-text-muted);">Cargando…</div>
+        </div>
+      </div>
+
+      <!-- Sección: Notas IT (persistentes por persona) -->
+      <div class="info-box" style="margin-bottom:0;">
+        <div class="info-box-title"><iconify-icon icon="tabler:notes"></iconify-icon> Notas IT (privadas)</div>
+        <p style="font-size:11px;color:var(--hero-text-muted);margin:6px 0 10px;line-height:1.5;">
+          Observaciones internas sobre esta persona: preferencias de software, incidencias recurrentes, accesos especiales, etc.
+        </p>
+        <textarea id="imm-notes" class="form-input" rows="5" placeholder="Escribe notas aquí…" style="resize:vertical;width:100%;"></textarea>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;">
+          <span id="imm-notes-status" style="font-family:var(--mono);font-size:11px;color:var(--hero-text-muted);">—</span>
+          <button class="btn btn-primary" id="imm-notes-save" onclick="saveInternalMemberNotes()" style="font-size:12px;">
+            <iconify-icon icon="tabler:device-floppy"></iconify-icon> Guardar notas
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <script src="js/it-console.js"></script>
+<script src="js/it-team-panel.js"></script>
 </body>
 </html>
