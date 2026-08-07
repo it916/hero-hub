@@ -484,6 +484,73 @@ nav { padding: 12px; flex: 1; }
 .form-input:focus { border-color: var(--hero-primary); box-shadow: 0 0 0 3px rgba(6,163,182,0.1); }
 .form-input::placeholder { color: var(--hero-text-subtle); }
 
+/* ── Toolbar de Usuarios (2 filas + filtros pill) ────────── */
+.users-toolbar {
+  display: flex; flex-direction: column; gap: 12px;
+  margin-bottom: 16px;
+}
+.toolbar-primary,
+.toolbar-filters {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+}
+.toolbar-primary .search-input {
+  flex: 1 1 200px; min-width: 200px; max-width: 420px;
+  width: auto;
+}
+.usr-count-badge {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--hero-text-muted);
+  margin-left: auto;
+}
+.filter-label {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--hero-text-muted);
+  padding-right: 4px;
+}
+.filter-label iconify-icon {
+  color: var(--hero-primary); font-size: 14px;
+}
+.filter-select {
+  appearance: none; -webkit-appearance: none; -moz-appearance: none;
+  width: auto;
+  min-width: 130px; max-width: 200px;
+  padding: 7px 30px 7px 14px;
+  background-color: var(--hero-bg-card);
+  border: 1px solid var(--hero-border-btn);
+  border-radius: 20px;
+  color: var(--hero-text-primary);
+  font-family: var(--sans, inherit); font-size: 12px; font-weight: 500;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background-color 0.15s, box-shadow 0.15s;
+  outline: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23718099' d='M0 0l5 6 5-6z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+.filter-select:hover { border-color: var(--hero-primary); }
+.filter-select:focus {
+  border-color: var(--hero-primary);
+  box-shadow: 0 0 0 3px rgba(6,163,182,0.12);
+}
+.filter-select.active {
+  border-color: var(--hero-primary);
+  background-color: var(--hero-primary-light);
+  color: var(--hero-primary);
+  font-weight: 600;
+}
+.filter-select.active {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%2306a3b6' d='M0 0l5 6 5-6z'/></svg>");
+}
+.toolbar-filters .btn { margin-left: auto; }
+.toolbar-filters .btn + .btn { margin-left: 0; }
+@media (max-width: 720px) {
+  .filter-select { min-width: 0; flex: 1 1 auto; max-width: none; }
+  .toolbar-filters .btn { margin-left: 0; }
+}
+
 /* ── Log console ─────────────────────────────────────────── */
 .log-console {
   background: var(--hero-bg-card);
@@ -1459,31 +1526,37 @@ html { scroll-behavior: smooth; }
 
       <!-- ══ VISTA 1: Google Workspace ══ -->
       <div id="users-view-workspace">
-        <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center;">
-          <button class="btn btn-primary" onclick="showPage('crear-usuario')"><iconify-icon icon="tabler:user-plus"></iconify-icon> Nuevo usuario</button>
-          <input class="form-input" id="usr-search" type="text" placeholder="Buscar por nombre o email..."
-            oninput="filterUsers()" style="flex:1; min-width:200px; max-width:360px;"/>
-          <select class="form-input" id="usr-filter-ou" onchange="filterUsers()" style="min-width:200px;">
-            <option value="">OU: Todas</option>
-          </select>
-          <select class="form-input" id="usr-filter-mfa" onchange="filterUsers()" style="min-width:170px;">
-            <option value="">2FA: Todos</option>
-            <option value="no">Sin 2FA</option>
-            <option value="si">Con 2FA</option>
-          </select>
-          <select class="form-input" id="usr-filter-rol" onchange="filterUsers()" style="min-width:170px;">
-            <option value="">Rol: Todos</option>
-            <option value="admin">Super Admin</option>
-            <option value="delegated">Delegated Admin</option>
-            <option value="user">Usuario</option>
-          </select>
-          <button class="btn btn-secondary" onclick="loadUsers()" id="btn-load-users" style="font-size:12px;">
-            ↺ Cargar usuarios
-          </button>
-          <button class="btn btn-secondary" onclick="openBackfillModal()" id="btn-backfill" style="font-size:12px;" title="Registrar correo personal de usuarios existentes">
-            <iconify-icon icon="tabler:mail-forward"></iconify-icon> Poblar correo personal
-          </button>
-          <span id="usr-count" style="font-family:var(--mono); font-size:11px; color:var(--hero-text-muted);"></span>
+        <div class="users-toolbar">
+          <!-- Fila 1: acciones primarias + búsqueda + contador -->
+          <div class="toolbar-primary">
+            <button class="btn btn-primary" onclick="showPage('crear-usuario')"><iconify-icon icon="tabler:user-plus"></iconify-icon> Nuevo usuario</button>
+            <input class="form-input search-input" id="usr-search" type="text" placeholder="Buscar por nombre o email..." oninput="filterUsers()"/>
+            <span id="usr-count" class="usr-count-badge"></span>
+          </div>
+          <!-- Fila 2: filtros pill + utilidades -->
+          <div class="toolbar-filters">
+            <span class="filter-label"><iconify-icon icon="tabler:filter"></iconify-icon> Filtros</span>
+            <select class="filter-select" id="usr-filter-ou" onchange="filterUsers()">
+              <option value="">OU: Todas</option>
+            </select>
+            <select class="filter-select" id="usr-filter-mfa" onchange="filterUsers()">
+              <option value="">2FA: Todos</option>
+              <option value="no">Sin 2FA</option>
+              <option value="si">Con 2FA</option>
+            </select>
+            <select class="filter-select" id="usr-filter-rol" onchange="filterUsers()">
+              <option value="">Rol: Todos</option>
+              <option value="admin">Super Admin</option>
+              <option value="delegated">Delegated Admin</option>
+              <option value="user">Usuario</option>
+            </select>
+            <button class="btn btn-secondary" onclick="loadUsers()" id="btn-load-users" style="font-size:12px;">
+              ↺ Cargar
+            </button>
+            <button class="btn btn-secondary" onclick="openBackfillModal()" id="btn-backfill" style="font-size:12px;" title="Registrar correo personal de usuarios existentes">
+              <iconify-icon icon="tabler:mail-forward"></iconify-icon> Poblar correo personal
+            </button>
+          </div>
         </div>
 
         <!-- Tabla Workspace -->

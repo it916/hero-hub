@@ -1,5 +1,19 @@
 [
   {
+    "id": "2026-08-07-it-console-usuarios-toolbar-pills",
+    "version": "v2.27.1",
+    "date": "2026-08-07",
+    "category": "style",
+    "scope": "it-console",
+    "audience": "admin",
+    "title": "IT Console · Usuarios · toolbar más ordenada y filtros compactos",
+    "items": [
+      "Los filtros de OU, 2FA y Rol del módulo Usuarios ya no se estiran de extremo a extremo. Ahora son pastillas compactas con ancho automático",
+      "Cuando aplicas un filtro, la pastilla se pinta en cyan para que veas de un vistazo qué está filtrando la vista",
+      "La barra superior se dividió en dos filas: acciones (Nuevo usuario, buscar) arriba, filtros y utilidades (Cargar, Poblar correo) abajo"
+    ]
+  },
+  {
     "id": "2026-08-07-it-console-equipo-interno-home-limpio",
     "version": "v2.27.0",
     "date": "2026-08-07",

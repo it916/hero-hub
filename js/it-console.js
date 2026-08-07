@@ -3799,6 +3799,11 @@ function filterUsers() {
   const ou = document.getElementById('usr-filter-ou')?.value || '';
   const mfa = document.getElementById('usr-filter-mfa')?.value || '';
   const rol = document.getElementById('usr-filter-rol')?.value || '';
+  // Toggle visual .active en pills según si tienen filtro aplicado
+  ['usr-filter-ou','usr-filter-mfa','usr-filter-rol'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('active', !!el.value);
+  });
   if (!allUsers.length) return;
   const filtered = allUsers.filter(u => {
     // Búsqueda incluye ahora cargo y departamento — Fernando puede buscar
