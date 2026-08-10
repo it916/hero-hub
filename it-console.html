@@ -1374,6 +1374,20 @@ html { scroll-behavior: smooth; }
         <iconify-icon icon="tabler:chevron-right" style="color:var(--hero-text-muted);flex-shrink:0;"></iconify-icon>
       </div>
 
+      <!-- Alerta previa: agentes que NUNCA han iniciado sesión -->
+      <div id="home-alert-never-login" style="display:none;background:linear-gradient(135deg,rgba(124,58,237,0.10),rgba(124,58,237,0.05));border:1px solid rgba(124,58,237,0.35);border-left:4px solid #7c3aed;border-radius:10px;padding:14px 18px;margin-bottom:16px;align-items:center;gap:14px;cursor:pointer;" onclick="jumpToInactivityFilter('nunca-login')" title="Ver agentes que nunca han iniciado sesión desde que se creó su cuenta">
+        <div style="width:38px;height:38px;flex-shrink:0;background:rgba(124,58,237,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#7c3aed;font-size:20px;">
+          <iconify-icon icon="tabler:user-question"></iconify-icon>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:700;color:#5b21b6;line-height:1.2;">
+            <span id="home-alert-never-count">0</span> agente<span id="home-alert-never-plural">s</span> nunca ha<span id="home-alert-never-plural2">n</span> iniciado sesión
+          </div>
+          <div style="font-size:11px;color:var(--hero-text-muted);margin-top:3px;">Cuentas creadas pero jamás usadas. Considera avisar al correo personal registrado o eliminar si ya no aplican.</div>
+        </div>
+        <iconify-icon icon="tabler:chevron-right" style="color:var(--hero-text-muted);flex-shrink:0;"></iconify-icon>
+      </div>
+
       <!-- Alerta A: agentes con ≥3m sin login que aún no recibieron aviso previo -->
       <div id="home-alert-inactive-noticeless" style="display:none;background:linear-gradient(135deg,rgba(232,163,23,0.10),rgba(232,163,23,0.05));border:1px solid rgba(232,163,23,0.35);border-left:4px solid #e8a317;border-radius:10px;padding:14px 18px;margin-bottom:16px;align-items:center;gap:14px;cursor:pointer;" onclick="jumpToInactivityFilter('inactivos-3m')" title="Ver agentes inactivos y decidir a quiénes enviar aviso previo">
         <div style="width:38px;height:38px;flex-shrink:0;background:rgba(232,163,23,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#e8a317;font-size:20px;">
@@ -1580,6 +1594,7 @@ html { scroll-behavior: smooth; }
             </select>
             <select class="filter-select" id="usr-filter-actividad" onchange="filterUsers()" title="Filtrar por estado del flujo de suspensión por inactividad">
               <option value="">Actividad: Todos</option>
+              <option value="nunca-login">Nunca han iniciado sesión</option>
               <option value="inactivos-3m">Inactivos ≥3m (sin aviso)</option>
               <option value="aviso-enviado">Aviso enviado, esperando 15d</option>
               <option value="aviso-vencido">Aviso vencido ≥15d</option>

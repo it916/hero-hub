@@ -1,5 +1,21 @@
 [
   {
+    "id": "2026-08-10-agentes-inactivos-fase-2",
+    "version": "v2.29.0",
+    "date": "2026-08-10",
+    "category": "feat",
+    "scope": "it-console",
+    "audience": "admin",
+    "title": "IT Console · flujo de agentes inactivos ≥3m (fase 2 · botones funcionales)",
+    "items": [
+      "Los botones \"Enviar aviso previo\" y \"Suspender + notificar\" del bloque de actividad ya funcionan. El primero envía un correo con badge naranja \"AVISO PREVIO\" al correo personal registrado y marca la fecha en Firestore; el segundo suspende la cuenta en Workspace y envía el correo de suspensión estándar con motivo \"inactividad prolongada tras aviso previo sin respuesta\"",
+      "Nueva opción \"Nunca han iniciado sesión\" en la pastilla Actividad para agentes con cuenta creada pero jamás usada. Chip morado nuevo en el Home cuenta esos casos",
+      "Detección de agente mejorada: cualquier usuario Workspace que no figure con rol de staff conocido (admin, IT, finanzas, interno) en Firestore users/ se considera agente. Cierra el gap donde agentes históricos sin doc en users/ quedaban invisibles al flujo",
+      "Los chips del flujo de inactividad ahora aparecen automáticamente al abrir el Home sin necesidad de visitar Usuarios primero (loadHome dispara la carga en background)",
+      "Los correos del aviso previo se firman desde \"Equipo de Hero Insurance USA\" en el From (en vez de Fernando Romero), acorde con la política de comunicación institucional del flujo"
+    ]
+  },
+  {
     "id": "2026-08-10-agentes-inactivos-fase-1",
     "version": "v2.28.0",
     "date": "2026-08-10",

@@ -635,11 +635,15 @@ async function sendViaResend({ to, subject, html, text }) {
 // endpoint /email/onboarding del Worker, que acepta destinos externos
 // (@gmail, @yahoo, etc.) por diseño. El endpoint /email genérico restringe
 // el destino a @heroinsuranceusa para evitar envíos accidentales.
-async function sendOnboardingViaResend({ to, subject, html, text }) {
+// `from` opcional (el Worker fuerza que sea @heroinsuranceusa.com igual);
+// útil cuando el mensaje debe firmarse como equipo, no como Fernando.
+async function sendOnboardingViaResend({ to, subject, html, text, from }) {
+  const payload = { to, subject, html, text };
+  if (from) payload.from = from;
   const resp = await authFetch(WORKER_URL + '/email/onboarding', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ to, subject, html, text })
+    body: JSON.stringify(payload)
   });
   const result = await resp.json();
   if (!resp.ok) throw new Error(result.message || result.error || 'Error del Worker');
@@ -1634,6 +1638,54 @@ function buildEmailReactivation(nombre, emailCorp) {
   + '</table></td></tr></table></body></html>';
 }
 
+// ── Template: aviso previo de suspensión por inactividad ─────
+// Se envía al correo personal cuando IT dispara el aviso desde el bloque
+// "Estado de actividad" del modal. La cuenta sigue activa; el correo avisa
+// que en 15 días se suspenderá si no detecta login. Firma "Equipo de Hero
+// Insurance USA" (no personal) porque es una comunicación de política.
+function buildEmailPreSuspension(nombre, emailCorp, fechaDeadline) {
+  var P = '#06a3b6';
+  var ALERT = '#e8a317';
+  var mailtoUrl = 'mailto:it@heroinsuranceusa.com'
+    + '?subject=' + encodeURIComponent('Mantener activa cuenta ' + emailCorp)
+    + '&body=' + encodeURIComponent('Hola equipo de IT,\n\nSolicito que mantengan activa mi cuenta ' + emailCorp + '.\n\nGracias.\n\n' + (nombre || ''));
+  return '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head>'
+  + '<body style="margin:0;padding:0;background:#f0f4f8;font-family:Trebuchet MS,Arial,sans-serif;">'
+  + '<table cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#f0f4f8;"><tr><td style="padding:32px 16px;">'
+  + '<table cellspacing="0" cellpadding="0" border="0" width="600" align="center" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(232,163,23,0.10);">'
+  + '<tr><td style="background:linear-gradient(135deg,' + ALERT + ',#c88a15);padding:32px 40px;text-align:center;">'
+  + '<img src="https://i.ibb.co/Gr4mzLv/Nuevo-Logo-Cuadrado-compress.png" width="120" alt="Hero" style="display:block;margin:0 auto 18px;"/>'
+  + '<div style="display:inline-block;background:rgba(255,255,255,0.2);color:#fff;font-weight:700;font-size:11px;letter-spacing:3px;padding:5px 14px;border-radius:20px;margin-bottom:10px;">AVISO PREVIO</div>'
+  + '<h1 style="margin:0;font-size:22px;font-weight:700;color:#fff;">Tu cuenta corporativa está en riesgo de suspensión</h1>'
+  + '</td></tr>'
+  + '<tr><td style="padding:32px 40px;">'
+  + '<p style="margin:0 0 16px;font-size:14px;color:#2d3748;line-height:1.55;">Hola <strong>' + escHtml(nombre) + '</strong>,</p>'
+  + '<p style="margin:0 0 18px;font-size:14px;color:#2d3748;line-height:1.55;">Notamos que tu cuenta corporativa <strong style="color:#b08a00;">' + escHtml(emailCorp) + '</strong> no registra inicios de sesión en los <strong>últimos 3 meses</strong>. Como parte de nuestra política de seguridad, en <strong>15 días</strong> procederemos a suspenderla si no detectamos actividad.</p>'
+  + '<div style="background:#fff8e6;border-radius:12px;border:1px solid #f5d87a;border-left:4px solid ' + ALERT + ';padding:16px 20px;margin-bottom:24px;">'
+  + '<p style="margin:0 0 6px;font-size:11px;font-weight:700;color:#b08a00;text-transform:uppercase;letter-spacing:1.5px;">Plazo</p>'
+  + '<p style="margin:0;font-size:13px;color:#7a5f00;line-height:1.6;">Tienes hasta el <strong>' + escHtml(fechaDeadline || '(15 días desde hoy)') + '</strong> para iniciar sesión o respondernos. Después de esa fecha la cuenta será suspendida automáticamente.</p>'
+  + '</div>'
+  + '<p style="margin:0 0 8px;font-size:14px;color:#2d3748;line-height:1.55;"><strong>¿Aún necesitas tu cuenta?</strong></p>'
+  + '<ul style="margin:0 0 20px 18px;padding:0;font-size:13px;color:#4a5568;line-height:1.7;">'
+  +   '<li>Inicia sesión en <a href="https://mail.google.com" style="color:' + P + ';font-weight:700;">mail.google.com</a> antes de la fecha indicada, o</li>'
+  +   '<li>Responde este correo o escríbenos a <a href="mailto:it@heroinsuranceusa.com" style="color:' + P + ';font-weight:700;">it@heroinsuranceusa.com</a></li>'
+  + '</ul>'
+  + '<p style="margin:0 0 20px;font-size:13px;color:#4a5568;line-height:1.55;">Si ya no la necesitas, no hace falta que hagas nada — la suspenderemos automáticamente al vencer el plazo.</p>'
+  + '<div style="text-align:center;margin:0 0 8px;">'
+  + '<a href="' + mailtoUrl + '" style="display:inline-block;padding:14px 32px;background:' + P + ';color:#fff;font-family:Trebuchet MS,Arial,sans-serif;font-size:14px;font-weight:700;text-decoration:none;border-radius:30px;letter-spacing:0.5px;box-shadow:0 4px 14px rgba(6,163,182,0.30);">Solicitar mantener la cuenta</a>'
+  + '</div>'
+  + '</td></tr>'
+  + '<tr><td style="padding:16px 40px 20px;background:#fafbfc;border-top:1px solid #e8e8e8;">'
+  + '<p style="margin:0;font-size:11px;color:#8a9099;line-height:1.55;font-style:italic;">Recibes este correo en tu dirección personal porque la registraste al crear tu cuenta de Hero Insurance USA, específicamente para notificarte sobre cambios importantes como este.</p>'
+  + '<p style="margin:12px 0 0;font-size:12px;color:#4a5568;line-height:1.5;">— <strong>Equipo de Hero Insurance USA</strong></p>'
+  + '</td></tr>'
+  + '<tr><td style="padding:14px 40px;background:#f0f4f8;text-align:center;border-top:1px solid #e8e8e8;">'
+  + '<p style="margin:0;font-size:10px;color:#aaa;">Hero Insurance USA &bull; IT Department</p>'
+  + '<p style="margin:4px 0 0;font-size:10px;color:#ccc;">CONFIDENTIALITY NOTICE: This email is intended solely for the addressee.</p>'
+  + '</td></tr>'
+  + '</table></td></tr></table></body></html>';
+}
+
 // ── Helpers Firestore: shared/workspaceUsers/{email} ─────────
 // Guarda info paralela a Workspace que necesitamos y Workspace no expone:
 // principalmente `personalEmail` para notificar al usuario cuando su cuenta
@@ -1697,6 +1749,7 @@ const PRE_SUSPENSION_GRACE_DAYS = 15;   // aviso previo → 15d → suspensión
 const SUSPENSION_TO_DELETION_DAYS = 15; // suspensión → 15d → eliminación (antes 7d)
 
 // Map email→role del Hub (Firestore users/), cargado a demanda con cache en memoria.
+// El role vive en `access.role` (schema del refactor v2.23 — ver js/user-store.js).
 let _hubUserRolesCache = null;
 async function getHubUserRoles(force) {
   if (_hubUserRolesCache && !force) return _hubUserRolesCache;
@@ -1706,7 +1759,11 @@ async function getHubUserRoles(force) {
     const db = getFirestore();
     const snap = await getDocs(collection(db, 'users'));
     const map = {};
-    snap.docs.forEach(d => { map[(d.id || '').toLowerCase()] = (d.data() || {}).role || null; });
+    snap.docs.forEach(d => {
+      const data = d.data() || {};
+      // Fallback a `role` plano por si algún doc antiguo aún no migró al schema anidado.
+      map[(d.id || '').toLowerCase()] = (data.access && data.access.role) || data.role || null;
+    });
     _hubUserRolesCache = map;
     return map;
   } catch (e) {
@@ -1719,9 +1776,17 @@ async function getHubUserRoles(force) {
 // puebla en loadUsers() y se refresca al cerrar el modal de un usuario editado.
 let _wsUsersMap = {};
 
+// Detección de "agente" invertida: el refactor v2.23 migró el staff interno
+// a users/, pero los agentes históricos siguen sin doc. Marcamos como agente
+// a cualquier usuario Workspace que NO figure con rol de staff conocido —
+// incluye tanto los pocos que tienen role:'agente' explícito como los que
+// no están en users/ aún. Los admin/IT/finanzas/interno se excluyen.
+const STAFF_ROLES = new Set(['admin', 'interno', 'IT', 'finanzas']);
 function isAgente(u, rolesMap) {
-  if (!u || !rolesMap) return false;
-  return rolesMap[(u.email || '').toLowerCase()] === 'agente';
+  if (!u) return false;
+  const role = rolesMap ? rolesMap[(u.email || '').toLowerCase()] : null;
+  if (role && STAFF_ROLES.has(role)) return false;
+  return true;
 }
 
 function daysSinceLogin(u) {
@@ -1733,7 +1798,7 @@ function daysSinceLogin(u) {
 }
 
 // Clasifica dónde está el agente en el flujo de suspensión por inactividad.
-// Estados: 'active' · 'inactive' · 'notice-waiting' · 'notice-expired'
+// Estados: 'active' · 'never-logged-in' · 'inactive' · 'notice-waiting' · 'notice-expired'
 function classifyActivityStatus(u, wsData) {
   const noticeAt = wsData && wsData.preSuspensionNoticeSentAt
     ? new Date(wsData.preSuspensionNoticeSentAt).getTime() : null;
@@ -1745,19 +1810,24 @@ function classifyActivityStatus(u, wsData) {
     return (Date.now() - noticeAt >= graceMs) ? 'notice-expired' : 'notice-waiting';
   }
   const days = daysSinceLogin(u);
-  if (days != null && days >= INACTIVITY_THRESHOLD_DAYS) return 'inactive';
+  if (days === null) return 'never-logged-in';
+  if (days >= INACTIVITY_THRESHOLD_DAYS) return 'inactive';
   return 'active';
 }
 
-// Chips A y B del Home. Cuentan solo agentes con estado activo en Workspace.
+// Chips del Home para el flujo de agentes inactivos. Cuentan solo agentes
+// con estado activo en Workspace. Tres chips: nunca-login (morado),
+// inactivos-3m (amarillo), aviso-vencido (rojo).
 async function _renderInactiveAgentsChips() {
+  const chipNever = document.getElementById('home-alert-never-login');
   const chipA = document.getElementById('home-alert-inactive-noticeless');
   const chipB = document.getElementById('home-alert-notice-expired');
-  if (!chipA || !chipB) return;
+  if (!chipA || !chipB || !chipNever) return;
   try {
     // allUsers puede estar vacío si aún no se hizo "Cargar usuarios" en esta
     // sesión — silencio y ocultar chips hasta que exista data.
     if (!allUsers || !allUsers.length) {
+      chipNever.style.display = 'none';
       chipA.style.display = 'none';
       chipB.style.display = 'none';
       return;
@@ -1767,16 +1837,26 @@ async function _renderInactiveAgentsChips() {
     (wsUsers || []).forEach(w => { wsMap[(w.email || '').toLowerCase()] = w; });
     _wsUsersMap = wsMap; // cache para filterUsers + renderActivityStatusBlock
 
+    let neverLogin = 0;
     let inactiveNoticeless = 0;
     let noticeExpired = 0;
     allUsers.forEach(u => {
       if (u.estado !== 'activo') return;
       if (!isAgente(u, rolesMap)) return;
       const status = classifyActivityStatus(u, wsMap[(u.email || '').toLowerCase()]);
-      if (status === 'inactive') inactiveNoticeless++;
+      if (status === 'never-logged-in') neverLogin++;
+      else if (status === 'inactive') inactiveNoticeless++;
       else if (status === 'notice-expired') noticeExpired++;
     });
 
+    if (neverLogin > 0) {
+      document.getElementById('home-alert-never-count').textContent = String(neverLogin);
+      document.getElementById('home-alert-never-plural').textContent = neverLogin === 1 ? '' : 's';
+      document.getElementById('home-alert-never-plural2').textContent = neverLogin === 1 ? '' : 'n';
+      chipNever.style.display = 'flex';
+    } else {
+      chipNever.style.display = 'none';
+    }
     if (inactiveNoticeless > 0) {
       document.getElementById('home-alert-inactive-count').textContent = String(inactiveNoticeless);
       document.getElementById('home-alert-inactive-plural').textContent = inactiveNoticeless === 1 ? '' : 's';
@@ -1834,7 +1914,13 @@ async function renderActivityStatusBlock(email, nombre) {
   let statusText = 'Activo';
   let detailText = u.ultimoLogin ? 'Último login: ' + fmtDate(u.ultimoLogin) : 'Sin registro de login';
 
-  if (status === 'inactive') {
+  if (status === 'never-logged-in') {
+    dotColor = '#7c3aed';
+    statusText = 'Nunca ha iniciado sesión';
+    detailText = 'Cuenta creada' + (u.creado ? ' el ' + fmtDate(u.creado) : '') + ' · sin registro de login';
+    card.style.background = 'rgba(124,58,237,0.08)';
+    card.style.border = '1px solid rgba(124,58,237,0.25)';
+  } else if (status === 'inactive') {
     dotColor = '#e8a317';
     statusText = 'Inactivo ≥3m';
     detailText = 'Último login: ' + fmtDate(u.ultimoLogin) + ' (' + days + ' días)';
@@ -1880,12 +1966,12 @@ async function renderActivityStatusBlock(email, nombre) {
   header.appendChild(label);
   card.appendChild(header);
 
-  if (status === 'inactive' || status === 'notice-expired') {
+  if (status === 'inactive' || status === 'never-logged-in' || status === 'notice-expired') {
     const actions = document.createElement('div');
     actions.style.cssText = 'margin-top:12px;';
     const btn = document.createElement('button');
     btn.type = 'button';
-    if (status === 'inactive') {
+    if (status === 'inactive' || status === 'never-logged-in') {
       btn.className = 'btn btn-primary';
       btn.style.cssText = 'width:100%;font-size:13px;';
       btn.textContent = hasPersonal ? 'Enviar aviso previo' : 'Sin correo personal registrado';
@@ -1911,14 +1997,124 @@ async function renderActivityStatusBlock(email, nombre) {
   box.style.display = 'block';
 }
 
-// Stubs Fase 1 — los endpoints aún no existen; avisar por toast.
-function enviarAvisoInactividad(email, nombre) {
-  showToast('Aviso previo pendiente de Fase 2 (endpoint /email/pre-suspension aún no cableado)');
-  addLog('Aviso previo solicitado para ' + email + ' — Fase 2 pendiente', 'warn');
+// Envía el aviso previo de suspensión por inactividad al correo personal del
+// agente, marca `preSuspensionNoticeSentAt` en Firestore y refresca el modal.
+// El botón solo debería llegar aquí si hay personalEmail — pero re-chequeamos
+// por defensa en profundidad.
+async function enviarAvisoInactividad(email, nombre) {
+  var wsData = _wsUsersMap[(email || '').toLowerCase()] || await getWorkspaceUser(email) || {};
+  var personalEmail = wsData.personalEmail;
+  if (!personalEmail) {
+    showToast('Registra primero el correo personal (botón "Poblar correo personal")');
+    return;
+  }
+
+  var now = new Date();
+  var deadline = new Date(now.getTime() + PRE_SUSPENSION_GRACE_DAYS * 86400000);
+  var fmtDeadline = deadline.toLocaleDateString('es-ES', {
+    timeZone: 'America/New_York', year: 'numeric', month: 'long', day: 'numeric'
+  });
+
+  var ok = await heroConfirm({
+    title: '¿Enviar aviso previo?',
+    body: 'Se enviará un correo a ' + personalEmail + ' avisando a ' + nombre
+        + ' que su cuenta corporativa será suspendida en 15 días (antes del '
+        + fmtDeadline + ') si no detectamos actividad. La cuenta sigue activa mientras tanto.',
+    confirmText: 'Enviar aviso',
+  });
+  if (!ok) return;
+
+  addLog('Enviando aviso previo de inactividad a ' + personalEmail + '...', 'info');
+
+  try {
+    await sendOnboardingViaResend({
+      from: 'Equipo de Hero Insurance USA <it@heroinsuranceusa.com>',
+      to: personalEmail,
+      subject: '[Hero Insurance] Tu cuenta corporativa está en riesgo de suspensión',
+      html: buildEmailPreSuspension(nombre, email, fmtDeadline),
+      text: 'Hola ' + nombre + ', notamos que tu cuenta corporativa ' + email
+          + ' no registra inicios de sesión en los últimos 3 meses. En 15 días '
+          + 'la suspenderemos si no detectamos actividad (antes del ' + fmtDeadline
+          + '). Si aún la necesitas, inicia sesión antes de esa fecha o responde '
+          + 'este correo. Escríbenos a it@heroinsuranceusa.com si necesitas ayuda.',
+    });
+
+    await saveWorkspaceUser(email, {
+      preSuspensionNoticeSentAt: now.toISOString(),
+      preSuspensionDeadline: deadline.toISOString(),
+      preSuspensionNoticeSentBy: 'it-console',
+    });
+    // Refresca el cache local para que el modal y los chips reflejen el nuevo estado
+    // sin necesidad de otro fetch de Firestore.
+    _wsUsersMap[(email || '').toLowerCase()] = Object.assign({}, wsData, {
+      preSuspensionNoticeSentAt: now.toISOString(),
+      preSuspensionDeadline: deadline.toISOString(),
+      preSuspensionNoticeSentBy: 'it-console',
+    });
+
+    auditLog('usuario', 'Aviso previo de inactividad enviado', email + ' → ' + personalEmail);
+    addLog('Aviso previo enviado a ' + personalEmail, 'success');
+    showToast('Aviso previo enviado. Plazo hasta ' + fmtDeadline);
+
+    // Repinta el bloque del modal (Inactivo → Aviso enviado) y refresca chips.
+    renderActivityStatusBlock(email, nombre);
+    _renderInactiveAgentsChips();
+  } catch (err) {
+    addLog('Error enviando aviso previo: ' + err.message, 'error');
+    showToast('Error: ' + err.message);
+  }
 }
-function suspenderPorInactividad(email, nombre) {
-  showToast('Suspensión por inactividad pendiente de Fase 2 (endpoint /email/suspension-notice aún no cableado)');
-  addLog('Suspensión por inactividad solicitada para ' + email + ' — Fase 2 pendiente', 'warn');
+
+// Suspende la cuenta en Workspace + envía notificación al correo personal con
+// el motivo "inactivity-noticed". Reusa /user-action y notificarSuspension del
+// flujo estándar para no duplicar lógica (ambos ya guardan Firestore, envían
+// email, hacen audit).
+async function suspenderPorInactividad(email, nombre) {
+  var wsData = _wsUsersMap[(email || '').toLowerCase()] || await getWorkspaceUser(email) || {};
+  var noticeSentAt = wsData.preSuspensionNoticeSentAt
+    ? new Date(wsData.preSuspensionNoticeSentAt).toLocaleDateString('en-US', {
+        month:'2-digit', day:'2-digit', year:'numeric'
+      })
+    : null;
+
+  var ok = await heroConfirm({
+    title: '¿Suspender la cuenta por inactividad?',
+    body: 'Se suspenderá la cuenta ' + email + ' en Workspace y se enviará '
+        + 'notificación al correo personal informando la suspensión y el nuevo '
+        + 'plazo de 15 días antes de la eliminación permanente.'
+        + (noticeSentAt ? ' El aviso previo se envió el ' + noticeSentAt + '.' : ''),
+    confirmText: 'Suspender + notificar',
+    destructive: true,
+  });
+  if (!ok) return;
+
+  addLog('Suspendiendo cuenta ' + email + ' por inactividad...', 'info');
+
+  try {
+    // (1) Suspender en Workspace via el endpoint existente
+    var resp = await authFetch(WORKER_URL + '/user-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, action: 'suspend' })
+    });
+    var result = await resp.json();
+    if (!resp.ok) throw new Error(result.error || 'Error');
+    addLog('Cuenta suspendida en Workspace', 'success');
+
+    // (2) Notificar al personal + marcar scheduledDeletionAt (+15d) reusando
+    // el helper existente. Motivo específico para diferenciar en el audit-log.
+    var motivo = SUSPENSION_REASONS.find(function(r) { return r.key === 'inactivity-noticed'; })
+              || SUSPENSION_REASONS.find(function(r) { return r.key === '3m'; });
+    await notificarSuspension(email, nombre, motivo);
+
+    auditLog('usuario', 'Cuenta suspendida por inactividad (con aviso previo)', email);
+    showToast('Cuenta suspendida: ' + nombre);
+    closeUserModal();
+    loadUsers();
+  } catch (err) {
+    addLog('Error suspendiendo por inactividad: ' + err.message, 'error');
+    showToast('Error: ' + err.message);
+  }
 }
 
 // ── Gestión de usuarios Workspace ────────────────────────────
@@ -2128,6 +2324,8 @@ var SUSPENSION_REASONS = [
   { key: 'never',    label: 'Cuenta inactiva — nunca ha iniciado sesión',           text: 'porque la cuenta nunca fue utilizada (no se registró ningún inicio de sesión).' },
   { key: '3m',       label: 'Cuenta inactiva — sin login en los últimos 3 meses',   text: 'por falta de uso: no se ha detectado actividad en los últimos 3 meses.' },
   { key: '6m',       label: 'Cuenta inactiva — sin login en los últimos 6 meses',   text: 'por falta de uso prolongado: no se ha detectado actividad en los últimos 6 meses.' },
+  // Motivo del flujo formal de agentes inactivos (aviso previo → 15d → suspender).
+  { key: 'inactivity-noticed', label: 'Inactividad prolongada tras aviso previo sin respuesta', text: 'por inactividad prolongada tras el aviso previo enviado sin recibir respuesta.' },
   { key: 'contrato', label: 'Fin de contrato',                                       text: 'porque tu contrato con Hero Insurance USA finalizó.' },
   { key: 'renuncia', label: 'Renuncia',                                              text: 'como parte del proceso de desvinculación por renuncia.' },
   { key: 'admin',    label: 'Solicitud de la administración',                        text: 'por decisión de la administración.' },
@@ -2581,6 +2779,13 @@ async function loadHome() {
   // el render del home si Firestore tarda o falla).
   _renderPendingDeletionsChip();
   _renderInactiveAgentsChips();
+  // Bootstrap: si entramos al Home antes de haber visitado Usuarios en esta
+  // sesión, allUsers está vacío y los chips del flujo de inactividad no
+  // pueden contar nada. Dispara loadUsers en background — al terminar llama
+  // a _renderInactiveAgentsChips y los chips aparecen sin intervención.
+  if (!allUsers || !allUsers.length) {
+    loadUsers();
+  }
 }
 
 // Chip de alerta en el dashboard: cuentas suspendidas cuyo scheduledDeletionAt
@@ -4091,7 +4296,8 @@ function filterUsers() {
         matchActividad = false;
       } else {
         const status = classifyActivityStatus(u, wsData);
-        if (act === 'inactivos-3m')       matchActividad = (status === 'inactive');
+        if (act === 'nunca-login')        matchActividad = (status === 'never-logged-in');
+        else if (act === 'inactivos-3m')  matchActividad = (status === 'inactive');
         else if (act === 'aviso-enviado') matchActividad = (status === 'notice-waiting');
         else if (act === 'aviso-vencido') matchActividad = (status === 'notice-expired');
       }
