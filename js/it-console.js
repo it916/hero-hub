@@ -67,9 +67,6 @@ function showApp(nombre, picture) {
   if (userLabel) userLabel.textContent = nombre + ' · IT Admin';
   addLog('Sesión iniciada como ' + nombre, 'success');
   applyStoredTheme();
-  // Start background services
-  requestNotificationPermission();
-  startPolling();
   loadHome();
   checkSystemStatus();
 }
@@ -387,221 +384,6 @@ async function runGlobalSearch() {
     + '<div><div style="font-size:13px;font-weight:600;color:var(--hero-text-primary);">' + escHtml(f.title) + '</div>'
     + '<div style="font-size:11px;color:var(--hero-text-muted);margin-top:2px;">' + escHtml(f.sub) + '</div></div></div>'
   ).join('');
-}
-
-// ── Notificaciones push ───────────────────────────────────────
-let notifInterval = null;
-// Conteos persistidos en localStorage para que tickets/solicitudes que
-// lleguen mientras la Console está cerrada generen notificación al reabrir.
-// La primera vez que cargas la Console (sin valor guardado) usa -1, lo que
-// suprime la notif inicial (evita spam de "tienes N pendientes" al primer login).
-const _LS_TICKETS = 'hero_lastTicketCount';
-const _LS_SOL     = 'hero_lastSolicitudCount';
-let lastTicketCount    = parseInt(localStorage.getItem(_LS_TICKETS) || '-1', 10);
-let lastSolicitudCount = parseInt(localStorage.getItem(_LS_SOL)     || '-1', 10);
-let isFirstPoll = true;
-
-async function requestNotificationPermission() {
-  if (!('Notification' in window)) return;
-  if (Notification.permission === 'default') await Notification.requestPermission();
-}
-
-// ── Centro de notificaciones ──────────────────────────────────
-let notifList = []; // { id, tipo, titulo, cuerpo, fecha, leida, action }
-
-function addNotif(tipo, titulo, cuerpo, action) {
-  const notif = {
-    id:     Date.now(),
-    tipo,   // 'ticket' | 'solicitud' | 'info'
-    titulo,
-    cuerpo,
-    fecha:  new Date(),
-    leida:  false,
-    action,
-  };
-  notifList.unshift(notif);
-  if (notifList.length > 50) notifList = notifList.slice(0, 50);
-  renderNotifPanel();
-  // Also send browser push if permitted
-  sendPushNotification(titulo, cuerpo, action);
-}
-
-function renderNotifPanel() {
-  const unread = notifList.filter(n => !n.leida).length;
-  const badge  = document.getElementById('notif-badge');
-  const list   = document.getElementById('notif-list');
-  const empty  = document.getElementById('notif-empty');
-
-  // Badge
-  if (badge) {
-    badge.style.display = unread > 0 ? 'block' : 'none';
-    badge.textContent   = unread > 9 ? '9+' : unread;
-  }
-
-  if (!list) return;
-
-  if (!notifList.length) {
-    list.innerHTML = '<div id="notif-empty" style="padding:32px;text-align:center;font-size:12px;color:var(--hero-text-muted);"><div style="font-size:28px;margin-bottom:8px;opacity:0.4;"><iconify-icon icon="tabler:bell-off"></iconify-icon></div>Sin notificaciones nuevas</div>';
-    return;
-  }
-
-  const iconos = {
-    ticket:    '<iconify-icon icon="tabler:ticket"></iconify-icon>',
-    solicitud: '<iconify-icon icon="tabler:inbox"></iconify-icon>',
-    info:      '<iconify-icon icon="tabler:info-circle"></iconify-icon>'
-  };
-  const colores = { ticket: 'var(--hero-danger)', solicitud: 'var(--hero-warning)', info: 'var(--hero-primary)' };
-
-  list.innerHTML = notifList.map(n => {
-    const tiempo = getElapsedTime(n.fecha.toISOString ? n.fecha.toISOString() : n.fecha);
-    const bg     = n.leida ? 'transparent' : 'var(--hero-primary-light)';
-    return '<div onclick="clickNotif(' + n.id + ')" style="display:flex;gap:12px;align-items:flex-start;padding:12px 16px;border-bottom:1px solid var(--hero-border);cursor:pointer;background:' + bg + ';transition:background 0.15s;" onmouseover="this.style.background=\'var(--hero-bg)\'" onmouseout="this.style.background=\'' + bg + '\'">'
-      + '<div style="width:32px;height:32px;border-radius:50%;background:' + colores[n.tipo] + '20;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;color:' + colores[n.tipo] + ';">' + (iconos[n.tipo] || '<iconify-icon icon="tabler:bell"></iconify-icon>') + '</div>'
-      + '<div style="flex:1;min-width:0;">'
-      + '<div style="font-size:12px;font-weight:' + (n.leida ? '400' : '700') + ';color:var(--hero-text-primary);margin-bottom:2px;">' + n.titulo + '</div>'
-      + '<div style="font-size:11px;color:var(--hero-text-muted);line-height:1.4;">' + n.cuerpo + '</div>'
-      + '<div style="font-size:10px;color:var(--hero-text-subtle);margin-top:4px;font-family:var(--mono);">Hace ' + tiempo + '</div>'
-      + '</div>'
-      + (!n.leida ? '<div style="width:7px;height:7px;border-radius:50%;background:var(--hero-primary);flex-shrink:0;margin-top:4px;"></div>' : '')
-      + '</div>';
-  }).join('');
-}
-
-function clickNotif(id) {
-  const n = notifList.find(x => x.id === id);
-  if (!n) return;
-  n.leida = true;
-  renderNotifPanel();
-  closeNotifPanel();
-  if (n.action) n.action();
-}
-
-function toggleNotifPanel() {
-  const panel = document.getElementById('notif-panel');
-  if (!panel) return;
-  const isOpen = panel.style.display === 'block';
-  panel.style.display = isOpen ? 'none' : 'block';
-  if (!isOpen) {
-    // Mark all as read when opening
-    setTimeout(() => {
-      notifList.forEach(n => n.leida = true);
-      renderNotifPanel();
-    }, 2000);
-  }
-}
-
-function closeNotifPanel() {
-  const panel = document.getElementById('notif-panel');
-  if (panel) panel.style.display = 'none';
-}
-
-function clearNotifs() {
-  notifList = [];
-  renderNotifPanel();
-  closeNotifPanel();
-}
-
-// Close panel when clicking outside
-document.addEventListener('click', function(e) {
-  const panel = document.getElementById('notif-panel');
-  const btn   = document.getElementById('btn-notif');
-  if (panel && panel.style.display === 'block' && !panel.contains(e.target) && e.target !== btn && !btn?.contains(e.target)) {
-    closeNotifPanel();
-  }
-});
-
-function sendPushNotification(title, body, onClick) {
-  if (Notification.permission !== 'granted') return;
-  // Respeta el toggle "Mostrar notificaciones del navegador" de Preferencias.
-  if (localStorage.getItem('hero_push_enabled') === 'false') return;
-  const n = new Notification(title, { body, icon: 'https://i.ibb.co/PvS31B1z/shield-low.png' });
-  if (onClick) n.onclick = function() { window.focus(); onClick(); };
-}
-
-function updateTabBadge(total) {
-  document.title = total > 0 ? '(' + total + ') IT CONSOLE - HERO' : 'IT CONSOLE - HERO';
-}
-
-async function pollForUpdates() {
-  try {
-    // Una sola llamada cada 60s en lugar de listar /ticket + /alta-agente
-    // completos. Los counts vienen de KV metadata (sin N+1).
-    const resp = await authFetch(WORKER_URL + '/stats');
-    if (!resp.ok) return;
-    const d = await resp.json();
-    const openTickets      = d.tickets.open      || 0;
-    const pendingSolicitud = d.solicitudes.pending || 0;
-
-    if (lastTicketCount >= 0 && openTickets > lastTicketCount) {
-      const diff = openTickets - lastTicketCount;
-      const sufijo = diff > 1 ? 's' : '';
-      addNotif('ticket',
-        diff + ' ticket' + sufijo + ' nuevo' + sufijo,
-        isFirstPoll
-          ? 'Llegaron ' + diff + ' ticket' + sufijo + ' desde tu última visita'
-          : 'Se ' + (diff > 1 ? 'abrieron' : 'abrió') + ' ' + diff + ' ticket' + sufijo + ' de soporte',
-        function() { showPage('tickets'); }
-      );
-    }
-    if (lastSolicitudCount >= 0 && pendingSolicitud > lastSolicitudCount) {
-      const diff = pendingSolicitud - lastSolicitudCount;
-      const plural = diff > 1 ? 'es' : '';
-      addNotif('solicitud',
-        diff + ' solicitud' + plural + ' de alta/baja',
-        isFirstPoll
-          ? 'Llegaron ' + diff + ' solicitud' + plural + ' desde tu última visita'
-          : 'Nueva' + (diff > 1 ? 's' : '') + ' solicitud' + plural + ' pendiente' + plural + ' de procesar',
-        function() { showPage('solicitudes'); }
-      );
-    }
-
-    lastTicketCount    = openTickets;
-    lastSolicitudCount = pendingSolicitud;
-    localStorage.setItem(_LS_TICKETS, String(openTickets));
-    localStorage.setItem(_LS_SOL,     String(pendingSolicitud));
-    isFirstPoll = false;
-    updateTabBadge(openTickets + pendingSolicitud);
-  } catch(e) { addLog('pollForUpdates: ' + e.message, 'warn'); }
-}
-
-// Polling con Page Visibility: cuando la pestaña no es visible (background tab,
-// minimizada, otro escritorio), pausamos el setInterval para no consumir cuota
-// KV de Cloudflare. Al volver, hacemos un poll inmediato + reanudamos.
-// Intervalo default 2 min (cache del backend es 2 min, alineado). Configurable
-// por usuario en Configuración → Preferencias (hero_poll_interval en segundos,
-// 0 = desactivado).
-function _getPollIntervalMs() {
-  const stored = parseInt(localStorage.getItem('hero_poll_interval') || '120', 10);
-  if (isNaN(stored) || stored < 0) return 120 * 1000;
-  return stored * 1000;
-}
-function startPolling() {
-  if (notifInterval) return;
-  const ms = _getPollIntervalMs();
-  if (ms === 0) return;
-  pollForUpdates();
-  notifInterval = setInterval(pollForUpdates, ms);
-
-  // Pausar cuando la pestaña pierde visibilidad
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      if (notifInterval) { clearInterval(notifInterval); notifInterval = null; }
-    } else {
-      if (!notifInterval) {
-        const ms = _getPollIntervalMs();
-        if (ms > 0) {
-          pollForUpdates();
-          notifInterval = setInterval(pollForUpdates, ms);
-        }
-      }
-    }
-  });
-}
-
-// Reinicia el polling cuando el usuario cambia el intervalo en Preferencias.
-function restartPolling() {
-  if (notifInterval) { clearInterval(notifInterval); notifInterval = null; }
-  startPolling();
 }
 
 async function auditLog(tipo, descripcion, detalle = null) {
@@ -1122,78 +904,17 @@ async function cfgSaveAuthorizers() {
 // Preferencias locales en localStorage. Aplicadas inmediatamente al guardar.
 function cfgLoadPrefs() {
   const themeEl = document.getElementById('cfg-pref-theme');
-  const pollEl  = document.getElementById('cfg-pref-poll');
-  const pushEl  = document.getElementById('cfg-pref-push');
   if (themeEl) themeEl.value = localStorage.getItem('hero-theme') || 'light';
-  if (pollEl)  pollEl.value  = localStorage.getItem('hero_poll_interval') || '120';
-  if (pushEl)  pushEl.checked = localStorage.getItem('hero_push_enabled') !== 'false';
-  _refreshPushStatus();
-}
-
-function _refreshPushStatus() {
-  const el      = document.getElementById('cfg-push-status');
-  const grantBtn = document.getElementById('btn-cfg-push-grant');
-  if (!el) return;
-  if (!('Notification' in window)) {
-    el.textContent = 'No soportado'; el.style.background = 'rgba(107,122,144,0.15)'; el.style.color = 'var(--hero-text-muted)';
-    if (grantBtn) grantBtn.style.display = 'none';
-    return;
-  }
-  const perm = Notification.permission;
-  const map = {
-    granted: { label: 'Concedido',   bg: 'rgba(34,160,107,0.12)', color: 'var(--hero-success)' },
-    denied:  { label: 'Denegado',    bg: 'rgba(214,69,69,0.12)',  color: 'var(--hero-danger)'  },
-    default: { label: 'Sin decidir', bg: 'rgba(232,163,23,0.12)', color: 'var(--hero-warning)' },
-  };
-  const cfg = map[perm] || map.default;
-  el.textContent = cfg.label; el.style.background = cfg.bg; el.style.color = cfg.color;
-  if (grantBtn) grantBtn.style.display = (perm === 'default') ? 'inline-flex' : 'none';
-}
-
-async function cfgRequestPushPermission() {
-  if (!('Notification' in window)) { showToast('Tu navegador no soporta notificaciones'); return; }
-  try {
-    const result = await Notification.requestPermission();
-    showToast(result === 'granted' ? 'Permiso concedido' : (result === 'denied' ? 'Permiso denegado' : 'Sin decisión'));
-    _refreshPushStatus();
-  } catch (e) {
-    showToast('Error: ' + e.message);
-  }
-}
-
-function cfgTestPush() {
-  if (!('Notification' in window)) { showToast('Tu navegador no soporta notificaciones'); return; }
-  if (Notification.permission !== 'granted') {
-    showToast('Primero concedé el permiso del navegador'); return;
-  }
-  // Bypassa el toggle hero_push_enabled — es una prueba explícita del usuario.
-  try {
-    const n = new Notification('Hero IT Console — prueba', {
-      body: 'Si ves este mensaje, las notificaciones del navegador están funcionando correctamente.',
-      icon: 'https://i.ibb.co/PvS31B1z/shield-low.png',
-    });
-    n.onclick = function() { window.focus(); n.close(); };
-    showToast('Notificación enviada');
-  } catch (e) {
-    showToast('Error: ' + e.message);
-  }
 }
 
 function cfgSavePrefs() {
   const themeEl = document.getElementById('cfg-pref-theme');
-  const pollEl  = document.getElementById('cfg-pref-poll');
-  const pushEl  = document.getElementById('cfg-pref-push');
   if (themeEl) {
     localStorage.setItem('hero-theme', themeEl.value);
     document.body.setAttribute('data-theme', themeEl.value);
     const btn = document.getElementById('btn-theme');
     if (btn) btn.innerHTML = '<iconify-icon icon="tabler:' + (themeEl.value === 'dark' ? 'moon' : 'sun') + '"></iconify-icon>';
   }
-  if (pollEl) {
-    localStorage.setItem('hero_poll_interval', pollEl.value);
-    restartPolling();
-  }
-  if (pushEl) localStorage.setItem('hero_push_enabled', pushEl.checked ? 'true' : 'false');
   showToast('Preferencias guardadas');
 }
 

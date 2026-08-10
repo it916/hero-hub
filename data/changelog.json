@@ -1,5 +1,20 @@
 [
   {
+    "id": "2026-08-10-it-console-quitar-notificaciones",
+    "version": "v2.29.1",
+    "date": "2026-08-10",
+    "category": "chore",
+    "scope": "it-console",
+    "audience": "admin",
+    "title": "IT Console · se quita la campana de notificaciones",
+    "items": [
+      "Se retiró la campana del top bar del IT Console, el panel de notificaciones y el polling de fondo que consultaba /stats cada 2 minutos",
+      "También se retiró la sección \"Notificaciones del navegador\" en Configuración (toggle, botón Pedir permiso, botón Probar notificación) y el selector de intervalo de polling",
+      "El sistema notificaba solo 2 eventos (tickets nuevos + solicitudes de alta/baja pendientes) y no era realtime — en la práctica no aportaba utilidad",
+      "Cero impacto funcional en el resto del Console: tickets y solicitudes siguen apareciendo en el Home y en sus pestañas normalmente, solo se pierde la ventana emergente y el badge en el título de la pestaña"
+    ]
+  },
+  {
     "id": "2026-08-10-agentes-inactivos-fase-2",
     "version": "v2.29.0",
     "date": "2026-08-10",

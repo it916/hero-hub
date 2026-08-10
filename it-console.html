@@ -1324,24 +1324,6 @@ html { scroll-behavior: smooth; }
     </div>
     <div class="topbar-right">
         <button onclick="toggleTheme()" id="btn-theme" title="Cambiar tema" aria-label="Cambiar tema claro/oscuro" style="background:var(--hero-bg);border:1px solid var(--hero-border);color:var(--hero-text-muted);width:36px;height:36px;border-radius:var(--hero-radius-btn);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><iconify-icon icon="tabler:sun"></iconify-icon></button>
-        <!-- Notification bell -->
-        <div style="position:relative;flex-shrink:0;">
-          <button onclick="toggleNotifPanel()" id="btn-notif" title="Notificaciones" aria-label="Centro de notificaciones" aria-haspopup="true" style="background:var(--hero-bg);border:1px solid var(--hero-border);color:var(--hero-text-muted);width:36px;height:36px;border-radius:var(--hero-radius-btn);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;"><iconify-icon icon="tabler:bell"></iconify-icon></button>
-          <span id="notif-badge" role="status" aria-live="polite" aria-atomic="true" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--hero-danger);color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;text-align:center;line-height:18px;padding:0 4px;pointer-events:none;"></span>
-        </div>
-        <!-- Notification panel -->
-        <div id="notif-panel" style="display:none;position:absolute;top:56px;right:16px;width:340px;background:var(--hero-card-bg);border:1px solid var(--hero-border);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,0.15);z-index:400;overflow:hidden;">
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--hero-border);">
-            <div style="font-size:13px;font-weight:700;color:var(--hero-text-primary);">Notificaciones</div>
-            <button onclick="clearNotifs()" style="background:transparent;border:none;font-size:11px;color:var(--hero-primary);cursor:pointer;font-family:var(--hero-font);">Limpiar todo</button>
-          </div>
-          <div id="notif-list" style="max-height:360px;overflow-y:auto;">
-            <div id="notif-empty" style="padding:32px;text-align:center;font-size:12px;color:var(--hero-text-muted);">
-              <div style="font-size:28px;margin-bottom:8px;opacity:0.4;"><iconify-icon icon="tabler:bell-off"></iconify-icon></div>
-              Sin notificaciones nuevas
-            </div>
-          </div>
-        </div>
         <button onclick="openGlobalSearch()" aria-label="Búsqueda global (tickets, solicitudes, dispositivos, usuarios)" style="background:var(--hero-bg);border:1px solid var(--hero-border);color:var(--hero-text-muted);padding:6px 12px;border-radius:var(--hero-radius-sm);cursor:pointer;font-size:12px;font-family:var(--hero-font);display:flex;align-items:center;gap:6px;"><iconify-icon icon="tabler:search" aria-hidden="true"></iconify-icon> <span style="color:var(--hero-text-muted)">Buscar...</span></button>
       <div class="clock" id="clock"></div>
       <div id="global-status">● SISTEMA LISTO</div>
@@ -2658,27 +2640,6 @@ html { scroll-behavior: smooth; }
               <option value="dark">Oscuro</option>
             </select>
           </div>
-          <div>
-            <label class="form-label">Intervalo de polling (actualización en background)</label>
-            <select class="form-input" id="cfg-pref-poll" onchange="cfgSavePrefs()">
-              <option value="60">60 segundos</option>
-              <option value="120" selected>2 minutos (recomendado)</option>
-              <option value="300">5 minutos</option>
-              <option value="0">Desactivado</option>
-            </select>
-            <p style="font-size:11px;color:var(--hero-text-muted);margin:6px 0 0;">Frecuencia con que el Console consulta /stats para detectar tickets/solicitudes nuevos.</p>
-          </div>
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-            <input type="checkbox" id="cfg-pref-push" onchange="cfgSavePrefs()" style="width:16px;height:16px;cursor:pointer;"/>
-            <span style="font-size:13px;">Mostrar notificaciones del navegador</span>
-          </label>
-          <div style="margin:-2px 0 0 26px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <span style="font-size:11px;color:var(--hero-text-muted);">Estado del permiso:</span>
-            <span id="cfg-push-status" style="font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:12px;">—</span>
-            <button class="btn btn-secondary" onclick="cfgRequestPushPermission()" id="btn-cfg-push-grant" style="font-size:11px;padding:4px 10px;display:none;"><iconify-icon icon="tabler:bell-plus"></iconify-icon> Pedir permiso</button>
-            <button class="btn btn-secondary" onclick="cfgTestPush()" style="font-size:11px;padding:4px 10px;"><iconify-icon icon="tabler:bell-ringing"></iconify-icon> Probar notificación</button>
-          </div>
-          <p style="font-size:11px;color:var(--hero-text-muted);margin:6px 0 0 26px;">Las notificaciones aparecen mientras la pestaña del Console esté abierta. Si está denegado, tenés que habilitarlo desde la configuración del sitio en tu navegador.</p>
         </div>
       </div>
 
