@@ -1,5 +1,21 @@
 [
   {
+    "id": "2026-08-10-agentes-inactivos-fase-1",
+    "version": "v2.28.0",
+    "date": "2026-08-10",
+    "category": "feat",
+    "scope": "it-console",
+    "audience": "admin",
+    "title": "IT Console · flujo de agentes inactivos ≥3m (fase 1 · frontend)",
+    "items": [
+      "Nueva pastilla \"Actividad\" en la barra de filtros de Usuarios con 4 opciones: Inactivos ≥3m (sin aviso), Aviso enviado esperando 15d, Aviso vencido ≥15d, y Suspendidos ≥15d (por eliminar). Las 3 primeras aplican a agentes; la 4ª a cualquier usuario suspendido con plazo cumplido",
+      "Dos alertas nuevas en el Home cuando hay agentes calificando: amarilla para inactivos que aún no recibieron aviso, roja para agentes cuyo aviso previo ya cumplió los 15 días y están listos para suspender. Click en cualquiera lleva a Usuarios con el filtro correspondiente ya activo",
+      "En la ficha de gestión de un usuario aparece un bloque nuevo \"Estado de actividad\" cuando la persona es agente. Muestra en qué punto del flujo está (Activo, Inactivo ≥3m, Aviso enviado, Aviso vencido) con la fecha exacta y el plazo, más un botón contextual para avanzar al siguiente paso",
+      "El plazo entre suspensión y eliminación se alarga de 7 a 15 días para dar más margen antes del borrado permanente. La alerta amarilla del Home y el correo de suspensión al personal reflejan el nuevo plazo",
+      "Nota: los botones \"Enviar aviso previo\" y \"Suspender + notificar\" del bloque de actividad muestran por ahora un aviso indicando que los correos automáticos se activarán en la fase 2 (endpoints del Worker aún por cablar)"
+    ]
+  },
+  {
     "id": "2026-08-07-it-console-usuarios-toolbar-pills",
     "version": "v2.27.1",
     "date": "2026-08-07",

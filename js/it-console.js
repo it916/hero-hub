@@ -1558,7 +1558,7 @@ function buildEmailReset(nombre, emailCorp, password) {
 // ── Template: cuenta suspendida (al personal email) ──────────
 // Se envía al correo personal (Gmail/etc.) cuando IT suspende una cuenta
 // de Workspace. Incluye motivo específico + advertencia de eliminación a
-// los 7 días + CTA de mailto a IT con subject pre-llenado para reactivación.
+// los 15 días + CTA de mailto a IT con subject pre-llenado para reactivación.
 function buildEmailSuspension(nombre, emailCorp, fechaEliminacion, motivo) {
   var P = '#06a3b6';
   var motivoText = motivo || 'por decisión de la administración';
@@ -1583,7 +1583,7 @@ function buildEmailSuspension(nombre, emailCorp, fechaEliminacion, motivo) {
   + '<p style="margin:0 0 20px;font-size:13px;color:#4a5568;line-height:1.55;">Mientras la cuenta está suspendida no podrás acceder al correo, al calendario ni a ningún otro servicio de Google Workspace de Hero Insurance USA.</p>'
   + '<div style="background:#fff8e6;border-radius:12px;border:1px solid #f5d87a;border-left:4px solid #f0b429;padding:16px 20px;margin-bottom:24px;">'
   + '<p style="margin:0 0 6px;font-size:11px;font-weight:700;color:#b08a00;text-transform:uppercase;letter-spacing:1.5px;">Plazo importante</p>'
-  + '<p style="margin:0;font-size:13px;color:#7a5f00;line-height:1.6;">Si no solicitas la reactivación de tu cuenta en los próximos <strong>7 días</strong>' + (fechaEliminacion ? ' (antes del <strong>' + fechaEliminacion + '</strong>)' : '') + ', la cuenta será <strong>eliminada de forma permanente</strong> y no podrás recuperar su contenido.</p>'
+  + '<p style="margin:0;font-size:13px;color:#7a5f00;line-height:1.6;">Si no solicitas la reactivación de tu cuenta en los próximos <strong>15 días</strong>' + (fechaEliminacion ? ' (antes del <strong>' + fechaEliminacion + '</strong>)' : '') + ', la cuenta será <strong>eliminada de forma permanente</strong> y no podrás recuperar su contenido.</p>'
   + '</div>'
   + '<div style="text-align:center;margin:0 0 24px;">'
   + '<a href="' + mailtoUrl + '" style="display:inline-block;padding:14px 32px;background:' + P + ';color:#fff;font-family:Trebuchet MS,Arial,sans-serif;font-size:14px;font-weight:700;text-decoration:none;border-radius:30px;letter-spacing:0.5px;box-shadow:0 4px 14px rgba(6,163,182,0.30);">✉ Solicitar reactivación</a>'
@@ -1688,6 +1688,239 @@ async function listWorkspaceUsers() {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════
+// Flujo de agentes inactivos ≥3m (Fase 1 · frontend, sin endpoints Fase 2)
+// Ver memory/project_agentes_inactivos_flujo_wip.md.
+// ═══════════════════════════════════════════════════════════════
+const INACTIVITY_THRESHOLD_DAYS = 90;   // ≥3 meses sin login → candidato a aviso previo
+const PRE_SUSPENSION_GRACE_DAYS = 15;   // aviso previo → 15d → suspensión
+const SUSPENSION_TO_DELETION_DAYS = 15; // suspensión → 15d → eliminación (antes 7d)
+
+// Map email→role del Hub (Firestore users/), cargado a demanda con cache en memoria.
+let _hubUserRolesCache = null;
+async function getHubUserRoles(force) {
+  if (_hubUserRolesCache && !force) return _hubUserRolesCache;
+  try {
+    const { getFirestore, collection, getDocs } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+    await import('/js/firebase-config.js');
+    const db = getFirestore();
+    const snap = await getDocs(collection(db, 'users'));
+    const map = {};
+    snap.docs.forEach(d => { map[(d.id || '').toLowerCase()] = (d.data() || {}).role || null; });
+    _hubUserRolesCache = map;
+    return map;
+  } catch (e) {
+    console.warn('[hubUserRoles] load falló:', e && e.message);
+    return {};
+  }
+}
+
+// Cache local del map Firestore shared/workspaceUsers indexado por email — se
+// puebla en loadUsers() y se refresca al cerrar el modal de un usuario editado.
+let _wsUsersMap = {};
+
+function isAgente(u, rolesMap) {
+  if (!u || !rolesMap) return false;
+  return rolesMap[(u.email || '').toLowerCase()] === 'agente';
+}
+
+function daysSinceLogin(u) {
+  if (!u || !u.ultimoLogin) return null;
+  if (u.ultimoLogin === '1970-01-01T00:00:00.000Z') return null;
+  const t = new Date(u.ultimoLogin).getTime();
+  if (!isFinite(t)) return null;
+  return Math.floor((Date.now() - t) / 86400000);
+}
+
+// Clasifica dónde está el agente en el flujo de suspensión por inactividad.
+// Estados: 'active' · 'inactive' · 'notice-waiting' · 'notice-expired'
+function classifyActivityStatus(u, wsData) {
+  const noticeAt = wsData && wsData.preSuspensionNoticeSentAt
+    ? new Date(wsData.preSuspensionNoticeSentAt).getTime() : null;
+  if (noticeAt) {
+    // Si volvió a loguearse tras el aviso, se considera activo (auto-limpieza suave).
+    const loginTime = u && u.ultimoLogin ? new Date(u.ultimoLogin).getTime() : 0;
+    if (loginTime > noticeAt) return 'active';
+    const graceMs = PRE_SUSPENSION_GRACE_DAYS * 86400000;
+    return (Date.now() - noticeAt >= graceMs) ? 'notice-expired' : 'notice-waiting';
+  }
+  const days = daysSinceLogin(u);
+  if (days != null && days >= INACTIVITY_THRESHOLD_DAYS) return 'inactive';
+  return 'active';
+}
+
+// Chips A y B del Home. Cuentan solo agentes con estado activo en Workspace.
+async function _renderInactiveAgentsChips() {
+  const chipA = document.getElementById('home-alert-inactive-noticeless');
+  const chipB = document.getElementById('home-alert-notice-expired');
+  if (!chipA || !chipB) return;
+  try {
+    // allUsers puede estar vacío si aún no se hizo "Cargar usuarios" en esta
+    // sesión — silencio y ocultar chips hasta que exista data.
+    if (!allUsers || !allUsers.length) {
+      chipA.style.display = 'none';
+      chipB.style.display = 'none';
+      return;
+    }
+    const [wsUsers, rolesMap] = await Promise.all([listWorkspaceUsers(), getHubUserRoles()]);
+    const wsMap = {};
+    (wsUsers || []).forEach(w => { wsMap[(w.email || '').toLowerCase()] = w; });
+    _wsUsersMap = wsMap; // cache para filterUsers + renderActivityStatusBlock
+
+    let inactiveNoticeless = 0;
+    let noticeExpired = 0;
+    allUsers.forEach(u => {
+      if (u.estado !== 'activo') return;
+      if (!isAgente(u, rolesMap)) return;
+      const status = classifyActivityStatus(u, wsMap[(u.email || '').toLowerCase()]);
+      if (status === 'inactive') inactiveNoticeless++;
+      else if (status === 'notice-expired') noticeExpired++;
+    });
+
+    if (inactiveNoticeless > 0) {
+      document.getElementById('home-alert-inactive-count').textContent = String(inactiveNoticeless);
+      document.getElementById('home-alert-inactive-plural').textContent = inactiveNoticeless === 1 ? '' : 's';
+      chipA.style.display = 'flex';
+    } else {
+      chipA.style.display = 'none';
+    }
+    if (noticeExpired > 0) {
+      document.getElementById('home-alert-expired-count').textContent = String(noticeExpired);
+      document.getElementById('home-alert-expired-plural').textContent = noticeExpired === 1 ? '' : 's';
+      document.getElementById('home-alert-expired-plural2').textContent = noticeExpired === 1 ? '' : 's';
+      chipB.style.display = 'flex';
+    } else {
+      chipB.style.display = 'none';
+    }
+  } catch (e) {
+    console.warn('[inactive-agents-chips] error:', e && e.message);
+  }
+}
+
+// Salta a Usuarios con el pill Actividad pre-configurado (para onclick del chip).
+// Setea el select ANTES de showPage: como loadUsers termina llamando a
+// filterUsers(), el filtro se aplica automáticamente cuando llegue la data.
+function jumpToInactivityFilter(preset) {
+  const sel = document.getElementById('usr-filter-actividad');
+  if (sel) sel.value = preset;
+  showPage('usuarios');
+}
+
+// Popula el bloque "Estado de actividad" del modal. Solo se muestra para agentes.
+async function renderActivityStatusBlock(email, nombre) {
+  const box = document.getElementById('um-actividad-box');
+  const content = document.getElementById('um-actividad-content');
+  if (!box || !content) return;
+  box.style.display = 'none';
+  while (content.firstChild) content.removeChild(content.firstChild);
+
+  const u = (allUsers || []).find(x => (x.email || '').toLowerCase() === (email || '').toLowerCase());
+  if (!u) return;
+  const rolesMap = await getHubUserRoles();
+  if (!isAgente(u, rolesMap)) return;
+
+  const wsData = _wsUsersMap[(email || '').toLowerCase()] || await getWorkspaceUser(email);
+  const status = classifyActivityStatus(u, wsData);
+  const days = daysSinceLogin(u);
+  const fmtDate = (iso) => iso
+    ? new Date(iso).toLocaleDateString('en-US', { month:'2-digit', day:'2-digit', year:'numeric' })
+    : '—';
+  const hasPersonal = !!(wsData && wsData.personalEmail);
+
+  const card = document.createElement('div');
+  card.style.cssText = 'padding:12px;border-radius:8px;';
+
+  let dotColor = 'var(--hero-success)';
+  let statusText = 'Activo';
+  let detailText = u.ultimoLogin ? 'Último login: ' + fmtDate(u.ultimoLogin) : 'Sin registro de login';
+
+  if (status === 'inactive') {
+    dotColor = '#e8a317';
+    statusText = 'Inactivo ≥3m';
+    detailText = 'Último login: ' + fmtDate(u.ultimoLogin) + ' (' + days + ' días)';
+    card.style.background = 'rgba(232,163,23,0.08)';
+    card.style.border = '1px solid rgba(232,163,23,0.25)';
+  } else if (status === 'notice-waiting') {
+    dotColor = '#e07b00';
+    const noticeAt = wsData.preSuspensionNoticeSentAt;
+    const deadlineMs = new Date(noticeAt).getTime() + PRE_SUSPENSION_GRACE_DAYS * 86400000;
+    const deadline = new Date(deadlineMs);
+    const daysLeft = Math.ceil((deadlineMs - Date.now()) / 86400000);
+    statusText = 'Aviso enviado';
+    detailText = 'Enviado el ' + fmtDate(noticeAt) + ' · plazo hasta ' + fmtDate(deadline.toISOString()) + ' (' + daysLeft + 'd)';
+    card.style.background = 'rgba(224,123,0,0.08)';
+    card.style.border = '1px solid rgba(224,123,0,0.25)';
+  } else if (status === 'notice-expired') {
+    dotColor = '#d64545';
+    const noticeAt = wsData.preSuspensionNoticeSentAt;
+    statusText = 'Aviso vencido';
+    detailText = 'Aviso enviado el ' + fmtDate(noticeAt) + ' · plazo cumplido';
+    card.style.background = 'rgba(214,69,69,0.08)';
+    card.style.border = '1px solid rgba(214,69,69,0.25)';
+  } else {
+    card.style.background = 'rgba(34,160,107,0.06)';
+    card.style.border = '1px solid rgba(34,160,107,0.20)';
+  }
+
+  const header = document.createElement('div');
+  header.style.cssText = 'display:flex;align-items:center;gap:10px;';
+  const dot = document.createElement('span');
+  dot.style.cssText = 'width:10px;height:10px;border-radius:50%;background:' + dotColor + ';flex-shrink:0;';
+  const label = document.createElement('div');
+  label.style.cssText = 'flex:1;';
+  const labelTitle = document.createElement('div');
+  labelTitle.style.cssText = 'font-size:13px;font-weight:600;color:var(--hero-text-primary);';
+  labelTitle.textContent = statusText;
+  const labelDetail = document.createElement('div');
+  labelDetail.style.cssText = 'font-family:var(--mono);font-size:11px;color:var(--hero-text-muted);margin-top:2px;';
+  labelDetail.textContent = detailText;
+  label.appendChild(labelTitle);
+  label.appendChild(labelDetail);
+  header.appendChild(dot);
+  header.appendChild(label);
+  card.appendChild(header);
+
+  if (status === 'inactive' || status === 'notice-expired') {
+    const actions = document.createElement('div');
+    actions.style.cssText = 'margin-top:12px;';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    if (status === 'inactive') {
+      btn.className = 'btn btn-primary';
+      btn.style.cssText = 'width:100%;font-size:13px;';
+      btn.textContent = hasPersonal ? 'Enviar aviso previo' : 'Sin correo personal registrado';
+      btn.disabled = !hasPersonal;
+      btn.style.opacity = hasPersonal ? '1' : '0.5';
+      btn.style.cursor = hasPersonal ? 'pointer' : 'not-allowed';
+      btn.title = hasPersonal
+        ? 'Envía aviso al correo personal registrado. Funcional tras Fase 2 (endpoint /email/pre-suspension).'
+        : 'Registra el correo personal antes de enviar el aviso (usa "Poblar correo personal" en la toolbar)';
+      btn.addEventListener('click', () => enviarAvisoInactividad(email, nombre));
+    } else {
+      btn.className = 'btn';
+      btn.style.cssText = 'width:100%;font-size:13px;background:rgba(214,69,69,0.10);border:1px solid var(--hero-danger);color:var(--hero-danger);';
+      btn.textContent = 'Suspender + notificar';
+      btn.title = 'Suspende la cuenta en Workspace y notifica al correo personal. Funcional tras Fase 2 (endpoint /email/suspension-notice).';
+      btn.addEventListener('click', () => suspenderPorInactividad(email, nombre));
+    }
+    actions.appendChild(btn);
+    card.appendChild(actions);
+  }
+
+  content.appendChild(card);
+  box.style.display = 'block';
+}
+
+// Stubs Fase 1 — los endpoints aún no existen; avisar por toast.
+function enviarAvisoInactividad(email, nombre) {
+  showToast('Aviso previo pendiente de Fase 2 (endpoint /email/pre-suspension aún no cableado)');
+  addLog('Aviso previo solicitado para ' + email + ' — Fase 2 pendiente', 'warn');
+}
+function suspenderPorInactividad(email, nombre) {
+  showToast('Suspensión por inactividad pendiente de Fase 2 (endpoint /email/suspension-notice aún no cableado)');
+  addLog('Suspensión por inactividad solicitada para ' + email + ' — Fase 2 pendiente', 'warn');
+}
+
 // ── Gestión de usuarios Workspace ────────────────────────────
 let currentUserEmail = null;
 
@@ -1697,6 +1930,7 @@ function openUserModal(email, nombre) {
   document.getElementById('um-nombre').textContent = nombre;
   document.getElementById('um-new-password').value = '';
   document.getElementById('user-modal').style.display = 'block';
+  renderActivityStatusBlock(email, nombre);
 }
 
 // Envía el email de bienvenida oficial al Hub. Se dispara desde el modal de
@@ -1855,7 +2089,7 @@ async function userAction(action) {
     }
 
     // #2 — Al suspender: buscar personalEmail en Firestore, promptear si no
-    // existe, mandar email de aviso + guardar scheduledDeletionAt (7 dias).
+    // existe, mandar email de aviso + guardar scheduledDeletionAt (15 dias).
     // El motivo ya fue elegido arriba (askSuspensionReason).
     if (action === 'suspend') {
       await notificarSuspension(email, nombre, motivoSuspend);
@@ -2049,7 +2283,7 @@ function suggestSuspensionReasonKey(user) {
 // Flujo:
 //   1. Busca personalEmail en Firestore shared/workspaceUsers/byEmail/{email}.
 //   2. Si no lo tiene → prompt para escribirlo (dejar vacío para saltear).
-//   3. Guarda suspendedAt + scheduledDeletionAt (+7 días) + motivo en Firestore
+//   3. Guarda suspendedAt + scheduledDeletionAt (+15 días) + motivo en Firestore
 //      para que el chip de dashboard "próximas eliminaciones" lo detecte.
 //   4. Si hay personalEmail → manda buildEmailSuspension al correo personal
 //      con el motivo específico.
@@ -2071,10 +2305,10 @@ async function notificarSuspension(emailCorp, nombre, motivo) {
       personalEmail = (input || '').trim();
     }
 
-    // Calcula fecha de eliminación programada (suspend + 7 días).
+    // Calcula fecha de eliminación programada (suspend + SUSPENSION_TO_DELETION_DAYS).
     var now = new Date();
     var scheduledDeletion = new Date(now);
-    scheduledDeletion.setDate(scheduledDeletion.getDate() + 7);
+    scheduledDeletion.setDate(scheduledDeletion.getDate() + SUSPENSION_TO_DELETION_DAYS);
 
     // Guarda el estado de suspensión en Firestore. Incluye personalEmail si
     // vino nuevo del prompt (permite backfill on-demand) y motivo/motivoKey
@@ -2107,7 +2341,7 @@ async function notificarSuspension(emailCorp, nombre, motivo) {
         subject: 'Tu cuenta ' + emailCorp + ' fue suspendida — Hero Insurance USA',
         html: buildEmailSuspension(nombre, emailCorp, fechaLabel, motivoText),
         text: 'Hola ' + nombre + ', tu cuenta corporativa ' + emailCorp + ' fue suspendida ' + motivoText + ' '
-            + 'Si no solicitas reactivación en los próximos 7 días (antes del ' + fechaLabel + '), '
+            + 'Si no solicitas reactivación en los próximos 15 días (antes del ' + fechaLabel + '), '
             + 'la cuenta será eliminada permanentemente. '
             + 'Para solicitar reactivación escribe a it@heroinsuranceusa.com.',
       });
@@ -2346,11 +2580,12 @@ async function loadHome() {
   // Alerta de cuentas suspendidas próximas a eliminar (background — no bloquea
   // el render del home si Firestore tarda o falla).
   _renderPendingDeletionsChip();
+  _renderInactiveAgentsChips();
 }
 
 // Chip de alerta en el dashboard: cuentas suspendidas cuyo scheduledDeletionAt
 // ya llegó (o pasó) y NO fueron reactivadas ni eliminadas. Se prometió al
-// usuario que su cuenta se eliminaria a los 7 días si no solicitaba
+// usuario que su cuenta se eliminaria a los 15 días si no solicitaba
 // reactivación; este chip le recuerda a IT que ese plazo se cumplió.
 async function _renderPendingDeletionsChip() {
   var alert = document.getElementById('home-alert-eliminaciones');
@@ -3576,7 +3811,22 @@ async function loadUsers() {
     addLog('Usuarios cargados: ' + allUsers.length, 'success');
     populateOuFilter(allUsers);
     _usersCurrentPage = 1;
-    renderUsers(allUsers);
+
+    // Cachea roles del Hub + docs de shared/workspaceUsers ANTES de renderizar,
+    // para que el filtro Actividad tenga la data lista si viene pre-seleccionado
+    // (ej. click en un chip del Home). Si algo falla, seguimos con render vacío.
+    try {
+      const [wsUsers] = await Promise.all([listWorkspaceUsers(), getHubUserRoles()]);
+      const map = {};
+      (wsUsers || []).forEach(w => { map[(w.email || '').toLowerCase()] = w; });
+      _wsUsersMap = map;
+    } catch (e) {
+      console.warn('[loadUsers] cache flujo inactivos falló:', e && e.message);
+    }
+    // filterUsers respeta el pill actual (Actividad + resto). Si no hay filtro
+    // seleccionado, se comporta como renderUsers(allUsers).
+    filterUsers();
+    _renderInactiveAgentsChips();
 
   } catch (err) {
     addLog('Error al cargar usuarios: ' + err.message, 'error');
@@ -3799,12 +4049,14 @@ function filterUsers() {
   const ou = document.getElementById('usr-filter-ou')?.value || '';
   const mfa = document.getElementById('usr-filter-mfa')?.value || '';
   const rol = document.getElementById('usr-filter-rol')?.value || '';
+  const act = document.getElementById('usr-filter-actividad')?.value || '';
   // Toggle visual .active en pills según si tienen filtro aplicado
-  ['usr-filter-ou','usr-filter-mfa','usr-filter-rol'].forEach(id => {
+  ['usr-filter-ou','usr-filter-mfa','usr-filter-rol','usr-filter-actividad'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.toggle('active', !!el.value);
   });
   if (!allUsers.length) return;
+  const rolesMap = _hubUserRolesCache || {};
   const filtered = allUsers.filter(u => {
     // Búsqueda incluye ahora cargo y departamento — Fernando puede buscar
     // "CEO", "Operaciones" o el nombre indistintamente.
@@ -3819,7 +4071,32 @@ function filterUsers() {
       || (rol === 'admin' && u.isAdmin)
       || (rol === 'delegated' && u.isDelegatedAdmin && !u.isAdmin)
       || (rol === 'user' && !u.isAdmin && !u.isDelegatedAdmin);
-    return matchText && matchOu && matchMfa && matchRol;
+    // Filtro Actividad: 3 primeras opciones son SOLO agentes activos (flujo
+    // pre-suspensión). La 4ª (suspendidos-vencidos) incluye a CUALQUIER usuario
+    // suspendido con plazo cumplido — coincide con el conteo del chip amarillo
+    // del Home, que también agrega sin distinguir agentes vs staff.
+    let matchActividad = true;
+    if (act) {
+      const wsData = _wsUsersMap[(u.email || '').toLowerCase()];
+      if (act === 'suspendidos-vencidos') {
+        if (u.estado === 'activo') {
+          matchActividad = false;
+        } else {
+          const sd = wsData && wsData.scheduledDeletionAt
+            ? new Date(wsData.scheduledDeletionAt).getTime() : null;
+          matchActividad = !!(sd && sd <= Date.now()
+            && !wsData.reactivatedAt && !wsData.deletedAt);
+        }
+      } else if (u.estado !== 'activo' || !isAgente(u, rolesMap)) {
+        matchActividad = false;
+      } else {
+        const status = classifyActivityStatus(u, wsData);
+        if (act === 'inactivos-3m')       matchActividad = (status === 'inactive');
+        else if (act === 'aviso-enviado') matchActividad = (status === 'notice-waiting');
+        else if (act === 'aviso-vencido') matchActividad = (status === 'notice-expired');
+      }
+    }
+    return matchText && matchOu && matchMfa && matchRol && matchActividad;
   });
   _usersCurrentPage = 1;
   renderUsers(filtered);
@@ -5033,7 +5310,7 @@ var PLANTILLAS_TEMPLATES = {
     to: '(correo personal registrado en shared/workspaceUsers)',
     trigger: 'IT suspende una cuenta desde el modal de Usuarios o desde una solicitud de baja. Antes de suspender se abre un modal para elegir el motivo (con pre-selección inteligente según el último login). El motivo elegido aparece tal cual en el email al usuario.',
     endpoint: 'POST /email/onboarding (mismo endpoint que onboarding porque acepta destinos externos)',
-    sections: ['Header rojo con badge SUSPENDIDA', 'Bloque de motivo específico (elegido en el modal)', 'Explicación breve', 'Advertencia amarilla del plazo de 7 días', 'CTA Solicitar reactivación (mailto)', 'Contacto directo']
+    sections: ['Header rojo con badge SUSPENDIDA', 'Bloque de motivo específico (elegido en el modal)', 'Explicación breve', 'Advertencia amarilla del plazo de 15 días', 'CTA Solicitar reactivación (mailto)', 'Contacto directo']
   },
   'reactivacion': {
     label: 'Reactivacion de cuenta',
