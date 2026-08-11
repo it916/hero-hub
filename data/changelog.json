@@ -1,5 +1,22 @@
 [
   {
+    "id": "2026-08-11-asistencia-cross-device-ui",
+    "version": "v2.32.3",
+    "date": "2026-08-11",
+    "date_modified": "2026-08-11",
+    "category": "fix",
+    "scope": "asistencia",
+    "audience": "all",
+    "title": "Asistencia sincroniza entre dispositivos + ajustes de UI",
+    "items": [
+      "Se corrigió un índice faltante en la base de datos que hacía que la suscripción de asistencia en tiempo real fallara silenciosamente desde v2.24.0. Efecto: cuando marcabas Entrada/Salida/Break en un dispositivo, otros dispositivos abiertos no reflejaban el cambio hasta refrescar la página. Ahora sí se sincroniza sin recargar",
+      "Los botones de asistencia cambiaron de orden a Entrada · Break · Salida (antes Break estaba al final, aunque en la práctica se usa entre medias)",
+      "El botón del modal de Break ahora dice \"Volver del break\" con un ícono de retorno (antes decía \"Terminar break\" con ícono de play)",
+      "El botón flotante de Soporte IT (esquina inferior derecha) ahora es un círculo compacto con solo el ícono, sin la etiqueta \"Soporte IT\" al lado. Al pasar el mouse aparece el tooltip",
+      "Adicionalmente, cuando la pestaña del Hub vuelve a estar visible tras estar en background, se hace una consulta directa a la base de datos para reconciliar el estado (defensa contra suspensión de websockets en pestañas dormidas)"
+    ]
+  },
+  {
     "id": "2026-08-11-solicitudes-gate-autorizacion",
     "version": "v2.32.2",
     "date": "2026-08-11",

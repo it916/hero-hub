@@ -201,9 +201,9 @@
             <div class="hqcc-tile-kicker"><i data-lucide="clock"></i>Mi Asistencia</div>
             <div class="hqcc-att-grid">
               <button type="button" class="hqcc-att-btn entrada att-btn att-entrada" data-att-type="Entrada"><i data-lucide="log-in"></i>Entrada</button>
-              <button type="button" class="hqcc-att-btn salida att-btn att-salida" data-att-type="Salida"><i data-lucide="log-out"></i>Salida</button>
               <!-- Break: proxy de los dos ocultos (que attendance.js ya cablea por data-att-type) -->
               <button type="button" id="hqcc-break" class="hqcc-break-btn"><i data-lucide="coffee"></i><span class="hqcc-break-label">Break</span></button>
+              <button type="button" class="hqcc-att-btn salida att-btn att-salida" data-att-type="Salida"><i data-lucide="log-out"></i>Salida</button>
             </div>
             <button type="button" id="hqcc-break-in" data-att-type="Inicio Break" style="display:none"></button>
             <button type="button" id="hqcc-break-out" data-att-type="Fin Break" style="display:none"></button>
@@ -436,9 +436,8 @@
   </main>
 
   <!-- ══ BOTÓN FLOTANTE — SOPORTE IT ══ -->
-  <a class="fab-support" href="soporte.html" target="_blank" rel="noopener" aria-label="Soporte IT">
+  <a class="fab-support" href="soporte.html" target="_blank" rel="noopener" aria-label="Soporte IT" title="Soporte IT">
     <i data-lucide="headphones"></i>
-    <span class="fab-support-label">Soporte IT</span>
   </a>
 
   <!-- ══ POP-UP INICIO DE JORNADA (antes: mensaje del día) ══ -->
@@ -522,8 +521,8 @@
       </div>
 
       <button class="bm-end-btn" id="bm-end-btn" type="button">
-        <i data-lucide="play"></i>
-        Terminar break
+        <i data-lucide="log-in"></i>
+        Volver del break
       </button>
     </div>
   </div>
@@ -550,7 +549,7 @@
   </div>
 
   <footer class="hero-footer">
-    <span>HERO HUB · v2.32.2</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+    <span>HERO HUB · v2.32.3</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
   </footer>
 </div>
 

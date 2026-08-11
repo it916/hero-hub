@@ -22,7 +22,7 @@
 // ═══════════════════════════════════════════
 
 import { auth } from "./firebase-config.js";
-import { writeAttendance, subscribeLastEvent } from "./attendance-store.js";
+import { writeAttendance, subscribeLastEvent, fetchLastEvent } from "./attendance-store.js";
 
 const STORAGE_KEY = "hh-attendance-last";
 const TICK_MS = 30_000;
@@ -551,7 +551,12 @@ window.openBreakModal = openBreakModal;
 window.closeBreakModal = closeBreakModal;
 
 // ── Suscripción a Firestore ────────────────────────────────────────
+// currentUser guardado para poder reconciliar/resuscribir sin depender
+// de auth.currentUser (que puede ser null en callbacks tardíos).
+let _subscribedUser = null;
+
 function startSubscription(user) {
+  _subscribedUser = user;
   if (_unsubSnapshot) { _unsubSnapshot(); _unsubSnapshot = null; }
   _unsubSnapshot = subscribeLastEvent({ email: user.email }, (evt, err) => {
     if (err) {
@@ -572,6 +577,59 @@ function startSubscription(user) {
     _markReady({ ok: true });
   });
 }
+
+// Hardening cross-device: Chrome suspende websockets en pestañas dormidas.
+// Cuando la pestaña vuelve a visible o al foco, fetch directo del último
+// evento y re-suscripción si cambió. Cubre el caso: usuario marca Entrada
+// desde móvil, deja el desktop dormido; al volver al desktop la vista
+// tiene que reflejar la Entrada nueva sin esperar a que onSnapshot
+// eventualmente re-conecte.
+async function reconcileFromFirestore(reason) {
+  if (!_subscribedUser) return;
+  try {
+    const evt = await fetchLastEvent({ email: _subscribedUser.email });
+    // Defensa crítica: si el fetch devuelve null pero SÍ teníamos estado en
+    // cache, es casi seguro un error transitorio (query cancelada por race
+    // con auth, cache vacío temporal, etc.). NO borramos el cache — el
+    // próximo snapshot corregirá. Sin esta guarda, entrar a la página
+    // dispara `focus`, fetch devuelve null, y borramos el "Entrada" del
+    // día → aparece el modal de entrada + Break bloqueado.
+    if (!evt && currentState) return;
+
+    const newState = evt
+      ? {
+          type: evt.type,
+          timestamp: evt.timestamp.toISOString(),
+          absenceDate: evt.absenceDate,
+          reason: evt.reason,
+        }
+      : null;
+    // Aplicar solo si difiere del actual (evita re-renders innecesarios).
+    const cur = currentState;
+    const changed = (!cur && newState)
+      || (cur && newState && (cur.type !== newState.type || cur.timestamp !== newState.timestamp));
+    if (changed) {
+      applyState(newState);
+    }
+    // Re-suscribir si la suscripción murió en background — barato porque
+    // Firestore deduplica por query.
+    if (reason === 'visibility') {
+      startSubscription(_subscribedUser);
+    }
+  } catch (err) {
+    console.warn('[attendance] reconcile falló:', err && err.message);
+  }
+}
+
+// Dispara reconciliación cuando la pestaña vuelve a foco/visible.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    reconcileFromFirestore('visibility');
+  }
+});
+window.addEventListener('focus', () => {
+  reconcileFromFirestore('focus');
+});
 
 // ── Init ───────────────────────────────────────────────────────────
 function init() {

@@ -7241,39 +7241,25 @@ body.role-it .hub-card.hc-it-console {
   position:fixed;
   bottom:24px; right:24px;
   z-index:900;
-  display:inline-flex; align-items:center; gap:10px;
-  height:56px;
-  padding:0 18px 0 16px;
-  border-radius:28px;
+  display:inline-flex; align-items:center; justify-content:center;
+  width:56px; height:56px;
+  border-radius:50%;
   background:linear-gradient(135deg, #06a3b6 0%, #066b78 100%);
   color:#fff;
   text-decoration:none;
-  font-weight:700; font-size:14px;
-  letter-spacing:.3px;
   box-shadow:0 8px 24px rgba(6,163,182,.4), 0 2px 6px rgba(0,0,0,.15);
-  transition:transform .2s ease, box-shadow .2s ease, padding .2s ease;
+  transition:transform .2s ease, box-shadow .2s ease;
 }
 .fab-support:hover {
-  transform:translateY(-3px) scale(1.03);
+  transform:translateY(-3px) scale(1.05);
   box-shadow:0 12px 30px rgba(6,163,182,.55), 0 4px 8px rgba(0,0,0,.2);
 }
 .fab-support i {
-  width:22px; height:22px;
-  flex-shrink:0;
-}
-.fab-support-label {
-  white-space:nowrap;
+  width:24px; height:24px;
 }
 
-/* En móvil: colapsar a botón circular, mostrar solo el ícono */
 @media (max-width: 640px) {
-  .fab-support {
-    padding:0;
-    width:56px;
-    justify-content:center;
-    bottom:16px; right:16px;
-  }
-  .fab-support-label { display:none; }
+  .fab-support { bottom:16px; right:16px; }
 }
 
 /* ══════════════════════════════════════════
