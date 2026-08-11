@@ -1,5 +1,20 @@
 [
   {
+    "id": "2026-08-11-tickets-modal-coherente",
+    "version": "v2.32.0",
+    "date": "2026-08-11",
+    "category": "feat",
+    "scope": "it-console",
+    "audience": "admin",
+    "title": "IT Console · Tickets · modal de respuesta más coherente con el sistema",
+    "items": [
+      "El modal de respuesta ya no permite cambiar la prioridad manualmente. La prioridad la calcula el sistema desde el impacto declarado por el usuario y ahora se muestra como badge coloreado en la sección Detalles, junto al impacto",
+      "Nueva casilla \"Notificar por email\" (marcada por defecto). Al destildarla, IT puede cambiar el estado sin enviar correo automático al usuario — útil para correcciones silenciosas (ej. reabrir un ticket cerrado por error). La respuesta libre siempre se envía por correo si tiene texto",
+      "Los botones de Respuesta rápida ahora también mueven el estado del ticket: \"Revisando\" lo pone en Progreso, \"Resuelto\" lo cierra. Menos clicks, menos olvidos",
+      "Fix: los botones de \"Plantillas casos comunes\" mostraban código HTML como texto en lugar del ícono renderizado. Corregido"
+    ]
+  },
+  {
     "id": "2026-08-11-it-console-home-todos-tickets",
     "version": "v2.31.1",
     "date": "2026-08-11",

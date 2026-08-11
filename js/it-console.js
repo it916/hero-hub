@@ -2739,7 +2739,7 @@ function toggleTicketTemplates() {
   panel.innerHTML = '<div style="font-size:10px;color:var(--hero-text-muted);margin-bottom:8px;letter-spacing:1px;text-transform:uppercase;">Elige una plantilla — carga respuesta + checklist</div>'
     + TICKET_TEMPLATES.map(t =>
         '<button onclick="loadTicketTemplate(\'' + escJs(t.id) + '\')" class="btn btn-secondary" style="font-size:11px;padding:5px 10px;margin:2px;">'
-        + escHtml(t.icon + ' ' + t.nombre)
+        + t.icon + ' ' + escHtml(t.nombre)
         + '</button>'
       ).join('');
   panel.style.display = 'block';
@@ -2936,11 +2936,24 @@ function openTicketModal(id) {
   document.getElementById('modal-asunto').textContent    = t.asunto;
   document.getElementById('modal-nombre').textContent    = t.nombre;
   document.getElementById('modal-email').textContent     = t.email;
-  document.getElementById('modal-categoria').textContent = t.categoria;
-  // Impacto y equipo (Fase 4) — tickets viejos no los tienen; mostrar guión.
-  const impLabel = IMPACTO_LABEL[t.impacto] || '—';
-  document.getElementById('modal-impacto').textContent = 'Impacto: ' + impLabel;
+  document.getElementById('modal-categoria').textContent = 'Categoría: ' + t.categoria;
   document.getElementById('modal-equipo').textContent = 'Equipo: ' + (t.equipo || '—');
+
+  // Prioridad como badge read-only — el server la calcula desde impacto+categoría.
+  // IT reevalúa el impacto abajo, y el server recalcula la prioridad al guardar.
+  const prioBadge = document.getElementById('modal-prioridad-badge');
+  const pc = PRIORIDAD_COLOR[t.prioridad] || PRIORIDAD_COLOR.Media;
+  prioBadge.textContent = 'Prioridad: ' + (t.prioridad || '—');
+  prioBadge.style.background = pc.bg;
+  prioBadge.style.color = pc.color;
+
+  // Impacto como badge (visual) — también editable abajo en el bloque de acciones.
+  const impBadge = document.getElementById('modal-impacto-badge');
+  const ic = IMPACTO_COLOR[t.impacto] || { color: 'var(--hero-text-muted)', bg: 'rgba(120,120,120,0.10)' };
+  const impLabelText = IMPACTO_LABEL[t.impacto] || '—';
+  impBadge.textContent = 'Impacto: ' + impLabelText;
+  impBadge.style.background = ic.bg;
+  impBadge.style.color = ic.color;
   // Adjuntos (Fase 3 — sección oculta si no hay). Preparado para cuando el
   // backend empiece a poblar t.adjuntos como [{key, filename, size, mime}].
   const adjBox = document.getElementById('modal-adjuntos-box');
@@ -2979,8 +2992,11 @@ function openTicketModal(id) {
   elEl.style.color = getElapsedColor(t.fecha, t.estado);
   document.getElementById('modal-descripcion').textContent = t.descripcion;
   document.getElementById('modal-estado').value    = t.estado;
-  document.getElementById('modal-prioridad').value = t.prioridad;
   document.getElementById('modal-respuesta').value = '';
+  // Notificar al usuario: default ON. Se puede destildar para correcciones
+  // silenciosas (ej. reabrir un ticket cerrado por error sin re-molestar).
+  const notifyEl = document.getElementById('modal-notify');
+  if (notifyEl) notifyEl.checked = true;
   // Reset paneles de plantilla al abrir cada ticket
   const tplPanel = document.getElementById('ticket-templates-panel');
   if (tplPanel) tplPanel.style.display = 'none';
@@ -2995,6 +3011,14 @@ function openTicketModal(id) {
     document.getElementById('modal-historial').innerHTML = hist.map(h => {
       const f = new Date(h.fecha).toLocaleString('es-MX', { timeZone:'America/New_York', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
       if (h.tipo === 'estado')    return '<div style="font-size:12px;color:var(--hero-text-muted);padding:4px 0;border-bottom:1px solid var(--hero-border);"><iconify-icon icon="tabler:clipboard-list"></iconify-icon> Estado: <strong>' + h.de + '</strong> → <strong>' + h.a + '</strong> · <span style="font-family:var(--mono);font-size:10px;">' + f + '</span></div>';
+      if (h.tipo === 'impacto') {
+        const deImp = IMPACTO_LABEL[h.de] || h.de || '—';
+        const aImp  = IMPACTO_LABEL[h.a]  || h.a  || '—';
+        const prio  = h.prioridadDe && h.prioridadA && h.prioridadDe !== h.prioridadA
+          ? ' · Prioridad: <strong>' + h.prioridadDe + '</strong> → <strong>' + h.prioridadA + '</strong>'
+          : '';
+        return '<div style="font-size:12px;color:var(--hero-text-muted);padding:4px 0;border-bottom:1px solid var(--hero-border);"><iconify-icon icon="tabler:arrows-transfer-up"></iconify-icon> Impacto: <strong>' + deImp + '</strong> → <strong>' + aImp + '</strong>' + prio + ' · <span style="font-family:var(--mono);font-size:10px;">' + f + '</span></div>';
+      }
       if (h.tipo === 'respuesta') return '<div style="font-size:12px;color:var(--hero-text-muted);padding:4px 0;border-bottom:1px solid var(--hero-border);"><iconify-icon icon="tabler:message-circle"></iconify-icon> Respuesta enviada · <span style="font-family:var(--mono);font-size:10px;">' + f + '</span></div>';
       return '';
     }).join('');
@@ -3014,6 +3038,13 @@ function setQuickReply(key) {
   const ta = document.getElementById('modal-respuesta');
   ta.value = QUICK_REPLIES[key] || '';
   ta.focus();
+  // Auto-cambia el estado del dropdown según la intención del quick reply.
+  // Revisando → en progreso. Resuelto → resuelto. Los otros no tocan estado.
+  const estadoEl = document.getElementById('modal-estado');
+  if (estadoEl) {
+    if (key === 'revisando') estadoEl.value = 'en progreso';
+    else if (key === 'resuelto') estadoEl.value = 'resuelto';
+  }
 }
 
 async function guardarTicket() {
@@ -3023,12 +3054,12 @@ async function guardarTicket() {
   btn.innerHTML = '<l-ring size="14" stroke="2" speed="0.7" color="#06a3b6"></l-ring> Guardando...';
   try {
     const estado    = document.getElementById('modal-estado').value;
-    const prioridad = document.getElementById('modal-prioridad').value;
     const respuesta = document.getElementById('modal-respuesta').value.trim();
+    const notificar = document.getElementById('modal-notify').checked;
     const resp = await authFetch(WORKER_URL + '/ticket/update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: currentTicketId, estado, prioridad, respuesta: respuesta || null })
+      body: JSON.stringify({ id: currentTicketId, estado, respuesta: respuesta || null, notificar })
     });
     const result = await resp.json();
     if (!resp.ok) throw new Error(result.error || 'Error');

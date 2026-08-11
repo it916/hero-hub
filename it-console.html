@@ -2118,8 +2118,11 @@ html { scroll-behavior: smooth; }
                 <div style="font-size:10px;color:var(--hero-primary);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Detalles</div>
                 <div id="modal-categoria" style="font-size:12px;color:var(--hero-text-body);"></div>
                 <div id="modal-equipo"    style="font-size:12px;color:var(--hero-text-body);margin-top:2px;"></div>
-                <div id="modal-impacto"   style="font-size:12px;color:var(--hero-text-body);margin-top:2px;"></div>
-                <div id="modal-fecha"    style="font-size:10px;color:var(--hero-text-muted);font-family:var(--mono);margin-top:4px;"></div>
+                <div style="display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap;">
+                  <span id="modal-prioridad-badge" style="font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 9px;border-radius:12px;letter-spacing:0.5px;" title="Prioridad calculada por el sistema a partir del impacto y la categoría"></span>
+                  <span id="modal-impacto-badge" style="font-family:var(--mono);font-size:10px;font-weight:600;padding:3px 9px;border-radius:12px;letter-spacing:0.5px;"></span>
+                </div>
+                <div id="modal-fecha"    style="font-size:10px;color:var(--hero-text-muted);font-family:var(--mono);margin-top:6px;"></div>
                 <div id="modal-elapsed"  style="font-size:10px;font-weight:600;margin-top:3px;"></div>
               </div>
             </div>
@@ -2147,7 +2150,7 @@ html { scroll-behavior: smooth; }
             </div>
 
             <!-- Actions -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+            <div style="display:grid;grid-template-columns:1fr auto;gap:14px;align-items:end;margin-bottom:14px;">
               <div>
                 <label class="form-label">Estado</label>
                 <select id="modal-estado" class="form-input" style="background:var(--hero-card-bg);">
@@ -2156,15 +2159,10 @@ html { scroll-behavior: smooth; }
                   <option value="resuelto">Resuelto</option>
                 </select>
               </div>
-              <div>
-                <label class="form-label">Prioridad</label>
-                <select id="modal-prioridad" class="form-input" style="background:var(--hero-card-bg);">
-                  <option value="Baja">Baja</option>
-                  <option value="Media">Media</option>
-                  <option value="Alta">Alta</option>
-                  <option value="Urgente">Urgente</option>
-                </select>
-              </div>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--hero-text-body);padding-bottom:10px;user-select:none;">
+                <input type="checkbox" id="modal-notify" checked style="width:15px;height:15px;cursor:pointer;accent-color:var(--hero-primary);"/>
+                <span>Notificar por email</span>
+              </label>
             </div>
 
             <!-- Quick replies + plantillas de casos comunes -->
