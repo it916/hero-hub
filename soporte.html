@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Soporte IT · Hero Insurance USA</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --hero-primary:#06a3b6; --hero-primary-hover:#058fa0; --hero-primary-light:#d6edf0;
+      --hero-bg-page:#f0f4f8; --hero-bg-card:#ffffff;
+      --hero-text-primary:#1a1a1a; --hero-text-body:#444444; --hero-text-muted:#777777;
+      --hero-border:#e8e8e8; --radius:10px;
+      --hero-font:'Trebuchet MS',Arial,sans-serif;
+    }
+    body { font-family:var(--hero-font); background:var(--hero-bg-page); color:var(--hero-text-body); min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:0 0 60px; }
+
+    .hero-header { width:100%; background:linear-gradient(135deg,#06a3b6 0%,#048395 60%,#036070 100%); padding:36px 24px 48px; text-align:center; position:relative; overflow:hidden; }
+    .hero-header::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 50% 0%,rgba(255,255,255,0.18) 0%,transparent 70%); }
+    .hero-header::after { content:''; position:absolute; bottom:-1px; left:0; right:0; height:40px; background:var(--hero-bg-page); clip-path:ellipse(55% 100% at 50% 100%); }
+    .hero-logo { width:96px; height:96px; border-radius:18px; display:block; margin:0 auto 12px; position:relative; z-index:1; box-shadow:0 6px 24px rgba(0,0,0,0.18); }
+    .header-tagline { font-family:var(--hero-font); font-weight:700; font-size:12px; letter-spacing:4px; text-transform:uppercase; color:rgba(255,255,255,0.9); margin-top:4px; position:relative; z-index:1; }
+
+    .container { width:100%; max-width:620px; padding:0 20px; margin-top:-20px; position:relative; z-index:2; }
+
+    .card { background:var(--hero-bg-card); border-radius:var(--radius); border:1px solid var(--hero-border); padding:36px; box-shadow:0 8px 32px rgba(6,163,182,0.10); margin-bottom:16px; }
+    .card-title { font-weight:700; font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--hero-primary); margin-bottom:24px; display:flex; align-items:center; gap:10px; }
+    .card-title::after { content:''; flex:1; height:1px; background:rgba(6,163,182,0.2); }
+
+    .field { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+    .field:last-of-type { margin-bottom:0; }
+    label { font-size:12px; font-weight:600; letter-spacing:0.5px; color:var(--hero-text-muted); text-transform:uppercase; }
+
+    input, select, textarea {
+      border:1.5px solid var(--hero-border); border-radius:8px; padding:12px 16px;
+      font-size:15px; font-family:var(--hero-font); color:var(--hero-text-primary);
+      background:#fff; transition:border-color 0.2s,box-shadow 0.2s; outline:none;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color:var(--hero-primary); box-shadow:0 0 0 3px rgba(6,163,182,0.12);
+    }
+    input::placeholder, textarea::placeholder { color:var(--hero-text-muted); opacity:0.7; }
+    select option { background:#fff; color:var(--hero-text-primary); }
+    textarea { resize:vertical; min-height:120px; line-height:1.6; }
+
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    @media(max-width:500px) { .row { grid-template-columns:1fr; } }
+
+    /* Impacto cards — 3 opciones apiladas verticalmente (textos largos) */
+    .impact-group { display:flex; flex-direction:column; gap:8px; }
+    .impact-card input[type="radio"] { display:none; }
+    .impact-card label {
+      display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:10px;
+      border:1.5px solid var(--hero-border); cursor:pointer; transition:all 0.2s;
+      background:#fff;
+    }
+    .impact-card label:hover { border-color:rgba(6,163,182,0.4); background:rgba(6,163,182,0.03); }
+    .impact-card input:checked + label {
+      border-color:var(--hero-primary); background:rgba(6,163,182,0.06);
+      box-shadow:0 0 0 3px rgba(6,163,182,0.10);
+    }
+    .impact-dot { width:12px; height:12px; border-radius:50%; flex-shrink:0; }
+    .impact-text { display:flex; flex-direction:column; gap:2px; }
+    .impact-title { font-size:14px; font-weight:600; color:var(--hero-text-primary); text-transform:none; letter-spacing:0; }
+    .impact-sub { font-size:12px; color:var(--hero-text-muted); text-transform:none; letter-spacing:0; }
+
+    /* Honeypot: fuera de viewport pero renderizado (los bots ignoran display:none) */
+    .hp-field { position:absolute; left:-9999px; top:-9999px; width:1px; height:1px; overflow:hidden; }
+
+    .btn-primary { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:15px 28px; margin-top:8px; border-radius:8px; font-size:15px; font-weight:700; font-family:var(--hero-font); letter-spacing:1px; text-transform:uppercase; cursor:pointer; border:none; background:linear-gradient(135deg,#06a3b6,#048395); color:#fff; transition:all 0.25s; box-shadow:0 4px 20px rgba(6,163,182,0.35); }
+    .btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 28px rgba(6,163,182,0.5); }
+    .btn-primary:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+
+    .toast { display:none; align-items:center; gap:12px; background:linear-gradient(135deg,#06a3b6,#048395); color:#fff; padding:16px 22px; border-radius:10px; margin-bottom:20px; font-size:14px; font-weight:600; animation:fadeIn 0.35s ease; box-shadow:0 4px 20px rgba(6,163,182,0.4); }
+    .toast.show { display:flex; }
+    .toast-icon { width:28px; height:28px; background:rgba(255,255,255,0.25); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(-10px);} to{opacity:1;transform:translateY(0);} }
+
+    .footer { margin-top:20px; text-align:center; font-size:11px; color:var(--hero-text-muted); letter-spacing:1px; }
+    .ticket-id { font-family:'Courier New',monospace; font-size:13px; color:#fff; background:rgba(255,255,255,0.2); padding:4px 12px; border-radius:6px; }
+  </style>
+</head>
+<body>
+  <div class="hero-header">
+    <img class="hero-logo" src="https://i.ibb.co/Gr4mzLv/Nuevo-Logo-Cuadrado-compress.png" alt="Hero Insurance USA"/>
+    <div class="header-tagline">Soporte de Tecnología</div>
+  </div>
+
+  <div class="container">
+    <div id="toast" class="toast">
+      <div class="toast-icon">✓</div>
+      <div id="toast-msg">Ticket enviado. Te contactaremos pronto.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Nuevo ticket de soporte</div>
+
+      <div class="row">
+        <div class="field">
+          <label for="nombre">Tu nombre *</label>
+          <input type="text" id="nombre" placeholder="Ej. María López"/>
+        </div>
+        <div class="field">
+          <label for="email">Tu correo corporativo *</label>
+          <input type="email" id="email" placeholder="mlopez@heroinsuranceusa.com"/>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="categoria">Categoría *</label>
+        <select id="categoria">
+          <option value="" disabled selected>Selecciona una categoría</option>
+          <option value="Problema con equipo o hardware">Problema con equipo o hardware</option>
+          <option value="Acceso a aplicación o plataforma">Acceso a aplicación o plataforma</option>
+          <option value="Solicitud de software">Solicitud de software</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="equipo">Equipo o plataforma afectada *</label>
+        <select id="equipo">
+          <option value="" disabled selected>¿Dónde ocurre el problema?</option>
+          <option value="Laptop/PC">Laptop/PC</option>
+          <option value="Navegador">Navegador</option>
+          <option value="Correo (Gmail/Workspace)">Correo (Gmail/Workspace)</option>
+          <option value="GoHighLevel CRM">GoHighLevel CRM</option>
+          <option value="Hero Hub">Hero Hub</option>
+          <option value="Contraseñas y accesos">Contraseñas y accesos</option>
+          <option value="Red/Wifi">Red/Wifi</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>¿Qué tanto te está afectando esto? *</label>
+        <div id="impact-hint" style="font-size:11px;color:var(--hero-primary);margin-bottom:8px;min-height:16px;"></div>
+        <div class="impact-group">
+          <div class="impact-card">
+            <input type="radio" name="impacto" id="i-bloqueante" value="bloqueante"/>
+            <label for="i-bloqueante">
+              <span class="impact-dot" style="background:#d64545;"></span>
+              <span class="impact-text">
+                <span class="impact-title">No puedo trabajar en nada</span>
+                <span class="impact-sub">Estoy bloqueado completamente</span>
+              </span>
+            </label>
+          </div>
+          <div class="impact-card">
+            <input type="radio" name="impacto" id="i-parcial" value="parcial" checked/>
+            <label for="i-parcial">
+              <span class="impact-dot" style="background:#f0b429;"></span>
+              <span class="impact-text">
+                <span class="impact-title">Puedo trabajar parcialmente</span>
+                <span class="impact-sub">Con una alternativa o limitación</span>
+              </span>
+            </label>
+          </div>
+          <div class="impact-card">
+            <input type="radio" name="impacto" id="i-molestia" value="molestia"/>
+            <label for="i-molestia">
+              <span class="impact-dot" style="background:#22a06b;"></span>
+              <span class="impact-text">
+                <span class="impact-title">Es una molestia pero no me bloquea</span>
+                <span class="impact-sub">Puedo trabajar normalmente</span>
+              </span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Honeypot invisible: bots suelen rellenar cualquier <input>.
+           Un humano no lo ve (fuera de viewport, tabindex negativo). Si el
+           backend recibe este campo con contenido, descarta el request. -->
+      <div class="hp-field" aria-hidden="true">
+        <label for="website">Website (déjalo en blanco)</label>
+        <input type="text" id="website" name="website" autocomplete="off" tabindex="-1"/>
+      </div>
+
+      <div class="field">
+        <label for="asunto">Asunto *</label>
+        <input type="text" id="asunto" oninput="suggestImpact()" placeholder="Describe brevemente el problema"/>
+      </div>
+
+      <div class="field">
+        <label for="descripcion">Descripción detallada *</label>
+        <textarea id="descripcion" oninput="suggestImpact()" placeholder="Explica con detalle qué está pasando, desde cuándo, y qué has intentado..."></textarea>
+      </div>
+
+      <button class="btn-primary" onclick="enviarTicket()">Enviar ticket →</button>
+    </div>
+
+    <div class="footer">HERO INSURANCE USA · IT DEPARTMENT</div>
+  </div>
+
+<script>
+  const WORKER_URL = 'https://hero-email-worker.broad-fire-d2d6.workers.dev';
+
+  // Palabras clave para sugerir IMPACTO. Nunca sugiere prioridad final — esa
+  // la calcula el backend a partir de impacto + categoría. Ayuda visual, no
+  // vinculante: el usuario puede cambiar el impacto seleccionado.
+  const KEYWORDS = {
+    bloqueante: ['no puedo trabajar','bloqueado','caído','no funciona nada','sin acceso','urgente','emergencia','crítico'],
+    parcial:    ['lento','falla intermitente','a veces','no siempre','con problemas','algunas veces','alternativa','a medias'],
+    molestia:   ['solicitud','instalar','agregar','cambiar','actualizar','mejorar','sugerencia','preferencia'],
+  };
+
+  const IMPACT_LABEL = {
+    bloqueante: 'No puedo trabajar en nada',
+    parcial:    'Puedo trabajar parcialmente',
+    molestia:   'Es una molestia pero no me bloquea',
+  };
+
+  function suggestImpact() {
+    const desc = document.getElementById('descripcion').value.toLowerCase();
+    const asunto = document.getElementById('asunto').value.toLowerCase();
+    const text = desc + ' ' + asunto;
+    for (const [impacto, words] of Object.entries(KEYWORDS)) {
+      if (words.some(w => text.includes(w))) {
+        const radio = document.getElementById('i-' + impacto);
+        if (radio) {
+          radio.checked = true;
+          const hint = document.getElementById('impact-hint');
+          if (hint) hint.textContent = '💡 Sugerido: ' + IMPACT_LABEL[impacto];
+        }
+        return;
+      }
+    }
+  }
+
+  async function enviarTicket() {
+    const nombre      = document.getElementById('nombre').value.trim();
+    const email       = document.getElementById('email').value.trim();
+    const categoria   = document.getElementById('categoria').value;
+    const equipo      = document.getElementById('equipo').value;
+    const impacto     = document.querySelector('input[name="impacto"]:checked')?.value || '';
+    const asunto      = document.getElementById('asunto').value.trim();
+    const descripcion = document.getElementById('descripcion').value.trim();
+    const website     = document.getElementById('website').value; // honeypot
+
+    if (!nombre || !email || !categoria || !equipo || !impacto || !asunto || !descripcion) {
+      alert('Por favor completa todos los campos obligatorios.'); return;
+    }
+    // Dominio corporativo obligatorio — el backend también valida esto.
+    if (!/^[a-z0-9._%+-]+@heroinsuranceusa\.com$/i.test(email)) {
+      alert('El correo debe ser de @heroinsuranceusa.com'); return;
+    }
+
+    const btn = document.querySelector('.btn-primary');
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+
+    try {
+      const resp = await fetch(WORKER_URL + '/ticket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, email, categoria, equipo, impacto, asunto, descripcion, website })
+      });
+      const result = await resp.json();
+      if (!resp.ok) throw new Error(result.error || 'Error del servidor');
+
+      document.getElementById('toast-msg').innerHTML =
+        'Ticket enviado correctamente. Tu ID: <span class="ticket-id">' + (result.ticketId || result.id) + '</span>';
+      const toast = document.getElementById('toast');
+      toast.classList.add('show');
+
+      ['nombre','email','asunto','descripcion'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('categoria').selectedIndex = 0;
+      document.getElementById('equipo').selectedIndex = 0;
+      document.getElementById('i-parcial').checked = true;
+      document.getElementById('website').value = '';
+      const hint = document.getElementById('impact-hint');
+      if (hint) hint.textContent = '';
+
+      setTimeout(() => toast.classList.remove('show'), 6000);
+    } catch(err) {
+      alert('No se pudo enviar el ticket: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Enviar ticket →';
+    }
+  }
+</script>
+</body>
+</html>

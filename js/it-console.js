@@ -948,7 +948,7 @@ function buildOnboardingEmail(nombre, email, password, tipo, lang) {
   var P    = '#06a3b6';
   var P2   = '#048395';
   var LOGO = 'https://i.ibb.co/PvS31B1z/shield-low.png';
-  var SOPORTE_URL = 'https://it916.github.io/hero-it-console/soporte.html';
+  var SOPORTE_URL = 'https://hub.heroinsuranceusa.com/soporte.html';
 
   // Textos del correo en español (es) e inglés (en). Cada idioma incluye sus 4 pasos de inicio de sesión.
   var STR = {
@@ -1271,7 +1271,7 @@ function buildEmailReset(nombre, emailCorp, password) {
   + '<div style="background:#eef4ff;border-radius:12px;border:1px solid #c5deff;padding:18px 20px;margin-bottom:20px;">'
   + '<p style="margin:0 0 4px;font-size:13px;font-weight:700;color:#1a202c;">Necesitas ayuda?</p>'
   + '<p style="margin:0 0 10px;font-size:12px;color:#4a5568;">Si no reconoces esta solicitud, contacta al equipo de IT de inmediato.</p>'
-  + '<a href="https://forms.gle/8dkvmbgAFwqVx2Mj9" style="display:inline-block;padding:10px 20px;background:#06a3b6;color:#fff;font-size:12px;font-weight:700;text-decoration:none;border-radius:8px;">Contactar soporte IT</a></div>'
+  + '<a href="https://hub.heroinsuranceusa.com/soporte.html" style="display:inline-block;padding:10px 20px;background:#06a3b6;color:#fff;font-size:12px;font-weight:700;text-decoration:none;border-radius:8px;">Contactar soporte IT</a></div>'
   + '<div style="text-align:center;padding:12px;background:#f7faff;border-radius:10px;border:1px solid #e2eaf8;">'
   + '<p style="margin:0;font-family:monospace;font-size:11px;color:#a0aec0;">Solicitud procesada el ' + fecha + ' (ET)</p></div>'
   + '</td></tr>'
@@ -2611,6 +2611,19 @@ const PRIORIDAD_COLOR = {
   Urgente: { color: '#d64545', bg: 'rgba(214,69,69,0.12)'   },
 };
 
+// Impacto (Fase 4): color y label para la tarjeta Kanban. Los tickets viejos
+// no tienen `impacto` — el render lo omite si undefined.
+const IMPACTO_COLOR = {
+  bloqueante: { color: '#d64545', bg: 'rgba(214,69,69,0.12)' },
+  parcial:    { color: '#e07b00', bg: 'rgba(224,123,0,0.12)' },
+  molestia:   { color: '#22a06b', bg: 'rgba(34,160,107,0.12)' },
+};
+const IMPACTO_LABEL = {
+  bloqueante: 'Bloqueante',
+  parcial:    'Parcial',
+  molestia:   'Molestia',
+};
+
 const QUICK_REPLIES = {
   revisando: 'Hola, hemos recibido tu ticket y estamos revisando el problema. Te contactaremos pronto con una solución.',
   info:      'Hola, para poder ayudarte necesitamos información adicional. ¿Podrías indicarnos...?',
@@ -2830,12 +2843,34 @@ function renderKanban(tickets) {
       const pc = PRIORIDAD_COLOR[t.prioridad] || PRIORIDAD_COLOR.Media;
       const elapsed = getElapsedTime(t.fecha);
       const elColor = getElapsedColor(t.fecha, t.estado);
+      // Impacto y equipo son campos nuevos (Fase 4). Tickets viejos no los tienen.
+      const ic = IMPACTO_COLOR[t.impacto] || null;
+      const impactoLabel = IMPACTO_LABEL[t.impacto] || '';
+      const equipoTxt = t.equipo ? escHtml(t.equipo) : '';
+      const impactoBadge = ic
+        ? '<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:' + ic.bg + ';color:' + ic.color + ';font-weight:600;">' + escHtml(impactoLabel) + '</span>'
+        : '';
+      const metaImpacto = (impactoBadge || equipoTxt)
+        ? '<div class="kanban-card-meta" style="margin-top:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
+          + impactoBadge
+          + (equipoTxt ? '<span style="font-size:11px;color:var(--hero-text-muted);">' + equipoTxt + '</span>' : '')
+          + '</div>'
+        : '';
+      // Badge de adjuntos (Fase 3 — preparado, se activa cuando t.adjuntos exista)
+      const nAdj = Array.isArray(t.adjuntos) ? t.adjuntos.length : 0;
+      const adjBadge = nAdj > 0
+        ? '<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(107,122,144,0.15);color:var(--hero-text-muted);font-weight:600;" title="' + nAdj + ' adjunto' + (nAdj === 1 ? '' : 's') + '">📎 ' + nAdj + '</span>'
+        : '';
       return '<div class="kanban-card" style="--card-pcolor:' + pc.color + ';" onclick="openTicketModal(\'' + t.id + '\')">'
         + '<div class="kanban-card-title">' + escHtml(t.asunto) + '</div>'
         + '<div class="kanban-card-meta">' + escHtml(t.nombre) + ' · ' + escHtml(t.categoria) + '</div>'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">'
+        + metaImpacto
+        + '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:8px;">'
         + '<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:' + pc.bg + ';color:' + pc.color + ';font-weight:600;">' + escHtml(t.prioridad) + '</span>'
+        + '<div style="display:flex;align-items:center;gap:6px;">'
+        + adjBadge
         + '<span class="kanban-card-time" style="color:' + elColor + ';">⏱ ' + elapsed + '</span>'
+        + '</div>'
         + '</div></div>';
     }).join('');
   });
@@ -2877,6 +2912,39 @@ function openTicketModal(id) {
   document.getElementById('modal-nombre').textContent    = t.nombre;
   document.getElementById('modal-email').textContent     = t.email;
   document.getElementById('modal-categoria').textContent = t.categoria;
+  // Impacto y equipo (Fase 4) — tickets viejos no los tienen; mostrar guión.
+  const impLabel = IMPACTO_LABEL[t.impacto] || '—';
+  document.getElementById('modal-impacto').textContent = 'Impacto: ' + impLabel;
+  document.getElementById('modal-equipo').textContent = 'Equipo: ' + (t.equipo || '—');
+  // Adjuntos (Fase 3 — sección oculta si no hay). Preparado para cuando el
+  // backend empiece a poblar t.adjuntos como [{key, filename, size, mime}].
+  const adjBox = document.getElementById('modal-adjuntos-box');
+  const adjList = document.getElementById('modal-adjuntos-list');
+  if (adjBox && adjList) {
+    while (adjList.firstChild) adjList.removeChild(adjList.firstChild);
+    const adj = Array.isArray(t.adjuntos) ? t.adjuntos : [];
+    if (adj.length > 0) {
+      adj.forEach(function(a) {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:var(--hero-bg);border:1px solid var(--hero-border);border-radius:6px;';
+        const name = document.createElement('span');
+        name.style.cssText = 'font-size:12px;color:var(--hero-text-body);';
+        name.textContent = a.filename || a.key || '(adjunto)';
+        const link = document.createElement('a');
+        link.href = WORKER_URL + '/ticket/attachment/' + encodeURIComponent(a.key || '');
+        link.textContent = 'Ver ↗';
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.style.cssText = 'font-size:11px;color:var(--hero-primary);text-decoration:none;font-weight:600;';
+        row.appendChild(name);
+        row.appendChild(link);
+        adjList.appendChild(row);
+      });
+      adjBox.style.display = 'block';
+    } else {
+      adjBox.style.display = 'none';
+    }
+  }
   const fecha = new Date(t.fecha).toLocaleString('es-MX', { timeZone:'America/New_York', year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
   document.getElementById('modal-fecha').textContent = fecha + ' ET';
   const elEl = document.getElementById('modal-elapsed');

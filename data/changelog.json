@@ -1,5 +1,23 @@
 [
   {
+    "id": "2026-08-11-soporte-endurecido",
+    "version": "v2.30.0",
+    "date": "2026-08-11",
+    "category": "feat",
+    "scope": "soporte",
+    "audience": "all",
+    "title": "Sistema de tickets de soporte IT rediseñado",
+    "items": [
+      "El formulario de soporte ahora vive en el Hub (hub.heroinsuranceusa.com/soporte.html). El link roto que veías desde el botón \"Soporte IT\" del Home y desde los correos de onboarding ahora abre esta nueva página",
+      "Nueva pregunta \"¿Qué tanto te está afectando esto?\" reemplaza el selector de prioridad. Ahora eliges impacto en tu trabajo (no puedo trabajar / puedo con alternativa / molestia) y el sistema calcula la prioridad final. Ya no es posible marcarte a ti mismo como \"Urgente\" para saltarte la cola",
+      "Nuevo campo obligatorio \"Equipo o plataforma afectada\" con 8 opciones (Laptop/PC, Navegador, Correo, GoHighLevel CRM, Hero Hub, Contraseñas y accesos, Red/Wifi, Otro) para que IT identifique el problema más rápido",
+      "El correo de confirmación que recibes al abrir un ticket ahora incluye el equipo/plataforma afectada y una sección \"Próximos pasos\" con el tiempo estimado de respuesta según la prioridad calculada",
+      "Solo se aceptan tickets desde correos @heroinsuranceusa.com. Si escribes desde un correo personal se rechaza con un mensaje claro",
+      "Límite anti-spam: máximo 5 tickets por hora desde el mismo correo (además del límite por IP que ya existía)",
+      "La tarjeta del ticket en el módulo Tickets del IT Console ahora muestra el impacto y el equipo afectado de un vistazo, y un badge de clip si el ticket tiene adjuntos (los adjuntos llegan en una próxima actualización)"
+    ]
+  },
+  {
     "id": "2026-08-10-it-console-quitar-notificaciones",
     "version": "v2.29.1",
     "date": "2026-08-10",

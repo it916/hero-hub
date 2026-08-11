@@ -2117,8 +2117,18 @@ html { scroll-behavior: smooth; }
               <div class="info-box" style="padding:12px 14px;">
                 <div style="font-size:10px;color:var(--hero-primary);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Detalles</div>
                 <div id="modal-categoria" style="font-size:12px;color:var(--hero-text-body);"></div>
+                <div id="modal-equipo"    style="font-size:12px;color:var(--hero-text-body);margin-top:2px;"></div>
+                <div id="modal-impacto"   style="font-size:12px;color:var(--hero-text-body);margin-top:2px;"></div>
                 <div id="modal-fecha"    style="font-size:10px;color:var(--hero-text-muted);font-family:var(--mono);margin-top:4px;"></div>
                 <div id="modal-elapsed"  style="font-size:10px;font-weight:600;margin-top:3px;"></div>
+              </div>
+            </div>
+
+            <!-- Adjuntos (Fase 3 — se renderiza si el ticket tiene t.adjuntos) -->
+            <div id="modal-adjuntos-box" style="display:none;margin-bottom:16px;">
+              <div class="info-box" style="padding:14px;">
+                <div style="font-size:10px;color:var(--hero-primary);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;"><iconify-icon icon="tabler:paperclip"></iconify-icon> Adjuntos</div>
+                <div id="modal-adjuntos-list" style="display:flex;flex-direction:column;gap:6px;"></div>
               </div>
             </div>
 
