@@ -1626,7 +1626,13 @@ async function renderActivityStatusBlock(email, nombre) {
   const fmtDate = (iso) => iso
     ? new Date(iso).toLocaleDateString('en-US', { month:'2-digit', day:'2-digit', year:'numeric' })
     : '—';
-  const hasPersonal = !!(wsData && wsData.personalEmail);
+  // Fuentes del correo personal, en orden de prioridad:
+  //   1. u.recoveryEmail — configurado por el propio usuario en Google Workspace
+  //   2. wsData.personalEmail — poblado por IT (backfill) o al crear la cuenta
+  //   3. prompt al enviar aviso — último recurso
+  // El botón queda activo si tenemos (1) o (2). Si no, sigue activo pero al
+  // hacer click abre un prompt para pedirlo.
+  const hasPersonal = !!(u.recoveryEmail || (wsData && wsData.personalEmail));
 
   const card = document.createElement('div');
   card.style.cssText = 'padding:12px;border-radius:8px;';
@@ -1695,19 +1701,16 @@ async function renderActivityStatusBlock(email, nombre) {
     if (status === 'inactive' || status === 'never-logged-in') {
       btn.className = 'btn btn-primary';
       btn.style.cssText = 'width:100%;font-size:13px;';
-      btn.textContent = hasPersonal ? 'Enviar aviso previo' : 'Sin correo personal registrado';
-      btn.disabled = !hasPersonal;
-      btn.style.opacity = hasPersonal ? '1' : '0.5';
-      btn.style.cursor = hasPersonal ? 'pointer' : 'not-allowed';
+      btn.textContent = 'Enviar aviso previo';
       btn.title = hasPersonal
-        ? 'Envía aviso al correo personal registrado. Funcional tras Fase 2 (endpoint /email/pre-suspension).'
-        : 'Registra el correo personal antes de enviar el aviso (usa "Poblar correo personal" en la toolbar)';
+        ? 'Envía aviso al correo personal (registrado en Google Workspace o en Firestore).'
+        : 'No hay correo personal registrado. Al hacer click se te pedirá uno para enviar el aviso.';
       btn.addEventListener('click', () => enviarAvisoInactividad(email, nombre));
     } else {
       btn.className = 'btn';
       btn.style.cssText = 'width:100%;font-size:13px;background:rgba(214,69,69,0.10);border:1px solid var(--hero-danger);color:var(--hero-danger);';
       btn.textContent = 'Suspender + notificar';
-      btn.title = 'Suspende la cuenta en Workspace y notifica al correo personal. Funcional tras Fase 2 (endpoint /email/suspension-notice).';
+      btn.title = 'Suspende la cuenta en Workspace y notifica al correo personal.';
       btn.addEventListener('click', () => suspenderPorInactividad(email, nombre));
     }
     actions.appendChild(btn);
@@ -1724,10 +1727,30 @@ async function renderActivityStatusBlock(email, nombre) {
 // por defensa en profundidad.
 async function enviarAvisoInactividad(email, nombre) {
   var wsData = _wsUsersMap[(email || '').toLowerCase()] || await getWorkspaceUser(email) || {};
-  var personalEmail = wsData.personalEmail;
+  var u = (allUsers || []).find(function(x) { return (x.email || '').toLowerCase() === (email || '').toLowerCase(); });
+  // Cascada de fuentes del correo personal:
+  //   1. recoveryEmail configurado en Google Workspace por el propio usuario
+  //   2. personalEmail guardado en Firestore (backfill previo o alta reciente)
+  //   3. Prompt on-the-fly al operador de IT
+  var personalEmail = ((u && u.recoveryEmail) || wsData.personalEmail || '').trim();
+  var fromRecovery = false;
   if (!personalEmail) {
-    showToast('Registra primero el correo personal (botón "Poblar correo personal")');
-    return;
+    var input = window.prompt(
+      'No hay correo personal registrado para ' + nombre + '.\n\n'
+      + 'Escribe el correo personal donde enviar el aviso previo (@gmail.com, @yahoo, etc.):',
+      ''
+    );
+    personalEmail = (input || '').trim();
+    if (!personalEmail) {
+      showToast('Aviso cancelado — no hay correo destino');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(personalEmail)) {
+      alert('El correo no parece válido.');
+      return;
+    }
+  } else if (u && u.recoveryEmail && !(wsData && wsData.personalEmail)) {
+    fromRecovery = true;
   }
 
   var now = new Date();
@@ -1760,18 +1783,21 @@ async function enviarAvisoInactividad(email, nombre) {
           + 'este correo. Escríbenos a it@heroinsuranceusa.com si necesitas ayuda.',
     });
 
-    await saveWorkspaceUser(email, {
+    // Al persistir: si el email vino del prompt o del recoveryEmail y no
+    // había registro en Firestore, guardarlo también para uso futuro.
+    var saveData = {
       preSuspensionNoticeSentAt: now.toISOString(),
       preSuspensionDeadline: deadline.toISOString(),
       preSuspensionNoticeSentBy: 'it-console',
-    });
+    };
+    if (!(wsData && wsData.personalEmail)) {
+      saveData.personalEmail = personalEmail;
+      saveData.personalEmailSource = fromRecovery ? 'workspace-recovery' : 'it-prompt';
+    }
+    await saveWorkspaceUser(email, saveData);
     // Refresca el cache local para que el modal y los chips reflejen el nuevo estado
     // sin necesidad de otro fetch de Firestore.
-    _wsUsersMap[(email || '').toLowerCase()] = Object.assign({}, wsData, {
-      preSuspensionNoticeSentAt: now.toISOString(),
-      preSuspensionDeadline: deadline.toISOString(),
-      preSuspensionNoticeSentBy: 'it-console',
-    });
+    _wsUsersMap[(email || '').toLowerCase()] = Object.assign({}, wsData, saveData);
 
     auditLog('usuario', 'Aviso previo de inactividad enviado', email + ' → ' + personalEmail);
     addLog('Aviso previo enviado a ' + personalEmail, 'success');
@@ -2211,7 +2237,12 @@ function suggestSuspensionReasonKey(user) {
 async function notificarSuspension(emailCorp, nombre, motivo) {
   try {
     var registro = await getWorkspaceUser(emailCorp);
+    // Cascada: personalEmail de Firestore → recoveryEmail de Workspace → prompt
     var personalEmail = (registro && registro.personalEmail) || '';
+    if (!personalEmail) {
+      var uWs = (allUsers || []).find(function(x) { return (x.email || '').toLowerCase() === (emailCorp || '').toLowerCase(); });
+      if (uWs && uWs.recoveryEmail) personalEmail = uWs.recoveryEmail;
+    }
 
     // Si no lo tenemos guardado, pedirlo. Vacío = saltear la notificación.
     if (!personalEmail) {
