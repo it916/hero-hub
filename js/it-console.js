@@ -2472,10 +2472,11 @@ async function loadHome() {
     addLog('Home: error cargando datos: ' + e.message, 'warn');
   }
 
-  // 1. Tickets prioritarios — abiertos con Urgente o Alta, viejos primero
+  // 1. Tickets abiertos — todos, ordenados por prioridad (Urgente primero)
+  // y luego por fecha (más viejos primero dentro de la misma prioridad).
   const PRIO_WEIGHT = { Urgente: 3, Alta: 2, Media: 1, Baja: 0 };
   const ticketsPri = tickets
-    .filter(t => t.estado === 'abierto' && (PRIO_WEIGHT[t.prioridad] || 0) >= 2)
+    .filter(t => t.estado === 'abierto')
     .sort((a, b) => {
       const dw = (PRIO_WEIGHT[b.prioridad] || 0) - (PRIO_WEIGHT[a.prioridad] || 0);
       return dw !== 0 ? dw : new Date(a.fecha) - new Date(b.fecha);
@@ -2543,7 +2544,7 @@ async function _renderPendingDeletionsChip() {
 function _renderHomeTickets(items) {
   const el = document.getElementById('md-tickets');
   if (!items.length) {
-    renderEmpty(el, { icon: '<iconify-icon icon="tabler:circle-check" style="color:var(--hero-success);"></iconify-icon>', message: 'Sin tickets prioritarios abiertos. Buen trabajo.' });
+    renderEmpty(el, { icon: '<iconify-icon icon="tabler:circle-check" style="color:var(--hero-success);"></iconify-icon>', message: 'Sin tickets abiertos. Buen trabajo.' });
     return;
   }
   el.innerHTML = items.map(t => {

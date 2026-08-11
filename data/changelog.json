@@ -1,5 +1,17 @@
 [
   {
+    "id": "2026-08-11-it-console-home-todos-tickets",
+    "version": "v2.31.1",
+    "date": "2026-08-11",
+    "category": "style",
+    "scope": "it-console",
+    "audience": "admin",
+    "title": "IT Console · el Home ahora muestra todos los tickets abiertos, no solo los urgentes",
+    "items": [
+      "Antes la sección de tickets del Home mostraba solo los de prioridad Alta o Urgente. Ahora aparecen todos los abiertos, ordenados por prioridad (Urgente primero) y luego por antigüedad. La sección pasó de llamarse \"Tickets urgentes\" a \"Tickets abiertos\""
+    ]
+  },
+  {
     "id": "2026-08-11-soporte-adjuntos",
     "version": "v2.31.0",
     "date": "2026-08-11",
