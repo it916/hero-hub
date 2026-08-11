@@ -2611,6 +2611,30 @@ const PRIORIDAD_COLOR = {
   Urgente: { color: '#d64545', bg: 'rgba(214,69,69,0.12)'   },
 };
 
+// Descarga un adjunto (Fase 3). El endpoint /ticket/attachment/:key requiere
+// gate HMAC — un <a href> no puede llevarlo. Fetch + blob + open new tab.
+async function verAdjunto(key, filename) {
+  try {
+    const resp = await authFetch(WORKER_URL + '/ticket/attachment/' + encodeURIComponent(key));
+    if (!resp.ok) throw new Error('No se pudo obtener el adjunto (' + resp.status + ')');
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const w = window.open(url, '_blank', 'noopener,noreferrer');
+    if (!w) {
+      // Popup bloqueado — forzamos descarga con anchor invisible.
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename || 'adjunto';
+      a.click();
+    }
+    // Libera el objectURL después de un rato para que el navegador no acumule.
+    setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
+  } catch (err) {
+    showToast('Error abriendo adjunto: ' + err.message);
+    addLog('Error adjunto: ' + err.message, 'error');
+  }
+}
+
 // Impacto (Fase 4): color y label para la tarjeta Kanban. Los tickets viejos
 // no tienen `impacto` — el render lo omite si undefined.
 const IMPACTO_COLOR = {
@@ -2928,16 +2952,18 @@ function openTicketModal(id) {
         const row = document.createElement('div');
         row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:var(--hero-bg);border:1px solid var(--hero-border);border-radius:6px;';
         const name = document.createElement('span');
-        name.style.cssText = 'font-size:12px;color:var(--hero-text-body);';
+        name.style.cssText = 'font-size:12px;color:var(--hero-text-body);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
         name.textContent = a.filename || a.key || '(adjunto)';
-        const link = document.createElement('a');
-        link.href = WORKER_URL + '/ticket/attachment/' + encodeURIComponent(a.key || '');
-        link.textContent = 'Ver ↗';
-        link.target = '_blank';
-        link.rel = 'noopener';
-        link.style.cssText = 'font-size:11px;color:var(--hero-primary);text-decoration:none;font-weight:600;';
+        // Botón que hace fetch autenticado (el endpoint requiere gate HMAC —
+        // un <a href> plano no lleva Authorization). Abre el resultado en una
+        // pestaña nueva vía blob URL, se autoborra a los 60s.
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = 'Ver ↗';
+        btn.style.cssText = 'background:transparent;border:none;font-size:11px;color:var(--hero-primary);cursor:pointer;font-weight:600;flex-shrink:0;';
+        btn.addEventListener('click', function() { verAdjunto(a.key, a.filename); });
         row.appendChild(name);
-        row.appendChild(link);
+        row.appendChild(btn);
         adjList.appendChild(row);
       });
       adjBox.style.display = 'block';

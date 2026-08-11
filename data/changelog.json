@@ -1,5 +1,20 @@
 [
   {
+    "id": "2026-08-11-soporte-adjuntos",
+    "version": "v2.31.0",
+    "date": "2026-08-11",
+    "category": "feat",
+    "scope": "soporte",
+    "audience": "all",
+    "title": "Ahora puedes adjuntar capturas y PDFs al reportar un ticket",
+    "items": [
+      "En el formulario de soporte apareció un botón \"Adjuntar archivo\" — puedes agregar hasta 3 archivos por ticket (PNG, JPG o PDF, máximo 10 MB cada uno)",
+      "Los archivos se suben en cuanto los eliges. Ves el progreso en tiempo real y puedes quitarlos con un click antes de enviar el ticket",
+      "Los adjuntos llegan a IT junto con el ticket: en la vista de Tickets del IT Console aparece un ícono de clip cuando hay adjuntos, y al abrir el ticket se ven listados con un botón \"Ver\" que abre el archivo en una pestaña nueva",
+      "Ideal para reportar problemas visuales — una captura vale más que mil palabras de descripción"
+    ]
+  },
+  {
     "id": "2026-08-11-soporte-endurecido",
     "version": "v2.30.0",
     "date": "2026-08-11",
