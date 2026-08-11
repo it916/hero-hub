@@ -1,5 +1,20 @@
 [
   {
+    "id": "2026-08-11-solicitudes-gate-autorizacion",
+    "version": "v2.32.2",
+    "date": "2026-08-11",
+    "category": "fix",
+    "scope": "it-console",
+    "audience": "admin",
+    "title": "IT Console · Solicitudes ya no se pueden procesar sin autorización previa",
+    "items": [
+      "Antes: el botón \"Crear usuario\" del módulo Solicitudes aparecía incluso cuando la solicitud estaba en estado \"pendiente\" (ninguno de los 3 autorizadores había hecho click todavía). Si IT lo presionaba, la cuenta se creaba en Workspace saltándose el flujo de aprobación",
+      "Ahora: en solicitudes pendientes solo se ven los botones Reenviar y Rechazar. Los botones de crear cuenta / suspender / marcar procesada aparecen únicamente cuando la solicitud pasa a estado \"autorizada\" (al menos uno de los administradores hizo click en su link)",
+      "El aviso amarillo explícito recuerda a IT que la solicitud está esperando autorización de Jesús, Anny o Aurys",
+      "Defensa en profundidad: el backend también rechaza cualquier intento directo de pasar una solicitud a \"procesada\" si no está en estado \"autorizada\""
+    ]
+  },
+  {
     "id": "2026-08-11-inactivos-recovery-email",
     "version": "v2.32.1",
     "date": "2026-08-11",

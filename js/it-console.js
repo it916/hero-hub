@@ -3268,18 +3268,32 @@ function renderSolicitudes() {
       const reenviarBtn = isPending
         ? '<button class="btn btn-secondary" onclick="reenviarAutorizadores(\'' + s.id + '\',\'' + (isBaja ? 'baja' : 'alta') + '\',\'' + safeTitulo + '\')" style="font-size:12px;" title="Reenviar el email de autorización con links nuevos"><iconify-icon icon="tabler:mail-forward"></iconify-icon> Reenviar</button>'
         : '';
-      if (isBaja) {
+      const tipoRechazo = isBaja ? 'baja' : 'alta';
+      const btnRechazar = '<button class="btn btn-secondary" onclick="rechazarSolicitud(\'' + s.id + '\',\'' + safeSolEmail + '\',\'' + safeSolNombre + '\',\'' + safeTitulo + '\',\'' + tipoRechazo + '\')" style="font-size:12px;"><iconify-icon icon="tabler:x"></iconify-icon> Rechazar</button>';
+
+      if (isPending) {
+        // Solicitud aún NO autorizada. IT solo puede reenviar el email o rechazar.
+        // Los botones destructivos/creación (Crear usuario, Suspender, Marcar
+        // procesada) se ocultan hasta que al menos un autorizador haga click.
+        acciones = '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">'
+          + '<div style="flex:1;min-width:200px;background:rgba(232,163,23,0.08);border:1px solid rgba(232,163,23,0.3);border-radius:8px;padding:8px 12px;font-size:12px;color:#8b6b00;line-height:1.4;">'
+          +   '<iconify-icon icon="tabler:hourglass"></iconify-icon> Esperando autorización de <strong>al menos un administrador</strong> (Jesús, Anny o Aurys)'
+          + '</div>'
+          + reenviarBtn
+          + btnRechazar
+          + '</div>';
+      } else if (isBaja) {
+        // Autorizada: botones completos.
         acciones = '<div style="display:flex;gap:8px;flex-wrap:wrap;">'
           + '<button class="btn btn-primary" onclick="suspenderDesdeSolicitud(\'' + s.id + '\',\'' + safeCorreoEl + '\',\'' + safeTitulo + '\')" style="font-size:12px;flex:1;background:linear-gradient(135deg,#c0392b,#e67e22);"><iconify-icon icon="tabler:lock"></iconify-icon> Suspender cuenta</button>'
-          + reenviarBtn
-          + '<button class="btn btn-secondary" onclick="rechazarSolicitud(\'' + s.id + '\',\'' + safeSolEmail + '\',\'' + safeSolNombre + '\',\'' + safeTitulo + '\',\'baja\')" style="font-size:12px;"><iconify-icon icon="tabler:x"></iconify-icon> Rechazar</button>'
+          + btnRechazar
           + '<button class="btn btn-secondary" onclick="resolverSolicitud(\'' + s.id + '\',\'procesada\')" style="font-size:12px;"><iconify-icon icon="tabler:check"></iconify-icon> Marcar procesada</button>'
           + '</div>';
       } else {
+        // Autorizada: botones completos.
         acciones = '<div style="display:flex;gap:8px;flex-wrap:wrap;">'
           + '<button class="btn btn-primary" onclick="openSolModal(\'' + s.id + '\')" style="font-size:12px;flex:1;"><iconify-icon icon="tabler:user-plus"></iconify-icon> Crear usuario</button>'
-          + reenviarBtn
-          + '<button class="btn btn-secondary" onclick="rechazarSolicitud(\'' + s.id + '\',\'' + safeSolEmail + '\',\'' + safeSolNombre + '\',\'' + safeTitulo + '\',\'alta\')" style="font-size:12px;"><iconify-icon icon="tabler:x"></iconify-icon> Rechazar</button>'
+          + btnRechazar
           + '<button class="btn btn-secondary" onclick="resolverSolicitud(\'' + s.id + '\',\'procesada\')" style="font-size:12px;"><iconify-icon icon="tabler:check"></iconify-icon> Marcar procesada</button>'
           + '</div>';
       }
