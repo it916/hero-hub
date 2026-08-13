@@ -42,14 +42,16 @@ const STATUS_FOR_TYPE = {
 
 // ── Máquina de estados de transiciones válidas ──────────────────────
 // Dado el último evento del día actual, ¿qué tipos puede marcar el usuario?
-// Al cambiar de día se resetea a "sin registro" (Entrada + Ausencia).
+// Al cambiar de día se resetea a "sin registro" (solo Entrada).
+// NOTA: "Ausencia" NO forma parte del ciclo del día — es un evento
+// independiente que se reporta para cualquier fecha (hoy, ayer, mañana)
+// y no bloquea ni es bloqueado por el ciclo Entrada→Break→Salida.
 const TRANSITIONS = {
-  __none__:       new Set(["Entrada", "Ausencia"]),
+  __none__:       new Set(["Entrada"]),
   "Entrada":      new Set(["Salida", "Inicio Break"]),
   "Fin Break":    new Set(["Salida", "Inicio Break"]),
   "Inicio Break": new Set(["Fin Break"]),
   "Salida":       new Set([]),
-  "Ausencia":     new Set([]),
 };
 
 // Motivo por tipo bloqueado. Se muestra como title del botón y como toast si el click cuela.
@@ -58,7 +60,6 @@ const BLOCK_REASON = {
   "Salida":       "No puedes marcar Salida antes de la Entrada.",
   "Inicio Break": "Solo puedes iniciar break si estás trabajando.",
   "Fin Break":    "Solo puedes terminar break si estás en break.",
-  "Ausencia":     "No puedes reportar ausencia si ya marcaste asistencia hoy.",
 };
 
 // Estado en memoria — la fuente de verdad tras el primer snapshot de Firestore.
@@ -172,8 +173,15 @@ function refreshButtonsState() {
     _applyButtonState(btn, allowed, btn.dataset.attType);
   });
 
+  // El botón de Ausencia siempre está habilitado — se puede reportar
+  // ausencia para cualquier fecha (hoy, ayer, mañana), independiente
+  // del ciclo del día en curso.
   const btnAus = document.getElementById("btnAusencia");
-  if (btnAus) _applyButtonState(btnAus, allowed, "Ausencia");
+  if (btnAus) {
+    btnAus.disabled = false;
+    btnAus.classList.remove("is-blocked");
+    btnAus.removeAttribute("title");
+  }
 
   // Botón break proxy del HQCC — activo si Inicio Break O Fin Break están permitidos.
   const btnBreak = document.getElementById("hqcc-break");
@@ -265,13 +273,19 @@ async function recordAttendance(type, btn, extras = {}) {
   const user = auth.currentUser;
   if (!user) { setFeedback("Sesión expirada. Recarga la página.", "err"); return; }
 
-  // Validación de transición: si el tipo NO está permitido, no escribimos.
-  const allowed = computeAllowedTypes(currentState);
-  if (!allowed.has(type)) {
-    const reason = BLOCK_REASON[type] || "No disponible en este momento.";
-    if (typeof heroToast !== "undefined") heroToast.info(reason);
-    setFeedback(reason, "err");
-    return;
+  const isAusencia = type === "Ausencia";
+
+  // Validación de transición: solo aplica al ciclo del día (Entrada/Break/Salida).
+  // La Ausencia es evento independiente — puede reportarse en cualquier momento
+  // y para cualquier fecha, así que se salta la validación.
+  if (!isAusencia) {
+    const allowed = computeAllowedTypes(currentState);
+    if (!allowed.has(type)) {
+      const reason = BLOCK_REASON[type] || "No disponible en este momento.";
+      if (typeof heroToast !== "undefined") heroToast.info(reason);
+      setFeedback(reason, "err");
+      return;
+    }
   }
 
   btn.classList.add("is-loading");
@@ -287,12 +301,21 @@ async function recordAttendance(type, btn, extras = {}) {
       absenceDate: extras.absenceDate,
       reason: extras.reason,
     });
-    setFeedback(`✓ ${type} registrada a las ${formatTime(now)}`, "ok");
 
-    // Optimistic update: aplicamos el estado nuevo YA para que la UI reaccione
-    // sin esperar al round-trip del snapshot. El snapshot llegará después
-    // y confirmará este estado.
-    applyState({ type, timestamp: now.toISOString(), ...extras });
+    if (isAusencia) {
+      // La ausencia NO forma parte del ciclo del día — no tocamos currentState
+      // ni el status bar. Solo confirmamos con toast.
+      const dateLabel = extras.absenceDate || "";
+      const msg = dateLabel ? `Ausencia registrada para ${dateLabel}` : "Ausencia registrada";
+      setFeedback(`✓ ${msg}`, "ok");
+      if (typeof heroToast !== "undefined") heroToast.success(msg);
+    } else {
+      setFeedback(`✓ ${type} registrada a las ${formatTime(now)}`, "ok");
+      // Optimistic update: aplicamos el estado nuevo YA para que la UI reaccione
+      // sin esperar al round-trip del snapshot. El snapshot llegará después
+      // y confirmará este estado.
+      applyState({ type, timestamp: now.toISOString(), ...extras });
+    }
 
     // Persistimos aparte el día de la primera Entrada para que
     // checkDailyPopup pueda detectarla aunque después se marquen Break/Salida
@@ -558,7 +581,9 @@ let _subscribedUser = null;
 function startSubscription(user) {
   _subscribedUser = user;
   if (_unsubSnapshot) { _unsubSnapshot(); _unsubSnapshot = null; }
-  _unsubSnapshot = subscribeLastEvent({ email: user.email }, (evt, err) => {
+  // excludeTypes: la Ausencia no forma parte del ciclo diario Entrada→Break→Salida,
+  // así que se ignora al calcular el "último evento" que gobierna botones y status.
+  _unsubSnapshot = subscribeLastEvent({ email: user.email, excludeTypes: ["Ausencia"] }, (evt, err) => {
     if (err) {
       // Si Firestore falla, mantenemos el cache y liberamos la promesa
       // para que auth.js no quede colgado esperando.
@@ -587,7 +612,7 @@ function startSubscription(user) {
 async function reconcileFromFirestore(reason) {
   if (!_subscribedUser) return;
   try {
-    const evt = await fetchLastEvent({ email: _subscribedUser.email });
+    const evt = await fetchLastEvent({ email: _subscribedUser.email, excludeTypes: ["Ausencia"] });
     // Defensa crítica: si el fetch devuelve null pero SÍ teníamos estado en
     // cache, es casi seguro un error transitorio (query cancelada por race
     // con auth, cache vacío temporal, etc.). NO borramos el cache — el
@@ -639,15 +664,11 @@ function init() {
     btn.addEventListener("click", () => recordAttendance(type, btn));
   });
 
-  // Botón ausencia (abre modal)
+  // Botón ausencia (abre modal) — siempre habilitado; la ausencia se
+  // reporta para cualquier fecha, no depende del ciclo del día.
   const btnAusencia = document.getElementById("btnAusencia");
   if (btnAusencia) {
     btnAusencia.addEventListener("click", () => {
-      const allowed = computeAllowedTypes(currentState);
-      if (!allowed.has("Ausencia")) {
-        if (typeof heroToast !== "undefined") heroToast.info(BLOCK_REASON["Ausencia"]);
-        return;
-      }
       btnAusencia.disabled = true;
       openAbsenceModal(btnAusencia);
     });

@@ -1,5 +1,19 @@
 [
   {
+    "id": "2026-08-13-ausencia-siempre-disponible",
+    "version": "v2.32.4",
+    "date": "2026-08-13",
+    "category": "fix",
+    "scope": "asistencia",
+    "audience": "all",
+    "title": "Reportar ausencia ahora funciona en cualquier momento",
+    "items": [
+      "Antes: el botón \"Reportar ausencia\" quedaba bloqueado apenas marcabas Entrada, Break o Salida del día, aunque el modal ya permitía elegir cualquier fecha. Efecto colateral: si reportabas una ausencia futura, tu estado del día actual se sobreescribía a \"Ausencia reportada\" y quedabas sin poder marcar Salida ni Break",
+      "Ahora: el botón está siempre habilitado. Puedes reportar ausencias de hoy, de ayer o de días futuros (viaje, cita médica programada, etc.) sin que interfieran con tu ciclo de asistencia del día en curso",
+      "Internamente: la ausencia se trata como evento independiente — se registra en la base de datos con su fecha objetivo pero no toca el estado del ciclo diario Entrada→Break→Salida. La confirmación llega por toast con la fecha exacta reportada"
+    ]
+  },
+  {
     "id": "2026-08-11-asistencia-cross-device-ui",
     "version": "v2.32.3",
     "date": "2026-08-11",

@@ -123,16 +123,27 @@ function docToPlainEvent(data) {
 // Formato crudo del doc — no aplica docToPlainEvent porque los callers
 // (attendance.js) quieren el objeto original con Timestamp y tipos nativos.
 //   { id, type, timestamp: Date, email, name, absenceDate, reason }
-export async function fetchLastEvent({ email }) {
+//
+// Si `excludeTypes` es un array de tipos, esos eventos se ignoran (útil
+// para obtener el "último evento del ciclo diario" descartando Ausencias,
+// que son eventos independientes). En ese caso ampliamos el limit y
+// filtramos en cliente — evita agregar índices compuestos.
+export async function fetchLastEvent({ email, excludeTypes } = {}) {
   if (!email) throw new Error("email es obligatorio");
+  const hasExclude = Array.isArray(excludeTypes) && excludeTypes.length > 0;
   const q = query(
     collection(db, COLLECTION),
     where("email", "==", email),
     orderBy("timestamp", "desc"),
-    limit(1)
+    limit(hasExclude ? 20 : 1)
   );
   const snap = await getDocs(q);
   if (snap.empty) return null;
+  if (hasExclude) {
+    const skip = new Set(excludeTypes);
+    const first = snap.docs.find(d => !skip.has(d.data().type));
+    return first ? _rawEventFromDoc(first) : null;
+  }
   return _rawEventFromDoc(snap.docs[0]);
 }
 
@@ -140,18 +151,27 @@ export async function fetchLastEvent({ email }) {
 // cambia (marca nueva desde cualquier device), el callback recibe el
 // evento actualizado (o null si aún no existe).
 // Devuelve la función de unsubscribe.
-export function subscribeLastEvent({ email }, callback) {
+//
+// `excludeTypes` funciona igual que en fetchLastEvent.
+export function subscribeLastEvent({ email, excludeTypes }, callback) {
   if (!email) throw new Error("email es obligatorio");
+  const hasExclude = Array.isArray(excludeTypes) && excludeTypes.length > 0;
+  const skip = hasExclude ? new Set(excludeTypes) : null;
   const q = query(
     collection(db, COLLECTION),
     where("email", "==", email),
     orderBy("timestamp", "desc"),
-    limit(1)
+    limit(hasExclude ? 20 : 1)
   );
   return onSnapshot(
     q,
     (snap) => {
       if (snap.empty) { callback(null); return; }
+      if (skip) {
+        const first = snap.docs.find(d => !skip.has(d.data().type));
+        callback(first ? _rawEventFromDoc(first) : null);
+        return;
+      }
       callback(_rawEventFromDoc(snap.docs[0]));
     },
     (err) => {
