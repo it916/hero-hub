@@ -1,5 +1,19 @@
 [
   {
+    "id": "2026-08-14-crms-en-banner",
+    "version": "v2.33.0",
+    "date": "2026-08-14",
+    "category": "feat",
+    "scope": "dashboard",
+    "audience": "all",
+    "title": "Accesos directos a Hero CRM y Go High Level en el banner del dashboard",
+    "items": [
+      "Antes: el tercer tile del banner mostraba el \"Próximo meeting\" del calendario. En la práctica los meetings ya los ves directo en Calendar/Meet, así que ese espacio no aportaba mucho valor al llegar al Hub",
+      "Ahora: en ese mismo lugar hay dos botones grandes con accesos directos al Hero CRM (portal interno) y al Launchpad de Go High Level. Son las dos herramientas que se usan a diario para operar, y ahora están a un clic desde el dashboard",
+      "Bajo el capó: se eliminaron ~950 líneas de código muerto (widget de Google Calendar, Google Identity Services, estilos legacy). El Hub carga un poco más rápido y desaparecen los popups ocasionales pidiendo re-autorización del token de Calendar"
+    ]
+  },
+  {
     "id": "2026-08-13-ausencia-siempre-disponible",
     "version": "v2.32.4",
     "date": "2026-08-13",

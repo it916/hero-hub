@@ -24,9 +24,6 @@
 <script defer src="js/topbar-dropdown.js"></script>
 <script defer src="js/toast.js"></script>
 <script defer src="js/hero-confirm.js"></script>
-<!-- Google Identity Services · usado por calendar-widget.js para refresh silencioso del token de Google Calendar (sin popup recurrente) -->
-<script src="https://accounts.google.com/gsi/client" async defer></script>
-<script defer src="js/calendar-widget.js"></script>
 <script defer src="js/campaign-video.js"></script>
 
 <!-- Shoelace · component library (modal "Agregar acceso" del arsenal) -->
@@ -215,18 +212,27 @@
             </div>
           </div>
 
-          <!-- Próximo meeting — alimentado por js/calendar-widget.js -->
-          <div class="hqcc-tile" id="hqcc-meet-tile" data-state="loading">
-            <div class="hqcc-meet-head">
-              <div class="hqcc-tile-kicker"><i data-lucide="calendar-days"></i>Próximo meeting</div>
-              <span class="hqcc-badge" id="hqcc-meet-badge" hidden></span>
+          <!-- CRMs — accesos rápidos al portal interno y a Go High Level -->
+          <div class="hqcc-tile">
+            <div class="hqcc-tile-kicker"><i data-lucide="briefcase"></i>CRMs</div>
+            <div class="hqcc-crm-btns">
+              <a class="hqcc-crm-btn primary" href="https://heroinsuranceusa.com/login" target="_blank" rel="noopener">
+                <span class="hqcc-crm-ico"><i data-lucide="shield"></i></span>
+                <span class="hqcc-crm-body">
+                  <span class="hqcc-crm-name">Hero - CRM</span>
+                  <span class="hqcc-crm-sub"></span>
+                </span>
+                <i data-lucide="arrow-up-right"></i>
+              </a>
+              <a class="hqcc-crm-btn" href="https://app.gohighlevel.com/v2/location/rZNWZDaUxUb562tjkNTW/launchpad" target="_blank" rel="noopener">
+                <span class="hqcc-crm-ico"><i data-lucide="zap"></i></span>
+                <span class="hqcc-crm-body">
+                  <span class="hqcc-crm-name">Go High Level - CRM</span>
+                  <span class="hqcc-crm-sub"></span>
+                </span>
+                <i data-lucide="arrow-up-right"></i>
+              </a>
             </div>
-            <div class="hqcc-meet-time"><span class="h" id="hqcc-meet-time-h">—</span><span class="m" id="hqcc-meet-time-m"></span></div>
-            <div>
-              <div class="hqcc-meet-title" id="hqcc-meet-title">Cargando…</div>
-              <div class="hqcc-meet-next" id="hqcc-meet-next"></div>
-            </div>
-            <a class="hqcc-join" id="hqcc-meet-join" href="https://calendar.google.com" target="_blank" rel="noopener"><i data-lucide="video"></i><span>Unirme</span></a>
           </div>
 
         </div>
@@ -549,7 +555,7 @@
   </div>
 
   <footer class="hero-footer">
-    <span>HERO HUB · v2.32.4</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+    <span>HERO HUB · v2.33.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
   </footer>
 </div>
 
