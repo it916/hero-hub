@@ -1,5 +1,19 @@
 [
   {
+    "id": "2026-08-17-portales-permisos",
+    "version": "v2.33.1",
+    "date": "2026-08-17",
+    "category": "fix",
+    "scope": "portales",
+    "audience": "all",
+    "title": "Portales · cualquiera del equipo puede agregar o editar accesos; solo admin o IT puede eliminarlos",
+    "items": [
+      "Antes: al intentar agregar un acceso en \"Cuentas del Equipo\" desde una cuenta que no fuera it@, aparecía el error \"Missing or insufficient permissions\". Solo IT podía cargar credenciales, aunque el botón Agregar estaba visible para todos",
+      "Ahora: cualquier persona con cuenta @heroinsuranceusa.com puede agregar y editar accesos del equipo (Jesús, Anny, Aurys, y el resto). El botón Eliminar sigue reservado a admin o IT",
+      "Bajo el capó: se abrió el permiso de escritura en el documento shared/carriers-team a todo el dominio corporativo. El bloqueo del borrado se mantiene en la interfaz — los botones de eliminar solo aparecen para admin o IT"
+    ]
+  },
+  {
     "id": "2026-08-14-crms-en-banner",
     "version": "v2.33.0",
     "date": "2026-08-14",

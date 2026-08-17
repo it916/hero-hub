@@ -13,6 +13,7 @@ const ALLOWED_DOMAIN = "heroinsuranceusa.com";
 let teamData = { jesus: [], anny: [], hero: [] };
 let personalData = [];
 let isAdmin = false;
+let isAdminOrIT = false;
 let currentAccount = 'jesus';
 let currentZone = 'team';
 let teamFilter = '';
@@ -34,12 +35,13 @@ onAuthStateChanged(auth, async (user) => {
   // Esperar a que page-guard cargue el rol
   const ctx = await window.getPageContext();
   isAdmin = isAdminRole(ctx.userRole);
+  isAdminOrIT = isAdmin || (ctx.userRole && ctx.userRole.role === "it");
   const isAgente = ctx.userRole && ctx.userRole.role === "agente";
 
   document.getElementById("user-avatar").src = await getFreshGooglePhotoURL(user);
   // El botón "Agregar" del equipo se muestra siempre: cualquier usuario
-  // puede agregar o editar portales del team; solo el borrado queda
-  // restringido a admin (ver buildCardHTML).
+  // del dominio puede agregar o editar portales del team; el borrado
+  // queda restringido a admin o IT (ver buildCardHTML).
   // btn-admin ya fue manejado por page-guard.js
 
   // Para agentes: ocultar la pestaña "Cuentas del Equipo" y mostrar solo "Mis Carriers"
@@ -197,9 +199,9 @@ function renderPersonal() {
 }
 
 function buildCardHTML(p, scope, idx) {
-  // personal: el dueño puede todo. team: cualquiera puede editar; solo admin borra.
+  // personal: el dueño puede todo. team: cualquiera edita; solo admin o IT borra.
   const canEdit = true;
-  const canDelete = scope === 'personal' || isAdmin;
+  const canDelete = scope === 'personal' || isAdminOrIT;
   const showActions = canEdit || canDelete;
   return `
     <div class="carrier-card" data-scope="${scope}" data-idx="${idx}">
