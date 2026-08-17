@@ -1,5 +1,19 @@
 [
   {
+    "id": "2026-08-17-imgbb-cleanup",
+    "version": "v2.33.3",
+    "date": "2026-08-17",
+    "category": "fix",
+    "scope": "it-console",
+    "audience": "admin",
+    "title": "IT Console y Soporte cargan el logo desde el repo (fin de imgbb)",
+    "items": [
+      "Antes: el favicon del IT Console, el logo del sidebar interno y el logo del formulario de Soporte apuntaban a imgbb.com. Con el servicio caído se veían rotos: pestaña sin ícono, sidebar sin logo, header del formulario de Soporte sin marca",
+      "Ahora: el IT Console usa icons/favicon-hero.png para el favicon y el apple-touch-icon; el sidebar interno y el formulario de Soporte usan images/logo-shield-only.png. Todo sirve desde el repo, sin dependencia de imgbb",
+      "Se eliminó también el preconnect a i.ibb.co del IT Console (ya sin uso)"
+    ]
+  },
+  {
     "id": "2026-08-17-emails-logo-repo",
     "version": "v2.33.2",
     "date": "2026-08-17",
