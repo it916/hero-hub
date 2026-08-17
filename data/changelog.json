@@ -1,5 +1,18 @@
 [
   {
+    "id": "2026-08-17-emails-logo-repo",
+    "version": "v2.33.2",
+    "date": "2026-08-17",
+    "category": "fix",
+    "scope": "it-console",
+    "audience": "admin",
+    "title": "Emails del IT Console cargan el logo desde el repo (imgbb dado de baja)",
+    "items": [
+      "Antes: las plantillas de email del IT Console (bienvenida al Hub, onboarding de cuenta corporativa, suspensión, reactivación y aviso de inactividad) traían el logo desde imgbb.com. Ese servicio se dejó de usar hace tiempo y en algún momento las URLs empezaron a fallar, por lo que los correos salían con el logo roto",
+      "Ahora: las 5 plantillas apuntan a hub.heroinsuranceusa.com/images/logo-shield-only.png, alineadas al resto del sistema (una plantilla ya lo usaba desde antes). El logo se sirve directamente desde el repositorio del Hub, sin dependencias externas"
+    ]
+  },
+  {
     "id": "2026-08-17-portales-permisos",
     "version": "v2.33.1",
     "date": "2026-08-17",

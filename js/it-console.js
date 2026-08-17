@@ -947,7 +947,7 @@ function buildOnboardingEmail(nombre, email, password, tipo, lang) {
   lang = (lang === 'en') ? 'en' : 'es';
   var P    = '#06a3b6';
   var P2   = '#048395';
-  var LOGO = 'https://i.ibb.co/PvS31B1z/shield-low.png';
+  var LOGO = 'https://hub.heroinsuranceusa.com/images/logo-shield-only.png';
   var SOPORTE_URL = 'https://hub.heroinsuranceusa.com/soporte.html';
 
   // Textos del correo en español (es) e inglés (en). Cada idioma incluye sus 4 pasos de inicio de sesión.
@@ -1250,7 +1250,7 @@ function buildEmailReset(nombre, emailCorp, password) {
   + '<table cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#f0f4f8;"><tr><td style="padding:32px 16px;">'
   + '<table cellspacing="0" cellpadding="0" border="0" width="600" align="center" style="background:#fff;border-radius:16px;overflow:hidden;">'
   + '<tr><td style="background:linear-gradient(135deg,#06a3b6,#048395);padding:36px 40px;text-align:center;">'
-  + '<img src="https://i.ibb.co/Gr4mzLv/Nuevo-Logo-Cuadrado-compress.png" width="120" style="display:block;margin:0 auto 20px;"/>'
+  + '<img src="https://hub.heroinsuranceusa.com/images/logo-shield-only.png" width="120" style="display:block;margin:0 auto 20px;"/>'
   + '<h1 style="margin:0;font-size:24px;font-weight:900;color:#fff;">Restablecimiento de Contrasena</h1>'
   + '<p style="margin:8px 0 0;font-size:13px;color:rgba(255,255,255,0.75);">Se ha generado una nueva contrasena temporal.</p></td></tr>'
   + '<tr><td style="padding:36px 40px;">'
@@ -1295,7 +1295,7 @@ function buildEmailSuspension(nombre, emailCorp, fechaEliminacion, motivo) {
   + '<table cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#f0f4f8;"><tr><td style="padding:32px 16px;">'
   + '<table cellspacing="0" cellpadding="0" border="0" width="600" align="center" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(192,57,43,0.10);">'
   + '<tr><td style="background:linear-gradient(135deg,#c0392b,#a52917);padding:32px 40px;text-align:center;">'
-  + '<img src="https://i.ibb.co/Gr4mzLv/Nuevo-Logo-Cuadrado-compress.png" width="120" style="display:block;margin:0 auto 18px;"/>'
+  + '<img src="https://hub.heroinsuranceusa.com/images/logo-shield-only.png" width="120" style="display:block;margin:0 auto 18px;"/>'
   + '<div style="display:inline-block;background:rgba(255,255,255,0.2);color:#fff;font-weight:700;font-size:11px;letter-spacing:3px;padding:5px 14px;border-radius:20px;margin-bottom:10px;">CUENTA SUSPENDIDA</div>'
   + '<h1 style="margin:0;font-size:22px;font-weight:700;color:#fff;">Tu cuenta corporativa fue suspendida</h1>'
   + '</td></tr>'
@@ -1337,7 +1337,7 @@ function buildEmailReactivation(nombre, emailCorp) {
   + '<table cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#f0f4f8;"><tr><td style="padding:32px 16px;">'
   + '<table cellspacing="0" cellpadding="0" border="0" width="600" align="center" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(34,160,107,0.10);">'
   + '<tr><td style="background:linear-gradient(135deg,#22a06b,#0f8054);padding:32px 40px;text-align:center;">'
-  + '<img src="https://i.ibb.co/Gr4mzLv/Nuevo-Logo-Cuadrado-compress.png" width="120" style="display:block;margin:0 auto 18px;"/>'
+  + '<img src="https://hub.heroinsuranceusa.com/images/logo-shield-only.png" width="120" style="display:block;margin:0 auto 18px;"/>'
   + '<div style="display:inline-block;background:rgba(255,255,255,0.2);color:#fff;font-weight:700;font-size:11px;letter-spacing:3px;padding:5px 14px;border-radius:20px;margin-bottom:10px;">CUENTA REACTIVADA</div>'
   + '<h1 style="margin:0;font-size:22px;font-weight:700;color:#fff;">Tu cuenta ya está activa nuevamente</h1>'
   + '</td></tr>'
@@ -1375,7 +1375,7 @@ function buildEmailPreSuspension(nombre, emailCorp, fechaDeadline) {
   + '<table cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#f0f4f8;"><tr><td style="padding:32px 16px;">'
   + '<table cellspacing="0" cellpadding="0" border="0" width="600" align="center" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(232,163,23,0.10);">'
   + '<tr><td style="background:linear-gradient(135deg,' + ALERT + ',#c88a15);padding:32px 40px;text-align:center;">'
-  + '<img src="https://i.ibb.co/Gr4mzLv/Nuevo-Logo-Cuadrado-compress.png" width="120" alt="Hero" style="display:block;margin:0 auto 18px;"/>'
+  + '<img src="https://hub.heroinsuranceusa.com/images/logo-shield-only.png" width="120" alt="Hero" style="display:block;margin:0 auto 18px;"/>'
   + '<div style="display:inline-block;background:rgba(255,255,255,0.2);color:#fff;font-weight:700;font-size:11px;letter-spacing:3px;padding:5px 14px;border-radius:20px;margin-bottom:10px;">AVISO PREVIO</div>'
   + '<h1 style="margin:0;font-size:22px;font-weight:700;color:#fff;">Tu cuenta corporativa está en riesgo de suspensión</h1>'
   + '</td></tr>'
