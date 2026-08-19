@@ -67,6 +67,16 @@ async function showDashboard() {
   // (ej. tarjeta de Portales solo para "agente", celebraciones ocultas para "agente", etc.)
   document.body.classList.add(`role-${currentUserRole.role}`);
 
+  // Flag opt-out de asistencia (directiva, invitados, etc.). Cachear en
+  // localStorage para que otras páginas apliquen la clase sin flash.
+  if (currentUserRole.trackAttendance === false) {
+    document.body.classList.add("no-attendance");
+    try { localStorage.setItem("hero-user-no-attendance", "1"); } catch (_) {}
+  } else {
+    document.body.classList.remove("no-attendance");
+    try { localStorage.removeItem("hero-user-no-attendance"); } catch (_) {}
+  }
+
   // Persistir el rol para que el banner de changelog y el skip-loading
   // de las otras páginas puedan decidir sincrónicamente al cargar.
   try { localStorage.setItem("hero-user-role", currentUserRole.role); } catch (_) {}

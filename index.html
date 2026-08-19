@@ -31,7 +31,7 @@
 <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/shoelace-autoloader.js"></script>
 </head>
 <body>
-<script>try{var t=localStorage.getItem("hero-theme");if(t)document.body.dataset.theme=t;}catch(e){}</script>
+<script>try{var t=localStorage.getItem("hero-theme");if(t)document.body.dataset.theme=t;if(localStorage.getItem("hero-user-no-attendance"))document.body.classList.add("no-attendance");}catch(e){}</script>
 
 <noscript>
   <div style="position:fixed;inset:0;background:#062a33;color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font-family:system-ui,sans-serif;z-index:99999;">
@@ -194,7 +194,7 @@
           </a>
 
           <!-- Mi Asistencia -->
-          <div class="hqcc-tile">
+          <div class="hqcc-tile" id="attendance-tile">
             <div class="hqcc-tile-kicker"><i data-lucide="clock"></i>Mi Asistencia</div>
             <div class="hqcc-att-grid">
               <button type="button" class="hqcc-att-btn entrada att-btn att-entrada" data-att-type="Entrada"><i data-lucide="log-in"></i>Entrada</button>
@@ -555,7 +555,7 @@
   </div>
 
   <footer class="hero-footer">
-    <span>HERO HUB · v2.33.3</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+    <span>HERO HUB · v2.35.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
   </footer>
 </div>
 

@@ -7212,6 +7212,23 @@ body.role-agente .connector:has(+ #sec-mensajes) {
 
 
 /* ═══════════════════════════════════════════
+   OPT-OUT DE ASISTENCIA — body.no-attendance
+   ═══════════════════════════════════════════
+   Flag por usuario (users/{email}.access.trackAttendance === false).
+   Pensado para la directiva y perfiles que no fichan (invitados, contadores externos).
+   Oculta los controles de asistencia; el resto del Hub queda intacto.
+   La clase se pre-aplica desde localStorage en el <head> para evitar flash. */
+body.no-attendance #attendance-tile,
+body.no-attendance #mp-att-section,
+body.no-attendance #btnAusencia {
+  display: none !important;
+}
+/* El HQCC tiene 3 cols (Oficina · Asistencia · CRMs). Al ocultar la del medio
+   se reajusta a 2 cols para no dejar hueco. */
+body.no-attendance .hqcc-modules { grid-template-columns: 1fr 1fr; }
+
+
+/* ═══════════════════════════════════════════
    VISIBILIDAD — Tarjeta de Finanzas
    ═══════════════════════════════════════════
    Solo visible para roles "admin" y "finanzas".

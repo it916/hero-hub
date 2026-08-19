@@ -1,5 +1,36 @@
 [
   {
+    "id": "2026-08-19-it-console-dashboard-accesos-rapidos",
+    "version": "v2.35.0",
+    "date": "2026-08-19",
+    "category": "feat",
+    "scope": "it-console",
+    "audience": "admin",
+    "title": "Dashboard del IT Console: accesos rápidos y alertas condensadas",
+    "items": [
+      "Antes: el dashboard tenía 4 alertas del ciclo de cuentas como barras de ancho completo, apiladas una debajo de otra. Las cuatro arrancan ocultas, así que en un día tranquilo el dashboard se veía casi vacío; y en un día con tres alertas activas, la cola de tickets quedaba empujada fuera de pantalla",
+      "Ahora: las 4 alertas viven en una sola tira de chips de una línea, con el mismo color y el mismo clic que antes (llevan al filtro de Usuarios que corresponda). Cuando no hay ninguna pendiente, la tira muestra \"Sin cuentas por revisar\" en vez de quedarse vacía",
+      "Nueva fila de 5 accesos rápidos bajo el saludo: Conectar a un equipo, Registrar intervención, Editar dispositivo, Crear usuario y Reset de contraseña. Son las acciones que más se usan y que hasta ahora estaban a tres clics dentro de Soporte → Dispositivos",
+      "En esta primera entrega los cinco tiles navegan a las páginas que ya existen. En la siguiente, los cuatro primeros abrirán su propio modal para resolver la acción sin salir del dashboard",
+      "Bajo el capó: los chips conservan los mismos id que tenían las barras, así que la lógica que los muestra y oculta no cambió. Lo único nuevo en JS es _syncHomeAlertStrip(), que decide cuándo mostrar el mensaje de estado limpio"
+    ]
+  },
+  {
+    "id": "2026-08-18-directiva-opt-out-asistencia",
+    "version": "v2.34.0",
+    "date": "2026-08-18",
+    "category": "feat",
+    "scope": "asistencia",
+    "audience": "admin",
+    "title": "Opt-out de asistencia por usuario (para la directiva y perfiles que no fichan)",
+    "items": [
+      "Antes: el tile \"Mi Asistencia\" del dashboard y el botón \"Reportar ausencia\" de Mi Perfil aparecían para todos por igual, incluidos los directivos (CEO, COO, CFO) que no marcan entrada/salida ni breaks porque son los dueños",
+      "Ahora: hay un flag por usuario (users/{email}.access.trackAttendance) que, cuando se pone en false, oculta el tile de asistencia del banner, el botón de reportar ausencia y la sección \"Mi asistencia\" de Mi Perfil. El resto del Hub queda exactamente igual — sigue viendo todo lo que le corresponde por rol",
+      "El flag es ortogonal al rol: un admin puede fichar (como IT) o no fichar (como la directiva). Para activarlo hoy, IT edita el doc del usuario en Firestore y agrega access.trackAttendance: false. Default es true — nadie queda exento por accidente",
+      "Bajo el capó: la clase body.no-attendance se pre-aplica desde localStorage en el <head> antes de que auth resuelva, así no hay flash del tile al cargar. El banner reajusta el grid a 2 columnas cuando el tile del medio queda oculto"
+    ]
+  },
+  {
     "id": "2026-08-17-imgbb-cleanup",
     "version": "v2.33.3",
     "date": "2026-08-17",

@@ -104,7 +104,7 @@ export async function loadUserRole(email) {
   // Legacy: emails hardcodeados como admin siempre entran como admin
   if (LEGACY_ADMIN_EMAILS.includes(normalizedEmail)) {
     cachedEmail = normalizedEmail;
-    cachedRole = { role: "admin", definition: ROLES.admin };
+    cachedRole = { role: "admin", definition: ROLES.admin, trackAttendance: true };
     return cachedRole;
   }
 
@@ -126,11 +126,14 @@ export async function loadUserRole(email) {
     }
 
     const definition = ROLES[roleName];
+    // trackAttendance: opt-out por usuario. Default true — solo los docs con
+    // access.trackAttendance === false quedan exentos de fichar (directiva, etc.).
+    const trackAttendance = person.access?.trackAttendance !== false;
     if (!definition) {
       console.warn(`Rol desconocido "${roleName}" para ${email}. Usando fallback.`);
-      cachedRole = { role: FALLBACK_ROLE, definition: ROLES[FALLBACK_ROLE] };
+      cachedRole = { role: FALLBACK_ROLE, definition: ROLES[FALLBACK_ROLE], trackAttendance };
     } else {
-      cachedRole = { role: roleName, definition };
+      cachedRole = { role: roleName, definition, trackAttendance };
     }
 
     cachedEmail = normalizedEmail;
