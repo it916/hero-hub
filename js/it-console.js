@@ -1551,6 +1551,7 @@ async function _renderInactiveAgentsChips() {
       chipNever.style.display = 'none';
       chipA.style.display = 'none';
       chipB.style.display = 'none';
+      _syncHomeAlertStrip();
       return;
     }
     const [wsUsers, rolesMap] = await Promise.all([listWorkspaceUsers(), getHubUserRoles()]);
@@ -1593,9 +1594,24 @@ async function _renderInactiveAgentsChips() {
     } else {
       chipB.style.display = 'none';
     }
+    _syncHomeAlertStrip();
   } catch (e) {
     console.warn('[inactive-agents-chips] error:', e && e.message);
   }
+}
+
+// Muestra "Sin cuentas por revisar" cuando ninguno de los 4 chips del ciclo de
+// cuentas quedó visible. Los chips los muestra/oculta _renderPendingDeletionsChip
+// y _renderInactiveAgentsChips; esta solo mira el resultado y ajusta el mensaje.
+function _syncHomeAlertStrip() {
+  var ids = ['home-alert-eliminaciones', 'home-alert-never-login',
+             'home-alert-inactive-noticeless', 'home-alert-notice-expired'];
+  var visibles = ids.filter(function(id) {
+    var el = document.getElementById(id);
+    return el && el.style.display && el.style.display !== 'none';
+  }).length;
+  var ok = document.getElementById('home-alert-ok');
+  if (ok) ok.style.display = visibles ? 'none' : 'flex';
 }
 
 // Salta a Usuarios con el pill Actividad pre-configurado (para onclick del chip).
@@ -2559,6 +2575,7 @@ async function _renderPendingDeletionsChip() {
     });
     if (!pending.length) {
       alert.style.display = 'none';
+      _syncHomeAlertStrip();
       return;
     }
     document.getElementById('home-alert-count').textContent = pending.length;
@@ -2567,6 +2584,7 @@ async function _renderPendingDeletionsChip() {
     document.getElementById('home-alert-plural2').textContent = plural;
     document.getElementById('home-alert-plural3').textContent = pending.length === 1 ? '' : 'n';
     alert.style.display = 'flex';
+    _syncHomeAlertStrip();
   } catch (e) {
     console.warn('[pending-deletions] error:', e && e.message);
   }

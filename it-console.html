@@ -666,6 +666,77 @@ nav { padding: 12px; flex: 1; }
 .home-col .action-card { cursor: pointer; }
 .home-col .action-card:hover { border-color: rgba(6,163,182,0.4); }
 
+/* ── Tira condensada de alertas del ciclo de cuentas ─────── */
+/* Reemplaza las 4 barras full-width apiladas. Los ids de cada chip y de sus
+   spans de conteo/plural son los mismos que usaba el markup anterior, para
+   que la lógica de it-console.js siga funcionando sin cambios. */
+.home-alert-strip {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  background: var(--hero-bg-card);
+  border: 1px solid var(--hero-border-card);
+  border-radius: var(--hero-radius-card);
+  padding: 10px 14px;
+  margin-bottom: 20px;
+}
+.home-alert-strip-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.2px; color: var(--hero-text-muted); margin-right: 4px;
+}
+.home-alert-chip {
+  display: none; align-items: center; gap: 7px;
+  padding: 5px 11px 5px 8px; border-radius: var(--hero-radius-pill);
+  font-size: 11.5px; font-weight: 600; cursor: pointer;
+  transition: filter 0.15s;
+}
+.home-alert-chip:hover { filter: brightness(0.96); }
+.home-alert-chip-n { font-family: var(--mono); font-weight: 700; font-size: 12px; }
+.home-alert-chip.amber  { background: rgba(232,163,23,0.12); border: 1px solid rgba(232,163,23,0.35); color: #b08a00; }
+.home-alert-chip.red    { background: rgba(214,69,69,0.12);  border: 1px solid rgba(214,69,69,0.35);  color: #9d2f2f; }
+.home-alert-chip.purple { background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.35); color: #5b21b6; }
+[data-theme="dark"] .home-alert-chip.amber  { color: #e8a317; }
+[data-theme="dark"] .home-alert-chip.red    { color: #f08585; }
+[data-theme="dark"] .home-alert-chip.purple { color: #b9a0f5; }
+.home-alert-ok {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--hero-success); font-weight: 600;
+}
+
+/* ── Accesos rápidos del dashboard ───────────────────────── */
+.home-quick-label {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.2px; color: var(--hero-primary); margin-bottom: 10px;
+}
+.home-quick {
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px; margin-bottom: 20px;
+}
+@media (max-width: 900px) { .home-quick { grid-template-columns: repeat(2, 1fr); } }
+.home-quick-tile {
+  background: var(--hero-bg-card);
+  border: 1px solid var(--hero-border-card);
+  border-radius: var(--hero-radius-card);
+  padding: 14px 10px;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 8px; text-align: center; cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+  font-family: var(--hero-font);
+}
+.home-quick-tile:hover {
+  border-color: rgba(6,163,182,0.35);
+  box-shadow: 0 4px 16px rgba(6,163,182,0.10);
+  transform: translateY(-1px);
+}
+.home-quick-tile.lead { border-color: rgba(6,163,182,0.35); box-shadow: 0 4px 16px rgba(6,163,182,0.10); }
+.home-quick-ico {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: var(--hero-primary-light); color: var(--hero-primary-text);
+  display: flex; align-items: center; justify-content: center; font-size: 19px;
+}
+.home-quick-tile.lead .home-quick-ico { background: var(--hero-primary-hover); color: #fff; }
+.home-quick-name { font-size: 11.5px; font-weight: 700; color: var(--hero-text-primary); line-height: 1.25; }
+.home-quick-sub  { font-size: 10px; color: var(--hero-text-muted); line-height: 1.3; }
+
 .home-status {
   background: var(--hero-bg-card);
   border: 1px solid var(--hero-border-card);
@@ -1341,60 +1412,81 @@ html { scroll-behavior: smooth; }
         <button class="btn btn-secondary" onclick="loadHome()" style="font-size:11px;padding:6px 12px;">↺ Actualizar</button>
       </div>
 
-      <!-- Alerta: cuentas suspendidas próximas a eliminar (>=15 días desde la suspensión) -->
-      <div id="home-alert-eliminaciones" style="display:none;background:linear-gradient(135deg,rgba(232,163,23,0.10),rgba(232,163,23,0.05));border:1px solid rgba(232,163,23,0.35);border-left:4px solid #e8a317;border-radius:10px;padding:14px 18px;margin-bottom:16px;align-items:center;gap:14px;cursor:pointer;" onclick="jumpToInactivityFilter('suspendidos-vencidos')" title="Ver cuentas suspendidas con plazo cumplido, listas para eliminar">
-        <div style="width:38px;height:38px;flex-shrink:0;background:rgba(232,163,23,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#e8a317;font-size:20px;">
-          <iconify-icon icon="tabler:alert-triangle"></iconify-icon>
-        </div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:13px;font-weight:700;color:#b08a00;line-height:1.2;">
-            <span id="home-alert-count">0</span> cuenta<span id="home-alert-plural">s</span> suspendida<span id="home-alert-plural2">s</span> cumple<span id="home-alert-plural3">n</span> 15 días
-          </div>
-          <div style="font-size:11px;color:var(--hero-text-muted);margin-top:3px;">Se prometió eliminación permanente si el usuario no solicitaba reactivación. Revisa y elimina manualmente cuando corresponda.</div>
-        </div>
-        <iconify-icon icon="tabler:chevron-right" style="color:var(--hero-text-muted);flex-shrink:0;"></iconify-icon>
+      <!-- Ciclo de cuentas — tira condensada.
+           Antes eran 4 barras full-width apiladas que en un día malo empujaban
+           la cola de trabajo fuera de pantalla, y en un día bueno dejaban el
+           dashboard vacío. Mismos ids que antes: la lógica de it-console.js
+           (_renderPendingDeletionsChip / _renderInactiveAgentsChips) los sigue
+           mostrando y ocultando igual. -->
+      <div class="home-alert-strip" id="home-alert-strip">
+        <span class="home-alert-strip-label">Ciclo de cuentas</span>
+
+        <span class="home-alert-chip amber" id="home-alert-eliminaciones"
+              onclick="jumpToInactivityFilter('suspendidos-vencidos')"
+              title="Ver cuentas suspendidas con plazo cumplido, listas para eliminar">
+          <span class="home-alert-chip-n" id="home-alert-count">0</span>
+          cuenta<span id="home-alert-plural">s</span>
+          suspendida<span id="home-alert-plural2">s</span>
+          cumple<span id="home-alert-plural3">n</span> 15 días
+        </span>
+
+        <span class="home-alert-chip purple" id="home-alert-never-login"
+              onclick="jumpToInactivityFilter('nunca-login')"
+              title="Ver agentes que nunca han iniciado sesión desde que se creó su cuenta">
+          <span class="home-alert-chip-n" id="home-alert-never-count">0</span>
+          agente<span id="home-alert-never-plural">s</span>
+          nunca ha<span id="home-alert-never-plural2">n</span> iniciado sesión
+        </span>
+
+        <span class="home-alert-chip amber" id="home-alert-inactive-noticeless"
+              onclick="jumpToInactivityFilter('inactivos-3m')"
+              title="Ver agentes inactivos y decidir a quiénes enviar aviso previo">
+          <span class="home-alert-chip-n" id="home-alert-inactive-count">0</span>
+          agente<span id="home-alert-inactive-plural">s</span> sin login ≥3 meses
+        </span>
+
+        <span class="home-alert-chip red" id="home-alert-notice-expired"
+              onclick="jumpToInactivityFilter('aviso-vencido')"
+              title="Ver agentes con aviso previo vencido, listos para suspender">
+          <span class="home-alert-chip-n" id="home-alert-expired-count">0</span>
+          agente<span id="home-alert-expired-plural">s</span>
+          con aviso vencido<span id="home-alert-expired-plural2">s</span>
+        </span>
+
+        <span class="home-alert-ok" id="home-alert-ok">
+          <iconify-icon icon="tabler:circle-check"></iconify-icon> Sin cuentas por revisar
+        </span>
       </div>
 
-      <!-- Alerta previa: agentes que NUNCA han iniciado sesión -->
-      <div id="home-alert-never-login" style="display:none;background:linear-gradient(135deg,rgba(124,58,237,0.10),rgba(124,58,237,0.05));border:1px solid rgba(124,58,237,0.35);border-left:4px solid #7c3aed;border-radius:10px;padding:14px 18px;margin-bottom:16px;align-items:center;gap:14px;cursor:pointer;" onclick="jumpToInactivityFilter('nunca-login')" title="Ver agentes que nunca han iniciado sesión desde que se creó su cuenta">
-        <div style="width:38px;height:38px;flex-shrink:0;background:rgba(124,58,237,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#7c3aed;font-size:20px;">
-          <iconify-icon icon="tabler:user-question"></iconify-icon>
-        </div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:13px;font-weight:700;color:#5b21b6;line-height:1.2;">
-            <span id="home-alert-never-count">0</span> agente<span id="home-alert-never-plural">s</span> nunca ha<span id="home-alert-never-plural2">n</span> iniciado sesión
-          </div>
-          <div style="font-size:11px;color:var(--hero-text-muted);margin-top:3px;">Cuentas creadas pero jamás usadas. Considera avisar al correo personal registrado o eliminar si ya no aplican.</div>
-        </div>
-        <iconify-icon icon="tabler:chevron-right" style="color:var(--hero-text-muted);flex-shrink:0;"></iconify-icon>
-      </div>
-
-      <!-- Alerta A: agentes con ≥3m sin login que aún no recibieron aviso previo -->
-      <div id="home-alert-inactive-noticeless" style="display:none;background:linear-gradient(135deg,rgba(232,163,23,0.10),rgba(232,163,23,0.05));border:1px solid rgba(232,163,23,0.35);border-left:4px solid #e8a317;border-radius:10px;padding:14px 18px;margin-bottom:16px;align-items:center;gap:14px;cursor:pointer;" onclick="jumpToInactivityFilter('inactivos-3m')" title="Ver agentes inactivos y decidir a quiénes enviar aviso previo">
-        <div style="width:38px;height:38px;flex-shrink:0;background:rgba(232,163,23,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#e8a317;font-size:20px;">
-          <iconify-icon icon="tabler:user-off"></iconify-icon>
-        </div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:13px;font-weight:700;color:#b08a00;line-height:1.2;">
-            <span id="home-alert-inactive-count">0</span> agente<span id="home-alert-inactive-plural">s</span> sin login hace ≥3 meses
-          </div>
-          <div style="font-size:11px;color:var(--hero-text-muted);margin-top:3px;">Revisa el listado y envía aviso previo al correo personal registrado. Se les dará 15 días antes de suspender.</div>
-        </div>
-        <iconify-icon icon="tabler:chevron-right" style="color:var(--hero-text-muted);flex-shrink:0;"></iconify-icon>
-      </div>
-
-      <!-- Alerta B: agentes cuyo aviso previo ya cumplió 15 días y están listos para suspender -->
-      <div id="home-alert-notice-expired" style="display:none;background:linear-gradient(135deg,rgba(214,69,69,0.10),rgba(214,69,69,0.05));border:1px solid rgba(214,69,69,0.35);border-left:4px solid #d64545;border-radius:10px;padding:14px 18px;margin-bottom:16px;align-items:center;gap:14px;cursor:pointer;" onclick="jumpToInactivityFilter('aviso-vencido')" title="Ver agentes con aviso previo vencido, listos para suspender">
-        <div style="width:38px;height:38px;flex-shrink:0;background:rgba(214,69,69,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#d64545;font-size:20px;">
-          <iconify-icon icon="tabler:bell-exclamation"></iconify-icon>
-        </div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:13px;font-weight:700;color:#9d2f2f;line-height:1.2;">
-            <span id="home-alert-expired-count">0</span> agente<span id="home-alert-expired-plural">s</span> con aviso vencido, listo<span id="home-alert-expired-plural2">s</span> para suspender
-          </div>
-          <div style="font-size:11px;color:var(--hero-text-muted);margin-top:3px;">Pasaron 15 días desde el aviso previo sin que el usuario volviera a loguearse. Procede a suspender + notificar.</div>
-        </div>
-        <iconify-icon icon="tabler:chevron-right" style="color:var(--hero-text-muted);flex-shrink:0;"></iconify-icon>
+      <!-- Accesos rápidos — Fase 1: navegan a las páginas que ya existen.
+           En Fase 2 los cuatro primeros abren su modal sin salir del dashboard. -->
+      <div class="home-quick-label">Acciones rápidas</div>
+      <div class="home-quick">
+        <button class="home-quick-tile lead" onclick="showPage('dispositivos')" title="Iniciar una sesión remota con Zoho Assist">
+          <span class="home-quick-ico"><iconify-icon icon="tabler:screen-share"></iconify-icon></span>
+          <span class="home-quick-name">Conectar a un equipo</span>
+          <span class="home-quick-sub">Zoho Assist</span>
+        </button>
+        <button class="home-quick-tile" onclick="showPage('dispositivos')" title="Registrar una intervención sobre un equipo">
+          <span class="home-quick-ico"><iconify-icon icon="tabler:clipboard-plus"></iconify-icon></span>
+          <span class="home-quick-name">Registrar intervención</span>
+          <span class="home-quick-sub">Instalación · reparación</span>
+        </button>
+        <button class="home-quick-tile" onclick="showPage('dispositivos')" title="Editar asignación, sistema operativo y notas IT de un equipo">
+          <span class="home-quick-ico"><iconify-icon icon="tabler:device-desktop-cog"></iconify-icon></span>
+          <span class="home-quick-name">Editar dispositivo</span>
+          <span class="home-quick-sub">Asignación · notas IT</span>
+        </button>
+        <button class="home-quick-tile" onclick="showPage('crear-usuario')" title="Crear una cuenta en Google Workspace">
+          <span class="home-quick-ico"><iconify-icon icon="tabler:user-plus"></iconify-icon></span>
+          <span class="home-quick-name">Crear usuario</span>
+          <span class="home-quick-sub">Abre la página completa</span>
+        </button>
+        <button class="home-quick-tile" onclick="showPage('reset')" title="Resetear la contraseña de un usuario en Workspace">
+          <span class="home-quick-ico"><iconify-icon icon="tabler:key"></iconify-icon></span>
+          <span class="home-quick-name">Reset de contraseña</span>
+          <span class="home-quick-sub">Workspace + aviso</span>
+        </button>
       </div>
 
       <!-- Cola priorizada — 2 columnas -->
