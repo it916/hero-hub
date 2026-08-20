@@ -1,0 +1,268 @@
+rules_version = '2';
+
+// ═══════════════════════════════════════════════════════════════════════
+// Hero Hub · Reglas de seguridad de Firestore
+// ═══════════════════════════════════════════════════════════════════════
+// Este archivo es la fuente de verdad versionada de las reglas, PERO no se
+// activa solo: push a main publica el sitio (GitHub Pages), no las reglas.
+// Para aplicarlas:
+//
+//     firebase deploy --only firestore:rules
+//
+// ── Semántica que hay que tener presente ──────────────────────────────
+// Cuando varios bloques `match` alcanzan el mismo documento, Firestore
+// concede el acceso si CUALQUIERA de ellos lo permite (OR). Un bloque
+// genérico nunca "restringe" a uno específico: solo suma permisos. Por eso
+// aquí cada ruta se declara UNA sola vez y no hay comodín final sobre
+// /shared: lo que no está declarado queda denegado por omisión.
+//
+// ── Fuente de verdad de los roles ─────────────────────────────────────
+// users/{email}.access.role  →  'admin' | 'interno' | 'finanzas' | 'it' | 'agente'
+// shared/roles quedó deprecado en v2.23.4 y ya no autoriza nada.
+// ═══════════════════════════════════════════════════════════════════════
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ═══════════════════════════════════════════════════════════════════
+    // HELPERS
+    // ═══════════════════════════════════════════════════════════════════
+
+    function autenticado() {
+      return request.auth != null && request.auth.token.email != null;
+    }
+
+    function esDelDominio() {
+      return autenticado()
+        && request.auth.token.email.matches('.*@heroinsuranceusa[.]com$');
+    }
+
+    // Cuenta raíz de IT. Sirve de recuperación si el catálogo de roles
+    // queda mal: nunca depende de leer otro documento.
+    function esIT() {
+      return autenticado()
+        && request.auth.token.email == 'it@heroinsuranceusa.com';
+    }
+
+    // Rol del usuario que hace la petición.
+    // Devuelve '' si el doc no existe o no tiene access.role: un get() a un
+    // documento inexistente lanzaría error de evaluación y denegaría el
+    // acceso incluso a quien sí lo tiene. El .get(clave, default) evita eso.
+    function rolActual() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.token.email))
+        ? get(/databases/$(database)/documents/users/$(request.auth.token.email))
+            .data.get('access', {}).get('role', '')
+        : '';
+    }
+
+    // Ojo: cada llamada a estos helpers cuesta una lectura facturada.
+    function tieneRol(roles) {
+      return esDelDominio() && (esIT() || rolActual() in roles);
+    }
+    function esAdmin()    { return tieneRol(['admin']); }
+    function esAdminOIT() { return tieneRol(['admin', 'it']); }
+
+
+    // ═══════════════════════════════════════════════════════════════════
+    // USUARIOS — users/{email}
+    // ═══════════════════════════════════════════════════════════════════
+    // Es el documento más sensible del Hub: access.role decide qué ve y qué
+    // puede hacer cada persona en todo el frontend. Por eso el dueño puede
+    // editar sus preferencias, pero NUNCA la clave 'access'.
+    //
+    // Campos auto-editables (verificados uno por uno contra el código):
+    //   display, prefs               → mi-perfil / panel de usuarios
+    //   theme                        → user-menu.js, finanzas.js
+    //   carriers                     → portales.js (carriers personales)
+    //   arsenal                      → widgets.js (accesos del dashboard)
+    //   lastChangelogSeenId          → changelog.js, changelog-banner.js
+    //   birthdayCardSeenDate         → birthday-card.js
+    //   birthdayInvites              → birthday-invite.js
+
+    match /users/{email} {
+      allow read: if esDelDominio();
+
+      allow create, delete: if esAdmin();
+
+      allow update: if esAdmin()
+        || (
+          request.auth.token.email == email
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+               'display', 'prefs', 'theme', 'carriers', 'arsenal',
+               'lastChangelogSeenId', 'birthdayCardSeenDate', 'birthdayInvites'
+             ])
+        );
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════════
+    // EQUIPO INTERNO DE IT — it-team/{email}
+    // ═══════════════════════════════════════════════════════════════════
+    // Notas de IT sobre cada persona. El rol se compara en minúscula ('it'),
+    // que es la clave real del catálogo de ROLES: antes decía 'IT' y la
+    // condición no se cumplía nunca.
+
+    match /it-team/{email} {
+      allow read, write: if esAdminOIT();
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════════
+    // DOCUMENTOS COMPARTIDOS — /shared/*
+    // ═══════════════════════════════════════════════════════════════════
+    // Cada documento se declara explícitamente. NO hay regla comodín al
+    // final: antes existía una que concedía lectura a todo el dominio y,
+    // por el OR de Firestore, dejaba shared/config (con el token de GitHub)
+    // legible para cualquier empleado.
+
+    // Empleado del mes — lo edita el panel de admin.
+    match /shared/spotlight {
+      allow read: if esDelDominio();
+      allow write: if esAdmin();
+    }
+
+    // Frases del día. Escritura abierta al dominio (comportamiento actual:
+    // cualquiera puede aportar una frase desde el Hub).
+    match /shared/messages {
+      allow read, write: if esDelDominio();
+    }
+
+    // Lista legacy del equipo. Aún la leen widgets.js y auth.js para los
+    // cumpleaños; se borrará cuando termine la Fase 1.5 del refactor.
+    match /shared/team {
+      allow read: if esDelDominio();
+      allow write: if esAdmin();
+    }
+
+    // Carriers compartidos del equipo. Cualquiera del dominio agrega o
+    // edita; el borrado se controla en la UI (portales.js), no aquí.
+    match /shared/carriers-team {
+      allow read, write: if esDelDominio();
+    }
+
+    match /shared/directorio {
+      allow read, write: if esDelDominio();
+    }
+
+    match /shared/guias {
+      allow read, write: if esDelDominio();
+    }
+
+    // Agencias: hoy se leen del Google Sheet, el doc queda como respaldo.
+    match /shared/agencias {
+      allow read: if esDelDominio();
+      allow write: if esAdmin();
+    }
+
+    // ⚠ Contiene githubToken (token con permiso de escritura al repo, y el
+    // repo es deploy a producción). Solo la cuenta raíz de IT lo toca.
+    match /shared/config {
+      allow read, write: if esIT();
+    }
+
+    // Permisos por rol editables desde admin.html → tab Permisos.
+    // Lectura para todo el dominio porque roles.js lo consulta al arrancar.
+    // Escritura solo admin: es la llave de la visibilidad de todo el Hub.
+    match /shared/rolePermissions {
+      allow read: if esDelDominio();
+      allow write: if esAdmin();
+    }
+
+    // Correo personal + estado de suspensión de las cuentas de Workspace.
+    // Es información personal de empleados: se restringe a quien opera la
+    // IT Console, no a todo el dominio como estaba antes.
+    match /shared/workspaceUsers/byEmail/{email} {
+      allow read, write: if esAdminOIT();
+    }
+
+    // Catálogo de roles deprecado (v2.23.4). Se conserva solo por historial
+    // y ya no autoriza nada. Puede borrarse una vez confirmado que ninguna
+    // regla ni módulo lo consulta.
+    match /shared/roles {
+      allow read: if esDelDominio();
+      allow write: if false;
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════════
+    // MÉTRICAS Y AUDITORÍA
+    // ═══════════════════════════════════════════════════════════════════
+
+    match /events/{eventId} {
+      allow create: if esDelDominio()
+        && request.resource.data.email == request.auth.token.email;
+      allow read: if esAdminOIT();
+      allow delete: if esAdmin();
+      allow update: if false;
+    }
+
+    // Cada quien puede leer su propia actividad (la sección "Actividad
+    // reciente" de mi-perfil.html consulta con where('actor','==',su email);
+    // con la regla anterior, restringida a it@, fallaba para todos los demás).
+    match /audit-log/{eventId} {
+      allow create: if esDelDominio()
+        && request.resource.data.actor == request.auth.token.email;
+      allow read: if esAdminOIT()
+        || (esDelDominio() && resource.data.actor == request.auth.token.email);
+      allow delete: if esAdmin();
+      allow update: if false;
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════════
+    // TARJETAS DE CUMPLEAÑOS
+    // ═══════════════════════════════════════════════════════════════════
+
+    match /birthdays/{cardId} {
+      allow read, write: if esDelDominio();
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════════
+    // FINANZAS — módulo en retirada
+    // ═══════════════════════════════════════════════════════════════════
+    // La autorización se leía de shared/roles, deprecado desde v2.23.4: las
+    // dos fuentes llevaban meses divergiendo. Ahora sale de users/.
+    //
+    // El rol 'finanzas' se retiró el 2026-08-20 y solo queda 'admin', para
+    // poder exportar los datos antes de apagar el módulo.
+    //
+    // ⚠ PENDIENTE: cuando el módulo se apague de verdad, estas seis
+    // colecciones no deben quedarse vivas y sin dueño. Exportar los datos
+    // (233 ingresos + brokers + reportes de pago) y sustituir estas reglas
+    // por `allow read, write: if false;`.
+
+    match /finanzas-comisiones-tabla/{doc} { allow read, write: if esAdmin(); }
+    match /finanzas-brokers/{doc}          { allow read, write: if esAdmin(); }
+    match /finanzas-ingresos/{doc}         { allow read, write: if esAdmin(); }
+    match /finanzas-config/{doc}           { allow read, write: if esAdmin(); }
+    match /finanzas-egresos/{doc}          { allow read, write: if esAdmin(); }
+    match /finanzas-reportes-pago/{doc}    { allow read, write: if esAdmin(); }
+
+
+    // ═══════════════════════════════════════════════════════════════════
+    // ASISTENCIA
+    // ═══════════════════════════════════════════════════════════════════
+    // Cada quien lee lo suyo; admin e IT leen todo (lo necesita el dashboard
+    // de asistencia de admin.html, que consulta sin filtro de email).
+    // Antes cualquier empleado podía consultar los horarios de cualquier otro.
+    //
+    // Nota sobre queries: la condición del dueño obliga a que la consulta
+    // incluya where('email','==',<su email>). attendance-store.js ya lo hace
+    // en las tres rutas que usa un usuario común.
+
+    match /attendance/{docId} {
+      allow read: if esAdminOIT()
+        || (esDelDominio() && resource.data.email == request.auth.token.email);
+
+      allow create: if esDelDominio()
+        && (request.resource.data.email == request.auth.token.email || esAdminOIT())
+        && request.resource.data.type is string
+        && request.resource.data.timestamp is timestamp;
+
+      allow update: if esAdminOIT();
+      allow delete: if false;
+    }
+
+  }
+}
