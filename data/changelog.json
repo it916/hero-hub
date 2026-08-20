@@ -1,5 +1,54 @@
 [
   {
+    "id": "2026-08-20-retiro-rol-finanzas",
+    "version": "v2.36.0",
+    "date": "2026-08-20",
+    "category": "refactor",
+    "scope": "roles",
+    "audience": "admin",
+    "title": "Se retira el rol Finanzas al descontinuarse el módulo",
+    "items": [
+      "Antes: el catálogo tenía 5 roles y \"finanzas\" existía solo para dar acceso a finanzas.html y su manual. El módulo quedó sin uso real",
+      "Ahora: quedan 4 roles — admin, interno, it y agente. Los dos titulares del rol (financesupport@ y samortiz@) pasaron a \"interno\" desde el panel de Usuarios",
+      "Las páginas finanzas y finanzas-manual siguen accesibles para admin, que aún necesita exportar los datos antes de apagar las colecciones",
+      "Bajo el capó: se agregó el alias finanzas → interno junto a los de directivo y rrhh. Sin ese alias, cualquier doc que aún dijera \"finanzas\" caería en el rol de respaldo, que es \"agente\", y esa persona perdería medio Hub",
+      "Pendiente: cuando el módulo se apague de verdad, las seis colecciones finanzas-* no pueden quedarse vivas y sin dueño. Hay que exportar los datos y cerrarlas con allow read, write: if false"
+    ]
+  },
+  {
+    "id": "2026-08-20-firestore-rules-versionadas",
+    "version": "v2.36.0",
+    "date": "2026-08-20",
+    "category": "fix",
+    "scope": "seguridad",
+    "audience": "admin",
+    "title": "Reglas de Firestore versionadas en el repo y dos agujeros cerrados",
+    "items": [
+      "Antes: las reglas vivían solo en la consola de Firebase, sin historial en el repo ni forma de revisarlas en un diff. Tenían tres bloques match duplicados, y en Firestore los bloques que alcanzan el mismo documento se combinan con OR: el segundo nunca corrige al primero, solo suma permisos",
+      "Agujero 1 (cerrado): un segundo bloque de users/{email} concedía write completo sobre el documento propio. Cualquier empleado podía escribir access.role = admin desde la consola del navegador y entrar a admin.html, finanzas y la IT Console. Ahora el dueño solo puede tocar display, prefs, theme, carriers, arsenal y las marcas de changelog y cumpleaños — nunca access",
+      "Agujero 2 (cerrado): la regla comodín de /shared/{docId} daba lectura a todo el dominio y, por el OR, alcanzaba también a shared/config, donde vive el token de GitHub con permiso de escritura al repo. Se eliminó el comodín y cada documento de /shared se declara una sola vez",
+      "Arreglado de paso: la sección \"Actividad reciente\" de Mi Perfil consulta audit-log filtrando por el propio actor, pero la regla solo permitía leer a it@. Fallaba en silencio para todos los demás",
+      "Endurecido: la asistencia deja de ser legible por todo el dominio (cada quien ve la suya; admin e IT ven todo, que es lo que necesita el dashboard), y los correos personales de shared/workspaceUsers quedan restringidos a quien opera la IT Console",
+      "Corregido: la autorización de Finanzas leía shared/roles, deprecado desde la v2.23.4. Las dos fuentes de verdad llevaban meses divergiendo. Ahora todo sale de users/{email}.access.role",
+      "Bajo el capó: firestore.rules, firebase.json y .firebaserc quedan en el repo. El flujo pasa a ser editar → firebase deploy --only firestore:rules → commit. Push a main NO publica reglas: si se hace solo el commit, el repo y producción se separan"
+    ]
+  },
+  {
+    "id": "2026-08-20-fix-visibilidad-por-rol",
+    "version": "v2.36.0",
+    "date": "2026-08-20",
+    "category": "fix",
+    "scope": "roles",
+    "audience": "admin",
+    "title": "Correcciones de visibilidad por rol",
+    "items": [
+      "Los agentes veían el acceso rápido \"Correos\" en el dashboard, pero solicitud-cuenta no está entre sus páginas permitidas: al hacer clic los rebotaba al inicio sin explicación. Ahora el tile no se les muestra",
+      "Las entradas del changelog dirigidas al equipo (audience: team) solo llegaban a admin e interno. Los roles finanzas e it se perdían los anuncios internos. La regla ahora vive en un solo lugar (roles.js) y la comparten la página y el banner del inicio",
+      "El tab de migración de datos del panel de admin comparaba el rol contra \"IT\" en mayúscula, cuando la clave real del catálogo es \"it\": la condición no se cumplía nunca y solo funcionaba por el email de respaldo. El mismo error aparecía en las listas de equipo interno del IT Console",
+      "Limpieza: se eliminaron las reglas CSS de las tarjetas hc-finanzas y hc-it-console, que dejaron de existir cuando se unificaron cuartel y arsenal, y dos imports muertos en directorio.js y guias.js"
+    ]
+  },
+  {
     "id": "2026-08-19-it-console-dashboard-accesos-rapidos",
     "version": "v2.35.0",
     "date": "2026-08-19",
