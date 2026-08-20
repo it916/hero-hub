@@ -9,6 +9,7 @@
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { canSeeAudience } from "./roles.js";
 
 onAuthStateChanged(auth, (user) => {
   if (!user) return;
@@ -17,13 +18,9 @@ onAuthStateChanged(auth, (user) => {
 });
 
 // Decide si una entrada del changelog es visible para el rol dado.
-// audience: "all" (o ausente) → todos | "team" → admin + interno | "admin" → solo admin
+// Misma regla que la página del changelog — vive en roles.js (canSeeAudience).
 function entryVisibleFor(entry, role) {
-  const audience = entry.audience || "all";
-  if (audience === "all") return true;
-  if (audience === "admin") return role === "admin";
-  if (audience === "team") return role === "admin" || role === "interno";
-  return true;
+  return canSeeAudience(entry.audience, role);
 }
 
 async function checkChangelogBanner(user) {

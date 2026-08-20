@@ -9,6 +9,7 @@ import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getFreshGooglePhotoURL } from "./user-photo.js";
+import { canSeeAudience } from "./roles.js";
 
 const CATEGORY_LABELS = {
   feat: "Nuevo",
@@ -76,13 +77,12 @@ document.getElementById("btn-logout")?.addEventListener("click", () =>
 );
 
 // Decide si una entrada del changelog es visible para el rol dado.
-// audience: "all" (o ausente) → todos | "team" → admin + interno | "admin" → solo admin
+// La regla vive en roles.js (canSeeAudience) para que la página y el banner
+// del index compartan exactamente el mismo criterio:
+// audience "all" → todos | "team" → todo el equipo interno (admin, interno,
+// finanzas, it) | "admin" → solo admin.
 function entryVisibleFor(entry, role) {
-  const audience = entry.audience || "all";
-  if (audience === "all") return true;
-  if (audience === "admin") return role === "admin";
-  if (audience === "team") return role === "admin" || role === "interno";
-  return true;
+  return canSeeAudience(entry.audience, role);
 }
 
 async function loadChangelog() {

@@ -14,7 +14,10 @@
 //
 // Fase 2 pendiente: checklist mensual recurrente + templates configurables.
 
-const IT_ROLES_INTERNOS = ['admin', 'interno', 'IT', 'finanzas'];
+// 'it' es la clave real del catálogo de ROLES; 'IT' y 'finanzas' se
+// conservan por si queda algún doc sin migrar (finanzas se retiró el
+// 2026-08-20), para no dejar a nadie fuera de la vista de equipo interno.
+const IT_ROLES_INTERNOS = ['admin', 'interno', 'it', 'IT', 'finanzas'];
 
 let internalTeam = [];         // users/{email} filtrados por rol
 let filteredInternal = [];

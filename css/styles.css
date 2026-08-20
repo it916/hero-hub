@@ -7228,32 +7228,11 @@ body.no-attendance #btnAusencia {
 body.no-attendance .hqcc-modules { grid-template-columns: 1fr 1fr; }
 
 
-/* ═══════════════════════════════════════════
-   VISIBILIDAD — Tarjeta de Finanzas
-   ═══════════════════════════════════════════
-   Solo visible para roles "admin" y "finanzas".
-   El resto del Hub no la ve. */
-.hub-card.hc-finanzas {
-  display: none;
-}
-body.role-admin .hub-card.hc-finanzas,
-body.role-finanzas .hub-card.hc-finanzas {
-  display: flex;
-}
-
-
-/* ═══════════════════════════════════════════
-   VISIBILIDAD — Tarjeta de IT Console
-   ═══════════════════════════════════════════
-   Solo visible para roles "admin" e "it".
-   El resto del Hub no la ve. */
-.hub-card.hc-it-console {
-  display: none;
-}
-body.role-admin .hub-card.hc-it-console,
-body.role-it .hub-card.hc-it-console {
-  display: flex;
-}
+/* Las reglas de visibilidad de las tarjetas .hub-card.hc-finanzas y
+   .hub-card.hc-it-console se eliminaron: esas tarjetas desaparecieron del
+   dashboard cuando cuartel y arsenal se unificaron. Su equivalente actual
+   son los .access-tile (at-finanzas / at-it-console), con sus propias
+   reglas por rol más abajo en este archivo. */
 
 
 /* ══════════════════════════════════════════════════════════
@@ -8400,15 +8379,20 @@ button.access-tile {
 [data-theme="dark"] .at-correos    { --tile-accent: rgba(244, 63, 94, 0.22); }
 
 /* ── Visibilidad por rol ──
-   Base de Datos: interno / admin / finanzas / IT (agente NO)
-   Finanzas:      solo admin y finanzas
+   Base de Datos: interno / admin / IT (agente NO)
+   Finanzas:      solo admin (módulo en retirada)
    IT Console:    solo admin e IT
+   Correos:       interno / admin / IT (agente NO — el rol "agente" no tiene
+                  solicitud-cuenta entre sus páginas permitidas, así que el
+                  tile lo mandaría a un redirect sin explicación)
    Calendario:    todos los roles */
-body.role-agente .access-tile.at-database { display: none; }
+body.role-agente .access-tile.at-database,
+body.role-agente .access-tile.at-correos { display: none; }
 
+/* El rol "finanzas" se retiró el 2026-08-20 al descontinuarse el módulo;
+   el tile queda solo para admin, que aún necesita exportar los datos. */
 .access-tile.at-finanzas { display: none; }
-body.role-admin    .access-tile.at-finanzas,
-body.role-finanzas .access-tile.at-finanzas { display: flex; }
+body.role-admin .access-tile.at-finanzas { display: flex; }
 
 .access-tile.at-it-console { display: none; }
 body.role-admin .access-tile.at-it-console,

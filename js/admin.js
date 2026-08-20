@@ -46,7 +46,9 @@ onAuthStateChanged(auth, async (user) => {
   // Tabs restringidos al rol IT (o cuenta it@ que entra como admin por legacy).
   // Migración de datos es housekeeping técnico — no debería aparecerle al resto
   // de admins para evitar disparos accidentales.
-  const isIT = userRole.role === "IT" || user.email === "it@heroinsuranceusa.com";
+  // El rol se compara en minúscula ("it"), que es la clave real del catálogo
+  // de ROLES; antes decía "IT" y la condición nunca se cumplía.
+  const isIT = userRole.role === "it" || user.email === "it@heroinsuranceusa.com";
   if (isIT) {
     document.querySelectorAll(".only-it").forEach(el => { el.style.display = ""; });
   }

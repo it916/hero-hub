@@ -3,7 +3,6 @@ import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, setDoc }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { isAdmin as isAdminRole } from "./roles.js";
 import { logEvent, ACTIONS } from "./audit-log.js";
 import { getFreshGooglePhotoURL } from "./user-photo.js";
 

@@ -1502,7 +1502,10 @@ let _wsUsersMap = {};
 // a cualquier usuario Workspace que NO figure con rol de staff conocido —
 // incluye tanto los pocos que tienen role:'agente' explícito como los que
 // no están en users/ aún. Los admin/IT/finanzas/interno se excluyen.
-const STAFF_ROLES = new Set(['admin', 'interno', 'IT', 'finanzas']);
+// 'it' es la clave real del catálogo de ROLES; 'IT' y 'finanzas' se
+// conservan por si queda algún doc sin migrar (finanzas se retiró el
+// 2026-08-20), para no reclasificar a nadie como agente por error.
+const STAFF_ROLES = new Set(['admin', 'interno', 'it', 'IT', 'finanzas']);
 function isAgente(u, rolesMap) {
   if (!u) return false;
   const role = rolesMap ? rolesMap[(u.email || '').toLowerCase()] : null;

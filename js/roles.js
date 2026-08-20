@@ -30,12 +30,13 @@ export const ROLES = {
     pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones", "changelog", "mi-perfil", "contracting", "solicitud-cuenta"],
     isAdmin: false
   },
-  finanzas: {
-    label: "Finanzas",
-    // Misma visibilidad que "interno" + la página de Finanzas y su manual. Sin acceso a admin/grabaciones/onboarding.
-    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "reuniones", "changelog", "finanzas", "finanzas-manual", "mi-perfil", "contracting", "solicitud-cuenta"],
-    isAdmin: false
-  },
+  // El rol "finanzas" se retiró al descontinuarse el módulo de Finanzas
+  // (2026-08-20). Sus dos titulares — financesupport@ y samortiz@ — pasaron
+  // a "interno". El alias de LEGACY_ROLE_ALIASES cubre cualquier doc que
+  // todavía diga "finanzas": sin él caerían en FALLBACK_ROLE, que es
+  // "agente", y perderían medio Hub.
+  // Las páginas finanzas / finanzas-manual siguen en el rol "admin" para
+  // poder exportar los datos antes de apagar las colecciones.
   it: {
     label: "IT",
     // Misma visibilidad que "interno" + la IT Console. Sin acceso a admin/finanzas.
@@ -59,7 +60,8 @@ export const ROLES = {
 // (sus permisos eran idénticos antes de la simplificación).
 const LEGACY_ROLE_ALIASES = {
   directivo: "interno",
-  rrhh: "interno"
+  rrhh: "interno",
+  finanzas: "interno"   // retirado el 2026-08-20 al descontinuarse el módulo
 };
 
 // Rol por defecto si algo falla — el más restrictivo
@@ -317,6 +319,27 @@ export function filterTopbarByRole(userRole) {
   if (adminBtn) {
     adminBtn.style.display = isAdmin(userRole) ? "inline-flex" : "none";
   }
+}
+
+
+// ═══════════════════════════════════════════
+// AUDIENCIAS (changelog y anuncios internos)
+// ═══════════════════════════════════════════
+// Roles que cuentan como "equipo interno" para las entradas con
+// audience: "team". Es todo el personal de la empresa menos "agente",
+// que es externo y solo debe ver novedades de audiencia "all".
+export const TEAM_ROLES = ["admin", "interno", "it"];
+
+/**
+ * ¿Un contenido con esta audiencia es visible para este rol?
+ * @param {string} audience - "all" (o vacío) | "team" | "admin"
+ * @param {string} role - clave del rol ("admin", "interno", "it", "agente")
+ */
+export function canSeeAudience(audience, role) {
+  const a = audience || "all";
+  if (a === "admin") return role === "admin";
+  if (a === "team") return TEAM_ROLES.includes(role);
+  return true; // "all" y cualquier valor desconocido → visible
 }
 
 
