@@ -1,5 +1,23 @@
 [
   {
+    "id": "2026-08-21-permisos-por-rol",
+    "version": "v2.37.0",
+    "date": "2026-08-21",
+    "category": "feat",
+    "scope": "admin",
+    "audience": "admin",
+    "title": "Permisos por rol editables desde el panel de admin",
+    "items": [
+      "Antes: para cambiar qué ve cada rol había que editar js/roles.js, reglas CSS repartidas por styles.css y varios if sueltos en el JavaScript de cada página. Tres capas distintas que llevaban tiempo desincronizadas — de ahí que el agente viera el tile de Correos hacia una página que no podía abrir",
+      "Ahora: admin.html tiene un tab \"Permisos\" con dos matrices de casillas. La primera decide qué páginas ve cada rol; la segunda, qué elementos concretos: los tiles del banner, las secciones sociales del dashboard, los cinco accesos rápidos, la pestaña de cuentas del equipo en Portales, el borrado de carriers compartidos, la edición de Agencias y los tabs de migración",
+      "La configuración vive en Firestore (shared/rolePermissions) y la lee js/roles.js al arrancar. Si el documento no existe, viene corrupto o falla la lectura, el Hub cae a los valores por defecto del código: nadie se queda fuera por un error de red o un guardado a medias",
+      "Guardarraíles: el rol Administrador siempre ve todo y sus casillas están bloqueadas; las páginas Inicio y Mi perfil no se pueden quitar (dejarían al usuario en un redirect sin salida); no se pueden crear ni eliminar roles desde la UI. Cada guardado queda en el Log de auditoría",
+      "La pantalla avisa de combinaciones incoherentes — por ejemplo un tile habilitado hacia una página que ese rol no tiene — sin impedirlas",
+      "Bajo el capó: el CSS deja de escribirse contra el rol (body.role-agente) y pasa a escribirse contra las features (body:not(.feat-tile-database)). Las clases se pre-aplican desde localStorage en el <head> para que no haya parpadeo mientras Firestore resuelve",
+      "Importante: esto controla la visibilidad, no el acceso a los datos. La frontera real siguen siendo las reglas de Firestore, y el panel lo advierte en pantalla"
+    ]
+  },
+  {
     "id": "2026-08-21-changelog-indicador-discreto",
     "version": "v2.36.1",
     "date": "2026-08-21",
