@@ -1,5 +1,19 @@
 [
   {
+    "id": "2026-08-21-permisos-afinado",
+    "version": "v2.37.1",
+    "date": "2026-08-21",
+    "category": "fix",
+    "scope": "admin",
+    "audience": "admin",
+    "title": "Ajustes al panel de Permisos recién estrenado",
+    "items": [
+      "Una página agregada al Hub podía quedar sin fila en la matriz: el panel usaba su propia lista para ordenar y descartaba lo que no estuviera en ella, sin avisar. Ahora esa lista es solo una preferencia de orden y lo que no figure se añade al final",
+      "El Log de auditoría registraba que alguien había tocado los permisos, pero no cuáles. Ahora guarda el detalle por rol: qué páginas y qué features se agregaron y cuáles se quitaron",
+      "Los avisos del panel usan window.heroToast: el optional chaining no protege de un ReferenceError cuando la variable no está declarada, así que si el script de avisos no cargaba, un guardado correcto podía terminar mostrando un error"
+    ]
+  },
+  {
     "id": "2026-08-21-permisos-por-rol",
     "version": "v2.37.0",
     "date": "2026-08-21",
