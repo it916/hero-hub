@@ -1,20 +1,27 @@
 // ═══════════════════════════════════════════
-// Hero Hub · Banner de novedades del Changelog
+// Hero Hub · Indicador de novedades del Changelog
 // ═══════════════════════════════════════════
 // Solo se incluye en index.html. Compara el id de la entrada más reciente
-// del changelog con users/{email}.lastChangelogSeenId. Si difieren, muestra
-// el banner. Al hacer clic en el banner, marca como visto + redirige.
-// La × también marca como visto pero sin redirigir.
+// del changelog con users/{email}.lastChangelogSeenId. Si difieren, pinta
+// un punto cyan sobre el link "Changelog" del topbar.
+//
+// Hasta la v2.36.0 esto era un banner flotante sobre el dashboard, con
+// texto y botón de cerrar. Se retiró el 2026-08-21 por invasivo: el punto
+// avisa igual sin interrumpir.
+//
+// El punto no se apaga solo: desaparece cuando el usuario entra a
+// changelog.html, que es donde se marca lastChangelogSeenId. Por eso este
+// módulo ya no escribe en Firestore — solo lee.
 
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { canSeeAudience } from "./roles.js";
 
 onAuthStateChanged(auth, (user) => {
   if (!user) return;
   // Pequeño delay para no competir con la carga inicial del dashboard
-  setTimeout(() => checkChangelogBanner(user), 1500);
+  setTimeout(() => checkChangelogIndicator(user), 1500);
 });
 
 // Decide si una entrada del changelog es visible para el rol dado.
@@ -23,7 +30,7 @@ function entryVisibleFor(entry, role) {
   return canSeeAudience(entry.audience, role);
 }
 
-async function checkChangelogBanner(user) {
+async function checkChangelogIndicator(user) {
   let latestId = null;
 
   // Rol del usuario desde el cache que persiste auth.js. Si todavía no está
@@ -64,44 +71,14 @@ async function checkChangelogBanner(user) {
     return;
   }
 
-  // 3. Mostrar el banner
-  showBanner(user, latestId);
+  // 3. Marcar el link del topbar
+  showIndicator();
 }
 
-function showBanner(user, latestId) {
-  const banner = document.getElementById("changelog-banner");
-  if (!banner) return;
-
-  banner.style.display = "flex";
-  // Pequeño retardo para que el navegador aplique display:flex antes del fade-in
-  requestAnimationFrame(() => banner.classList.add("is-open"));
-  if (window.refreshIcons) window.refreshIcons();
-
-  const goToChangelog = async () => {
-    await markSeen(user.email, latestId);
-    location.href = "changelog.html";
-  };
-
-  const dismissOnly = async (e) => {
-    e.stopPropagation();
-    await markSeen(user.email, latestId);
-    banner.classList.remove("is-open");
-    setTimeout(() => { banner.style.display = "none"; }, 300);
-  };
-
-  // Clic en cualquier parte del banner (excepto la ×) → ir al changelog
-  banner.addEventListener("click", goToChangelog);
-  banner.querySelector(".changelog-banner-close")?.addEventListener("click", dismissOnly);
-}
-
-async function markSeen(email, latestId) {
-  try {
-    await setDoc(
-      doc(db, "users", email),
-      { lastChangelogSeenId: latestId },
-      { merge: true }
-    );
-  } catch (e) {
-    console.warn("No se pudo guardar last seen:", e.message);
-  }
+function showIndicator() {
+  // El topbar puede haberse filtrado por rol (roles.js → filterTopbarByRole).
+  // Si el link quedó oculto, no tiene sentido pintarle el punto.
+  const link = document.querySelector('#topbar-nav .nav-link[href="changelog.html"]');
+  if (!link || link.style.display === "none") return;
+  link.classList.add("has-news");
 }

@@ -7405,104 +7405,24 @@ body.no-attendance .hqcc-modules { grid-template-columns: 1fr 1fr; }
    CHANGELOG — Banner de novedades (index) + Página
    ═══════════════════════════════════════════════════ */
 
-/* ── Banner de novedades en index.html ── */
-.changelog-banner {
-  display: none;
-  align-items: center;
-  gap: 14px;
-  max-width: 1320px;
-  margin: 14px auto 0;
-  padding: 14px 20px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, var(--cyan) 0%, var(--cyan-2) 100%);
-  color: #fff;
-  box-shadow: 0 12px 30px rgba(6,163,182,.32), 0 0 0 1px rgba(255,255,255,.08) inset;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  opacity: 0;
-  transform: translateY(-8px);
-  transition: opacity .35s ease, transform .35s ease, box-shadow .2s ease;
-}
-.changelog-banner.is-open { opacity: 1; transform: translateY(0); }
-.changelog-banner:hover { box-shadow: 0 18px 40px rgba(6,163,182,.45), 0 0 0 1px rgba(255,255,255,.15) inset; }
-.changelog-banner::before {
+/* ── Indicador de novedades: punto en el link Changelog del topbar ──
+   Reemplaza al banner flotante que aparecía sobre el dashboard, retirado
+   el 2026-08-21 por invasivo. El punto lo pinta js/changelog-indicator.js
+   y desaparece solo cuando el usuario entra a changelog.html, que es donde
+   se marca lastChangelogSeenId. */
+.nav-link.has-news { position: relative; }
+.nav-link.has-news::after {
   content: "";
-  position: absolute; inset: 0;
-  background: radial-gradient(600px 200px at 10% 50%, rgba(255,255,255,.18), transparent 60%);
-  pointer-events: none;
-}
-.changelog-banner-icon {
-  width: 42px; height: 42px;
-  flex-shrink: 0;
-  border-radius: 12px;
-  background: rgba(255,255,255,.18);
-  display: flex; align-items: center; justify-content: center;
-  position: relative; z-index: 1;
-}
-.changelog-banner-icon i { width: 22px; height: 22px; color: #fff; }
-.changelog-banner-text {
-  flex: 1;
-  position: relative; z-index: 1;
-  display: flex; flex-direction: column; gap: 2px;
-  min-width: 0;
-}
-.changelog-banner-title {
-  font-family: var(--display);
-  font-style: italic;
-  font-weight: 800;
-  font-size: 17px;
-  line-height: 1.1;
-}
-.changelog-banner-sub {
-  font-size: 13px;
-  font-weight: 500;
-  opacity: .92;
-}
-.changelog-banner-arrow {
-  flex-shrink: 0;
-  position: relative; z-index: 1;
-  width: 36px; height: 36px;
+  position: absolute;
+  top: 6px; right: 7px;
+  width: 6px; height: 6px;
   border-radius: 50%;
-  background: rgba(255,255,255,.16);
-  display: flex; align-items: center; justify-content: center;
-  transition: transform .2s ease, background .2s ease;
+  background: var(--cyan);
+  /* El anillo recorta el punto contra el fondo del topbar */
+  box-shadow: 0 0 0 2px var(--card);
 }
-.changelog-banner:hover .changelog-banner-arrow {
-  background: rgba(255,255,255,.28);
-  transform: translateX(3px);
-}
-.changelog-banner-arrow i { width: 18px; height: 18px; color: #fff; }
-.changelog-banner-close {
-  flex-shrink: 0;
-  position: relative; z-index: 2;
-  width: 30px; height: 30px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(0,0,0,.15);
-  color: #fff;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: background .2s ease;
-}
-.changelog-banner-close:hover { background: rgba(0,0,0,.28); }
-.changelog-banner-close i { width: 14px; height: 14px; }
-
-body[data-theme="dark"] .changelog-banner {
-  background: linear-gradient(135deg, #07b8cd 0%, #069ab0 100%);
-  box-shadow: 0 12px 30px rgba(7,184,205,.28), 0 0 0 1px rgba(255,255,255,.08) inset;
-}
-
-@media (max-width: 640px) {
-  .changelog-banner {
-    margin: 10px 12px 0;
-    padding: 12px 14px;
-    gap: 10px;
-  }
-  .changelog-banner-icon { width: 38px; height: 38px; }
-  .changelog-banner-title { font-size: 15px; }
-  .changelog-banner-sub { font-size: 12px; }
-  .changelog-banner-arrow { display: none; }
+body[data-theme="dark"] .nav-link.has-news::after {
+  background: var(--cyan-bright);
 }
 
 /* ── Página de changelog ── */

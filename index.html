@@ -139,16 +139,9 @@
     </div>
   </header>
 
-  <!-- ══ BANNER DE NOVEDADES — Changelog (oculto por defecto) ══ -->
-  <div id="changelog-banner" class="changelog-banner" role="button" tabindex="0" aria-label="Ver novedades del Hero Hub">
-    <div class="changelog-banner-icon"><i data-lucide="sparkles"></i></div>
-    <div class="changelog-banner-text">
-      <div class="changelog-banner-title">¡Hay novedades en el Hero Hub!</div>
-      <div class="changelog-banner-sub">Presiona para ver los últimos cambios</div>
-    </div>
-    <div class="changelog-banner-arrow"><i data-lucide="arrow-right"></i></div>
-    <button class="changelog-banner-close" type="button" aria-label="Cerrar"><i data-lucide="x"></i></button>
-  </div>
+  <!-- El banner de novedades del changelog se retiró en la v2.36.1.
+       Ahora js/changelog-indicator.js marca con un punto el link
+       "Changelog" del topbar cuando hay algo sin leer. -->
 
   <main class="page">
 
@@ -555,7 +548,7 @@
   </div>
 
   <footer class="hero-footer">
-    <span>HERO HUB · v2.36.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+    <span>HERO HUB · v2.36.1</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
   </footer>
 </div>
 
@@ -889,7 +882,7 @@
 <script type="module" src="js/auth.js"></script>
 <script type="module" src="js/tracker.js"></script>
 <script type="module" src="js/attendance.js"></script>
-<script type="module" src="js/changelog-banner.js"></script>
+<script type="module" src="js/changelog-indicator.js"></script>
 <script>
   // ══ Modal Entrenamientos: Calendario vs Grabaciones ══
   (function () {
