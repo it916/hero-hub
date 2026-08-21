@@ -1,5 +1,20 @@
 [
   {
+    "id": "2026-08-21-changelog-indicador-discreto",
+    "version": "v2.36.1",
+    "date": "2026-08-21",
+    "category": "style",
+    "scope": "changelog",
+    "audience": "all",
+    "title": "El aviso de novedades deja de ser un banner y pasa a ser un punto en el topbar",
+    "items": [
+      "Antes: al entrar al Hub aparecía un banner cyan sobre el dashboard anunciando que había novedades, con su texto y su botón de cerrar. Interrumpía la vista cada vez que se publicaba algo",
+      "Ahora: cuando hay algo sin leer, el link \"Changelog\" del topbar lleva un punto cyan discreto. Nada se superpone al dashboard",
+      "El punto desaparece al entrar a la página de Changelog, igual que antes. Si un rol no ve el link en su topbar, tampoco ve el punto",
+      "Bajo el capó: js/changelog-banner.js pasa a llamarse js/changelog-indicator.js y ya no escribe en Firestore, solo lee. Se eliminaron el bloque HTML del banner y sus 95 líneas de CSS"
+    ]
+  },
+  {
     "id": "2026-08-20-retiro-rol-finanzas",
     "version": "v2.36.0",
     "date": "2026-08-20",
