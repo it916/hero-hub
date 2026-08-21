@@ -13,7 +13,7 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 import {
   collection, query, where, orderBy, limit, getDocs
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { guardPage, filterTopbarByRole } from "./roles.js";
+import { guardPage, filterTopbarByRole, applyRoleClasses } from "./roles.js";
 import { getFreshGooglePhotoURL, getGooglePhotoURL } from "./user-photo.js";
 import { ACTION_LABELS } from "./audit-log.js";
 import { getUserByEmail, countryLabel, countryFlagUrl } from "./user-store.js";
@@ -96,8 +96,7 @@ onAuthStateChanged(auth, async (user) => {
   if (!guard) return;
   const { userRole } = guard;
 
-  document.body.classList.add(`role-${userRole.role}`);
-  try { localStorage.setItem("hero-user-role", userRole.role); } catch (_) {}
+  applyRoleClasses(userRole);
   filterTopbarByRole(userRole);
 
   document.getElementById("loading").style.display = "none";

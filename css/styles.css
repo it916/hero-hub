@@ -7187,26 +7187,29 @@ button.hub-card {
 
 
 /* ═══════════════════════════════════════════
-   VISIBILIDAD POR ROL — body.role-agente
+   VISIBILIDAD POR FEATURE — body.feat-*
    ═══════════════════════════════════════════
-   El agente solo ve un subconjunto del dashboard:
-   - Banner superior (sin botón Gather)
-   - Tarjetas hub: Equipo + Entrenamientos (2 cards)
-   - Arsenal del Héroe (accesos directos)
-   Portales sigue accesible vía topbar, pero no como tarjeta del cuartel.
-   Todo lo demás se oculta (asistencia, onboarding, misiones, celebraciones, mensajes). */
+   Desde v2.37.0 la visibilidad NO se escribe contra el rol, sino contra las
+   features que ese rol tiene habilitadas en admin.html → Permisos.
+   js/roles.js (applyRoleClasses) pone una clase feat-{clave} en el <body>
+   por cada feature activa, y el script inline del <head> las pre-aplica
+   desde localStorage para que no haya flash.
 
-/* Tarjeta de Portales: oculta por defecto en el dashboard (solo accesible vía topbar para roles no-agente).
-   La card de Entrenamientos es visible para todos los roles. */
-/* Ocultos para el agente — el HQCC banner solo muestra el ribbon superior
-   (saludo + clima + fecha/hora); los tiles de Oficina/Asistencia/Meeting no le aplican. */
-body.role-agente .hqcc-modules,
-body.role-agente #sec-misiones,
-body.role-agente #sec-celebraciones,
-body.role-agente #sec-mensajes,
-body.role-agente .connector:has(+ #sec-misiones),
-body.role-agente .connector:has(+ #sec-celebraciones),
-body.role-agente .connector:has(+ #sec-mensajes) {
+   Se escribe en negativo — body:not(.feat-x) — para que el elemento esté
+   oculto mientras no conste que el usuario tiene el permiso. Al agregar una
+   feature nueva: declararla en FEATURES de roles.js y sumar aquí su regla.
+
+   Por defecto el agente no tiene hqcc-tiles ni dashboard-social: ve solo el
+   ribbon del banner (saludo + fecha/hora), sin tiles de Oficina, Asistencia
+   ni CRMs, y sin las secciones sociales del dashboard. */
+
+body:not(.feat-hqcc-tiles) .hqcc-modules,
+body:not(.feat-dashboard-social) #sec-misiones,
+body:not(.feat-dashboard-social) #sec-celebraciones,
+body:not(.feat-dashboard-social) #sec-mensajes,
+body:not(.feat-dashboard-social) .connector:has(+ #sec-misiones),
+body:not(.feat-dashboard-social) .connector:has(+ #sec-celebraciones),
+body:not(.feat-dashboard-social) .connector:has(+ #sec-mensajes) {
   display: none !important;
 }
 
@@ -8298,25 +8301,19 @@ button.access-tile {
 [data-theme="dark"] .at-calendario { --tile-accent: rgba(16, 185, 129, 0.22); }
 [data-theme="dark"] .at-correos    { --tile-accent: rgba(244, 63, 94, 0.22); }
 
-/* ── Visibilidad por rol ──
-   Base de Datos: interno / admin / IT (agente NO)
-   Finanzas:      solo admin (módulo en retirada)
-   IT Console:    solo admin e IT
-   Correos:       interno / admin / IT (agente NO — el rol "agente" no tiene
-                  solicitud-cuenta entre sus páginas permitidas, así que el
-                  tile lo mandaría a un redirect sin explicación)
-   Calendario:    todos los roles */
-body.role-agente .access-tile.at-database,
-body.role-agente .access-tile.at-correos { display: none; }
-
-/* El rol "finanzas" se retiró el 2026-08-20 al descontinuarse el módulo;
-   el tile queda solo para admin, que aún necesita exportar los datos. */
-.access-tile.at-finanzas { display: none; }
-body.role-admin .access-tile.at-finanzas { display: flex; }
-
-.access-tile.at-it-console { display: none; }
-body.role-admin .access-tile.at-it-console,
-body.role-it    .access-tile.at-it-console { display: flex; }
+/* ── Visibilidad por feature ──
+   Cada tile depende de su feature, configurable en admin.html → Permisos.
+   Los valores por defecto (DEFAULT_ROLES en js/roles.js) reproducen el
+   comportamiento anterior: Base de Datos y Correos para todos menos el
+   agente, Finanzas solo para admin, IT Console para admin e IT, Calendario
+   para todos. */
+body:not(.feat-tile-database)   .access-tile.at-database,
+body:not(.feat-tile-correos)    .access-tile.at-correos,
+body:not(.feat-tile-finanzas)   .access-tile.at-finanzas,
+body:not(.feat-tile-it-console) .access-tile.at-it-console,
+body:not(.feat-tile-calendario) .access-tile.at-calendario {
+  display: none;
+}
 
 
 /* ═══════════════════════════════════════════════════════════

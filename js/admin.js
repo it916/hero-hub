@@ -3,7 +3,7 @@ import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, setDoc, updateDoc, collection, query, where, orderBy, limit, getDocs, Timestamp, deleteDoc }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { loadUserRole, isAdmin as isAdminRole } from "./roles.js";
+import { loadUserRole, isAdmin as isAdminRole, hasFeature } from "./roles.js";
 import { initRolesPanel } from "./roles-admin.js";
 import { initAuditPanel } from "./audit-panel.js";
 import { initAsistenciaDashboard } from "./asistencia-dashboard.js";
@@ -43,13 +43,12 @@ onAuthStateChanged(auth, async (user) => {
   // Exponer email del admin actual para roles-admin.js
   window._currentAdminEmail = user.email;
 
-  // Tabs restringidos al rol IT (o cuenta it@ que entra como admin por legacy).
-  // Migración de datos es housekeeping técnico — no debería aparecerle al resto
-  // de admins para evitar disparos accidentales.
-  // El rol se compara en minúscula ("it"), que es la clave real del catálogo
-  // de ROLES; antes decía "IT" y la condición nunca se cumplía.
-  const isIT = userRole.role === "it" || user.email === "it@heroinsuranceusa.com";
-  if (isIT) {
+  // Migración de datos es housekeeping técnico: no debería aparecerle a todo
+  // admin para evitar disparos accidentales. Depende de la feature
+  // admin-migracion, configurable en el tab Permisos. it@ la ve siempre.
+  const veMigracion = hasFeature(userRole, "admin-migracion")
+    || user.email === "it@heroinsuranceusa.com";
+  if (veMigracion) {
     document.querySelectorAll(".only-it").forEach(el => { el.style.display = ""; });
   }
 });
@@ -450,6 +449,18 @@ window.loadRolesPanel = async function() {
     return;
   }
   await initRolesPanel(window._currentAdminEmail);
+};
+
+// ══ PERMISOS POR ROL ══
+// Se llama desde admin.html al abrir el tab "Permisos". Carga perezosa: el
+// módulo solo se descarga si el admin entra al tab.
+window.loadPermisosPanel = async function() {
+  if (!window._currentAdminEmail) {
+    console.warn("Admin email no disponible todavía");
+    return;
+  }
+  const { initPermisosPanel } = await import("./permisos-admin.js");
+  await initPermisosPanel(window._currentAdminEmail);
 };
 
 // ══ LOG DE AUDITORÍA ══

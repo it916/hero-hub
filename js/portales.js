@@ -3,7 +3,7 @@ import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, setDoc, updateDoc }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { isAdmin as isAdminRole } from "./roles.js";
+import { hasFeature } from "./roles.js";
 import { logEvent, ACTIONS } from "./audit-log.js";
 import { getFreshGooglePhotoURL } from "./user-photo.js";
 
@@ -12,8 +12,7 @@ const ALLOWED_DOMAIN = "heroinsuranceusa.com";
 
 let teamData = { jesus: [], anny: [], hero: [] };
 let personalData = [];
-let isAdmin = false;
-let isAdminOrIT = false;
+let puedeBorrarDelEquipo = false;   // feature portales-delete
 let currentAccount = 'jesus';
 let currentZone = 'team';
 let teamFilter = '';
@@ -34,18 +33,21 @@ onAuthStateChanged(auth, async (user) => {
 
   // Esperar a que page-guard cargue el rol
   const ctx = await window.getPageContext();
-  isAdmin = isAdminRole(ctx.userRole);
-  isAdminOrIT = isAdmin || (ctx.userRole && ctx.userRole.role === "it");
-  const isAgente = ctx.userRole && ctx.userRole.role === "agente";
+  // Ambos permisos son features configurables en admin.html → Permisos.
+  // Por defecto reproducen lo de antes: el agente no ve la pestaña del
+  // equipo, y solo admin e IT pueden borrar carriers compartidos.
+  puedeBorrarDelEquipo = hasFeature(ctx.userRole, "portales-delete");
+  const veZonaEquipo = hasFeature(ctx.userRole, "portales-team");
 
   document.getElementById("user-avatar").src = await getFreshGooglePhotoURL(user);
   // El botón "Agregar" del equipo se muestra siempre: cualquier usuario
   // del dominio puede agregar o editar portales del team; el borrado
-  // queda restringido a admin o IT (ver buildCardHTML).
+  // depende de la feature portales-delete (ver buildCardHTML).
   // btn-admin ya fue manejado por page-guard.js
 
-  // Para agentes: ocultar la pestaña "Cuentas del Equipo" y mostrar solo "Mis Carriers"
-  if (isAgente) {
+  // Sin la feature portales-team: se oculta la pestaña "Cuentas del Equipo"
+  // y se entra directo a "Mis Carriers" (es el caso del agente por defecto)
+  if (!veZonaEquipo) {
     const teamZoneTab = document.querySelector('.zone-tab[data-zone="team"]');
     const personalZoneTab = document.querySelector('.zone-tab[data-zone="personal"]');
     const teamZone = document.getElementById("zone-team");
@@ -64,8 +66,8 @@ onAuthStateChanged(auth, async (user) => {
   document.getElementById("loading").style.display = "none";
   document.getElementById("dashboard").style.display = "block";
 
-  // Los agentes no necesitan cargar team (no lo verán)
-  if (isAgente) {
+  // Sin acceso a la zona del equipo no tiene sentido cargarla
+  if (!veZonaEquipo) {
     await loadPersonal();
   } else {
     await Promise.all([loadTeam(), loadPersonal()]);
@@ -199,9 +201,10 @@ function renderPersonal() {
 }
 
 function buildCardHTML(p, scope, idx) {
-  // personal: el dueño puede todo. team: cualquiera edita; solo admin o IT borra.
+  // personal: el dueño puede todo. team: cualquiera edita; borrar depende
+  // de la feature portales-delete.
   const canEdit = true;
-  const canDelete = scope === 'personal' || isAdminOrIT;
+  const canDelete = scope === 'personal' || puedeBorrarDelEquipo;
   const showActions = canEdit || canDelete;
   return `
     <div class="carrier-card" data-scope="${scope}" data-idx="${idx}">

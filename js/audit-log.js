@@ -33,6 +33,7 @@ export const ACTIONS = {
   ROLE_CREATE: "role.create",
   ROLE_UPDATE: "role.update",
   ROLE_DELETE: "role.delete",
+  PERMISOS_UPDATE: "permisos.update",
 
   // Accesos denegados (se loguean desde page-guard.js)
   AUTH_DENIED_NO_ROLE: "auth.denied.no_role",
@@ -99,6 +100,7 @@ export const ACTIONS = {
 export const ACTION_LABELS = {
   "role.create": { label: "Usuario agregado", icon: "user-plus", color: "#22a06b" },
   "role.update": { label: "Rol cambiado", icon: "shuffle", color: "#06a3b6" },
+  "permisos.update": { label: "Permisos por rol actualizados", icon: "sliders-horizontal", color: "#6366f1" },
   "role.delete": { label: "Usuario eliminado", icon: "user-x", color: "#c0392b" },
   "auth.denied.no_role": { label: "Acceso denegado (sin rol)", icon: "shield-off", color: "#e8a317" },
   "auth.denied.page": { label: "Acceso denegado (página)", icon: "shield-off", color: "#e8a317" },

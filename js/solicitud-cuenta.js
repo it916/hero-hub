@@ -14,7 +14,7 @@
 
 import { auth } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { guardPage, filterTopbarByRole } from "./roles.js";
+import { guardPage, filterTopbarByRole, applyRoleClasses } from "./roles.js";
 import { getFreshGooglePhotoURL } from "./user-photo.js";
 
 const WORKER_URL = "https://hero-email-worker.broad-fire-d2d6.workers.dev";
@@ -42,8 +42,7 @@ onAuthStateChanged(auth, async (user) => {
 async function showApp({ user, userRole }) {
   document.getElementById("loading").style.display = "none";
   document.getElementById("dashboard").style.display = "block";
-  document.body.classList.add(`role-${userRole.role}`);
-  try { localStorage.setItem("hero-user-role", userRole.role); } catch (_) {}
+  applyRoleClasses(userRole);
 
   // Avatar (para el user-menu del topbar)
   try {

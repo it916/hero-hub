@@ -17,7 +17,7 @@ import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, updateDoc, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { isAdmin as isAdminRole } from "./roles.js";
+import { hasFeature } from "./roles.js";
 import { logEvent, ACTIONS } from "./audit-log.js";
 import { getFreshGooglePhotoURL } from "./user-photo.js";
 
@@ -77,7 +77,9 @@ onAuthStateChanged(auth, async (user) => {
 
   const ctx = await window.getPageContext();
   // En modo Sheet la edición vive en el Sheet → admin pierde botones de editar en el Hub
-  canEdit = isAdminRole(ctx.userRole) && !USE_SHEET;
+  // La feature se configura en admin.html → Permisos, pero mientras las
+  // agencias se lean del Google Sheet la edición está desactivada para todos.
+  canEdit = hasFeature(ctx.userRole, "agencias-edit") && !USE_SHEET;
 
   document.getElementById("user-avatar").src = await getFreshGooglePhotoURL(user);
   document.getElementById("loading").style.display = "none";

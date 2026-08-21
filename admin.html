@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="css/styles.css">
 <link rel="stylesheet" href="css/roles-admin.css">
 <link rel="stylesheet" href="css/audit-panel.css">
+<link rel="stylesheet" href="css/permisos-admin.css">
 
 <!-- Shoelace · component library -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css">
@@ -96,6 +97,10 @@
             <button type="button" class="admin-sidebar-link" data-tab="roles">
               <i data-lucide="users"></i>
               <span>Usuarios</span>
+            </button>
+            <button type="button" class="admin-sidebar-link" data-tab="permisos">
+              <i data-lucide="sliders-horizontal"></i>
+              <span>Permisos</span>
             </button>
             <button type="button" class="admin-sidebar-link" data-tab="log">
               <i data-lucide="list"></i>
@@ -371,6 +376,12 @@
       <!-- ══════════════════════════════════════════════ -->
       <!-- SECCIÓN LOG / AUDITORÍA (nuevo en Fase 2c)      -->
       <!-- ══════════════════════════════════════════════ -->
+      <section class="admin-section" id="tab-permisos" style="display:none;">
+        <h2 style="margin:0;">🎛️ Permisos por rol</h2>
+        <p class="admin-note" style="margin:4px 0 22px;">Define qué páginas y qué elementos ve cada rol. Los cambios aplican en el próximo ingreso de cada usuario.</p>
+        <div id="permisos-content"></div>
+      </section>
+
       <section class="admin-section" id="tab-log" style="display:none;">
         <div class="al-header">
           <div>
@@ -515,7 +526,7 @@
     </div><!-- /.admin-shell -->
 
     <footer class="hero-footer">
-      <span>HERO HUB · ADMIN v2.36.1</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+      <span>HERO HUB · ADMIN v2.37.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
     </footer>
 
     <!-- ══ MODAL: Estadísticas detalladas por persona ══ -->
@@ -602,6 +613,7 @@
       messages: 'Mensajes',
       metrics: 'Métricas',
       roles: 'Usuarios',
+      permisos: 'Permisos por rol',
       log: 'Log de auditoría',
       migracion: 'Migración de datos'
     };
@@ -633,7 +645,7 @@
           const tab = b.dataset.tab;
           document.querySelectorAll('.admin-sidebar-link[data-tab]').forEach(x => x.classList.remove('active'));
           b.classList.add('active');
-          ['asistencia','spotlight','messages','metrics','roles','log','migracion'].forEach(t => {
+          ['asistencia','spotlight','messages','metrics','roles','permisos','log','migracion'].forEach(t => {
             const sec = document.getElementById('tab-' + t);
             if (sec) sec.style.display = (t === tab) ? 'block' : 'none';
           });
@@ -641,6 +653,7 @@
           if (tab === 'asistencia' && window.loadAsistenciaDashboard) window.loadAsistenciaDashboard();
           if (tab === 'metrics' && window.loadMetrics) window.loadMetrics();
           if (tab === 'roles' && window.loadRolesPanel) window.loadRolesPanel();
+          if (tab === 'permisos' && window.loadPermisosPanel) window.loadPermisosPanel();
           if (tab === 'log' && window.loadAuditPanel) window.loadAuditPanel();
           if (tab === 'migracion' && window.loadMigrationPanel) window.loadMigrationPanel();
           if (window.innerWidth <= 900) closeSidebar();

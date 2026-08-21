@@ -6,7 +6,7 @@ import { doc, getDoc, setDoc, updateDoc }
 import { renderWidgets } from "./widgets.js";
 import { openBirthdayCardModal, checkBirthdayPopup } from "./birthday-card.js";
 import { checkBirthdayInvitePopup } from "./birthday-invite.js";
-import { loadUserRole, filterTopbarByRole, isAdmin as isAdminRole, clearRoleCache, canAccessPage } from "./roles.js";
+import { loadUserRole, filterTopbarByRole, isAdmin as isAdminRole, clearRoleCache, canAccessPage, applyRoleClasses } from "./roles.js";
 import { getFreshGooglePhotoURL } from "./user-photo.js";
 
 const ALLOWED_DOMAIN = "heroinsuranceusa.com";
@@ -52,6 +52,12 @@ function showLogin() {
 }
 
 async function showDashboard() {
+  // Las clases van ANTES de mostrar el dashboard: entre el display:block y
+  // la foto del avatar hay un await, y en ese hueco se vería el dashboard
+  // sin features aplicadas (todos los tiles ocultos, apareciendo de golpe
+  // un instante después).
+  applyRoleClasses(currentUserRole);
+
   document.getElementById("login-screen").style.display = "none";
   document.getElementById("dashboard").style.display = "block";
   const photoUrl = await getFreshGooglePhotoURL(currentUser);
@@ -62,24 +68,6 @@ async function showDashboard() {
   // Filtrar el topbar según el rol del usuario
   // (oculta links a páginas no permitidas y maneja el botón admin)
   filterTopbarByRole(currentUserRole);
-
-  // Marcar el body con el rol para que el CSS pueda mostrar/ocultar widgets
-  // (ej. tarjeta de Portales solo para "agente", celebraciones ocultas para "agente", etc.)
-  document.body.classList.add(`role-${currentUserRole.role}`);
-
-  // Flag opt-out de asistencia (directiva, invitados, etc.). Cachear en
-  // localStorage para que otras páginas apliquen la clase sin flash.
-  if (currentUserRole.trackAttendance === false) {
-    document.body.classList.add("no-attendance");
-    try { localStorage.setItem("hero-user-no-attendance", "1"); } catch (_) {}
-  } else {
-    document.body.classList.remove("no-attendance");
-    try { localStorage.removeItem("hero-user-no-attendance"); } catch (_) {}
-  }
-
-  // Persistir el rol para que el banner de changelog y el skip-loading
-  // de las otras páginas puedan decidir sincrónicamente al cargar.
-  try { localStorage.setItem("hero-user-role", currentUserRole.role); } catch (_) {}
 
   // Cargar datos del usuario desde Firestore
   let userData = {};
