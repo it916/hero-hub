@@ -29,13 +29,24 @@ const DOC_REF = () => doc(db, "shared", "rolePermissions");
 // Orden de los roles en las columnas (admin primero, agente al final)
 const ORDEN_ROLES = ["admin", "interno", "it", "agente"];
 
-// Orden de las páginas en las filas: primero las que todos comparten
-const ORDEN_PAGINAS = [
+// Orden preferido de las filas: primero las páginas que casi todos comparten,
+// al final las restringidas. Es solo una preferencia de presentación — las
+// páginas que no estén aquí se añaden al final igualmente. Sin eso, agregar
+// una página a PAGE_LABELS y olvidarla en esta lista la dejaría sin fila en
+// la matriz, invisible y sin ningún error que lo avisara.
+const ORDEN_PREFERIDO = [
   "index", "equipo", "portales", "mi-perfil", "changelog",
   "agencias", "directorio", "guias", "politicas", "onboarding",
   "reuniones", "grabaciones", "contracting", "solicitud-cuenta",
   "finanzas", "finanzas-manual", "it-console", "admin"
 ];
+
+function paginasOrdenadas() {
+  const todas = Object.keys(PAGE_LABELS);
+  const primero = ORDEN_PREFERIDO.filter(p => todas.includes(p));
+  const resto = todas.filter(p => !primero.includes(p));
+  return [...primero, ...resto];
+}
 
 let estado = null;        // { [rol]: { pages:Set, features:Set } }
 let estadoOriginal = null;
@@ -91,6 +102,34 @@ function clonarEstado(origen) {
     };
   }
   return copia;
+}
+
+/**
+ * Qué cambió respecto a lo guardado, por rol. Va al audit log: sin esto el
+ * registro solo dice "alguien tocó los permisos", que es tanto como nada
+ * cuando dentro de unos meses haya que averiguar por qué un rol perdió algo.
+ * Devuelve {} si no hay diferencias.
+ */
+function calcularDiff() {
+  const diff = {};
+  for (const rol of Object.keys(estado)) {
+    const antes = estadoOriginal[rol];
+    const ahora = estado[rol];
+
+    const cambios = {};
+    const pagesQuitadas  = [...antes.pages].filter(p => !ahora.pages.has(p));
+    const pagesAgregadas = [...ahora.pages].filter(p => !antes.pages.has(p));
+    const featsQuitadas  = [...antes.features].filter(f => !ahora.features.has(f));
+    const featsAgregadas = [...ahora.features].filter(f => !antes.features.has(f));
+
+    if (pagesQuitadas.length)  cambios.paginasQuitadas  = pagesQuitadas;
+    if (pagesAgregadas.length) cambios.paginasAgregadas = pagesAgregadas;
+    if (featsQuitadas.length)  cambios.featuresQuitadas = featsQuitadas;
+    if (featsAgregadas.length) cambios.featuresAgregadas = featsAgregadas;
+
+    if (Object.keys(cambios).length) diff[rol] = cambios;
+  }
+  return diff;
 }
 
 function hayCambios() {
@@ -149,15 +188,13 @@ function construirAviso() {
 }
 
 function filasDePaginas() {
-  return ORDEN_PAGINAS
-    .filter(p => PAGE_LABELS[p])
-    .map(p => ({
-      clave: p,
-      etiqueta: PAGE_LABELS[p],
-      obligatoria: PAGINAS_OBLIGATORIAS.includes(p),
-      grupo: null,
-      nota: null
-    }));
+  return paginasOrdenadas().map(p => ({
+    clave: p,
+    etiqueta: PAGE_LABELS[p],
+    obligatoria: PAGINAS_OBLIGATORIAS.includes(p),
+    grupo: null,
+    nota: null
+  }));
 }
 
 function filasDeFeatures() {
@@ -414,12 +451,17 @@ async function restaurarDefaults() {
   }
   render();
   avisosDeCoherencia();
-  heroToast?.info("Valores por defecto cargados. Pulsa Guardar para publicarlos.");
+  // Con window. delante a propósito: el optional chaining no protege de un
+  // ReferenceError si el identificador no está declarado, solo de null.
+  window.heroToast?.info("Valores por defecto cargados. Pulsa Guardar para publicarlos.");
 }
 
 async function guardarCambios() {
   const btn = document.getElementById("perm-guardar");
   if (btn) { btn.disabled = true; btn.textContent = "Guardando…"; }
+
+  // Se calcula antes de mover estadoOriginal, que es contra lo que se compara.
+  const diff = calcularDiff();
 
   const roles = {};
   for (const rol of ORDEN_ROLES) {
@@ -445,14 +487,17 @@ async function guardarCambios() {
     // admin vea el efecto sin recargar de más.
     await loadRolesCatalog({ force: true });
 
-    await logEvent(ACTIONS.PERMISOS_UPDATE, adminEmail, { roles: Object.keys(roles) });
+    await logEvent(ACTIONS.PERMISOS_UPDATE, adminEmail, {
+      rolesAfectados: Object.keys(diff),
+      cambios: diff
+    });
 
     const metaEl = document.getElementById("perm-meta");
     if (metaEl) metaEl.textContent = textoMeta();
-    heroToast?.success("Permisos guardados. Aplican en el próximo ingreso de cada usuario.");
+    window.heroToast?.success("Permisos guardados. Aplican en el próximo ingreso de cada usuario.");
   } catch (e) {
     console.error("[permisos] Error guardando:", e);
-    heroToast?.error("No se pudieron guardar los permisos: " + e.message);
+    window.heroToast?.error("No se pudieron guardar los permisos: " + e.message);
   } finally {
     actualizarBotonGuardar();
   }
