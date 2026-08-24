@@ -2789,41 +2789,39 @@ body[data-theme="dark"] .hqcc-break-btn { background:rgba(6,163,182,.14); border
 .hqcc-att-feedback { min-height:13px; font-family:var(--mono); font-size:10.5px; font-weight:600; letter-spacing:.3px; color:var(--muted); }
 .hqcc-att-feedback.ok { color:#059669; } .hqcc-att-feedback.err { color:#dc2626; }
 
-/* CRMs — accesos rápidos en el HQCC tile */
-.hqcc-crm-btns { display:flex; flex-direction:column; gap:10px; margin-top:auto; }
-.hqcc-crm-btn {
-  display:flex; align-items:center; gap:12px;
-  padding:11px 14px; border-radius:12px;
-  border:1px solid var(--border); background:var(--paper);
+/* Plataformas — accesos rápidos en el HQCC tile.
+   Lista sin cajas: las dos filas se reparten la altura de la columna con
+   flex:1, así el tile llena su celda del grid sin dejar aire abajo por más
+   que el tile de Asistencia crezca. */
+.hqcc-plat { gap:8px; }
+.hqcc-plat-list { display:flex; flex-direction:column; flex:1; }
+.hqcc-plat-row {
+  display:flex; align-items:center; gap:14px; flex:1;
+  padding:0 8px; border-radius:12px;
   color:var(--text); text-decoration:none;
-  transition:transform .15s, background .15s, border-color .15s, box-shadow .15s;
+  transition:background .15s;
 }
-.hqcc-crm-btn:hover {
-  transform:translateY(-1px); background:var(--card);
-  border-color:rgba(6,163,182,.32);
-  box-shadow:0 8px 20px rgba(6,107,120,.12);
+.hqcc-plat-row:first-child { border-bottom:1px solid var(--border); }
+.hqcc-plat-ico { width:24px; height:24px; flex-shrink:0; stroke-width:1.75; transition:color .15s; }
+.hqcc-plat-ico.hero { color:var(--cyan-deep); }
+.hqcc-plat-ico.ghl  { color:#e07000; }
+.hqcc-plat-body { display:flex; flex-direction:column; min-width:0; flex:1; }
+.hqcc-plat-name {
+  font-family:var(--display); font-size:16px; font-weight:700;
+  line-height:1.15; color:var(--text); transition:color .15s;
 }
-.hqcc-crm-btn.primary {
-  background:linear-gradient(135deg, var(--cyan-deep), var(--cyan));
-  color:#fff; border-color:transparent;
-  box-shadow:0 6px 16px rgba(6,163,182,.28);
-}
-.hqcc-crm-btn.primary:hover {
-  background:linear-gradient(135deg, #058fa0, #07b5ca);
-  box-shadow:0 10px 24px rgba(6,163,182,.40);
-}
-.hqcc-crm-ico {
-  width:34px; height:34px; border-radius:10px; flex-shrink:0;
-  display:inline-flex; align-items:center; justify-content:center;
-  background:rgba(6,163,182,.12); color:var(--cyan-deep);
-}
-.hqcc-crm-ico i { width:18px; height:18px; }
-.hqcc-crm-btn.primary .hqcc-crm-ico { background:rgba(255,255,255,.18); color:#fff; }
-.hqcc-crm-body { display:flex; flex-direction:column; min-width:0; flex:1; }
-.hqcc-crm-name { font-size:13.5px; font-weight:700; line-height:1.2; }
-.hqcc-crm-sub  { font-size:11px; color:var(--muted); margin-top:2px; }
-.hqcc-crm-btn.primary .hqcc-crm-sub { color:rgba(255,255,255,.85); }
-.hqcc-crm-btn > i:last-child { width:14px; height:14px; opacity:.7; flex-shrink:0; }
+.hqcc-plat-sub { font-size:11.5px; color:var(--muted); margin-top:3px; }
+.hqcc-plat-arrow { width:16px; height:16px; flex-shrink:0; color:var(--cyan); transition:transform .15s; }
+
+.hqcc-plat-row:hover { background:var(--paper); }
+.hqcc-plat-row:hover .hqcc-plat-ico  { color:var(--cyan); }
+.hqcc-plat-row:hover .hqcc-plat-name { color:var(--cyan-deep); }
+.hqcc-plat-row:hover .hqcc-plat-arrow { transform:translate(2px,-2px); }
+
+body[data-theme="dark"] .hqcc-plat-ico.hero { color:var(--cyan-bright); }
+body[data-theme="dark"] .hqcc-plat-ico.ghl  { color:#ff9838; }
+body[data-theme="dark"] .hqcc-plat-row:hover { background:rgba(6,163,182,.12); }
+body[data-theme="dark"] .hqcc-plat-row:hover .hqcc-plat-name { color:var(--cyan-bright); }
 
 @media (max-width:900px) {
   .hqcc-modules { grid-template-columns:1fr; }
@@ -7201,7 +7199,7 @@ button.hub-card {
 
    Por defecto el agente no tiene hqcc-tiles ni dashboard-social: ve solo el
    ribbon del banner (saludo + fecha/hora), sin tiles de Oficina, Asistencia
-   ni CRMs, y sin las secciones sociales del dashboard. */
+   ni Plataformas, y sin las secciones sociales del dashboard. */
 
 body:not(.feat-hqcc-tiles) .hqcc-modules,
 body:not(.feat-dashboard-social) #sec-misiones,
@@ -7226,7 +7224,7 @@ body.no-attendance #mp-att-section,
 body.no-attendance #btnAusencia {
   display: none !important;
 }
-/* El HQCC tiene 3 cols (Oficina · Asistencia · CRMs). Al ocultar la del medio
+/* El HQCC tiene 3 cols (Oficina · Asistencia · Plataformas). Al ocultar la del medio
    se reajusta a 2 cols para no dejar hueco. */
 body.no-attendance .hqcc-modules { grid-template-columns: 1fr 1fr; }
 
