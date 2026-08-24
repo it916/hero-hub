@@ -1,5 +1,22 @@
 [
   {
+    "id": "2026-08-24-tile-plataformas",
+    "version": "v2.38.0",
+    "date": "2026-08-24",
+    "category": "feat",
+    "scope": "dashboard",
+    "audience": "all",
+    "title": "El tile de CRMs del banner ahora se llama Plataformas",
+    "items": [
+      "El tile tenía dos botones con una segunda línea de texto reservada en el CSS que nunca se llenaba, así que quedaba con aire muerto y desalineado respecto al tile de Asistencia",
+      "El botón de Hero CRM usaba el mismo gradiente cyan que el tile de Oficina Virtual: dos elementos peleando por ser el dominante del banner",
+      "Ahora es una lista sin cajas: cada plataforma lleva su ícono en el color de su marca, el nombre en Bricolage y una línea que dice para qué sirve — Hero CRM para clientes y pólizas, Go High Level para marketing y leads",
+      "Las dos filas se reparten la altura de la columna, así que el tile llena su espacio por más que crezca el de al lado",
+      "El nombre “CRMs” y el ícono de maletín describían una categoría de software, no una tarea. Pasan a “Plataformas” con ícono de cuadrícula",
+      "El acceso a Hero CRM apunta ahora a app.heroinsuranceusa.com/login"
+    ]
+  },
+  {
     "id": "2026-08-21-permisos-afinado",
     "version": "v2.37.1",
     "date": "2026-08-21",
