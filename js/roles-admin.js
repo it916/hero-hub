@@ -553,6 +553,13 @@ function openUserModal(user) {
             <span class="mf-checkbox-hint">Para empleados en período de prueba, cuentas técnicas o ex-empleados con acceso residual. Sigue pudiendo entrar al Hub y marcar asistencia, pero no aparece en la vista pública del organigrama.</span>
           </span>
         </label>
+        <label class="mf-checkbox">
+          <input type="checkbox" id="m-no-attendance">
+          <span class="mf-checkbox-body">
+            <span class="mf-checkbox-label">Exento de marcar asistencia</span>
+            <span class="mf-checkbox-hint">Para la directiva y cuentas que no fichan. Le oculta el tile de asistencia del banner, la sección de asistencia en Mi Perfil y el botón de Ausencia. No altera su rol ni borra los registros que ya tenga.</span>
+          </span>
+        </label>
       </div>
 
       <div class="mf-section">
@@ -621,6 +628,9 @@ function openUserModal(user) {
   dialog.querySelector("#m-bday").value = bd || "";
   dialog.querySelector("#m-access-role").value = roleVal;
   dialog.querySelector("#m-excluded").checked = user?.meta?.excluded === true;
+  // Solo un false explícito exime de fichar: los docs viejos sin el campo
+  // (y los usuarios nuevos) fichan normal.
+  dialog.querySelector("#m-no-attendance").checked = user?.access?.trackAttendance === false;
   if (editing) {
     // bio.frase se setea por atributo `value=` en el HTML
     // bio.union se parsea de "Marzo 2024" a "2024-03" para el input type=month
@@ -820,6 +830,8 @@ function openUserModal(user) {
 
     const newRole = dialog.querySelector("#m-access-role").value || null;
     const newExcluded = dialog.querySelector("#m-excluded").checked;
+    // El checkbox pregunta por la exención; el campo guarda lo contrario.
+    const newTrackAttendance = !dialog.querySelector("#m-no-attendance").checked;
 
     let photoPath = photoVal;
     if (pendingPhotoFile) {
@@ -842,6 +854,7 @@ function openUserModal(user) {
     try {
       if (editing) {
         const oldRole = user.access?.role || null;
+        const oldTrackAttendance = user.access?.trackAttendance !== false;
         await updateUserFields(originalEmail, {
           "identity.name": name,
           "identity.photo": photoPath,
@@ -852,6 +865,7 @@ function openUserModal(user) {
           "display.jobTitle": jobTitle,
           "display.bio": newBio || emptyBio,
           "access.role": newRole,
+          "access.trackAttendance": newTrackAttendance,
           "meta.excluded": newExcluded,
         });
         user.identity = { ...(user.identity || {}), name, photo: photoPath,
@@ -860,6 +874,7 @@ function openUserModal(user) {
         user.display = { ...(user.display || {}), jobTitle, bio: newBio || emptyBio };
         if (!user.access) user.access = {};
         user.access.role = newRole;
+        user.access.trackAttendance = newTrackAttendance;
         user.access.updatedBy = currentAdminEmail;
         user.access.updatedAt = { toDate: () => new Date() };
         if (!user.meta) user.meta = {};
@@ -870,6 +885,11 @@ function openUserModal(user) {
             to: ROLES[newRole]?.label || newRole || "(sin rol)"
           });
         }
+        if (oldTrackAttendance !== newTrackAttendance) {
+          logEvent(ACTIONS.ATTENDANCE_OPTOUT, originalEmail, {
+            estado: newTrackAttendance ? "Vuelve a fichar" : "Exento"
+          });
+        }
         table.updateRow(originalEmail, buildRow(user));
       } else {
         const created = await createUser(primaryEmail, {
@@ -878,10 +898,14 @@ function openUserModal(user) {
           phones: phonesPayload, emails: emailsPayload,
           jobTitle, role: newRole,
           excluded: newExcluded,
+          trackAttendance: newTrackAttendance,
         });
         users.push(created);
         users.sort((a, b) => (a.identity?.name || "").localeCompare(b.identity?.name || ""));
         logEvent(ACTIONS.ROLE_CREATE, primaryEmail, { role: ROLES[newRole]?.label || newRole || "(sin rol)" });
+        if (!newTrackAttendance) {
+          logEvent(ACTIONS.ATTENDANCE_OPTOUT, primaryEmail, { estado: "Exento" });
+        }
         table.addRow(buildRow(created));
       }
       renderStats();

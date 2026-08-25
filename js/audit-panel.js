@@ -199,6 +199,10 @@ function formatDetails(action, details) {
   if (action === "role.create" && details.role) {
     return `Rol: <span class="al-tag al-tag-cyan">${escapeHtml(details.role)}</span>`;
   }
+  if (action === "attendance.optout" && details.estado) {
+    const cyan = details.estado === "Exento" ? "" : " al-tag-cyan";
+    return `<span class="al-tag${cyan}">${escapeHtml(details.estado)}</span>`;
+  }
   if (action === "role.delete" && details.role) {
     return `Tenía: <span class="al-tag">${escapeHtml(details.role)}</span>`;
   }

@@ -34,6 +34,10 @@ export const ACTIONS = {
   ROLE_UPDATE: "role.update",
   ROLE_DELETE: "role.delete",
   PERMISOS_UPDATE: "permisos.update",
+  // Exención de fichaje (access.trackAttendance). Se loguea aparte del rol
+  // porque no es un cambio de permisos: la persona sigue viendo lo mismo,
+  // solo deja de marcar asistencia.
+  ATTENDANCE_OPTOUT: "attendance.optout",
 
   // Accesos denegados (se loguean desde page-guard.js)
   AUTH_DENIED_NO_ROLE: "auth.denied.no_role",
@@ -101,6 +105,7 @@ export const ACTION_LABELS = {
   "role.create": { label: "Usuario agregado", icon: "user-plus", color: "#22a06b" },
   "role.update": { label: "Rol cambiado", icon: "shuffle", color: "#06a3b6" },
   "permisos.update": { label: "Permisos por rol actualizados", icon: "sliders-horizontal", color: "#6366f1" },
+  "attendance.optout": { label: "Exención de asistencia", icon: "alarm-clock-off", color: "#e8a317" },
   "role.delete": { label: "Usuario eliminado", icon: "user-x", color: "#c0392b" },
   "auth.denied.no_role": { label: "Acceso denegado (sin rol)", icon: "shield-off", color: "#e8a317" },
   "auth.denied.page": { label: "Acceso denegado (página)", icon: "shield-off", color: "#e8a317" },

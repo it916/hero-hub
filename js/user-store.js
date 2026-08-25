@@ -98,6 +98,10 @@ export async function createUser(email, initial = {}) {
     access: {
       role: initial.role || null,
       active: initial.active !== false,
+      // Opt-out de fichaje. Se escribe explícito aunque el default sea true,
+      // para que el campo exista en el doc y se pueda ver desde la consola
+      // de Firestore sin adivinar. roles.js lo lee con `!== false`.
+      trackAttendance: initial.trackAttendance !== false,
       updatedBy: actor,
       updatedAt: now
     },
