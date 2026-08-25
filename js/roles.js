@@ -99,7 +99,7 @@ export const DEFAULT_ROLES = {
     // Misma visibilidad que "interno" + la IT Console. Sin acceso a admin.
     // it@ está en LEGACY_ADMIN_EMAILS y entra como admin — este rol es para
     // futuros asistentes de IT o cuentas de servicio que necesiten la consola.
-    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "reuniones", "changelog", "it-console", "mi-perfil", "contracting", "solicitud-cuenta"],
+    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones", "changelog", "it-console", "mi-perfil", "contracting", "solicitud-cuenta"],
     features: ["hqcc-tiles", "dashboard-social", "tile-database", "tile-correos", "tile-calendario", "tile-it-console", "portales-team", "portales-delete", "admin-migracion"],
     isAdmin: false
   },
@@ -284,8 +284,19 @@ export async function loadUserRole(email) {
   // Catálogo de permisos: si ya hay una copia en localStorage se usa de
   // inmediato y el refresco viaja en segundo plano (no añade latencia a la
   // carga de la página). La primera vez sí se espera.
-  if (leerCatalogoCacheado()) {
-    loadRolesCatalog();
+  //
+  // Antes el resultado de ese refresco se descartaba: la página ya había
+  // resuelto con el cache viejo, así que un cambio hecho desde admin →
+  // Permisos tardaba DOS cargas en verse (una para refrescar el cache y otra
+  // para aplicarlo). Ahora, si lo que llega difiere de lo que había, se
+  // recalcula el rol en caliente.
+  const catalogoPrevio = leerCatalogoCacheado();
+  if (catalogoPrevio) {
+    loadRolesCatalog().then(fresco => {
+      if (fresco && JSON.stringify(fresco) !== JSON.stringify(catalogoPrevio)) {
+        refrescarRolEnCaliente();
+      }
+    });
   } else {
     await loadRolesCatalog();
   }
@@ -331,6 +342,30 @@ export async function loadUserRole(email) {
   } catch (e) {
     console.error("Error cargando rol del usuario:", e);
     return null;
+  }
+}
+
+/**
+ * Reaplica el rol del usuario cuando el catálogo remoto llegó tarde y trae
+ * algo distinto de lo que había cacheado. Solo se dispara en ese caso, así
+ * que en la carga normal no hace absolutamente nada.
+ *
+ * Si el cambio dejó al usuario sin permiso para la página en la que está,
+ * se lo saca: es el mismo criterio de guardPage(), aplicado un segundo
+ * después. Preferible a dejarlo en una pantalla que ya no le corresponde.
+ */
+function refrescarRolEnCaliente() {
+  if (!cachedRole) return;
+
+  const definicion = definicionEfectiva(cachedRole.role);
+  if (!definicion) return;
+
+  cachedRole = { ...cachedRole, definition: definicion };
+  applyRoleClasses(cachedRole);
+  filterTopbarByRole(cachedRole);
+
+  if (!canAccessPage(getCurrentPage(), cachedRole)) {
+    redirectToAllowedPage(cachedRole);
   }
 }
 
@@ -531,9 +566,10 @@ export function filterTopbarByRole(userRole) {
     const href = link.getAttribute("href") || "";
     const pageName = href.replace(".html", "").replace("./", "");
 
-    if (pageName && !allowedPages.includes(pageName)) {
-      link.style.display = "none";
-    }
+    // Se asigna en los dos sentidos, no solo "none": si el catálogo llega
+    // tarde y AMPLÍA los permisos, un enlace ya ocultado tiene que volver.
+    if (!pageName) return;
+    link.style.display = allowedPages.includes(pageName) ? "" : "none";
   });
 
   // Si todos los hijos de un .nav-group quedaron ocultos, ocultar también
@@ -543,9 +579,8 @@ export function filterTopbarByRole(userRole) {
     const visibleChildren = Array.from(children).filter(
       c => c.style.display !== "none"
     );
-    if (children.length && !visibleChildren.length) {
-      group.style.display = "none";
-    }
+    if (!children.length) return;
+    group.style.display = visibleChildren.length ? "" : "none";
   });
 
   // Botón de admin
