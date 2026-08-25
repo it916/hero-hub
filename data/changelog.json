@@ -1,5 +1,22 @@
 [
   {
+    "id": "2026-08-25-exencion-asistencia",
+    "version": "v2.39.0",
+    "date": "2026-08-25",
+    "category": "feat",
+    "scope": "admin",
+    "audience": "admin",
+    "title": "La exención de asistencia se activa desde el panel de Usuarios",
+    "items": [
+      "Eximir a alguien de fichar existía desde v2.34.0, pero solo se podía hacer editando el documento a mano en la consola de Firestore: sin registro de quién lo hizo ni cuándo. Ahora es una casilla en el modal de Usuarios",
+      "Marcarla le oculta a esa persona el tile de asistencia del banner, la sección de asistencia en Mi Perfil y el botón de Ausencia. No toca su rol ni borra los registros que ya tenga",
+      "El cambio queda en el Log de auditoría como acción propia — “Exención de asistencia” — y no mezclado con los cambios de rol, porque la persona sigue viendo exactamente lo mismo que antes",
+      "Los usuarios nuevos se crean con el campo escrito de forma explícita, para que se vea en Firestore sin tener que deducir el valor por defecto",
+      "El rol IT no incluía Onboarding ni Grabaciones pese a que su definición decía tener lo mismo que Equipo interno. Un agente veía Grabaciones y él no",
+      "Un cambio de permisos hecho desde admin tardaba dos recargas en verse: la copia local se usaba para resolver y el dato fresco de Firestore llegaba después y se descartaba. Ahora se aplica en la misma carga"
+    ]
+  },
+  {
     "id": "2026-08-24-tile-plataformas",
     "version": "v2.38.0",
     "date": "2026-08-24",
