@@ -1364,12 +1364,47 @@ function buildEmailReactivation(nombre, emailCorp) {
 // "Estado de actividad" del modal. La cuenta sigue activa; el correo avisa
 // que en 15 días se suspenderá si no detecta login. Firma "Equipo de Hero
 // Insurance USA" (no personal) porque es una comunicación de política.
-function buildEmailPreSuspension(nombre, emailCorp, fechaDeadline) {
+//
+// `opts` distingue las dos variantes del flujo (ver classifyActivityStatus):
+//   { neverLoggedIn: true, fechaCreacion: 'MM/DD/YYYY' } → la cuenta nunca
+//   registró un login. NO se le puede decir "sin actividad en los últimos
+//   3 meses" porque puede tener 2 semanas de creada; el copy cambia a
+//   "creada el X y aún sin activar" y el CTA pide la contraseña temporal.
+//   Sin opts (o neverLoggedIn:false) → inactivo ≥3m, copy original.
+function buildEmailPreSuspension(nombre, emailCorp, fechaDeadline, opts) {
+  var o = opts || {};
+  var never = !!o.neverLoggedIn;
+  var fechaCreacion = o.fechaCreacion || '';
   var P = '#06a3b6';
   var ALERT = '#e8a317';
-  var mailtoUrl = 'mailto:it@heroinsuranceusa.com'
-    + '?subject=' + encodeURIComponent('Mantener activa cuenta ' + emailCorp)
-    + '&body=' + encodeURIComponent('Hola equipo de IT,\n\nSolicito que mantengan activa mi cuenta ' + emailCorp + '.\n\nGracias.\n\n' + (nombre || ''));
+  var mailtoUrl = never
+    ? 'mailto:it@heroinsuranceusa.com'
+      + '?subject=' + encodeURIComponent('Activar cuenta ' + emailCorp)
+      + '&body=' + encodeURIComponent('Hola equipo de IT,\n\nQuiero activar mi cuenta ' + emailCorp + '. Por favor envíenme la contraseña temporal para poder iniciar sesión.\n\nGracias.\n\n' + (nombre || ''))
+    : 'mailto:it@heroinsuranceusa.com'
+      + '?subject=' + encodeURIComponent('Mantener activa cuenta ' + emailCorp)
+      + '&body=' + encodeURIComponent('Hola equipo de IT,\n\nSolicito que mantengan activa mi cuenta ' + emailCorp + '.\n\nGracias.\n\n' + (nombre || ''));
+  // Copy variable entre las dos variantes. Todo lo demás (layout, colores,
+  // footer) es idéntico para no duplicar el template completo.
+  var h1Text = never
+    ? 'Activa tu cuenta corporativa o será suspendida'
+    : 'Tu cuenta corporativa está en riesgo de suspensión';
+  var parrafoMotivo = never
+    ? 'Tu cuenta corporativa <strong style="color:#b08a00;">' + escHtml(emailCorp) + '</strong>'
+      + (fechaCreacion ? ' fue creada el <strong>' + escHtml(fechaCreacion) + '</strong> y' : '')
+      + ' todavía no registra <strong>ningún inicio de sesión</strong>. Como parte de nuestra política de seguridad, en <strong>15 días</strong> procederemos a suspenderla si no la activas.'
+    : 'Notamos que tu cuenta corporativa <strong style="color:#b08a00;">' + escHtml(emailCorp) + '</strong> no registra inicios de sesión en los <strong>últimos 3 meses</strong>. Como parte de nuestra política de seguridad, en <strong>15 días</strong> procederemos a suspenderla si no detectamos actividad.';
+  var textoPlazo = never
+    ? 'Tienes hasta el <strong>' + escHtml(fechaDeadline || '(15 días desde hoy)') + '</strong> para iniciar sesión por primera vez o respondernos. Después de esa fecha la cuenta será suspendida automáticamente.'
+    : 'Tienes hasta el <strong>' + escHtml(fechaDeadline || '(15 días desde hoy)') + '</strong> para iniciar sesión o respondernos. Después de esa fecha la cuenta será suspendida automáticamente.';
+  var tituloAyuda = never ? '¿Necesitas tu cuenta?' : '¿Aún necesitas tu cuenta?';
+  var bulletLogin = never
+    ? '<li>Inicia sesión por primera vez en <a href="https://mail.google.com" style="color:' + P + ';font-weight:700;">mail.google.com</a> con la contraseña temporal que te enviamos al crear la cuenta, o</li>'
+    : '<li>Inicia sesión en <a href="https://mail.google.com" style="color:' + P + ';font-weight:700;">mail.google.com</a> antes de la fecha indicada, o</li>';
+  var bulletContacto = never
+    ? '<li>Responde este correo o escríbenos a <a href="mailto:it@heroinsuranceusa.com" style="color:' + P + ';font-weight:700;">it@heroinsuranceusa.com</a> — si perdiste la contraseña temporal, te la reenviamos</li>'
+    : '<li>Responde este correo o escríbenos a <a href="mailto:it@heroinsuranceusa.com" style="color:' + P + ';font-weight:700;">it@heroinsuranceusa.com</a></li>';
+  var ctaText = never ? 'Solicitar activación' : 'Solicitar mantener la cuenta';
   return '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head>'
   + '<body style="margin:0;padding:0;background:#f0f4f8;font-family:Trebuchet MS,Arial,sans-serif;">'
   + '<table cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#f0f4f8;"><tr><td style="padding:32px 16px;">'
@@ -1377,23 +1412,23 @@ function buildEmailPreSuspension(nombre, emailCorp, fechaDeadline) {
   + '<tr><td style="background:linear-gradient(135deg,' + ALERT + ',#c88a15);padding:32px 40px;text-align:center;">'
   + '<img src="https://hub.heroinsuranceusa.com/images/logo-shield-only.png" width="120" alt="Hero" style="display:block;margin:0 auto 18px;"/>'
   + '<div style="display:inline-block;background:rgba(255,255,255,0.2);color:#fff;font-weight:700;font-size:11px;letter-spacing:3px;padding:5px 14px;border-radius:20px;margin-bottom:10px;">AVISO PREVIO</div>'
-  + '<h1 style="margin:0;font-size:22px;font-weight:700;color:#fff;">Tu cuenta corporativa está en riesgo de suspensión</h1>'
+  + '<h1 style="margin:0;font-size:22px;font-weight:700;color:#fff;">' + h1Text + '</h1>'
   + '</td></tr>'
   + '<tr><td style="padding:32px 40px;">'
   + '<p style="margin:0 0 16px;font-size:14px;color:#2d3748;line-height:1.55;">Hola <strong>' + escHtml(nombre) + '</strong>,</p>'
-  + '<p style="margin:0 0 18px;font-size:14px;color:#2d3748;line-height:1.55;">Notamos que tu cuenta corporativa <strong style="color:#b08a00;">' + escHtml(emailCorp) + '</strong> no registra inicios de sesión en los <strong>últimos 3 meses</strong>. Como parte de nuestra política de seguridad, en <strong>15 días</strong> procederemos a suspenderla si no detectamos actividad.</p>'
+  + '<p style="margin:0 0 18px;font-size:14px;color:#2d3748;line-height:1.55;">' + parrafoMotivo + '</p>'
   + '<div style="background:#fff8e6;border-radius:12px;border:1px solid #f5d87a;border-left:4px solid ' + ALERT + ';padding:16px 20px;margin-bottom:24px;">'
   + '<p style="margin:0 0 6px;font-size:11px;font-weight:700;color:#b08a00;text-transform:uppercase;letter-spacing:1.5px;">Plazo</p>'
-  + '<p style="margin:0;font-size:13px;color:#7a5f00;line-height:1.6;">Tienes hasta el <strong>' + escHtml(fechaDeadline || '(15 días desde hoy)') + '</strong> para iniciar sesión o respondernos. Después de esa fecha la cuenta será suspendida automáticamente.</p>'
+  + '<p style="margin:0;font-size:13px;color:#7a5f00;line-height:1.6;">' + textoPlazo + '</p>'
   + '</div>'
-  + '<p style="margin:0 0 8px;font-size:14px;color:#2d3748;line-height:1.55;"><strong>¿Aún necesitas tu cuenta?</strong></p>'
+  + '<p style="margin:0 0 8px;font-size:14px;color:#2d3748;line-height:1.55;"><strong>' + tituloAyuda + '</strong></p>'
   + '<ul style="margin:0 0 20px 18px;padding:0;font-size:13px;color:#4a5568;line-height:1.7;">'
-  +   '<li>Inicia sesión en <a href="https://mail.google.com" style="color:' + P + ';font-weight:700;">mail.google.com</a> antes de la fecha indicada, o</li>'
-  +   '<li>Responde este correo o escríbenos a <a href="mailto:it@heroinsuranceusa.com" style="color:' + P + ';font-weight:700;">it@heroinsuranceusa.com</a></li>'
+  +   bulletLogin
+  +   bulletContacto
   + '</ul>'
   + '<p style="margin:0 0 20px;font-size:13px;color:#4a5568;line-height:1.55;">Si ya no la necesitas, no hace falta que hagas nada — la suspenderemos automáticamente al vencer el plazo.</p>'
   + '<div style="text-align:center;margin:0 0 8px;">'
-  + '<a href="' + mailtoUrl + '" style="display:inline-block;padding:14px 32px;background:' + P + ';color:#fff;font-family:Trebuchet MS,Arial,sans-serif;font-size:14px;font-weight:700;text-decoration:none;border-radius:30px;letter-spacing:0.5px;box-shadow:0 4px 14px rgba(6,163,182,0.30);">Solicitar mantener la cuenta</a>'
+  + '<a href="' + mailtoUrl + '" style="display:inline-block;padding:14px 32px;background:' + P + ';color:#fff;font-family:Trebuchet MS,Arial,sans-serif;font-size:14px;font-weight:700;text-decoration:none;border-radius:30px;letter-spacing:0.5px;box-shadow:0 4px 14px rgba(6,163,182,0.30);">' + ctaText + '</a>'
   + '</div>'
   + '</td></tr>'
   + '<tr><td style="padding:16px 40px 20px;background:#fafbfc;border-top:1px solid #e8e8e8;">'
@@ -1778,9 +1813,23 @@ async function enviarAvisoInactividad(email, nombre) {
     timeZone: 'America/New_York', year: 'numeric', month: 'long', day: 'numeric'
   });
 
+  // Variante del copy: nunca-login vs inactivo ≥3m. A quien nunca entró no se
+  // le puede decir "sin actividad en 3 meses" — la cuenta puede ser reciente.
+  // Se mira daysSinceLogin en vez de classifyActivityStatus porque este último
+  // devuelve 'notice-waiting' en cuanto existe un aviso previo — un reenvío
+  // perdería la variante correcta del copy.
+  var esNuncaLogin = daysSinceLogin(u) === null;
+  var fmtCreacion = (u && u.creado)
+    ? new Date(u.creado).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })
+    : '';
+
   var ok = await heroConfirm({
     title: '¿Enviar aviso previo?',
-    body: 'Se enviará un correo a ' + personalEmail + ' avisando a ' + nombre
+    body: esNuncaLogin
+      ? 'Se enviará un correo a ' + personalEmail + ' avisando a ' + nombre
+        + ' que su cuenta corporativa nunca fue activada y será suspendida en 15 días (antes del '
+        + fmtDeadline + ') si no inicia sesión. La cuenta sigue activa mientras tanto.'
+      : 'Se enviará un correo a ' + personalEmail + ' avisando a ' + nombre
         + ' que su cuenta corporativa será suspendida en 15 días (antes del '
         + fmtDeadline + ') si no detectamos actividad. La cuenta sigue activa mientras tanto.',
     confirmText: 'Enviar aviso',
@@ -1793,9 +1842,22 @@ async function enviarAvisoInactividad(email, nombre) {
     await sendOnboardingViaResend({
       from: 'Equipo de Hero Insurance USA <it@heroinsuranceusa.com>',
       to: personalEmail,
-      subject: '[Hero Insurance] Tu cuenta corporativa está en riesgo de suspensión',
-      html: buildEmailPreSuspension(nombre, email, fmtDeadline),
-      text: 'Hola ' + nombre + ', notamos que tu cuenta corporativa ' + email
+      subject: esNuncaLogin
+        ? '[Hero Insurance] Activa tu cuenta corporativa antes del ' + fmtDeadline
+        : '[Hero Insurance] Tu cuenta corporativa está en riesgo de suspensión',
+      html: buildEmailPreSuspension(nombre, email, fmtDeadline, {
+        neverLoggedIn: esNuncaLogin,
+        fechaCreacion: fmtCreacion,
+      }),
+      text: esNuncaLogin
+        ? 'Hola ' + nombre + ', tu cuenta corporativa ' + email
+          + (fmtCreacion ? ' fue creada el ' + fmtCreacion + ' y' : '')
+          + ' todavía no registra ningún inicio de sesión. En 15 días la suspenderemos '
+          + 'si no la activas (antes del ' + fmtDeadline + '). Si la necesitas, inicia '
+          + 'sesión en mail.google.com con la contraseña temporal que te enviamos, o '
+          + 'responde este correo. Escríbenos a it@heroinsuranceusa.com si perdiste la '
+          + 'contraseña temporal o necesitas ayuda.'
+        : 'Hola ' + nombre + ', notamos que tu cuenta corporativa ' + email
           + ' no registra inicios de sesión en los últimos 3 meses. En 15 días '
           + 'la suspenderemos si no detectamos actividad (antes del ' + fmtDeadline
           + '). Si aún la necesitas, inicia sesión antes de esa fecha o responde '
@@ -1818,7 +1880,9 @@ async function enviarAvisoInactividad(email, nombre) {
     // sin necesidad de otro fetch de Firestore.
     _wsUsersMap[(email || '').toLowerCase()] = Object.assign({}, wsData, saveData);
 
-    auditLog('usuario', 'Aviso previo de inactividad enviado', email + ' → ' + personalEmail);
+    auditLog('usuario', esNuncaLogin
+      ? 'Aviso previo enviado (cuenta nunca activada)'
+      : 'Aviso previo de inactividad enviado', email + ' → ' + personalEmail);
     addLog('Aviso previo enviado a ' + personalEmail, 'success');
     showToast('Aviso previo enviado. Plazo hasta ' + fmtDeadline);
 
@@ -5412,6 +5476,41 @@ var PLANTILLAS_TEMPLATES = {
     trigger: 'IT resetea la contrasena desde el modal de usuario del IT Console. Se envia al mismo correo corporativo reseteado.',
     endpoint: 'POST /email',
     sections: ['Header con logo', 'Aviso de seguridad amarillo', 'Card credenciales', 'CTA Contactar soporte', 'Timestamp']
+  },
+  'preaviso-3m': {
+    label: 'Aviso previo — inactivo 3m',
+    build: function() {
+      var fecha = new Date(Date.now() + PRE_SUSPENSION_GRACE_DAYS * 86400000).toLocaleDateString('es-ES', {
+        timeZone: 'America/New_York', year: 'numeric', month: 'long', day: 'numeric'
+      });
+      return buildEmailPreSuspension(PLANTILLAS_SAMPLE.nombre, PLANTILLAS_SAMPLE.email, fecha);
+    },
+    subject: '[Hero Insurance] Tu cuenta corporativa esta en riesgo de suspension',
+    from: 'Equipo de Hero Insurance USA <it@heroinsuranceusa.com>',
+    to: '(correo personal: recoveryEmail de Workspace, personalEmail de Firestore o prompt a IT)',
+    trigger: 'IT pulsa "Enviar aviso previo" en el bloque "Estado de actividad" del modal de Usuarios, cuando el agente lleva 3 meses o mas sin iniciar sesion. La cuenta sigue ACTIVA: solo se marca preSuspensionNoticeSentAt en Firestore y arranca el plazo de 15 dias.',
+    endpoint: 'POST /email/onboarding (acepta destinos externos)',
+    sections: ['Header ambar con badge AVISO PREVIO', 'Parrafo: sin login en los ultimos 3 meses', 'Caja de plazo con fecha limite', 'Dos salidas: iniciar sesion o responder', 'CTA Solicitar mantener la cuenta (mailto)']
+  },
+  'preaviso-never': {
+    label: 'Aviso previo — nunca inicio sesion',
+    build: function() {
+      var fecha = new Date(Date.now() + PRE_SUSPENSION_GRACE_DAYS * 86400000).toLocaleDateString('es-ES', {
+        timeZone: 'America/New_York', year: 'numeric', month: 'long', day: 'numeric'
+      });
+      var creada = new Date(Date.now() - 21 * 86400000).toLocaleDateString('en-US', {
+        month: '2-digit', day: '2-digit', year: 'numeric'
+      });
+      return buildEmailPreSuspension(PLANTILLAS_SAMPLE.nombre, PLANTILLAS_SAMPLE.email, fecha, {
+        neverLoggedIn: true, fechaCreacion: creada
+      });
+    },
+    subject: '[Hero Insurance] Activa tu cuenta corporativa antes del (fecha limite)',
+    from: 'Equipo de Hero Insurance USA <it@heroinsuranceusa.com>',
+    to: '(correo personal: recoveryEmail de Workspace, personalEmail de Firestore o prompt a IT)',
+    trigger: 'Mismo boton que el anterior, pero el agente nunca registro un login (estado never-logged-in). El copy cambia porque la cuenta puede ser reciente: no se le puede decir "sin actividad en 3 meses". Se menciona la fecha de creacion real de la cuenta.',
+    endpoint: 'POST /email/onboarding (acepta destinos externos)',
+    sections: ['Header ambar con badge AVISO PREVIO', 'Parrafo: creada el X y aun sin ningun inicio de sesion', 'Caja de plazo con fecha limite', 'Dos salidas: primer login con la contrasena temporal o responder', 'CTA Solicitar activacion (mailto pidiendo la contrasena temporal)']
   },
   'suspension': {
     label: 'Suspension de cuenta',
