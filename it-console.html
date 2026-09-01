@@ -1417,7 +1417,11 @@ html { scroll-behavior: smooth; }
            la cola de trabajo fuera de pantalla, y en un día bueno dejaban el
            dashboard vacío. Mismos ids que antes: la lógica de it-console.js
            (_renderPendingDeletionsChip / _renderInactiveAgentsChips) los sigue
-           mostrando y ocultando igual. -->
+           mostrando y ocultando igual.
+           IMPORTANTE: el texto de cada chip va dentro de UN solo span. El chip
+           es display:flex con gap, asi que cada nodo de texto suelto se vuelve
+           un item flex anonimo y el gap reemplaza los espacios — la frase se
+           rompia en pedazos sueltos ("agente  s  nunca ha  n  iniciado sesion"). -->
       <div class="home-alert-strip" id="home-alert-strip">
         <span class="home-alert-strip-label">Ciclo de cuentas</span>
 
@@ -1425,32 +1429,28 @@ html { scroll-behavior: smooth; }
               onclick="jumpToInactivityFilter('suspendidos-vencidos')"
               title="Ver cuentas suspendidas con plazo cumplido, listas para eliminar">
           <span class="home-alert-chip-n" id="home-alert-count">0</span>
-          cuenta<span id="home-alert-plural">s</span>
-          suspendida<span id="home-alert-plural2">s</span>
-          cumple<span id="home-alert-plural3">n</span> 15 días
+          <span>cuenta<span id="home-alert-plural">s</span> suspendida<span id="home-alert-plural2">s</span> cumple<span id="home-alert-plural3">n</span> 15 días</span>
         </span>
 
         <span class="home-alert-chip purple" id="home-alert-never-login"
               onclick="jumpToInactivityFilter('nunca-login')"
               title="Ver agentes que nunca han iniciado sesión desde que se creó su cuenta">
           <span class="home-alert-chip-n" id="home-alert-never-count">0</span>
-          agente<span id="home-alert-never-plural">s</span>
-          nunca ha<span id="home-alert-never-plural2">n</span> iniciado sesión
+          <span>agente<span id="home-alert-never-plural">s</span> nunca ha<span id="home-alert-never-plural2">n</span> iniciado sesión</span>
         </span>
 
         <span class="home-alert-chip amber" id="home-alert-inactive-noticeless"
               onclick="jumpToInactivityFilter('inactivos-3m')"
               title="Ver agentes inactivos y decidir a quiénes enviar aviso previo">
           <span class="home-alert-chip-n" id="home-alert-inactive-count">0</span>
-          agente<span id="home-alert-inactive-plural">s</span> sin login ≥3 meses
+          <span>agente<span id="home-alert-inactive-plural">s</span> sin login ≥3 meses</span>
         </span>
 
         <span class="home-alert-chip red" id="home-alert-notice-expired"
               onclick="jumpToInactivityFilter('aviso-vencido')"
               title="Ver agentes con aviso previo vencido, listos para suspender">
           <span class="home-alert-chip-n" id="home-alert-expired-count">0</span>
-          agente<span id="home-alert-expired-plural">s</span>
-          con aviso vencido<span id="home-alert-expired-plural2">s</span>
+          <span>agente<span id="home-alert-expired-plural">s</span> con aviso<span id="home-alert-expired-plural2">s</span> vencido<span id="home-alert-expired-plural3">s</span></span>
         </span>
 
         <span class="home-alert-ok" id="home-alert-ok">

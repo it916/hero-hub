@@ -1626,8 +1626,10 @@ async function _renderInactiveAgentsChips() {
     }
     if (noticeExpired > 0) {
       document.getElementById('home-alert-expired-count').textContent = String(noticeExpired);
+      // 3 spans: agente(s) con aviso(s) vencido(s).
       document.getElementById('home-alert-expired-plural').textContent = noticeExpired === 1 ? '' : 's';
       document.getElementById('home-alert-expired-plural2').textContent = noticeExpired === 1 ? '' : 's';
+      document.getElementById('home-alert-expired-plural3').textContent = noticeExpired === 1 ? '' : 's';
       chipB.style.display = 'flex';
     } else {
       chipB.style.display = 'none';
