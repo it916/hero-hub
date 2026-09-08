@@ -24,6 +24,14 @@
 import { auth } from "./firebase-config.js";
 import { writeAttendance, subscribeLastEvent, fetchLastEvent } from "./attendance-store.js";
 
+// ── Cierre del fichaje desde el Hub (2026-09-08) ─────────────────
+// El registro de asistencia pasó a Time Doctor. El tile del HQCC queda
+// cubierto por la cinta de clausura y sus botones no se cablean ni se
+// re-habilitan al llegar snapshots. Para reactivarlo: poner false aquí y
+// quitar .att-closed + el bloque .att-tape del tile en index.html.
+const HQCC_ATTENDANCE_CLOSED = true;
+const isClosedTileBtn = btn => HQCC_ATTENDANCE_CLOSED && !!btn.closest("#attendance-tile");
+
 const STORAGE_KEY = "hh-attendance-last";
 const TICK_MS = 30_000;
 
@@ -170,6 +178,7 @@ function refreshButtonsState() {
   const allowed = computeAllowedTypes(currentState);
 
   document.querySelectorAll("button[data-att-type]").forEach(btn => {
+    if (isClosedTileBtn(btn)) return;   // tile cerrado: no se re-habilita
     _applyButtonState(btn, allowed, btn.dataset.attType);
   });
 
@@ -185,7 +194,7 @@ function refreshButtonsState() {
 
   // Botón break proxy del HQCC — activo si Inicio Break O Fin Break están permitidos.
   const btnBreak = document.getElementById("hqcc-break");
-  if (btnBreak) {
+  if (btnBreak && !HQCC_ATTENDANCE_CLOSED) {
     const canStartBreak = allowed.has("Inicio Break");
     const canEndBreak = allowed.has("Fin Break");
     const active = canStartBreak || canEndBreak;
@@ -317,35 +326,12 @@ async function recordAttendance(type, btn, extras = {}) {
       applyState({ type, timestamp: now.toISOString(), ...extras });
     }
 
-    // Persistimos aparte el día de la primera Entrada para que
-    // checkDailyPopup pueda detectarla aunque después se marquen Break/Salida
-    // y el estado actual ya no sea "Entrada".
-    if (type === "Entrada") {
-      try { localStorage.setItem("hh-attendance-entry-day", now.toISOString().slice(0, 10)); } catch {}
-    }
-
     // Modal de break: se abre al iniciar y se cierra al terminar.
     if (type === "Inicio Break") openBreakModal(now);
     else if (type === "Fin Break") closeBreakModal();
-
-    // Modal de inicio de jornada: si estaba abierto (o se marcó Entrada
-    // desde el HQCC con el modal abierto), mostrar la vista de confirmación
-    // + barra 5s antes de auto-cerrar.
-    if (type === "Entrada") {
-      const dp = document.getElementById("daily-popup");
-      if (dp && dp.style.display !== "none" && typeof window.showJornadaConfirmation === "function") {
-        window.showJornadaConfirmation();
-      }
-    }
   } catch (e) {
     console.error("attendance:", e);
     setFeedback("✗ No se pudo registrar. Reintenta.", "err");
-    // Si el fallo es la Entrada disparada desde el modal de inicio de
-    // jornada, reactivamos su botón para que el usuario pueda reintentar.
-    if (type === "Entrada") {
-      const btnStart = document.getElementById("dp-btn-start");
-      if (btnStart) btnStart.disabled = false;
-    }
   } finally {
     btn.classList.remove("is-loading");
     // No reactivamos btn.disabled aquí — refreshButtonsState (llamado
@@ -660,6 +646,7 @@ window.addEventListener('focus', () => {
 function init() {
   // Botones genéricos: data-att-type indica qué tipo registrar
   document.querySelectorAll("button[data-att-type]").forEach(btn => {
+    if (isClosedTileBtn(btn)) return;   // tile cerrado: sin listeners
     const type = btn.dataset.attType;
     btn.addEventListener("click", () => recordAttendance(type, btn));
   });
@@ -674,7 +661,7 @@ function init() {
     });
   }
 
-  initHqccBreakToggle();
+  if (!HQCC_ATTENDANCE_CLOSED) initHqccBreakToggle();
 
   // Pinta con cache mientras carga el snapshot.
   const cached = loadCache();
@@ -682,7 +669,7 @@ function init() {
   refreshStatusView();
 
   // Si al cargar la página el usuario ya está en break hoy, reabre el modal.
-  if (currentState && currentState.type === "Inicio Break"
+  if (!HQCC_ATTENDANCE_CLOSED && currentState && currentState.type === "Inicio Break"
       && isSameLocalDay(currentState.timestamp, new Date().toISOString())) {
     openBreakModal(currentState.timestamp);
   }

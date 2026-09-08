@@ -2789,6 +2789,59 @@ body[data-theme="dark"] .hqcc-break-btn { background:rgba(6,163,182,.14); border
 .hqcc-att-feedback { min-height:13px; font-family:var(--mono); font-size:10.5px; font-weight:600; letter-spacing:.3px; color:var(--muted); }
 .hqcc-att-feedback.ok { color:#059669; } .hqcc-att-feedback.err { color:#dc2626; }
 
+/* ── Asistencia CERRADA — cinta amarilla en X sobre el tile ───────
+   El fichaje desde el Hub se retiró: ahora se registra en Time Doctor.
+   Los controles siguen a la vista pero desaturados e `inert`; dos bandas
+   doradas cruzan el tile en X y la placa central lleva el aviso.
+   Para revertir: quitar .att-closed y el bloque .att-tape del tile en
+   index.html, y poner HQCC_ATTENDANCE_CLOSED = false en js/attendance.js. */
+.hqcc-tile.att-closed { position:relative; isolation:isolate; overflow:hidden; }
+.hqcc-tile.att-closed .hqcc-tile-kicker,
+.hqcc-tile.att-closed .hqcc-att-inner { filter:grayscale(1); opacity:.42; user-select:none; }
+.hqcc-tile.att-closed .hqcc-att-inner { display:flex; flex-direction:column; gap:11px; }
+.hqcc-tile.att-closed .hqcc-att-btn:hover,
+.hqcc-tile.att-closed .hqcc-break-btn:hover { transform:none; box-shadow:none; }
+
+.att-tape { position:absolute; inset:0; z-index:2; pointer-events:none; }
+.att-tape-band {
+  position:absolute; top:50%; left:50%; width:200%; height:30px;
+  background:linear-gradient(180deg,#ffd45e 0%,var(--gold) 45%,#e0a020 100%);
+  border-top:1px solid rgba(255,255,255,.55);
+  border-bottom:1px solid rgba(160,105,10,.35);
+  box-shadow:0 6px 18px rgba(160,105,10,.28);
+}
+.att-tape-band.b1 { transform:translate(-50%,-50%) rotate(34deg); }
+.att-tape-band.b2 { transform:translate(-50%,-50%) rotate(-34deg); }
+
+.att-tape-plate {
+  position:absolute; z-index:3; bottom:14px; left:50%; transform:translateX(-50%);
+  width:calc(100% - 26px); display:flex; flex-direction:column; gap:3px;
+  padding:10px 12px; border-radius:14px; text-align:center;
+  background:var(--card); border:2px solid var(--gold);
+  box-shadow:0 12px 30px rgba(6,42,51,.22);
+}
+.att-tape-title {
+  font-family:var(--display); font-weight:800; font-size:13.5px; line-height:1.12;
+  letter-spacing:.2px; text-transform:uppercase; color:var(--text);
+}
+.att-tape-sub { font-size:10.5px; line-height:1.35; color:var(--muted); }
+
+body[data-theme="dark"] .att-tape-plate { box-shadow:0 12px 30px rgba(0,0,0,.5); }
+
+/* Las bandas llevan un angulo fijo, asi que hay que reajustarlo cuando el tile
+   pasa a ocupar el ancho completo: si no, la X queda chica y flotando en medio
+   en vez de cruzar de esquina a esquina. */
+@media (max-width:900px) {
+  .att-tape-band { width:115%; height:26px; }
+  .att-tape-band.b1 { transform:translate(-50%,-50%) rotate(14deg); }
+  .att-tape-band.b2 { transform:translate(-50%,-50%) rotate(-14deg); }
+}
+@media (max-width:560px) {
+  .att-tape-band { width:140%; }
+  .att-tape-band.b1 { transform:translate(-50%,-50%) rotate(24deg); }
+  .att-tape-band.b2 { transform:translate(-50%,-50%) rotate(-24deg); }
+}
+
 /* Plataformas — accesos rápidos en el HQCC tile.
    Lista sin cajas: las dos filas se reparten la altura de la columna con
    flex:1, así el tile llena su celda del grid sin dejar aire abajo por más
@@ -4569,339 +4622,6 @@ body[data-theme="dark"] .bdc-cd-label{ color:#06a3b6; }
 }
 
 /* ══════════════════════════════════════════
-   POP-UP MENSAJE DEL DÍA
-   ══════════════════════════════════════════ */
-.daily-popup-overlay {
-  position:fixed; inset:0;
-  background:rgba(6,42,51,.75);
-  backdrop-filter:blur(16px);
-  -webkit-backdrop-filter:blur(16px);
-  z-index:10000;
-  display:flex; align-items:center; justify-content:center;
-  padding:24px;
-  animation:dp-fade .3s ease;
-}
-@keyframes dp-fade {
-  from { opacity:0; }
-  to { opacity:1; }
-}
-
-.daily-popup {
-  position:relative;
-  max-width:500px;
-  width:100%;
-  background:linear-gradient(135deg, #fff 0%, #f0f4f8 100%);
-  border-radius:24px;
-  padding:40px 36px 32px;
-  box-shadow:0 30px 80px rgba(0,0,0,.4);
-  animation:dp-pop .5s cubic-bezier(.18,.89,.32,1.28);
-  overflow:hidden;
-  isolation:isolate;
-}
-[data-theme="dark"] .daily-popup {
-  background:linear-gradient(135deg, #1a2536 0%, #0f1a2a 100%);
-}
-@keyframes dp-pop {
-  from { opacity:0; transform:scale(.85) translateY(20px); }
-  to { opacity:1; transform:scale(1) translateY(0); }
-}
-
-.dp-glow {
-  position:absolute; top:-100px; left:-100px;
-  width:300px; height:300px;
-  background:radial-gradient(circle, rgba(6,163,182,.2) 0%, transparent 70%);
-  pointer-events:none;
-  animation:dp-glow-spin 20s linear infinite;
-  z-index:-1;
-}
-@keyframes dp-glow-spin {
-  to { transform:rotate(360deg) translate(20px, 20px); }
-}
-
-.dp-close {
-  position:absolute; top:16px; right:16px;
-  width:36px; height:36px;
-  border-radius:50%;
-  background:var(--paper);
-  border:1px solid var(--border);
-  color:var(--muted);
-  cursor:pointer;
-  display:flex; align-items:center; justify-content:center;
-  transition:all .15s;
-}
-.dp-close:hover {
-  background:var(--rose); color:#fff; border-color:var(--rose);
-  transform:rotate(90deg);
-}
-.dp-close i { width:18px; height:18px; }
-
-.dp-kicker {
-  font-family:var(--mono);
-  font-size:10px; font-weight:700;
-  letter-spacing:3px; text-transform:uppercase;
-  color:var(--cyan);
-  text-align:center;
-  margin-bottom:18px;
-}
-
-.dp-frase {
-  font-family:var(--display); font-style:italic; font-weight:700;
-  font-size:clamp(22px, 3vw, 30px);
-  line-height:1.25;
-  color:var(--text);
-  text-align:center;
-  margin-bottom:24px;
-  letter-spacing:-.01em;
-  position:relative;
-  padding:0 16px;
-}
-.dp-frase::before, .dp-frase::after {
-  content:'"';
-  position:absolute;
-  font-family:var(--display);
-  font-size:60px;
-  color:var(--cyan);
-  opacity:.3;
-  line-height:1;
-}
-.dp-frase::before { top:-16px; left:-6px; }
-.dp-frase::after { bottom:-44px; right:-6px; }
-
-.dp-author {
-  display:flex; align-items:center; gap:12px;
-  justify-content:center;
-  padding:16px;
-  background:var(--paper);
-  border-radius:12px;
-  margin-bottom:20px;
-}
-.dp-author-av {
-  width:44px; height:44px; border-radius:50%;
-  background:linear-gradient(135deg, var(--cyan), var(--cyan-deep));
-  color:#fff;
-  display:flex; align-items:center; justify-content:center;
-  font-family:var(--display); font-weight:800;
-  font-size:16px;
-  flex-shrink:0;
-}
-.dp-author-name {
-  font-size:14px; font-weight:700; color:var(--text);
-}
-.dp-author-date {
-  font-family:var(--mono);
-  font-size:11px; color:var(--muted);
-  margin-top:2px;
-}
-
-.dp-divider {
-  height:1px;
-  background:linear-gradient(90deg, transparent, var(--border), transparent);
-  margin:20px 0;
-}
-
-.dp-reactions-label {
-  text-align:center;
-  font-size:12.5px; color:var(--text-2);
-  margin-bottom:14px;
-  font-weight:500;
-}
-
-.dp-reactions {
-  display:flex; gap:8px;
-  justify-content:center;
-  flex-wrap:wrap;
-  margin-bottom:18px;
-}
-.dp-react-btn {
-  width:52px; height:52px;
-  border-radius:14px;
-  border:2px solid var(--border);
-  background:var(--paper);
-  font-size:26px;
-  cursor:pointer;
-  transition:all .2s cubic-bezier(.18,.89,.32,1.28);
-  display:flex; align-items:center; justify-content:center;
-}
-.dp-react-btn:hover {
-  transform:translateY(-4px) scale(1.15);
-  border-color:var(--cyan);
-  background:rgba(6,163,182,.08);
-}
-.dp-react-btn.selected {
-  background:linear-gradient(135deg, var(--cyan), var(--cyan-deep));
-  border-color:var(--cyan);
-  transform:scale(1.1);
-  box-shadow:0 6px 16px rgba(6,163,182,.35);
-}
-
-.dp-reactions-summary {
-  display:flex; flex-wrap:wrap; gap:6px;
-  justify-content:center;
-  min-height:24px;
-}
-.dp-react-chip {
-  display:inline-flex; align-items:center; gap:6px;
-  padding:5px 10px;
-  background:var(--paper);
-  border:1px solid var(--border);
-  border-radius:999px;
-  font-size:12px;
-  color:var(--text-2);
-}
-.dp-react-chip .react-emoji { font-size:14px; }
-.dp-react-chip .react-names {
-  font-family:var(--mono);
-  font-size:10.5px;
-  color:var(--muted);
-}
-.dp-react-chip.mine {
-  background:rgba(6,163,182,.1);
-  border-color:var(--cyan);
-  color:var(--cyan-deep);
-}
-
-/* ══════════════════════════════════════════
-   INICIO DE JORNADA — vistas del daily-popup
-   ══════════════════════════════════════════ */
-
-.dp-hello {
-  font-family:var(--display);
-  font-size:clamp(24px, 3.2vw, 32px);
-  font-weight:800;
-  color:var(--text);
-  text-align:center;
-  margin-bottom:6px;
-  letter-spacing:-.01em;
-}
-.dp-hello span {
-  background:linear-gradient(135deg, var(--cyan), var(--cyan-deep));
-  -webkit-background-clip:text;
-  background-clip:text;
-  -webkit-text-fill-color:transparent;
-}
-.dp-tagline {
-  text-align:center;
-  font-size:13.5px;
-  color:var(--text-2);
-  margin-bottom:22px;
-}
-
-.dp-actions {
-  display:flex; flex-direction:column; gap:10px;
-  margin-bottom:22px;
-}
-.dp-action-btn {
-  display:flex; align-items:center; gap:14px;
-  padding:14px 16px;
-  border-radius:14px;
-  border:2px solid var(--border);
-  background:var(--paper);
-  color:var(--text);
-  text-decoration:none;
-  cursor:pointer;
-  transition:all .2s cubic-bezier(.18,.89,.32,1.28);
-  font-family:inherit;
-  text-align:left;
-}
-.dp-action-btn:hover {
-  transform:translateY(-2px);
-  border-color:var(--cyan);
-  box-shadow:0 8px 20px rgba(6,163,182,.15);
-}
-.dp-action-btn:disabled { opacity:.6; cursor:not-allowed; transform:none; }
-.dp-action-icon {
-  width:44px; height:44px;
-  border-radius:12px;
-  display:flex; align-items:center; justify-content:center;
-  flex-shrink:0;
-  background:rgba(6,163,182,.1);
-  color:var(--cyan);
-}
-.dp-action-icon i { width:22px; height:22px; }
-.dp-action-body { display:flex; flex-direction:column; gap:2px; flex:1; }
-.dp-action-title {
-  font-family:var(--display); font-weight:700;
-  font-size:15px; color:var(--text);
-}
-.dp-action-sub {
-  font-size:12px; color:var(--muted);
-  font-family:var(--mono);
-}
-
-/* Verde emerald para "Iniciar mi día" — coherente con el botón Entrada
-   del HQCC banner (.att-entrada / .hqcc-att-btn.entrada). Verde = go. */
-.dp-action-primary {
-  background:linear-gradient(135deg, #10b981, #059669);
-  border-color:#059669;
-  color:#fff;
-  box-shadow:0 4px 12px rgba(16,185,129,.28);
-}
-.dp-action-primary .dp-action-icon {
-  background:rgba(255,255,255,.2);
-  color:#fff;
-}
-.dp-action-primary .dp-action-title { color:#fff; }
-.dp-action-primary .dp-action-sub { color:rgba(255,255,255,.85); }
-.dp-action-primary:hover {
-  box-shadow:0 10px 24px rgba(16,185,129,.42);
-  border-color:#059669;
-}
-
-.dp-mensaje-label {
-  text-align:center;
-  font-family:var(--mono);
-  font-size:10px; font-weight:700;
-  letter-spacing:2.5px; text-transform:uppercase;
-  color:var(--cyan);
-  margin-bottom:14px;
-}
-
-/* Vista de confirmación (post-marcar entrada) */
-.dp-check {
-  display:flex; justify-content:center;
-  margin:8px 0 20px;
-}
-.dp-check-svg {
-  width:88px; height:88px;
-  color:var(--cyan-deep);
-  animation:dp-check-in .55s cubic-bezier(.18,.89,.32,1.28);
-}
-.dp-check-svg circle { animation:dp-stroke .5s ease-out forwards; stroke-dasharray:151; stroke-dashoffset:151; }
-.dp-check-svg path { animation:dp-stroke .35s .3s ease-out forwards; stroke-dasharray:60; stroke-dashoffset:60; }
-@keyframes dp-check-in { from { transform:scale(.4); opacity:0; } to { transform:scale(1); opacity:1; } }
-@keyframes dp-stroke { to { stroke-dashoffset:0; } }
-
-.dp-confirm-title {
-  text-align:center;
-  font-family:var(--display); font-weight:800;
-  font-size:26px; color:var(--text);
-  margin-bottom:6px;
-}
-.dp-confirm-sub {
-  text-align:center;
-  font-size:14px; color:var(--text-2);
-  margin-bottom:26px;
-}
-.dp-progress {
-  height:6px;
-  background:var(--paper);
-  border-radius:999px;
-  overflow:hidden;
-  border:1px solid var(--border);
-}
-.dp-progress-fill {
-  height:100%;
-  background:linear-gradient(90deg, var(--cyan), var(--cyan-deep));
-  width:100%;
-  transform-origin:left center;
-  transform:scaleX(0);
-}
-.dp-progress-fill.running {
-  animation:dp-prog 5s linear forwards;
-}
-@keyframes dp-prog { from { transform:scaleX(0); } to { transform:scaleX(1); } }
-
-/* ══════════════════════════════════════════
    BREAK MODAL — bloqueante con contador
    ══════════════════════════════════════════ */
 .break-modal-overlay {
@@ -5042,9 +4762,6 @@ body[data-theme="dark"] .bdc-cd-label{ color:#06a3b6; }
 .bm-end-btn i { width:18px; height:18px; }
 
 @media (max-width:500px) {
-  .daily-popup { padding:32px 24px 24px; }
-  .dp-action-btn { padding:12px 14px; }
-  .dp-action-icon { width:40px; height:40px; }
   .break-modal { padding:36px 24px 24px; }
   .bm-emoji { font-size:64px; }
   .bm-timer { font-size:36px; }

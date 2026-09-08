@@ -1,5 +1,22 @@
 [
   {
+    "id": "2026-09-08-asistencia-time-doctor",
+    "version": "v2.41.0",
+    "date": "2026-09-08",
+    "category": "feat",
+    "scope": "asistencia",
+    "audience": "all",
+    "title": "El fichaje de asistencia se mudó a Time Doctor",
+    "items": [
+      "El tile “Mi Asistencia” del banner queda cerrado: los botones de Entrada, Break y Salida ya no registran nada. Una cinta cruza el tile con el aviso y la indicación de usar Time Doctor para el check in, el break y el check out",
+      "Los controles siguen a la vista, atenuados bajo la cinta, para que se entienda qué dejó de funcionar en vez de que el tile desaparezca sin explicación",
+      "El cierre no es solo visual: los botones quedan inertes — no responden a click ni a teclado — y el código dejó de conectarlos con Firestore, así que no vuelven a habilitarse solos cuando llegan datos nuevos",
+      "Desaparece el modal de inicio de jornada que aparecía al entrar al Hub, el que traía “Iniciar mi día”, el acceso a la Oficina Virtual y el mensaje del día",
+      "El mensaje del día sigue donde estaba: en la sección de mensajes del dashboard, y se edita desde el panel de administración",
+      "Los registros de asistencia anteriores no se tocan. Siguen en Firestore y el Dashboard de Asistencia del panel de admin los sigue mostrando"
+    ]
+  },
+  {
     "id": "2026-08-25-exencion-asistencia",
     "version": "v2.39.0",
     "date": "2026-08-25",
