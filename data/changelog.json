@@ -1,5 +1,41 @@
 [
   {
+    "id": "2026-09-09-rrhh-fichas",
+    "version": "v2.44.0",
+    "date": "2026-09-09",
+    "category": "feat",
+    "scope": "admin",
+    "audience": "admin",
+    "title": "Recursos Humanos gana fichas por persona y rango de fechas libre",
+    "items": [
+      "El módulo ahora tiene dos vistas: la general, con los contadores y la lista de todo el equipo, y una nueva por persona",
+      "Al periodo se le suma «Personalizado»: se eligen las dos fechas en un calendario y todo — contadores, lista y gráficos — se recalcula para ese rango exacto",
+      "La vista por persona trae la lista del equipo con buscador y, al elegir a alguien, su ficha completa: foto, cargo, ciudad y país, horario asignado, desde cuándo está en Hero con su antigüedad calculada, cumpleaños, dirección y datos de contacto",
+      "Debajo de cada ficha aparecen los reportes de esa persona en el periodo elegido, con su propio resumen por tipo",
+      "Cada persona puede tener enlazada su carpeta de Drive con contratos y documentos. Los archivos no se suben al Hub: viven en Drive, donde los permisos, el versionado y la papelera ya funcionan",
+      "Se guardan datos que antes no existían en ninguna parte: la ciudad, la dirección completa, la fecha de ingreso a Hero y el horario asignado con sus días de trabajo",
+      "Todo lo nuevo se edita desde la propia ficha, con el botón «Editar datos laborales». El panel de administración sigue encargándose de la cuenta — rol, accesos, foto",
+      "Los campos nuevos empiezan vacíos: hay que llenarlos persona por persona",
+      "Esos datos no se guardan junto al resto del perfil, sino en su propio lugar, al que solo llega quien administra el Hub. El perfil que alimenta el directorio y el módulo Equipo lo puede leer todo el equipo, y la dirección de casa o el enlace a un contrato no tenían por qué estar ahí"
+    ]
+  },
+  {
+    "id": "2026-09-09-rrhh-modulo",
+    "version": "v2.44.0",
+    "date": "2026-09-09",
+    "category": "refactor",
+    "scope": "admin",
+    "audience": "admin",
+    "title": "Recursos Humanos sale del panel de administración",
+    "items": [
+      "Recursos Humanos deja de ser un tab del panel y pasa a ser un módulo propio, con su propia página y su tarjeta en los módulos de acceso del inicio",
+      "El panel de administración queda para lo que es: la gestión interna del Hub — métricas, usuarios, permisos, log de auditoría, spotlight, mensajes y migración",
+      "Al entrar al panel ahora se abre Métricas, que pasó a ser la vista de resumen",
+      "El módulo se lleva todo lo que tenía: los contadores, la lista de reportes, el gráfico por persona, el historial de asistencia plegado y las estadísticas por persona",
+      "Por ahora entra el mismo que antes — los administradores. Como es una página como cualquier otra del Hub, abrirla a más gente es marcar una casilla en Permisos, sin tocar código"
+    ]
+  },
+  {
     "id": "2026-09-09-reportes-correo",
     "version": "v2.43.0",
     "date": "2026-09-09",

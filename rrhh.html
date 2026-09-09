@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="icons/favicon-hero.png">
+<link rel="apple-touch-icon" href="icons/favicon-hero.png">
+<meta name="theme-color" content="#06a3b6">
+<title>Recursos Humanos — Hero Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<script type="module" src="js/user-menu.js"></script>
+<script defer src="https://unpkg.com/lucide@0.474.0"></script>
+<script defer src="js/topbar-dropdown.js"></script>
+<script defer src="js/toast.js"></script>
+<script defer src="js/hero-confirm.js"></script>
+
+<!-- Flatpickr · rango de fechas personalizado (locale ES) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+
+<!-- Chart.js · barras de "quién reporta más" y gráficos del historial -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+
+<!-- Shoelace · component library -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css">
+<script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/shoelace-autoloader.js"></script>
+</head>
+<body>
+<script>try{var t=localStorage.getItem("hero-theme");if(t)document.body.dataset.theme=t;}catch(e){}</script>
+<script>try{var r=localStorage.getItem("hero-user-role");if(r){document.body.classList.add("skip-loading","role-"+r);}}catch(e){}</script>
+
+<noscript>
+  <div style="position:fixed;inset:0;background:#062a33;color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font-family:system-ui,sans-serif;z-index:99999;">
+    <div>
+      <h1 style="margin:0 0 12px;">Hero Hub requiere JavaScript</h1>
+      <p style="margin:0;opacity:.85;">Activa JavaScript en tu navegador para acceder al Hero Hub.</p>
+    </div>
+  </div>
+</noscript>
+
+<div id="loading" class="login-container"><div class="login-card"><p>Verificando acceso...</p></div></div>
+
+<div id="dashboard" style="display:none;">
+
+  <header class="hero-topbar">
+    <div class="topbar-inner">
+      <div class="brand-block">
+        <a href="index.html" class="brand-link">
+          <div class="logo-mark"><img src="icons/favicon-hero.png" alt="Hero"></div>
+          <div>
+            <div class="brand-name">HERO HUB</div>
+            <div class="brand-sub">Hero Insurance USA</div>
+          </div>
+        </a>
+      </div>
+      <nav class="topbar-nav" id="topbar-nav">
+        <a href="index.html" class="nav-link"><i data-lucide="home"></i><span>Inicio</span></a>
+        <a href="equipo.html" class="nav-link"><i data-lucide="users"></i><span>Equipo</span></a>
+
+        <div class="nav-group">
+          <button class="nav-group-toggle" type="button" aria-expanded="false" aria-haspopup="true">
+            <i data-lucide="briefcase"></i><span>Operaciones</span>
+            <i data-lucide="chevron-down" class="nav-group-arrow"></i>
+          </button>
+          <div class="nav-dropdown" role="menu">
+            <a href="portales.html" class="nav-link" role="menuitem"><i data-lucide="shield"></i><span>Portales</span></a>
+            <a href="agencias.html" class="nav-link" role="menuitem"><i data-lucide="network"></i><span>Agencias</span></a>
+            <a href="directorio.html" class="nav-link" role="menuitem"><i data-lucide="book-user"></i><span>Directorio</span></a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-group-toggle" type="button" aria-expanded="false" aria-haspopup="true">
+            <i data-lucide="library"></i><span>Recursos</span>
+            <i data-lucide="chevron-down" class="nav-group-arrow"></i>
+          </button>
+          <div class="nav-dropdown" role="menu">
+            <a href="guias.html" class="nav-link active" role="menuitem"><i data-lucide="book-open"></i><span>Guías</span></a>
+            <a href="politicas.html" class="nav-link" role="menuitem"><i data-lucide="scroll-text"></i><span>Políticas</span></a>
+            <a href="onboarding.html" class="nav-link" role="menuitem"><i data-lucide="rocket"></i><span>Onboarding</span></a>
+            <a href="reuniones.html" class="nav-link" role="menuitem"><i data-lucide="presentation"></i><span>Reuniones</span></a>
+          </div>
+        </div>
+
+        <a href="changelog.html" class="nav-link"><i data-lucide="sparkles"></i><span>Changelog</span></a>
+      </nav>
+      <div class="topbar-actions">
+        <button id="btn-logout" class="icon-btn" title="Salir" style="display:none;"><i data-lucide="log-out"></i></button>
+
+        <button id="theme-toggle-btn" class="icon-btn" type="button" title="Cambiar a noche" aria-label="Cambiar a noche"><i data-lucide="moon"></i></button>
+        <div class="user-menu-wrap">
+          <button id="user-avatar-btn" class="user-avatar-btn" type="button" aria-label="Menú de usuario" aria-haspopup="true" aria-expanded="false">
+            <img id="user-avatar" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="" class="avatar">
+          </button>
+          <div id="user-menu" class="user-menu" role="menu" hidden>
+            <div class="user-menu-header">
+              <img id="user-menu-avatar" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="" class="user-menu-photo">
+              <div class="user-menu-info">
+                <div class="user-menu-name" id="user-menu-name">—</div>
+                <div class="user-menu-email" id="user-menu-email">—</div>
+                <div class="user-menu-role" id="user-menu-role" hidden></div>
+              </div>
+            </div>
+            <div class="user-menu-divider"></div>
+            <button id="user-menu-profile" class="user-menu-item" type="button" role="menuitem">
+              <i data-lucide="user"></i><span>Mi perfil</span>
+            </button>
+            <a href="admin.html" id="user-menu-admin" class="user-menu-item" role="menuitem" hidden>
+              <i data-lucide="shield-check"></i><span>Admin</span>
+            </a>
+            <div class="user-menu-divider"></div>
+            <button id="user-menu-logout" class="user-menu-item user-menu-item-danger" type="button" role="menuitem">
+              <i data-lucide="log-out"></i><span>Cerrar sesión</span>
+            </button>
+          </div>
+        </div>
+        <button id="btn-menu" class="icon-btn menu-toggle" title="Menú"><i data-lucide="menu"></i></button>
+      </div>
+    </div>
+  </header>
+
+<main class="page" id="rrhh-page">
+        <div class="ad-toolbar">
+          <div>
+            <h2 style="margin:0;">👥 Recursos Humanos</h2>
+            <p class="admin-note" style="margin:4px 0 0;">Ausencias, llegadas tarde y reportes de corte eléctrico o caída de internet.</p>
+          </div>
+          <div class="ad-toolbar-actions">
+            <select id="rh-period" class="ad-select">
+              <option value="today">Hoy</option>
+              <option value="week">Esta semana</option>
+              <option value="month" selected>Este mes</option>
+              <option value="last90">Últimos 90 días</option>
+              <option value="all">Todo lo cargado</option>
+              <option value="custom">Personalizado…</option>
+            </select>
+            <div class="rh-range" id="rh-range" hidden>
+              <input type="text" id="rh-from" class="ad-select rh-date" placeholder="MM/DD/YYYY" autocomplete="off">
+              <span class="rh-range-sep">→</span>
+              <input type="text" id="rh-to" class="ad-select rh-date" placeholder="MM/DD/YYYY" autocomplete="off">
+            </div>
+            <select id="rh-type" class="ad-select">
+              <option value="all" selected>Todos los tipos</option>
+              <option value="ausencia">Ausencia</option>
+              <option value="retraso">Llegada tarde</option>
+              <option value="corte-electrico">Corte eléctrico</option>
+              <option value="falla-internet">Sin internet</option>
+            </select>
+            <sl-button id="rh-refresh" variant="primary" size="medium">
+              <i data-lucide="refresh-cw" slot="prefix" style="width:14px;height:14px;"></i>
+              Actualizar
+            </sl-button>
+            <sl-button id="rh-load-all" variant="default" size="medium" title="Trae todos los reportes. Sin esto, se cargan solo los ultimos 90 dias.">
+              <i data-lucide="history" slot="prefix" style="width:14px;height:14px;"></i>
+              Cargar todo el histórico
+            </sl-button>
+            <span class="ad-pill ad-pill-mono"><span id="rh-last-update">—</span></span>
+          </div>
+        </div>
+
+        <div class="rh-views" role="tablist">
+          <button type="button" class="rh-view-btn active" data-view="general" role="tab" aria-selected="true">
+            <i data-lucide="layout-dashboard"></i><span>Vista general</span>
+          </button>
+          <button type="button" class="rh-view-btn" data-view="personas" role="tab" aria-selected="false">
+            <i data-lucide="user-search"></i><span>Por persona</span>
+          </button>
+        </div>
+
+        <div id="rh-loading" class="ad-loading">Cargando reportes…</div>
+        <div id="rh-error" class="ad-error" style="display:none;"></div>
+
+        <div id="rh-content" style="display:none;">
+
+          <section class="ad-section">
+            <div class="section-label"><span class="kicker-dot"></span>Reportes · <span id="rh-period-label">este mes</span></div>
+            <div class="rh-kpis">
+              <div class="rh-kpi rh-k-ausencia">
+                <div class="rh-kpi-emoji">🚫</div>
+                <div class="rh-kpi-value" id="rh-kpi-ausencia">0</div>
+                <div class="rh-kpi-label">Ausencias</div>
+              </div>
+              <div class="rh-kpi rh-k-retraso">
+                <div class="rh-kpi-emoji">⏰</div>
+                <div class="rh-kpi-value" id="rh-kpi-retraso">0</div>
+                <div class="rh-kpi-label">Llegadas tarde</div>
+              </div>
+              <div class="rh-kpi rh-k-corte">
+                <div class="rh-kpi-emoji">⚡</div>
+                <div class="rh-kpi-value" id="rh-kpi-corte-electrico">0</div>
+                <div class="rh-kpi-label">Cortes eléctricos</div>
+              </div>
+              <div class="rh-kpi rh-k-internet">
+                <div class="rh-kpi-emoji">📶</div>
+                <div class="rh-kpi-value" id="rh-kpi-falla-internet">0</div>
+                <div class="rh-kpi-label">Sin internet</div>
+              </div>
+            </div>
+          </section>
+
+          <section class="ad-section">
+            <div class="section-label"><span class="kicker-dot"></span>Reportes recientes</div>
+            <p class="ad-hint">La fecha es la del hecho reportado. Pasa el cursor por encima para ver cuándo se envió el aviso.</p>
+            <div class="rh-list" id="rh-list"></div>
+          </section>
+
+          <section class="ad-section">
+            <div class="section-label"><span class="kicker-dot"></span>Quién reporta más</div>
+            <p class="ad-hint">Cantidad de reportes por persona en el periodo y el tipo seleccionados.</p>
+            <div class="ad-bars-box">
+              <canvas id="rh-person-bars"></canvas>
+            </div>
+          </section>
+
+        </div>
+
+        <!-- ══ VISTA POR PERSONA ══
+             Lista de la gente del equipo a la izquierda y su ficha a la
+             derecha. Los datos salen de users/{email} — los mismos que
+             alimentan el módulo Equipo — y los reportes, del rango elegido
+             arriba. La rinde js/rrhh-personas.js. -->
+        <div id="rh-personas" hidden>
+          <div class="rh-split">
+            <aside class="rh-people">
+              <div class="rh-people-search">
+                <i data-lucide="search"></i>
+                <input type="text" id="rh-people-filter" placeholder="Buscar por nombre o cargo…" autocomplete="off">
+              </div>
+              <div class="rh-people-list" id="rh-people-list"></div>
+            </aside>
+            <section class="rh-card">
+              <div class="rh-card-empty" id="rh-card-empty">
+                <i data-lucide="user-round"></i>
+                <p>Elige a alguien de la lista para ver su ficha completa.</p>
+              </div>
+              <div id="rh-card-body" hidden></div>
+            </section>
+          </div>
+        </div>
+
+        <!-- ══ HISTORIAL DE ASISTENCIA ══
+             El fichaje desde el Hub se cerró en v2.41.0 (Time Doctor), así que
+             estos datos no crecen más. Se conservan plegados para consultas de
+             nómina; el dashboard se carga solo al abrir el desplegable. -->
+        <details class="rh-history" id="rh-history">
+          <summary class="rh-history-summary">
+            <i data-lucide="history"></i>
+            <span class="rh-history-title">Historial de asistencia</span>
+            <span class="rh-history-note">Fichaje cerrado el 09/08/2026 — se conserva para consulta</span>
+          </summary>
+
+          <div class="rh-history-body">
+            <div class="ad-toolbar">
+              <div>
+                <p class="admin-note" style="margin:0;">Estado del equipo y horas trabajadas hasta el cierre del fichaje.</p>
+              </div>
+              <div class="ad-toolbar-actions">
+                <select id="ad-period" class="ad-select">
+                  <option value="today" selected>Hoy</option>
+                  <option value="week">Esta semana</option>
+                  <option value="month">Este mes</option>
+                </select>
+                <sl-button id="ad-refresh" variant="default" size="medium">
+                  <i data-lucide="refresh-cw" slot="prefix" style="width:14px;height:14px;"></i>
+                  Actualizar
+                </sl-button>
+                <sl-button id="ad-load-history" variant="default" size="medium" title="Trae toda la historia. Sin esto, se cargan solo los ultimos 30 dias.">
+                  <i data-lucide="history" slot="prefix" style="width:14px;height:14px;"></i>
+                  Historico completo
+                </sl-button>
+                <span class="ad-pill ad-pill-mono"><span id="ad-last-update">—</span></span>
+              </div>
+            </div>
+
+            <div id="ad-loading" class="ad-loading">Cargando datos de asistencia…</div>
+            <div id="ad-error" class="ad-error" style="display:none;"></div>
+
+            <div id="ad-content" style="display:none;">
+
+              <section class="ad-section">
+                <div class="section-label"><span class="kicker-dot"></span>Equipo ahora · <span id="ad-period-label">hoy</span></div>
+                <div class="ad-counters">
+                  <div class="ad-counter ad-c-working">
+                    <div class="ad-counter-icon"><i data-lucide="check-circle-2"></i></div>
+                    <div class="ad-counter-value" id="ad-count-working">0</div>
+                    <div class="ad-counter-label">Trabajando</div>
+                  </div>
+                  <div class="ad-counter ad-c-break">
+                    <div class="ad-counter-icon"><i data-lucide="coffee"></i></div>
+                    <div class="ad-counter-value" id="ad-count-break">0</div>
+                    <div class="ad-counter-label">En break</div>
+                  </div>
+                  <div class="ad-counter ad-c-out">
+                    <div class="ad-counter-icon"><i data-lucide="log-out"></i></div>
+                    <div class="ad-counter-value" id="ad-count-out">0</div>
+                    <div class="ad-counter-label">Fuera</div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="ad-section">
+                <div class="ad-split">
+                  <div class="ad-team-list-wrap">
+                    <div class="section-label"><span class="kicker-dot"></span>Estado por persona</div>
+                    <div class="ad-team-list" id="ad-team-list"></div>
+                  </div>
+                  <div class="ad-donut-wrap">
+                    <div class="section-label"><span class="kicker-dot"></span>Distribución</div>
+                    <div class="ad-donut-box">
+                      <canvas id="ad-donut"></canvas>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="ad-section">
+                <div class="section-label"><span class="kicker-dot"></span>Horas trabajadas · <span id="ad-hours-period-label">hoy</span></div>
+                <p class="ad-hint">No incluye breaks. Calculado a partir de los eventos Entrada / Salida / Break registrados.</p>
+                <div class="ad-bars-box">
+                  <canvas id="ad-hours-bars"></canvas>
+                </div>
+              </section>
+
+            </div>
+          </div>
+        </details>
+      </main>
+
+    <!-- ══ MODAL: Estadísticas detalladas por persona ══ -->
+    <div id="ad-person-modal" class="ad-pm-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="ad-pm-name">
+      <div class="ad-pm" role="document">
+        <button class="ad-pm-close" id="ad-pm-close" type="button" aria-label="Cerrar"><i data-lucide="x"></i></button>
+
+        <header class="ad-pm-header">
+          <div class="ad-pm-avatar" id="ad-pm-avatar">—</div>
+          <div class="ad-pm-header-info">
+            <div class="ad-pm-name" id="ad-pm-name">—</div>
+            <div class="ad-pm-email" id="ad-pm-email">—</div>
+            <div class="ad-pm-now" id="ad-pm-now"></div>
+          </div>
+        </header>
+
+        <div class="ad-pm-toolbar">
+          <label class="ad-pm-period-lbl" for="ad-pm-period">Periodo:</label>
+          <select class="ad-pm-select" id="ad-pm-period">
+            <option value="month">Mes actual</option>
+            <option value="prevMonth">Mes pasado</option>
+            <option value="last30">Últimos 30 días</option>
+            <option value="last90">Últimos 90 días</option>
+            <option value="all">Todo el historial</option>
+            <option value="custom">Rango personalizado…</option>
+          </select>
+          <div class="ad-pm-custom-range" id="ad-pm-custom-range" hidden>
+            <label class="ad-pm-date-lbl">Desde
+              <input type="text" id="ad-pm-from" class="ad-pm-date" placeholder="MM/DD/YYYY" autocomplete="off">
+            </label>
+            <label class="ad-pm-date-lbl">Hasta
+              <input type="text" id="ad-pm-to" class="ad-pm-date" placeholder="MM/DD/YYYY" autocomplete="off">
+            </label>
+          </div>
+          <div class="ad-pm-period-label" id="ad-pm-period-label">—</div>
+        </div>
+
+        <div class="ad-pm-kpis" id="ad-pm-kpis"></div>
+
+        <div class="ad-pm-charts">
+          <div class="ad-pm-chart-card">
+            <div class="ad-pm-chart-title">Horas trabajadas por día</div>
+            <div class="ad-pm-chart-canvas-wrap"><canvas id="ad-pm-chart-line"></canvas></div>
+          </div>
+          <div class="ad-pm-chart-card">
+            <div class="ad-pm-chart-title">Distribución de tiempo</div>
+            <div class="ad-pm-chart-canvas-wrap"><canvas id="ad-pm-chart-donut"></canvas></div>
+          </div>
+          <div class="ad-pm-chart-card ad-pm-chart-card-wide">
+            <div class="ad-pm-chart-title">Horas por día de semana</div>
+            <div class="ad-pm-chart-canvas-wrap"><canvas id="ad-pm-chart-bars"></canvas></div>
+          </div>
+        </div>
+
+        <div class="ad-pm-detail">
+          <div class="ad-pm-detail-title">Detalle por día</div>
+          <div class="ad-pm-table-wrap">
+            <table class="ad-pm-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Entrada</th>
+                  <th>Salida</th>
+                  <th>Trabajado</th>
+                  <th>Breaks</th>
+                  <th>Ausencia</th>
+                </tr>
+              </thead>
+              <tbody id="ad-pm-detail-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  <footer class="hero-footer">
+    <span>HERO HUB · RRHH v2.44.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+  </footer>
+</div>
+
+<script>
+  window.refreshIcons = () => { if (window.lucide) lucide.createIcons(); };
+  document.addEventListener("DOMContentLoaded", () => {
+    window.refreshIcons();
+    const menuBtn = document.getElementById("btn-menu");
+    const nav = document.getElementById("topbar-nav");
+    if (menuBtn && nav) menuBtn.addEventListener("click", () => nav.classList.toggle("open"));
+  });
+</script>
+<script type="module" src="js/firebase-config.js"></script>
+<script type="module" src="js/page-guard.js"></script>
+<script type="module" src="js/rrhh-dashboard.js"></script>
+<script type="module" src="js/rrhh-personas.js"></script>
+<script type="module" src="js/tracker.js"></script>
+</body>
+</html>

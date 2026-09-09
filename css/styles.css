@@ -115,6 +115,11 @@ body[data-theme="dark"] .hero-topbar { background:rgba(15,42,51,.92); }
 /* ══════════════════════════════════════════
    ARSENAL — Grid 2×2 de tarjetas cuadradas grandes
    ══════════════════════════════════════════ */
+/* El arsenal está oculto desde el 09/09/2026 (ver index.html). El `hidden`
+   del HTML bastaría hoy, pero cualquier regla futura que le dé display a
+   .section lo reviviría sin querer: esto lo sujeta. */
+#sec-arsenal[hidden], #conn-arsenal[hidden] { display: none !important; }
+
 .arsenal-grid-2x2 {
   display:grid;
   grid-template-columns:repeat(2, 1fr);
@@ -3261,6 +3266,195 @@ body[data-theme="dark"] .rh-flag-edited { color:var(--gold-2); }
 .rh-more {
   padding:12px; text-align:center;
   font-family:var(--mono); font-size:11px; letter-spacing:.5px; color:var(--muted);
+}
+
+/* ── Switch de vistas · General / Por persona ── */
+.rh-views { display:flex; gap:8px; margin-bottom:18px; }
+.rh-view-btn {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:9px 16px; border-radius:12px; cursor:pointer;
+  border:1px solid var(--border); background:var(--card);
+  font-family:var(--sans); font-size:13px; font-weight:600; color:var(--text-2);
+  transition:background .15s, color .15s, border-color .15s;
+}
+.rh-view-btn i { width:15px; height:15px; }
+.rh-view-btn:hover { border-color:var(--cyan); color:var(--cyan-deep); }
+.rh-view-btn.active {
+  background:linear-gradient(135deg,var(--cyan),var(--cyan-deep));
+  border-color:transparent; color:#fff;
+  box-shadow:0 6px 16px rgba(6,163,182,.28);
+}
+
+/* Rango de fechas personalizado en la toolbar */
+.rh-range { display:inline-flex; align-items:center; gap:8px; }
+.rh-range-sep { color:var(--muted); font-size:13px; }
+.rh-date { width:130px; }
+
+/* ── Vista por persona ── */
+.rh-split { display:grid; grid-template-columns:280px 1fr; gap:18px; align-items:start; }
+
+.rh-people {
+  background:var(--card); border:1px solid var(--border); border-radius:16px;
+  overflow:hidden; box-shadow:var(--shadow);
+}
+.rh-people-search {
+  display:flex; align-items:center; gap:8px;
+  padding:12px 14px; border-bottom:1px solid var(--border);
+}
+.rh-people-search i { width:15px; height:15px; color:var(--muted); flex-shrink:0; }
+.rh-people-search input {
+  flex:1; border:none; background:none; outline:none;
+  font-family:var(--sans); font-size:13px; color:var(--text);
+}
+.rh-people-list { max-height:620px; overflow-y:auto; }
+.rh-person-row {
+  display:flex; align-items:center; gap:11px; width:100%;
+  padding:10px 14px; border:none; background:none; cursor:pointer;
+  text-align:left; border-bottom:1px solid var(--border);
+  transition:background .15s;
+}
+.rh-person-row:hover { background:var(--paper-2); }
+.rh-person-row.active { background:rgba(6,163,182,.10); box-shadow:inset 3px 0 0 var(--cyan); }
+.rh-person-photo { width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; }
+.rh-person-info { min-width:0; }
+.rh-person-name {
+  font-size:13px; font-weight:700; color:var(--text);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.rh-person-job {
+  font-size:11.5px; color:var(--muted); margin-top:1px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+
+/* ── Ficha ── */
+.rh-card {
+  background:var(--card); border:1px solid var(--border); border-radius:16px;
+  padding:22px 24px; box-shadow:var(--shadow); min-height:320px;
+}
+.rh-card-empty {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:12px; padding:60px 20px; color:var(--muted); text-align:center;
+}
+.rh-card-empty i { width:34px; height:34px; opacity:.5; }
+.rh-card-empty p { margin:0; font-size:13px; font-style:italic; }
+
+.rh-card-head { display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+.rh-card-photo { width:74px; height:74px; border-radius:50%; object-fit:cover; flex-shrink:0; }
+.rh-card-id { flex:1; min-width:180px; }
+.rh-card-name { font-family:var(--display); font-size:22px; font-weight:700; color:var(--text); margin:0; }
+.rh-card-job { font-size:13px; color:var(--cyan-deep); font-weight:600; margin-top:2px; }
+body[data-theme="dark"] .rh-card-job { color:var(--cyan-bright); }
+.rh-card-place { display:flex; align-items:center; gap:7px; margin-top:6px; font-size:12.5px; color:var(--muted); }
+.rh-card-flag { width:18px; height:13px; border-radius:2px; object-fit:cover; }
+.rh-card-actions { margin-left:auto; }
+
+.rh-btn {
+  padding:9px 15px; border-radius:11px; cursor:pointer;
+  border:1px solid var(--border); background:var(--paper-2);
+  font-family:var(--sans); font-size:12.5px; font-weight:700; color:var(--text-2);
+  transition:border-color .15s, color .15s;
+}
+.rh-btn:hover { border-color:var(--cyan); color:var(--cyan-deep); }
+.rh-btn-primary {
+  background:linear-gradient(135deg,var(--cyan),var(--cyan-deep));
+  border-color:transparent; color:#fff;
+  box-shadow:0 5px 14px rgba(6,163,182,.28);
+}
+.rh-btn-primary:hover { color:#fff; box-shadow:0 8px 20px rgba(6,163,182,.4); }
+.rh-btn:disabled { opacity:.6; cursor:wait; }
+
+/* Datos laborales en lectura */
+.rh-datos {
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:2px 20px;
+  margin:22px 0 4px; padding-top:18px; border-top:1px solid var(--border);
+}
+.rh-dato { padding:9px 0; }
+.rh-dato-label {
+  font-family:var(--mono); font-size:9.5px; font-weight:700;
+  letter-spacing:1.1px; text-transform:uppercase; color:var(--muted);
+}
+.rh-dato-value { font-size:13.5px; color:var(--text); margin-top:3px; }
+.rh-dato-value.vacio { color:var(--muted); font-style:italic; font-size:12.5px; }
+
+/* La dirección y la carpeta de documentos ocupan la fila completa: no
+   caben en una columna de la grilla de datos. */
+.rh-dato-ancho { grid-column:1 / -1; }
+.rh-docs-link {
+  display:inline-flex; align-items:center; gap:8px; margin-top:5px;
+  padding:8px 13px; border-radius:10px; text-decoration:none;
+  background:var(--paper-2); border:1px solid var(--border);
+  font-size:12.5px; font-weight:600; color:var(--cyan-deep);
+  transition:border-color .15s, background .15s;
+}
+.rh-docs-link:hover { border-color:var(--cyan); background:rgba(6,163,182,.08); }
+.rh-docs-link i { width:15px; height:15px; }
+body[data-theme="dark"] .rh-docs-link { color:var(--cyan-bright); }
+
+/* Formulario de edición */
+.rh-form { margin:22px 0 4px; padding-top:18px; border-top:1px solid var(--border); }
+.rh-form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+.rh-field { min-width:0; }
+.rh-label {
+  display:block; margin-bottom:6px;
+  font-family:var(--mono); font-size:9.5px; font-weight:700;
+  letter-spacing:1.1px; text-transform:uppercase; color:var(--muted);
+}
+.rh-input {
+  width:100%; padding:9px 12px; border-radius:10px;
+  border:1px solid var(--border); background:var(--paper);
+  font-family:var(--sans); font-size:13.5px; color:var(--text);
+}
+.rh-input:focus { outline:none; border-color:var(--cyan); box-shadow:0 0 0 3px rgba(6,163,182,.16); }
+body[data-theme="dark"] .rh-input { background:rgba(255,255,255,.05); }
+
+.rh-textarea { resize:vertical; min-height:56px; font-family:var(--sans); line-height:1.5; }
+.rh-hint { margin-top:5px; font-size:11px; color:var(--muted); line-height:1.45; }
+
+.rh-days { display:flex; gap:7px; flex-wrap:wrap; }
+.rh-day {
+  width:36px; height:36px; border-radius:10px; cursor:pointer;
+  border:1px solid var(--border); background:var(--paper);
+  font-family:var(--sans); font-size:12.5px; font-weight:700; color:var(--muted);
+  transition:background .15s, color .15s, border-color .15s;
+}
+.rh-day:hover { border-color:var(--cyan); }
+.rh-day.on { background:var(--cyan); border-color:transparent; color:#fff; }
+body[data-theme="dark"] .rh-day { background:rgba(255,255,255,.05); }
+
+.rh-form-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:18px; }
+
+/* Reportes de la persona dentro de la ficha */
+.rh-card-reports { margin-top:24px; padding-top:18px; border-top:1px solid var(--border); }
+.rh-mini-kpis { display:flex; gap:10px; flex-wrap:wrap; margin:12px 0 16px; }
+.rh-mini-kpi {
+  display:inline-flex; align-items:center; gap:7px;
+  padding:7px 13px; border-radius:11px;
+  background:var(--paper-2); border:1px solid var(--border);
+}
+.rh-mini-kpi.cero { opacity:.45; }
+.rh-mini-emoji { font-size:15px; line-height:1; }
+.rh-mini-n { font-family:var(--display); font-weight:800; font-size:16px; color:var(--text); }
+
+.rh-mini-list { display:flex; flex-direction:column; gap:6px; }
+.rh-mini-row {
+  display:grid; grid-template-columns:auto auto 1fr auto; gap:10px; align-items:center;
+  padding:9px 12px; border-radius:10px; background:var(--paper-2);
+  font-size:12.5px;
+}
+.rh-mini-row-emoji { font-size:14px; line-height:1; }
+.rh-mini-row-label { font-weight:700; color:var(--text); }
+.rh-mini-row-detail {
+  color:var(--text-2); min-width:0;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.rh-mini-row-date { font-family:var(--mono); font-size:11.5px; color:var(--muted); }
+
+@media (max-width:900px) {
+  .rh-split { grid-template-columns:1fr; }
+  .rh-people-list { max-height:280px; }
+  .rh-form-row { grid-template-columns:1fr; }
+  .rh-card-actions { margin-left:0; width:100%; }
+  .rh-btn { width:100%; }
 }
 
 /* ── Historial de asistencia plegado ──
@@ -7914,11 +8108,85 @@ body[data-theme="dark"] .ad-pm-kpi-value { color: var(--cyan); }
    Calendario. Diseño minimalista tipo Google Workspace launcher.
    Colores por módulo, hover animado, dark mode, responsive. */
 
+/* Dos columnas: módulos del Hub | accesos de Google.
+   La izquierda pesa el doble porque lleva seis tarjetas en 2×3 y la derecha
+   una lista de filas finas. */
+.access-split {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 26px;
+  align-items: start;
+}
+.access-col { min-width: 0; }
+
 .access-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 20px;
   margin-top: 24px;
+}
+
+/* ── Accesos a Google Workspace ──
+   Los ve todo el mundo: cualquiera con cuenta del dominio los usa a diario.
+   Iconos de Lucide con el color de cada producto, en vez de los logos
+   oficiales, para no meter imágenes externas al Hub. */
+.google-rail {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.google-row {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 14px 16px;
+  text-decoration: none;
+  border-bottom: 1px solid var(--border);
+  transition: background .15s;
+}
+.google-row:last-child { border-bottom: none; }
+.google-row:hover { background: var(--paper-2); }
+.google-ico {
+  width: 36px; height: 36px; flex-shrink: 0;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+}
+/* Los logos ya traen su propio color: el recuadro va neutro para no
+   competir con ellos. En oscuro se aclara apenas, porque un logo a color
+   sobre fondo casi negro pierde contraste. */
+.google-ico { background: var(--paper-2); border: 1px solid var(--border); }
+.google-ico img { width: 26px; height: 26px; display: block; }
+body[data-theme="dark"] .google-ico { background: rgba(255,255,255,.92); border-color: transparent; }
+.google-body { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.google-name { font-size: 14px; font-weight: 700; color: var(--text); }
+.google-sub {
+  font-size: 11.5px; color: var(--muted); margin-top: 2px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.google-arrow { width: 15px; height: 15px; flex-shrink: 0; color: var(--cyan); transition: transform .15s; }
+.google-row:hover .google-arrow { transform: translate(2px, -2px); }
+
+/* Dentro de las dos columnas el tile mide por altura, no por proporción.
+   Con el aspect-ratio 2/1 original — pensado para un grid auto-fit de 220px —
+   al ensanchar la columna cada tile crecía hasta ~215px de alto, y las tres
+   filas duplicaban la altura de la lista de Google. Con 104px fijos, las dos
+   columnas terminan casi a la misma altura. */
+.access-split .access-tile {
+  aspect-ratio: auto;
+  min-height: 104px;
+}
+.access-split .access-icon { width: 48px; height: 48px; }
+.access-split .access-icon i { width: 24px; height: 24px; }
+.access-split .access-name { font-size: 15.5px; }
+
+@media (max-width: 1080px) {
+  .access-split { grid-template-columns: 1fr; gap: 8px; }
+  .access-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
 }
 
 @media (max-width: 500px) {
@@ -8105,6 +8373,17 @@ button.access-tile {
 .at-it-console:hover             { border-color: #4338ca; }
 .at-it-console:hover .access-icon{ background: rgba(67, 56, 202, 0.16); }
 
+.at-rrhh {
+  --tile-accent: rgba(190, 24, 93, 0.14);
+  --tile-led: #f472b6;
+  --tile-glow: rgba(236, 72, 153, 0.32);
+  --tile-glow-strong: rgba(236, 72, 153, 0.60);
+}
+.at-rrhh .access-icon      { background: rgba(190, 24, 93, 0.10); }
+.at-rrhh .access-icon i    { color: #be185d; }
+.at-rrhh:hover             { border-color: #be185d; }
+.at-rrhh:hover .access-icon{ background: rgba(190, 24, 93, 0.16); }
+
 .at-calendario {
   --tile-accent: rgba(5, 150, 105, 0.14);
   --tile-led: #34d399;
@@ -8185,6 +8464,7 @@ body:not(.feat-tile-database)   .access-tile.at-database,
 body:not(.feat-tile-correos)    .access-tile.at-correos,
 body:not(.feat-tile-finanzas)   .access-tile.at-finanzas,
 body:not(.feat-tile-it-console) .access-tile.at-it-console,
+body:not(.feat-tile-rrhh)       .access-tile.at-rrhh,
 body:not(.feat-tile-calendario) .access-tile.at-calendario {
   display: none;
 }

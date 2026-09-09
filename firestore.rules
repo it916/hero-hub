@@ -107,6 +107,28 @@ service cloud.firestore {
     }
 
 
+    // ══════════════════════════════════════════════════════════════════
+    // DATOS DE RRHH — hr-data/{email}
+    // ══════════════════════════════════════════════════════════════════
+    // Ciudad, dirección completa, fecha de ingreso, horario asignado y el
+    // enlace a la carpeta de documentos. Vive aparte de users/{email} porque
+    // ese documento lo lee cualquiera del dominio — de ahí salen el
+    // directorio, Equipo y los cumpleaños — y esto no debe verlo el equipo.
+    //
+    // Solo admin, que es quien entra al módulo de Recursos Humanos. Si esa
+    // página se abre a otro rol, hay que ampliar TAMBIÉN esta regla: el
+    // page-guard protege la pantalla, no los datos.
+    //
+    // Nadie borra desde el cliente, ni siquiera admin: un contrato enlazado o
+    // una fecha de ingreso no se pierden por un clic.
+    // `write` incluiría el delete y las reglas se suman con OR, así que se
+    // enumeran create y update en vez de usar el atajo.
+    match /hr-data/{email} {
+      allow read, create, update: if esAdmin();
+      allow delete: if false;
+    }
+
+
     // ═══════════════════════════════════════════════════════════════════
     // DOCUMENTOS COMPARTIDOS — /shared/*
     // ═══════════════════════════════════════════════════════════════════

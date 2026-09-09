@@ -39,6 +39,7 @@ export const PAGE_LABELS = {
   finanzas: "Finanzas",
   "finanzas-manual": "Manual de Finanzas",
   "it-console": "IT Console",
+  rrhh: "Recursos Humanos",
   admin: "Admin"
 };
 
@@ -52,6 +53,7 @@ export const FEATURES = {
   "tile-database":    { group: "Accesos rápidos",     label: "Base de Datos" },
   "tile-finanzas":    { group: "Accesos rápidos",     label: "Finanzas", nota: "El módulo está en retirada" },
   "tile-it-console":  { group: "Accesos rápidos",     label: "IT Console" },
+  "tile-rrhh":        { group: "Accesos rápidos",     label: "Recursos Humanos", nota: "Requiere también la página Recursos Humanos" },
   "tile-correos":     { group: "Accesos rápidos",     label: "Correos", nota: "Requiere también la página Solicitud de cuenta" },
   "tile-calendario":  { group: "Accesos rápidos",     label: "Calendario" },
   "portales-team":    { group: "Permisos de edición", label: "Portales · pestaña Cuentas del Equipo" },

@@ -249,11 +249,16 @@ var f=localStorage.getItem("hero-user-features");if(f)f.split(" ").filter(Boolea
       </div>
     </section>
 
-    <!-- ══ MÓDULOS DE ACCESO — Launcher moderno para los 4 módulos principales ══ -->
+    <!-- ══ MÓDULOS DE ACCESO ══
+         Dos columnas: a la izquierda los módulos del Hub (cada uno sujeto a
+         su feature tile-*, así que no todos ven los seis), a la derecha los
+         accesos a Google Workspace, que sí ve todo el mundo. -->
     <section class="section fade-in" id="sec-access-modules">
-      <div class="section-label"><span class="kicker-dot"></span>Módulos de acceso</div>
+      <div class="access-split">
 
-      <div class="access-grid">
+        <div class="access-col">
+          <div class="section-label"><span class="kicker-dot"></span>Módulos de acceso</div>
+          <div class="access-grid">
         <a href="https://docs.google.com/spreadsheets/d/1100HED8B6MxpDrOxnFoxitsRzZPRerwN6TkAJvXVu2I/edit?gid=969364169#gid=969364169" target="_blank" rel="noopener" class="access-tile at-database">
           <div class="access-icon"><i data-lucide="database"></i></div>
           <div class="access-content">
@@ -267,6 +272,14 @@ var f=localStorage.getItem("hero-user-features");if(f)f.split(" ").filter(Boolea
           <div class="access-content">
             <div class="access-name">Finanzas</div>
             <div class="access-roles">admin · finanzas</div>
+          </div>
+        </a>
+
+        <a href="rrhh.html" target="_blank" rel="noopener" class="access-tile at-rrhh">
+          <div class="access-icon"><i data-lucide="users-round"></i></div>
+          <div class="access-content">
+            <div class="access-name">Recursos Humanos</div>
+            <div class="access-roles">admin</div>
           </div>
         </a>
 
@@ -293,13 +306,88 @@ var f=localStorage.getItem("hero-user-features");if(f)f.split(" ").filter(Boolea
             <div class="access-roles">Alta y baja de cuentas</div>
           </div>
         </a>
+          </div>
+        </div>
+
+        <!-- Google Workspace — las URLs llevan /a/heroinsuranceusa.com para
+             que abran con la cuenta corporativa a quien tenga varias sesiones
+             de Google en el mismo navegador. Meet no soporta ese formato.
+             Los logos son SVG propios en images/google/, no imágenes traídas
+             de fuera: el Hub no depende de CDNs ajenos para sus assets. -->
+        <aside class="access-col google-col">
+          <div class="section-label"><span class="kicker-dot"></span>Google Workspace</div>
+          <div class="google-rail">
+            <a class="google-row" href="https://mail.google.com/a/heroinsuranceusa.com" target="_blank" rel="noopener">
+              <span class="google-ico"><img src="images/google/gmail-2026.svg" alt="" width="26" height="26"></span>
+              <span class="google-body">
+                <span class="google-name">Gmail</span>
+                <span class="google-sub">Tu correo corporativo</span>
+              </span>
+              <i class="google-arrow" data-lucide="arrow-up-right"></i>
+            </a>
+            <a class="google-row" href="https://drive.google.com/a/heroinsuranceusa.com" target="_blank" rel="noopener">
+              <span class="google-ico"><img src="images/google/google-drive-2026.svg" alt="" width="26" height="26"></span>
+              <span class="google-body">
+                <span class="google-name">Drive</span>
+                <span class="google-sub">Archivos y unidades compartidas</span>
+              </span>
+              <i class="google-arrow" data-lucide="arrow-up-right"></i>
+            </a>
+            <a class="google-row" href="https://calendar.google.com/a/heroinsuranceusa.com" target="_blank" rel="noopener">
+              <span class="google-ico"><img src="images/google/google-calendar-2026.svg" alt="" width="26" height="26"></span>
+              <span class="google-body">
+                <span class="google-name">Calendar</span>
+                <span class="google-sub">Tu agenda y reuniones</span>
+              </span>
+              <i class="google-arrow" data-lucide="arrow-up-right"></i>
+            </a>
+            <a class="google-row" href="https://meet.google.com/" target="_blank" rel="noopener">
+              <span class="google-ico"><img src="images/google/google-meet-2026.svg" alt="" width="26" height="26"></span>
+              <span class="google-body">
+                <span class="google-name">Meet</span>
+                <span class="google-sub">Videollamadas</span>
+              </span>
+              <i class="google-arrow" data-lucide="arrow-up-right"></i>
+            </a>
+            <a class="google-row" href="https://mail.google.com/chat/u/0/" target="_blank" rel="noopener">
+              <span class="google-ico"><img src="images/google/google-chat-2026.svg" alt="" width="26" height="26"></span>
+              <span class="google-body">
+                <span class="google-name">Chat</span>
+                <span class="google-sub">Mensajes con el equipo</span>
+              </span>
+              <i class="google-arrow" data-lucide="arrow-up-right"></i>
+            </a>
+            <a class="google-row" href="https://docs.google.com/spreadsheets/u/0/" target="_blank" rel="noopener">
+              <span class="google-ico"><img src="images/google/google-sheets-2026.svg" alt="" width="26" height="26"></span>
+              <span class="google-body">
+                <span class="google-name">Sheets</span>
+                <span class="google-sub">Hojas de cálculo</span>
+              </span>
+              <i class="google-arrow" data-lucide="arrow-up-right"></i>
+            </a>
+          </div>
+        </aside>
+
       </div>
     </section>
 
-    <div class="connector"></div>
+    <div class="connector" id="conn-arsenal" hidden></div>
 
-    <!-- ══ ARSENAL DEL HÉROE — Accesos directos administrados desde admin.html ══ -->
-    <section class="section fade-in">
+    <!-- ══ ARSENAL DEL HÉROE — OCULTO desde el 09/09/2026 ══
+         No se eliminó a propósito: se esconde para ver si alguien lo reclama
+         y decidir con eso si se usaba de verdad. El tracker solo registra
+         visitas a páginas, no clics, así que no hay otra forma de saberlo.
+
+         PARA REVIVIRLO: quita el atributo `hidden` de esta sección y del
+         conector de arriba. Nada más — el JS que lo pinta (js/widgets.js,
+         renderTools) sigue intacto, y los accesos guardados por cada persona
+         siguen en su documento de Firestore, campo `arsenal`.
+
+         SI SE DECIDE ELIMINARLO: hay que borrar también renderTools y el
+         modal "Agregar acceso" en js/widgets.js, los estilos .arsenal-* en
+         css/styles.css, y decidir qué pasa con el campo `arsenal` de cada
+         usuario, que hoy guarda sus accesos personalizados. -->
+    <section class="section fade-in" id="sec-arsenal" hidden>
       <div class="section-label"><span class="kicker-dot"></span>Arsenal del héroe</div>
 
       <div class="card-shell">
@@ -586,7 +674,7 @@ var f=localStorage.getItem("hero-user-features");if(f)f.split(" ").filter(Boolea
   </div>
 
   <footer class="hero-footer">
-    <span>HERO HUB · v2.43.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+    <span>HERO HUB · v2.44.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
   </footer>
 </div>
 

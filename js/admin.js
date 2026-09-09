@@ -6,7 +6,6 @@ import { doc, getDoc, setDoc, updateDoc, collection, query, where, orderBy, limi
 import { loadUserRole, isAdmin as isAdminRole, hasFeature } from "./roles.js";
 import { initRolesPanel } from "./roles-admin.js";
 import { initAuditPanel } from "./audit-panel.js";
-import { initRRHHDashboard } from "./rrhh-dashboard.js";
 import { logEvent, ACTIONS } from "./audit-log.js";
 import { getAllUsers } from "./user-store.js";
 
@@ -38,7 +37,7 @@ onAuthStateChanged(auth, async (user) => {
   if (window.refreshIcons) window.refreshIcons();
   loadSpotlight();
   loadMessages();
-  initRRHHDashboard();
+  window.loadMetrics();
 
   // Exponer email del admin actual para roles-admin.js
   window._currentAdminEmail = user.email;
@@ -470,10 +469,6 @@ window.loadAuditPanel = async function() {
   await initAuditPanel();
 };
 
-// ══ DASHBOARD DE RECURSOS HUMANOS ══
-// Se llama desde admin.html cuando el usuario abre el tab "Recursos Humanos".
-// El historial de asistencia que vive plegado dentro lo carga
-// rrhh-dashboard.js por su cuenta, la primera vez que alguien lo abre.
-window.loadRRHHDashboard = async function() {
-  await initRRHHDashboard();
-};
+// ══ RECURSOS HUMANOS ══
+// Dejó de ser un tab de este panel en v2.44.0: ahora es rrhh.html, con su
+// propio page-guard. js/rrhh-dashboard.js arranca solo desde esa página.

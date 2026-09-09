@@ -70,9 +70,9 @@
 
           <div class="admin-sidebar-group">
             <div class="admin-sidebar-kicker">Resumen</div>
-            <button type="button" class="admin-sidebar-link active" data-tab="rrhh">
-              <i data-lucide="users"></i>
-              <span>Recursos Humanos</span>
+            <button type="button" class="admin-sidebar-link active" data-tab="metrics">
+              <i data-lucide="bar-chart-3"></i>
+              <span>Métricas</span>
             </button>
           </div>
 
@@ -85,10 +85,6 @@
             <button type="button" class="admin-sidebar-link" data-tab="messages">
               <i data-lucide="message-square"></i>
               <span>Mensajes</span>
-            </button>
-            <button type="button" class="admin-sidebar-link" data-tab="metrics">
-              <i data-lucide="bar-chart-3"></i>
-              <span>Métricas</span>
             </button>
           </div>
 
@@ -138,173 +134,6 @@
         <!-- ══════════════════════════════════════════════ -->
         <!-- SECCIÓN DASHBOARD DE ASISTENCIA                -->
         <!-- ══════════════════════════════════════════════ -->
-        <section class="admin-section" id="tab-rrhh">
-          <div class="ad-toolbar">
-            <div>
-              <h2 style="margin:0;">👥 Recursos Humanos</h2>
-              <p class="admin-note" style="margin:4px 0 0;">Ausencias, llegadas tarde y reportes de corte eléctrico o caída de internet.</p>
-            </div>
-            <div class="ad-toolbar-actions">
-              <select id="rh-period" class="ad-select">
-                <option value="today">Hoy</option>
-                <option value="week">Esta semana</option>
-                <option value="month" selected>Este mes</option>
-                <option value="all">Todo</option>
-              </select>
-              <select id="rh-type" class="ad-select">
-                <option value="all" selected>Todos los tipos</option>
-                <option value="ausencia">Ausencia</option>
-                <option value="retraso">Llegada tarde</option>
-                <option value="corte-electrico">Corte eléctrico</option>
-                <option value="falla-internet">Sin internet</option>
-              </select>
-              <sl-button id="rh-refresh" variant="primary" size="medium">
-                <i data-lucide="refresh-cw" slot="prefix" style="width:14px;height:14px;"></i>
-                Actualizar
-              </sl-button>
-              <sl-button id="rh-load-all" variant="default" size="medium" title="Trae todos los reportes. Sin esto, se cargan solo los ultimos 90 dias.">
-                <i data-lucide="history" slot="prefix" style="width:14px;height:14px;"></i>
-                Cargar todo el histórico
-              </sl-button>
-              <span class="ad-pill ad-pill-mono"><span id="rh-last-update">—</span></span>
-            </div>
-          </div>
-
-          <div id="rh-loading" class="ad-loading">Cargando reportes…</div>
-          <div id="rh-error" class="ad-error" style="display:none;"></div>
-
-          <div id="rh-content" style="display:none;">
-
-            <section class="ad-section">
-              <div class="section-label"><span class="kicker-dot"></span>Reportes · <span id="rh-period-label">este mes</span></div>
-              <div class="rh-kpis">
-                <div class="rh-kpi rh-k-ausencia">
-                  <div class="rh-kpi-emoji">🚫</div>
-                  <div class="rh-kpi-value" id="rh-kpi-ausencia">0</div>
-                  <div class="rh-kpi-label">Ausencias</div>
-                </div>
-                <div class="rh-kpi rh-k-retraso">
-                  <div class="rh-kpi-emoji">⏰</div>
-                  <div class="rh-kpi-value" id="rh-kpi-retraso">0</div>
-                  <div class="rh-kpi-label">Llegadas tarde</div>
-                </div>
-                <div class="rh-kpi rh-k-corte">
-                  <div class="rh-kpi-emoji">⚡</div>
-                  <div class="rh-kpi-value" id="rh-kpi-corte-electrico">0</div>
-                  <div class="rh-kpi-label">Cortes eléctricos</div>
-                </div>
-                <div class="rh-kpi rh-k-internet">
-                  <div class="rh-kpi-emoji">📶</div>
-                  <div class="rh-kpi-value" id="rh-kpi-falla-internet">0</div>
-                  <div class="rh-kpi-label">Sin internet</div>
-                </div>
-              </div>
-            </section>
-
-            <section class="ad-section">
-              <div class="section-label"><span class="kicker-dot"></span>Reportes recientes</div>
-              <p class="ad-hint">La fecha es la del hecho reportado. Pasa el cursor por encima para ver cuándo se envió el aviso.</p>
-              <div class="rh-list" id="rh-list"></div>
-            </section>
-
-            <section class="ad-section">
-              <div class="section-label"><span class="kicker-dot"></span>Quién reporta más</div>
-              <p class="ad-hint">Cantidad de reportes por persona en el periodo y el tipo seleccionados.</p>
-              <div class="ad-bars-box">
-                <canvas id="rh-person-bars"></canvas>
-              </div>
-            </section>
-
-          </div>
-
-          <!-- ══ HISTORIAL DE ASISTENCIA ══
-               El fichaje desde el Hub se cerró en v2.41.0 (Time Doctor), así que
-               estos datos no crecen más. Se conservan plegados para consultas de
-               nómina; el dashboard se carga solo al abrir el desplegable. -->
-          <details class="rh-history" id="rh-history">
-            <summary class="rh-history-summary">
-              <i data-lucide="history"></i>
-              <span class="rh-history-title">Historial de asistencia</span>
-              <span class="rh-history-note">Fichaje cerrado el 09/08/2026 — se conserva para consulta</span>
-            </summary>
-
-            <div class="rh-history-body">
-              <div class="ad-toolbar">
-                <div>
-                  <p class="admin-note" style="margin:0;">Estado del equipo y horas trabajadas hasta el cierre del fichaje.</p>
-                </div>
-                <div class="ad-toolbar-actions">
-                  <select id="ad-period" class="ad-select">
-                    <option value="today" selected>Hoy</option>
-                    <option value="week">Esta semana</option>
-                    <option value="month">Este mes</option>
-                  </select>
-                  <sl-button id="ad-refresh" variant="default" size="medium">
-                    <i data-lucide="refresh-cw" slot="prefix" style="width:14px;height:14px;"></i>
-                    Actualizar
-                  </sl-button>
-                  <sl-button id="ad-load-history" variant="default" size="medium" title="Trae toda la historia. Sin esto, se cargan solo los ultimos 30 dias.">
-                    <i data-lucide="history" slot="prefix" style="width:14px;height:14px;"></i>
-                    Historico completo
-                  </sl-button>
-                  <span class="ad-pill ad-pill-mono"><span id="ad-last-update">—</span></span>
-                </div>
-              </div>
-
-              <div id="ad-loading" class="ad-loading">Cargando datos de asistencia…</div>
-              <div id="ad-error" class="ad-error" style="display:none;"></div>
-
-              <div id="ad-content" style="display:none;">
-
-                <section class="ad-section">
-                  <div class="section-label"><span class="kicker-dot"></span>Equipo ahora · <span id="ad-period-label">hoy</span></div>
-                  <div class="ad-counters">
-                    <div class="ad-counter ad-c-working">
-                      <div class="ad-counter-icon"><i data-lucide="check-circle-2"></i></div>
-                      <div class="ad-counter-value" id="ad-count-working">0</div>
-                      <div class="ad-counter-label">Trabajando</div>
-                    </div>
-                    <div class="ad-counter ad-c-break">
-                      <div class="ad-counter-icon"><i data-lucide="coffee"></i></div>
-                      <div class="ad-counter-value" id="ad-count-break">0</div>
-                      <div class="ad-counter-label">En break</div>
-                    </div>
-                    <div class="ad-counter ad-c-out">
-                      <div class="ad-counter-icon"><i data-lucide="log-out"></i></div>
-                      <div class="ad-counter-value" id="ad-count-out">0</div>
-                      <div class="ad-counter-label">Fuera</div>
-                    </div>
-                  </div>
-                </section>
-
-                <section class="ad-section">
-                  <div class="ad-split">
-                    <div class="ad-team-list-wrap">
-                      <div class="section-label"><span class="kicker-dot"></span>Estado por persona</div>
-                      <div class="ad-team-list" id="ad-team-list"></div>
-                    </div>
-                    <div class="ad-donut-wrap">
-                      <div class="section-label"><span class="kicker-dot"></span>Distribución</div>
-                      <div class="ad-donut-box">
-                        <canvas id="ad-donut"></canvas>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                <section class="ad-section">
-                  <div class="section-label"><span class="kicker-dot"></span>Horas trabajadas · <span id="ad-hours-period-label">hoy</span></div>
-                  <p class="ad-hint">No incluye breaks. Calculado a partir de los eventos Entrada / Salida / Break registrados.</p>
-                  <div class="ad-bars-box">
-                    <canvas id="ad-hours-bars"></canvas>
-                  </div>
-                </section>
-
-              </div>
-            </div>
-          </details>
-        </section>
-
         <!-- SECCIÓN SPOTLIGHT -->
       <section class="admin-section" id="tab-spotlight" style="display:none;">
         <h2>🌟 Hero Spotlight</h2>
@@ -335,7 +164,7 @@
       </section>
 
       <!-- SECCIÓN MÉTRICAS -->
-      <section class="admin-section" id="tab-metrics" style="display:none;">
+      <section class="admin-section" id="tab-metrics">
         <div class="metrics-header">
           <div>
             <h2 style="margin:0;">📊 Métricas de uso</h2>
@@ -612,89 +441,15 @@
     </div><!-- /.admin-shell -->
 
     <footer class="hero-footer">
-      <span>HERO HUB · ADMIN v2.43.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+      <span>HERO HUB · ADMIN v2.44.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
     </footer>
 
-    <!-- ══ MODAL: Estadísticas detalladas por persona ══ -->
-    <div id="ad-person-modal" class="ad-pm-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="ad-pm-name">
-      <div class="ad-pm" role="document">
-        <button class="ad-pm-close" id="ad-pm-close" type="button" aria-label="Cerrar"><i data-lucide="x"></i></button>
-
-        <header class="ad-pm-header">
-          <div class="ad-pm-avatar" id="ad-pm-avatar">—</div>
-          <div class="ad-pm-header-info">
-            <div class="ad-pm-name" id="ad-pm-name">—</div>
-            <div class="ad-pm-email" id="ad-pm-email">—</div>
-            <div class="ad-pm-now" id="ad-pm-now"></div>
-          </div>
-        </header>
-
-        <div class="ad-pm-toolbar">
-          <label class="ad-pm-period-lbl" for="ad-pm-period">Periodo:</label>
-          <select class="ad-pm-select" id="ad-pm-period">
-            <option value="month">Mes actual</option>
-            <option value="prevMonth">Mes pasado</option>
-            <option value="last30">Últimos 30 días</option>
-            <option value="last90">Últimos 90 días</option>
-            <option value="all">Todo el historial</option>
-            <option value="custom">Rango personalizado…</option>
-          </select>
-          <div class="ad-pm-custom-range" id="ad-pm-custom-range" hidden>
-            <label class="ad-pm-date-lbl">Desde
-              <input type="text" id="ad-pm-from" class="ad-pm-date" placeholder="MM/DD/YYYY" autocomplete="off">
-            </label>
-            <label class="ad-pm-date-lbl">Hasta
-              <input type="text" id="ad-pm-to" class="ad-pm-date" placeholder="MM/DD/YYYY" autocomplete="off">
-            </label>
-          </div>
-          <div class="ad-pm-period-label" id="ad-pm-period-label">—</div>
-        </div>
-
-        <div class="ad-pm-kpis" id="ad-pm-kpis"></div>
-
-        <div class="ad-pm-charts">
-          <div class="ad-pm-chart-card">
-            <div class="ad-pm-chart-title">Horas trabajadas por día</div>
-            <div class="ad-pm-chart-canvas-wrap"><canvas id="ad-pm-chart-line"></canvas></div>
-          </div>
-          <div class="ad-pm-chart-card">
-            <div class="ad-pm-chart-title">Distribución de tiempo</div>
-            <div class="ad-pm-chart-canvas-wrap"><canvas id="ad-pm-chart-donut"></canvas></div>
-          </div>
-          <div class="ad-pm-chart-card ad-pm-chart-card-wide">
-            <div class="ad-pm-chart-title">Horas por día de semana</div>
-            <div class="ad-pm-chart-canvas-wrap"><canvas id="ad-pm-chart-bars"></canvas></div>
-          </div>
-        </div>
-
-        <div class="ad-pm-detail">
-          <div class="ad-pm-detail-title">Detalle por día</div>
-          <div class="ad-pm-table-wrap">
-            <table class="ad-pm-table">
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Entrada</th>
-                  <th>Salida</th>
-                  <th>Trabajado</th>
-                  <th>Breaks</th>
-                  <th>Ausencia</th>
-                </tr>
-              </thead>
-              <tbody id="ad-pm-detail-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-
-      </div>
-    </div>
   </div>
 
   <script>
     window.refreshIcons = () => { if (window.lucide) lucide.createIcons(); };
 
     const TAB_TITLES = {
-      rrhh: 'Recursos Humanos',
       spotlight: 'Spotlight',
       messages: 'Mensajes',
       metrics: 'Métricas',
@@ -731,12 +486,11 @@
           const tab = b.dataset.tab;
           document.querySelectorAll('.admin-sidebar-link[data-tab]').forEach(x => x.classList.remove('active'));
           b.classList.add('active');
-          ['rrhh','spotlight','messages','metrics','roles','permisos','log','migracion'].forEach(t => {
+          ['metrics','spotlight','messages','roles','permisos','log','migracion'].forEach(t => {
             const sec = document.getElementById('tab-' + t);
             if (sec) sec.style.display = (t === tab) ? 'block' : 'none';
           });
           if (breadcrumb && TAB_TITLES[tab]) breadcrumb.textContent = TAB_TITLES[tab];
-          if (tab === 'rrhh' && window.loadRRHHDashboard) window.loadRRHHDashboard();
           if (tab === 'metrics' && window.loadMetrics) window.loadMetrics();
           if (tab === 'roles' && window.loadRolesPanel) window.loadRolesPanel();
           if (tab === 'permisos' && window.loadPermisosPanel) window.loadPermisosPanel();

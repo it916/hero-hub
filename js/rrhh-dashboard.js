@@ -1,8 +1,9 @@
 // ═══════════════════════════════════════════
 // Hero Hub · Dashboard de Recursos Humanos
 // ═══════════════════════════════════════════
-// Tab principal de admin.html desde v2.42.0. Reúne en una sola vista todo
-// lo que el equipo reporta desde el tile "Reportar" del banner:
+// Módulo propio (rrhh.html) desde v2.44.0 — antes era el primer tab de
+// admin.html. Reúne en una sola vista todo lo que el equipo reporta desde el
+// tile "Reportar" del banner:
 //
 //   · Ausencia         → colección `attendance`, type="Ausencia"
 //   · Corte eléctrico  ┐
@@ -43,17 +44,23 @@ const charts = {};
 
 const $ = id => document.getElementById(id);
 
-// ── Init (admin.js al arrancar, y al volver al tab) ────────────────
+// ── Init ───────────────────────────────────────────────────────────
 export async function initRRHHDashboard() {
   if (!handlersBound) {
     const refresh = $("rh-refresh");
     const full = $("rh-load-all");
     if (refresh) refresh.addEventListener("click", () => fetchAndRender({ loadAll: historyLoaded }));
     if (full) full.addEventListener("click", () => fetchAndRender({ loadAll: true }));
-    ["rh-period", "rh-type"].forEach(id => {
-      const el = $(id);
-      if (el) el.addEventListener("change", render);
+    const periodo = $("rh-period");
+    if (periodo) periodo.addEventListener("change", () => {
+      const custom = periodo.value === "custom";
+      const wrap = $("rh-range");
+      if (wrap) wrap.hidden = !custom;
+      if (custom) asegurarPickers();
+      render();
     });
+    const tipo = $("rh-type");
+    if (tipo) tipo.addEventListener("change", render);
     bindHistorial();
     handlersBound = true;
   }
@@ -189,24 +196,84 @@ function horaDe(d) {
 function rangoActual() {
   const now = new Date();
   const sel = $("rh-period").value;
-  if (sel === "today") return { desde: startOfDay(now), label: "hoy" };
-  if (sel === "week")  return { desde: startOfWeek(now), label: "esta semana" };
-  if (sel === "month") return { desde: startOfMonth(now), label: "este mes" };
-  return { desde: null, label: "todo el periodo cargado" };
+  if (sel === "today") return { desde: startOfDay(now), hasta: null, label: "hoy" };
+  if (sel === "week")  return { desde: startOfWeek(now), hasta: null, label: "esta semana" };
+  if (sel === "month") return { desde: startOfMonth(now), hasta: null, label: "este mes" };
+  if (sel === "last90") {
+    const d = new Date(now);
+    d.setDate(d.getDate() - 90);
+    d.setHours(0, 0, 0, 0);
+    return { desde: d, hasta: null, label: "los últimos 90 días" };
+  }
+  if (sel === "custom") {
+    const desde = parseMMDDYYYY($("rh-from").value);
+    const hasta = parseMMDDYYYY($("rh-to").value);
+    // El "hasta" tapa el final del día: si no, un reporte de las 3 PM del
+    // último día del rango quedaría fuera por unas horas.
+    if (hasta) hasta.setHours(23, 59, 59, 999);
+    const fmt = d => d ? `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}` : "?";
+    return { desde, hasta, label: `${fmt(desde)} → ${fmt(hasta)}` };
+  }
+  return { desde: null, hasta: null, label: "todo el periodo cargado" };
+}
+
+// Flatpickr se instancia la primera vez que se elige "Personalizado".
+let fpDesde = null, fpHasta = null;
+function asegurarPickers() {
+  if (fpDesde && fpHasta) return;
+  const from = $("rh-from"), to = $("rh-to");
+  if (!from || !to || typeof flatpickr === "undefined") return;
+
+  const hoy = new Date();
+  const mesAtras = new Date();
+  mesAtras.setDate(mesAtras.getDate() - 30);
+
+  fpDesde = flatpickr(from, {
+    locale: "es", dateFormat: "m/d/Y", defaultDate: mesAtras, maxDate: hoy,
+    onChange: ([d]) => { if (d && fpHasta) fpHasta.set("minDate", d); render(); },
+  });
+  fpHasta = flatpickr(to, {
+    locale: "es", dateFormat: "m/d/Y", defaultDate: hoy, maxDate: hoy, minDate: mesAtras,
+    onChange: ([d]) => { if (d && fpDesde) fpDesde.set("maxDate", d); render(); },
+  });
+}
+
+// ── Estado compartido con la vista por persona ─────────────────────
+// js/rrhh-personas.js consume esto en vez de volver a leer Firestore: los
+// dos módulos viven en la misma página y comparten la instancia.
+const suscriptores = [];
+
+export function getItemsEnRango() {
+  const { desde, hasta } = rangoActual();
+  return items.filter(it =>
+    (!desde || it.cuando >= desde) && (!hasta || it.cuando <= hasta));
+}
+
+export function getEtiquetaRango() {
+  return rangoActual().label;
+}
+
+export function onDatosActualizados(cb) {
+  suscriptores.push(cb);
 }
 
 function render() {
-  const { desde, label } = rangoActual();
+  const { desde, hasta, label } = rangoActual();
   const tipoSel = $("rh-type").value;
 
   $("rh-period-label").textContent = label;
 
-  const enRango = desde ? items.filter(it => it.cuando >= desde) : items.slice();
+  const enRango = items.filter(it =>
+    (!desde || it.cuando >= desde) && (!hasta || it.cuando <= hasta));
   const visibles = tipoSel === "all" ? enRango : enRango.filter(it => it.tipo === tipoSel);
 
   pintarKPIs(enRango);
   pintarLista(visibles);
   pintarBarras(visibles);
+
+  // La ficha por persona depende del mismo rango: se entera acá en vez de
+  // duplicar los listeners del selector.
+  suscriptores.forEach(cb => { try { cb(); } catch (e) { console.error("rrhh:", e); } });
 
   if (window.refreshIcons) window.refreshIcons();
 }
@@ -362,4 +429,14 @@ function pintarError(cont, detalle) {
   det.textContent = detalle || "Verifica tu conexión y las reglas de Firestore.";
 
   cont.append(iconWrap, texto, det);
+}
+
+// ── Arranque ───────────────────────────────────────────────────────
+// rrhh.html carga este módulo directamente. Hay que esperar a que
+// page-guard resuelva la sesión y el rol: antes de eso las lecturas a
+// Firestore se rechazan por reglas y el panel arrancaría en error.
+if (document.getElementById("rh-list")) {
+  const ctx = window.HeroHubContext;
+  if (ctx && ctx.readyPromise) ctx.readyPromise.then(() => initRRHHDashboard());
+  else initRRHHDashboard();
 }
