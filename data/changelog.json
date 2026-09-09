@@ -1,5 +1,22 @@
 [
   {
+    "id": "2026-09-09-reportes-correo",
+    "version": "v2.43.0",
+    "date": "2026-09-09",
+    "category": "feat",
+    "scope": "dashboard",
+    "audience": "all",
+    "title": "Los reportes del banner ahora avisan por correo",
+    "items": [
+      "Cuando reportas una ausencia, una llegada tarde, un corte eléctrico o una caída de internet, además de quedar registrado sale un correo a quien corresponde — ya no hay que avisar por aparte",
+      "Las ausencias y las llegadas tarde van al equipo de Recursos Humanos y a la directiva; los cortes y las caídas de internet suman a IT, porque son incidencias técnicas además de una persona que no está disponible",
+      "Recibes copia de tu propio aviso: te queda constancia de qué reportaste y a qué hora",
+      "Quien reciba el correo puede responderlo y te contesta directamente a ti, no a un buzón genérico",
+      "El correo dice si el aviso se mandó en caliente o si ajustaste la hora antes de enviarlo",
+      "Si el correo llegara a fallar, tu reporte se guarda igual y el mensaje en pantalla te lo dice, para que sepas que tienes que avisar por otro medio"
+    ]
+  },
+  {
     "id": "2026-09-09-tile-reportar",
     "version": "v2.42.0",
     "date": "2026-09-09",

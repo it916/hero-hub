@@ -32,14 +32,27 @@ import { openAbsenceModal } from "./attendance.js";
 
 const COLLECTION = "reports";
 
+// El aviso por correo lo manda el Worker (repo hero-it-console). Verifica el
+// Firebase ID token contra las JWKs de Google antes de enviar nada.
+const WORKER_URL = "https://hero-email-worker.broad-fire-d2d6.workers.dev";
+
 // ── Destinatarios por tipo ─────────────────────────────────────────
-// PROVISIONALES — pendientes de confirmar con HR. En Fase A solo se
-// guardan dentro del documento; todavía no se le manda correo a nadie.
+// Copia informativa de lo que hace el Worker: se guarda dentro del documento
+// para dejar rastro de a quién se avisó. La lista que MANDA es la del Worker
+// (DESTINOS_REPORTES en hero-email-worker.js) — si el cliente pudiera elegir
+// destinatarios, el endpoint sería un relay de spam. Al cambiar allá, cambiar
+// también acá para que el registro no mienta.
+const HR = [
+  "brokersupport@heroinsuranceusa.com",
+  "hr@heroinsuranceusa.com",
+  "contracting@heroinsuranceusa.com",
+  "jgutierrez@heroinsuranceusa.com",
+];
 const DESTINOS = {
-  "ausencia":         ["hr@heroinsuranceusa.com"],
-  "corte-electrico":  ["it@heroinsuranceusa.com"],
-  "falla-internet":   ["it@heroinsuranceusa.com"],
-  "retraso":          ["hr@heroinsuranceusa.com"],
+  "ausencia":         HR,
+  "retraso":          HR,
+  "corte-electrico":  ["it@heroinsuranceusa.com"].concat(HR),
+  "falla-internet":   ["it@heroinsuranceusa.com"].concat(HR),
 };
 
 // ── Tipos de reporte ───────────────────────────────────────────────
@@ -297,6 +310,48 @@ async function enviarInstant(alMomento) {
   });
 }
 
+// ── Aviso por correo ───────────────────────────────────────────────
+// Se manda ANTES de guardar, a propósito: la regla de Firestore es
+// `allow update: if false`, así que el documento no se puede editar después
+// para marcarlo como avisado. Enviando primero, el registro nace con el
+// estado real y nunca hay que tocarlo.
+//
+// Devuelve true si el correo salió. Nunca lanza: que falle el aviso no debe
+// impedir que el reporte quede registrado, que es lo que no se puede perder.
+async function notificar(tipo, datos) {
+  const user = auth.currentUser;
+  if (!user) return false;
+
+  try {
+    const idToken = await user.getIdToken();
+    const resp = await fetch(WORKER_URL + "/reportes/notificar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        idToken,
+        reporte: {
+          type: tipo.id,
+          fecha: datos.fecha || null,
+          hora: datos.hora || null,
+          llegadaEstimada: datos.llegadaEstimada || null,
+          detalle: datos.detalle || null,
+          alMomento: typeof datos.alMomento === "boolean" ? datos.alMomento : null,
+        },
+      }),
+    });
+    if (!resp.ok) {
+      let msg = "HTTP " + resp.status;
+      try { const d = await resp.json(); msg = d.error || msg; } catch (_) {}
+      console.warn("reportes: el aviso por correo falló —", msg);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error("reportes: no se pudo contactar al Worker —", e);
+    return false;
+  }
+}
+
 // ── Escritura ──────────────────────────────────────────────────────
 async function guardar(tipo, btn, extras) {
   const user = auth.currentUser;
@@ -305,26 +360,30 @@ async function guardar(tipo, btn, extras) {
     return;
   }
 
-  const registro = Object.assign({
-    timestamp: Timestamp.fromDate(new Date()),
-    email: user.email,
-    name: user.displayName || user.email.split("@")[0],
-    type: tipo.id,
-    label: tipo.label,
-    destinos: DESTINOS[tipo.id] || [],
-    notified: false,
-  }, extras);
-
   const textoOriginal = btn.textContent;
   enviando = true;
   btn.disabled = true;
   btn.textContent = "Enviando…";
 
   try {
+    const avisado = await notificar(tipo, extras);
+
+    const registro = Object.assign({
+      timestamp: Timestamp.fromDate(new Date()),
+      email: user.email,
+      name: user.displayName || user.email.split("@")[0],
+      type: tipo.id,
+      label: tipo.label,
+      destinos: DESTINOS[tipo.id] || [],
+      notified: avisado,
+    }, extras);
+
     await addDoc(collection(db, COLLECTION), registro);
     saveLast(tipo.label, registro.fecha);
     cerrarModal();
-    toast("ok", `${tipo.label} reportado`);
+
+    if (avisado) toast("ok", `${tipo.label} reportado · aviso enviado`);
+    else toast("error", "Reporte guardado, pero no se pudo enviar el aviso por correo");
   } catch (e) {
     console.error("reportes:", e);
     toast("error", "No se pudo enviar el reporte. Reintenta.");
@@ -363,9 +422,15 @@ function pintarTile() {
     btn.addEventListener("click", () => {
       if (tipo.flow === "absence") {
         // Ausencia mantiene su propio modal (Flatpickr en español) y su
-        // escritura a `attendance`, para no romper el panel de HR.
+        // escritura a `attendance`, para no romper el panel de HR. El aviso
+        // por correo sí pasa por acá: attendance.js guarda, y al volver
+        // disparamos la notificación con los datos que acaba de registrar.
         btn.disabled = true;
-        openAbsenceModal(btn, absenceDate => saveLast(tipo.label, absenceDate));
+        openAbsenceModal(btn, async ({ absenceDate, reason }) => {
+          saveLast(tipo.label, absenceDate);
+          const avisado = await notificar(tipo, { fecha: absenceDate, detalle: reason });
+          if (!avisado) toast("error", "Ausencia registrada, pero no se pudo enviar el aviso por correo");
+        });
       } else if (tipo.flow === "instant") {
         abrirInstant(tipo);
       } else {

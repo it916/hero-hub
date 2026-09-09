@@ -345,7 +345,8 @@ async function recordAttendance(type, btn, extras = {}) {
 // ── Modal de ausencia (sl-dialog) ──────────────────────────────────
 // Exportado para el tile "Reportar" del banner (js/reportes.js): el botón
 // de Ausencia reusa este modal en vez de duplicarlo. `onSaved` es opcional
-// y recibe la fecha en MM/DD/YYYY cuando la ausencia quedó registrada.
+// y recibe { absenceDate, reason } cuando la ausencia quedó registrada —
+// reportes.js lo usa para disparar el aviso por correo.
 export function openAbsenceModal(triggerBtn, onSaved) {
   const today = new Date();
   const todayStr = today.toISOString().slice(0, 10);
@@ -435,7 +436,7 @@ export function openAbsenceModal(triggerBtn, onSaved) {
     // El botón del tile de Reportar no lo conoce refreshButtonsState, así
     // que lo reactivamos aquí pase lo que pase.
     triggerBtn.disabled = false;
-    if (ok && typeof onSaved === "function") onSaved(absenceDate);
+    if (ok && typeof onSaved === "function") onSaved({ absenceDate, reason });
   });
 
   // Shoelace lazy-registra el custom element en el primer uso; sin esto
