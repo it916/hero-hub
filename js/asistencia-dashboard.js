@@ -333,6 +333,10 @@ function renderHoursBars(hours) {
 
 function renderAbsenceList(absences) {
   const list = document.getElementById("ad-absence-list");
+  // Desde v2.42.0 las ausencias se muestran en el dashboard de RRHH, junto
+  // con el resto de los reportes. Aquí ya no hay contenedor: se sale sin
+  // hacer nada en vez de reventar.
+  if (!list) return;
   if (!absences.length) {
     list.innerHTML = `<div class="ad-empty">— Sin ausencias reportadas en los últimos 30 días —</div>`;
     return;

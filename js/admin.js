@@ -6,7 +6,7 @@ import { doc, getDoc, setDoc, updateDoc, collection, query, where, orderBy, limi
 import { loadUserRole, isAdmin as isAdminRole, hasFeature } from "./roles.js";
 import { initRolesPanel } from "./roles-admin.js";
 import { initAuditPanel } from "./audit-panel.js";
-import { initAsistenciaDashboard } from "./asistencia-dashboard.js";
+import { initRRHHDashboard } from "./rrhh-dashboard.js";
 import { logEvent, ACTIONS } from "./audit-log.js";
 import { getAllUsers } from "./user-store.js";
 
@@ -38,7 +38,7 @@ onAuthStateChanged(auth, async (user) => {
   if (window.refreshIcons) window.refreshIcons();
   loadSpotlight();
   loadMessages();
-  initAsistenciaDashboard();
+  initRRHHDashboard();
 
   // Exponer email del admin actual para roles-admin.js
   window._currentAdminEmail = user.email;
@@ -470,8 +470,10 @@ window.loadAuditPanel = async function() {
   await initAuditPanel();
 };
 
-// ══ DASHBOARD DE ASISTENCIA ══
-// Se llama desde admin.html cuando el usuario abre el tab "Asistencia".
-window.loadAsistenciaDashboard = async function() {
-  await initAsistenciaDashboard();
+// ══ DASHBOARD DE RECURSOS HUMANOS ══
+// Se llama desde admin.html cuando el usuario abre el tab "Recursos Humanos".
+// El historial de asistencia que vive plegado dentro lo carga
+// rrhh-dashboard.js por su cuenta, la primera vez que alguien lo abre.
+window.loadRRHHDashboard = async function() {
+  await initRRHHDashboard();
 };

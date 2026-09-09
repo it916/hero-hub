@@ -2765,87 +2765,143 @@ body[data-theme="dark"] .hqcc-date-small { color:var(--text-2); }
 .hqcc-office-cta { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:11px; border-radius:12px; background:#fff; color:var(--cyan-deep); font-family:var(--display); font-weight:700; font-size:14px; }
 .hqcc-office-cta i { width:16px; height:16px; }
 
-/* Asistencia — Entrada + Salida + Break en una sola fila de 3 columnas */
-.hqcc-att-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:9px; }
-.hqcc-att-btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:11px 8px; border-radius:11px; border:1px solid transparent; font-family:inherit; font-size:12.5px; font-weight:700; cursor:pointer; transition:transform .15s, box-shadow .15s, background .2s; }
-.hqcc-att-btn i { width:15px; height:15px; }
-.hqcc-att-btn:hover { transform:translateY(-2px); }
-.hqcc-att-btn:active { transform:translateY(0); }
-.hqcc-att-btn:disabled { opacity:.6; cursor:wait; transform:none; }
-.hqcc-att-btn.entrada { background:linear-gradient(135deg,var(--emerald),#059669); color:#fff; border-color:rgba(16,185,129,.4); box-shadow:0 5px 14px rgba(16,185,129,.28); }
-.hqcc-att-btn.entrada:hover { box-shadow:0 9px 22px rgba(16,185,129,.42); }
-.hqcc-att-btn.salida { background:linear-gradient(135deg,var(--rose),#dc2637); color:#fff; border-color:rgba(244,63,94,.4); box-shadow:0 5px 14px rgba(244,63,94,.26); }
-.hqcc-att-btn.salida:hover { box-shadow:0 9px 22px rgba(244,63,94,.42); }
-.hqcc-break-btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:11px 8px; border-radius:11px; border:1px solid rgba(6,163,182,.25); font-family:inherit; font-size:12.5px; font-weight:700; cursor:pointer; background:var(--paper-2); color:var(--cyan-deep); transition:transform .15s, background .2s, color .2s, box-shadow .2s; }
-.hqcc-break-btn i { width:15px; height:15px; }
-.hqcc-break-btn:hover { transform:translateY(-2px); box-shadow:0 6px 16px rgba(6,163,182,.22); }
-.hqcc-break-btn.on { background:linear-gradient(135deg,var(--gold),#e0a020); color:var(--teal-darker); border-color:transparent; box-shadow:0 6px 16px rgba(245,184,48,.4); }
-body[data-theme="dark"] .hqcc-break-btn { background:rgba(6,163,182,.14); border-color:rgba(6,163,182,.4); color:var(--cyan-bright); }
-.hqcc-status { display:flex; flex-direction:column; gap:5px; padding-top:10px; border-top:1px solid var(--border); }
-.hqcc-status-row { display:flex; align-items:center; gap:8px; }
-.hqcc-status-label { font-family:var(--mono); font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); flex-shrink:0; }
-.hqcc-status-value { font-size:12.5px; font-weight:600; color:var(--text); }
-.hqcc-status-row.last .hqcc-status-value { font-family:var(--mono); font-size:11px; font-weight:500; color:var(--muted); }
-.hqcc-att-feedback { min-height:13px; font-family:var(--mono); font-size:10.5px; font-weight:600; letter-spacing:.3px; color:var(--muted); }
-.hqcc-att-feedback.ok { color:#059669; } .hqcc-att-feedback.err { color:#dc2626; }
-
-/* ── Asistencia CERRADA — cinta amarilla en X sobre el tile ───────
-   El fichaje desde el Hub se retiró: ahora se registra en Time Doctor.
-   Los controles siguen a la vista pero desaturados e `inert`; dos bandas
-   doradas cruzan el tile en X y la placa central lleva el aviso.
-   Para revertir: quitar .att-closed y el bloque .att-tape del tile en
-   index.html, y poner HQCC_ATTENDANCE_CLOSED = false en js/attendance.js. */
-.hqcc-tile.att-closed { position:relative; isolation:isolate; overflow:hidden; }
-.hqcc-tile.att-closed .hqcc-tile-kicker,
-.hqcc-tile.att-closed .hqcc-att-inner { filter:grayscale(1); opacity:.42; user-select:none; }
-.hqcc-tile.att-closed .hqcc-att-inner { display:flex; flex-direction:column; gap:11px; }
-.hqcc-tile.att-closed .hqcc-att-btn:hover,
-.hqcc-tile.att-closed .hqcc-break-btn:hover { transform:none; box-shadow:none; }
-
-.att-tape { position:absolute; inset:0; z-index:2; pointer-events:none; }
-.att-tape-band {
-  position:absolute; top:50%; left:50%; width:200%; height:30px;
-  background:linear-gradient(180deg,#ffd45e 0%,var(--gold) 45%,#e0a020 100%);
-  border-top:1px solid rgba(255,255,255,.55);
-  border-bottom:1px solid rgba(160,105,10,.35);
-  box-shadow:0 6px 18px rgba(160,105,10,.28);
+/* ── Reportar — tile del HQCC ─────────────────────────────────────
+   Sustituye al tile de fichaje (retirado en v2.41.0, ahora en Time
+   Doctor). Cuatro botones abren un mismo modal que cambia de cabecera
+   y de campos segun el tipo. La logica vive en js/reportes.js. */
+.hqcc-rep { position:relative; }
+.rep-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; flex:1; align-content:start; }
+.rep-btn {
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+  padding:13px 8px; border-radius:13px; cursor:pointer;
+  border:1px solid var(--border); background:var(--paper-2);
+  font-family:inherit; transition:transform .15s, box-shadow .18s, border-color .18s, background .18s;
 }
-.att-tape-band.b1 { transform:translate(-50%,-50%) rotate(34deg); }
-.att-tape-band.b2 { transform:translate(-50%,-50%) rotate(-34deg); }
+.rep-btn:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(6,42,51,.12); }
+.rep-btn:active { transform:translateY(0); }
+.rep-btn:disabled { opacity:.55; cursor:wait; transform:none; box-shadow:none; }
+.rep-btn-emoji { font-size:21px; line-height:1; }
+.rep-btn-label { font-size:12px; font-weight:700; color:var(--text); }
+.rep-btn[data-tone="rose"]:hover    { border-color:var(--rose);   background:rgba(244,63,94,.07); }
+.rep-btn[data-tone="gold"]:hover    { border-color:var(--gold);   background:rgba(245,184,48,.10); }
+.rep-btn[data-tone="cyan"]:hover    { border-color:var(--cyan);   background:rgba(6,163,182,.08); }
+.rep-btn[data-tone="violet"]:hover  { border-color:#8b5cf6;       background:rgba(139,92,246,.08); }
+body[data-theme="dark"] .rep-btn { background:rgba(255,255,255,.04); }
 
-.att-tape-plate {
-  position:absolute; z-index:3; bottom:14px; left:50%; transform:translateX(-50%);
-  width:calc(100% - 26px); display:flex; flex-direction:column; gap:3px;
-  padding:10px 12px; border-radius:14px; text-align:center;
-  background:var(--card); border:2px solid var(--gold);
-  box-shadow:0 12px 30px rgba(6,42,51,.22);
+.rep-last {
+  display:flex; align-items:center; gap:8px; padding-top:10px;
+  border-top:1px solid var(--border);
+  font-family:var(--mono); font-size:10px; letter-spacing:.5px; color:var(--muted);
 }
-.att-tape-title {
-  font-family:var(--display); font-weight:800; font-size:13.5px; line-height:1.12;
-  letter-spacing:.2px; text-transform:uppercase; color:var(--text);
-}
-.att-tape-sub { font-size:10.5px; line-height:1.35; color:var(--muted); }
+.rep-last b { font-weight:700; color:var(--text); font-family:var(--sans); font-size:11.5px; letter-spacing:0; }
 
-body[data-theme="dark"] .att-tape-plate { box-shadow:0 12px 30px rgba(0,0,0,.5); }
-
-/* Las bandas llevan un angulo fijo, asi que hay que reajustarlo cuando el tile
-   pasa a ocupar el ancho completo: si no, la X queda chica y flotando en medio
-   en vez de cruzar de esquina a esquina. */
-@media (max-width:900px) {
-  .att-tape-band { width:115%; height:26px; }
-  .att-tape-band.b1 { transform:translate(-50%,-50%) rotate(14deg); }
-  .att-tape-band.b2 { transform:translate(-50%,-50%) rotate(-14deg); }
+/* ── Modal de reporte ──
+   Overlay propio en vez de <sl-dialog>: el formulario lleva un <select>
+   nativo y Shoelace lo cierra al abrirse dentro de un dialog. */
+.rep-overlay {
+  position:fixed; inset:0; z-index:9000; display:none;
+  align-items:center; justify-content:center; padding:20px;
+  background:rgba(6,42,51,.6); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
 }
+.rep-overlay.is-open { display:flex; }
+.rep-modal {
+  width:100%; max-width:440px; max-height:92vh; overflow-y:auto;
+  background:var(--card); border:1px solid var(--border); border-radius:22px;
+  padding:26px; box-shadow:0 26px 60px rgba(6,42,51,.35);
+  animation:repModalIn .22s ease;
+}
+@keyframes repModalIn { from { opacity:0; transform:translateY(14px) scale(.98); } to { opacity:1; transform:none; } }
+.rep-modal-head { display:flex; align-items:center; gap:13px; margin-bottom:6px; }
+.rep-modal-emoji {
+  width:50px; height:50px; flex-shrink:0; border-radius:15px;
+  display:flex; align-items:center; justify-content:center; font-size:25px;
+  background:var(--paper-2); border:1px solid var(--border);
+  animation:repEmojiFloat 3.4s ease-in-out infinite;
+}
+@keyframes repEmojiFloat { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-4px); } }
+.rep-modal-title { font-family:var(--display); font-size:20px; font-weight:700; color:var(--text); line-height:1.15; }
+.rep-modal-sub { font-size:12px; color:var(--muted); margin-top:2px; }
+.rep-modal-note {
+  margin:16px 0 18px; padding:11px 13px; border-radius:11px;
+  background:var(--paper-2); border-left:3px solid var(--cyan);
+  font-size:12px; line-height:1.5; color:var(--text-2);
+}
+.rep-field { margin-bottom:14px; }
+.rep-field.is-hidden { display:none; }
+.rep-label {
+  display:block; margin-bottom:6px;
+  font-family:var(--mono); font-size:9.5px; font-weight:700;
+  letter-spacing:1.1px; text-transform:uppercase; color:var(--muted);
+}
+.rep-input, .rep-textarea, .rep-select {
+  width:100%; padding:10px 12px; border-radius:11px;
+  border:1px solid var(--border); background:var(--paper);
+  font-family:var(--sans); font-size:13.5px; color:var(--text);
+}
+.rep-input:focus, .rep-textarea:focus, .rep-select:focus {
+  outline:none; border-color:var(--cyan); box-shadow:0 0 0 3px rgba(6,163,182,.16);
+}
+.rep-textarea { resize:vertical; min-height:78px; }
+.rep-hint { margin-top:5px; font-size:11px; color:var(--muted); }
+.rep-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+/* Vista "aviso al momento" — corte eléctrico y sin internet.
+   Paso 1 enseña la hora actual en grande para que confirmar sea un click;
+   el paso 3 solo aparece si el usuario cambió la hora, porque el reporte
+   queda inmutable en Firestore. */
+.rep-step[hidden] { display:none; }
+.rep-now {
+  margin:16px 0 4px; padding:20px 16px; border-radius:16px; text-align:center;
+  background:var(--paper-2); border:1px solid var(--border);
+}
+.rep-now-kicker {
+  font-family:var(--mono); font-size:9.5px; font-weight:700;
+  letter-spacing:1.2px; text-transform:uppercase; color:var(--muted);
+}
+.rep-now-time {
+  margin-top:6px; font-family:var(--display); font-weight:800;
+  font-size:34px; line-height:1.05; color:var(--cyan-deep);
+}
+.rep-now-date { margin-top:4px; font-size:12.5px; color:var(--text-2); }
+body[data-theme="dark"] .rep-now-time { color:var(--cyan-bright); }
+
+.rep-verify {
+  margin:16px 0 4px; padding:18px 16px; border-radius:16px; text-align:center;
+  background:rgba(245,184,48,.12); border:1px solid rgba(245,184,48,.45);
+}
+.rep-verify-icon { font-size:26px; line-height:1; }
+.rep-verify-title {
+  margin-top:8px; font-family:var(--display); font-weight:700;
+  font-size:16px; color:var(--text);
+}
+.rep-verify-body { margin-top:8px; font-size:13px; line-height:1.55; color:var(--text-2); }
+.rep-verify-body b { color:var(--text); }
+.rep-verify-now { display:block; margin-top:4px; color:var(--muted); font-size:12px; }
+.rep-verify-now b { color:var(--muted); }
+.rep-verify-warn {
+  margin-top:12px; font-family:var(--mono); font-size:10px;
+  letter-spacing:.6px; text-transform:uppercase; color:#a06a08;
+}
+body[data-theme="dark"] .rep-verify-warn { color:var(--gold-2); }
+
+.rep-actions { display:flex; gap:10px; margin-top:20px; }
+.rep-actions button { flex:1; padding:12px; border-radius:12px; font-family:var(--sans); font-size:13.5px; font-weight:700; cursor:pointer; border:1px solid transparent; }
+.rep-cancel { background:var(--paper-2); border-color:var(--border); color:var(--text-2); }
+.rep-submit { background:linear-gradient(135deg,var(--cyan),var(--cyan-deep)); color:#fff; box-shadow:0 6px 16px rgba(6,163,182,.3); }
+.rep-submit:hover { box-shadow:0 10px 24px rgba(6,163,182,.42); }
+.rep-submit:disabled { opacity:.65; cursor:wait; box-shadow:none; }
+body[data-theme="dark"] .rep-input,
+body[data-theme="dark"] .rep-textarea,
+body[data-theme="dark"] .rep-select { background:rgba(255,255,255,.05); }
+
 @media (max-width:560px) {
-  .att-tape-band { width:140%; }
-  .att-tape-band.b1 { transform:translate(-50%,-50%) rotate(24deg); }
-  .att-tape-band.b2 { transform:translate(-50%,-50%) rotate(-24deg); }
+  .rep-modal { padding:20px; border-radius:18px; }
+  .rep-row { grid-template-columns:1fr; }
 }
 
 /* Plataformas — accesos rápidos en el HQCC tile.
    Lista sin cajas: las dos filas se reparten la altura de la columna con
    flex:1, así el tile llena su celda del grid sin dejar aire abajo por más
-   que el tile de Asistencia crezca. */
+   que el tile de Reportar crezca. */
 .hqcc-plat { gap:8px; }
 .hqcc-plat-list { display:flex; flex-direction:column; flex:1; }
 .hqcc-plat-row {
@@ -3133,6 +3189,107 @@ body[data-theme="dark"] .ad-team-detail { color:var(--text-2); }
 .ad-absence-reason {
   font-size:13px; color:#334155; font-style:italic;
   overflow:hidden; text-overflow:ellipsis;
+}
+
+/* ═══════════════════════════════════════════
+   DASHBOARD DE RECURSOS HUMANOS — .rh-*
+   ═══════════════════════════════════════════
+   Tab principal de admin.html desde v2.42.0. Reúne los reportes del tile
+   "Reportar" del banner (js/rrhh-dashboard.js). Comparte la piel del
+   dashboard de asistencia (.ad-*) y solo agrega lo propio. */
+
+.rh-kpis {
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(170px, 1fr));
+  gap:14px;
+}
+.rh-kpi {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:16px 18px;
+  display:flex; flex-direction:column; gap:4px;
+  box-shadow:var(--shadow);
+  position:relative;
+  overflow:hidden;
+}
+.rh-kpi::before {
+  content:""; position:absolute; top:0; left:0; right:0; height:4px;
+  background:var(--cyan);
+}
+.rh-kpi.rh-k-ausencia::before { background:#f43f5e; }
+.rh-kpi.rh-k-retraso::before  { background:#8b5cf6; }
+.rh-kpi.rh-k-corte::before    { background:var(--gold); }
+.rh-kpi.rh-k-internet::before { background:var(--cyan); }
+.rh-kpi-emoji { font-size:20px; line-height:1; }
+.rh-kpi-value { font-family:var(--display); font-weight:800; font-size:32px; line-height:1; color:var(--text); }
+.rh-kpi-label { font-size:12px; color:var(--muted); }
+
+/* ── Lista de reportes ── */
+.rh-list { display:flex; flex-direction:column; gap:8px; }
+.rh-item {
+  display:grid; grid-template-columns:auto 1fr auto; gap:14px; align-items:center;
+  padding:13px 16px; border-radius:14px;
+  background:var(--card); border:1px solid var(--border);
+  transition:border-color .15s, transform .15s;
+}
+.rh-item:hover { border-color:var(--border-2); transform:translateX(2px); }
+.rh-item-emoji {
+  width:38px; height:38px; flex-shrink:0; border-radius:11px;
+  display:flex; align-items:center; justify-content:center; font-size:19px;
+  background:var(--paper-2); border:1px solid var(--border);
+}
+.rh-item-body { min-width:0; }
+.rh-item-top { display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
+.rh-item-name { font-weight:700; font-size:14px; color:var(--text); }
+.rh-item-tag { font-family:var(--mono); font-size:10.5px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; }
+.rh-item-flag {
+  font-family:var(--mono); font-size:9.5px; font-weight:700;
+  letter-spacing:.4px; padding:2px 7px; border-radius:6px; cursor:help;
+}
+.rh-flag-live   { background:rgba(16,185,129,.14); color:#047857; }
+.rh-flag-edited { background:rgba(245,184,48,.18); color:#8a6100; }
+body[data-theme="dark"] .rh-flag-live   { color:#34d399; }
+body[data-theme="dark"] .rh-flag-edited { color:var(--gold-2); }
+.rh-item-detail {
+  margin-top:3px; font-size:12.5px; color:var(--text-2); line-height:1.45;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.rh-item-when { text-align:right; flex-shrink:0; }
+.rh-item-date { font-family:var(--mono); font-size:12px; font-weight:700; color:var(--text); }
+.rh-item-time { font-size:11px; color:var(--muted); margin-top:2px; }
+.rh-more {
+  padding:12px; text-align:center;
+  font-family:var(--mono); font-size:11px; letter-spacing:.5px; color:var(--muted);
+}
+
+/* ── Historial de asistencia plegado ──
+   El fichaje se cerró en v2.41.0; esto queda para consultas de nómina. */
+.rh-history {
+  margin-top:28px; border:1px solid var(--border); border-radius:16px;
+  background:var(--paper-2); overflow:hidden;
+}
+.rh-history-summary {
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  padding:15px 18px; cursor:pointer; list-style:none;
+  transition:background .15s;
+}
+.rh-history-summary::-webkit-details-marker { display:none; }
+.rh-history-summary:hover { background:rgba(6,163,182,.07); }
+.rh-history-summary i { width:16px; height:16px; color:var(--cyan); flex-shrink:0; }
+.rh-history-title { font-family:var(--display); font-weight:700; font-size:15px; color:var(--text); }
+.rh-history-note { font-size:11.5px; color:var(--muted); }
+.rh-history-summary::after {
+  content:"▾"; margin-left:auto; color:var(--muted); font-size:13px;
+  transition:transform .18s;
+}
+.rh-history[open] .rh-history-summary::after { transform:rotate(180deg); }
+.rh-history-body { padding:4px 18px 20px; border-top:1px solid var(--border); background:var(--card); }
+
+@media (max-width:700px) {
+  .rh-item { grid-template-columns:auto 1fr; row-gap:8px; }
+  .rh-item-when { grid-column:2; text-align:left; }
+  .rh-item-detail { white-space:normal; }
 }
 
 .ad-empty {
@@ -6936,14 +7093,16 @@ body:not(.feat-dashboard-social) .connector:has(+ #sec-mensajes) {
    Pensado para la directiva y perfiles que no fichan (invitados, contadores externos).
    Oculta los controles de asistencia; el resto del Hub queda intacto.
    La clase se pre-aplica desde localStorage en el <head> para evitar flash. */
-body.no-attendance #attendance-tile,
 body.no-attendance #mp-att-section,
 body.no-attendance #btnAusencia {
   display: none !important;
 }
-/* El HQCC tiene 3 cols (Oficina · Asistencia · Plataformas). Al ocultar la del medio
-   se reajusta a 2 cols para no dejar hueco. */
-body.no-attendance .hqcc-modules { grid-template-columns: 1fr 1fr; }
+/* El tile del banner ya no es de fichaje sino de Reportar, y ese lo ven todos:
+   avisar de un corte de luz no tiene que ver con marcar entrada. Al exento solo
+   se le retira el botón de Ausencia, que sí es un evento de asistencia; el que
+   queda suelto se estira a las dos columnas para no dejar hueco. */
+body.no-attendance .rep-btn[data-id="ausencia"] { display: none !important; }
+body.no-attendance .rep-btn:last-child { grid-column: span 2; }
 
 
 /* Las reglas de visibilidad de las tarjetas .hub-card.hc-finanzas y

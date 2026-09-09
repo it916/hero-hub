@@ -25,18 +25,35 @@ async function toggleHubTheme() {
   const next = current === "dark" ? "light" : "dark";
   document.body.dataset.theme = next;
   try { localStorage.setItem("hero-theme", next); } catch (e) {}
-  syncThemeMenuItem();
+  syncThemeButton();
+  // Sin sesión todavía (el botón vive fuera del menú y funciona antes de
+  // la auth) el tema queda solo en localStorage; saveUserField no hace nada.
   await saveUserField({ theme: next });
 }
 
-function syncThemeMenuItem() {
-  const item = document.getElementById("user-menu-theme");
-  if (!item) return;
+// El toggle día/noche es un botón propio del topbar, no un ítem del menú del
+// avatar: se usa seguido y no vale esconderlo detrás de dos clics.
+function syncThemeButton() {
+  const btn = document.getElementById("theme-toggle-btn");
+  if (!btn) return;
   const theme = document.body.dataset.theme || "light";
   const icon = theme === "dark" ? "sun" : "moon";
   const label = theme === "dark" ? "Cambiar a día" : "Cambiar a noche";
-  item.innerHTML = `<i data-lucide="${icon}"></i><span>${label}</span>`;
+
+  const i = document.createElement("i");
+  i.dataset.lucide = icon;
+  btn.replaceChildren(i);
+  btn.title = label;
+  btn.setAttribute("aria-label", label);
   if (window.refreshIcons) window.refreshIcons();
+}
+
+function initThemeToggle() {
+  const btn = document.getElementById("theme-toggle-btn");
+  if (!btn || btn.dataset.bound) return;
+  btn.dataset.bound = "1";
+  btn.addEventListener("click", toggleHubTheme);
+  syncThemeButton();
 }
 
 export function attachUserMenu() {
@@ -119,11 +136,6 @@ export function attachUserMenu() {
     });
   }
 
-  // Toggle día/noche.
-  syncThemeMenuItem();
-  const themeItem = document.getElementById("user-menu-theme");
-  if (themeItem) themeItem.addEventListener("click", toggleHubTheme);
-
   // Mi perfil: navega a mi-perfil.html.
   const profileItem = document.getElementById("user-menu-profile");
   if (profileItem) {
@@ -133,9 +145,20 @@ export function attachUserMenu() {
   }
 }
 
+// El botón de tema no depende de la sesión: se bindea apenas hay DOM, para
+// que funcione también mientras la auth resuelve.
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initThemeToggle);
+} else {
+  initThemeToggle();
+}
+
 // Auto-init: cuando la auth resuelva un usuario, bindea el menú.
 // requestAnimationFrame da un tick para que el DOM del topbar termine de pintar.
 onAuthStateChanged(auth, (user) => {
   if (!user) return;
-  requestAnimationFrame(attachUserMenu);
+  requestAnimationFrame(() => {
+    attachUserMenu();
+    initThemeToggle();   // por si el topbar terminó de pintar después
+  });
 });

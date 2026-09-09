@@ -108,6 +108,7 @@ var f=localStorage.getItem("hero-user-features");if(f)f.split(" ").filter(Boolea
       <div class="topbar-actions">
         <button id="btn-logout" class="icon-btn" title="Salir" style="display:none;"><i data-lucide="log-out"></i></button>
 
+        <button id="theme-toggle-btn" class="icon-btn" type="button" title="Cambiar a noche" aria-label="Cambiar a noche"><i data-lucide="moon"></i></button>
         <div class="user-menu-wrap">
           <button id="user-avatar-btn" class="user-avatar-btn" type="button" aria-label="Menú de usuario" aria-haspopup="true" aria-expanded="false">
             <img id="user-avatar" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="" class="avatar">
@@ -128,10 +129,6 @@ var f=localStorage.getItem("hero-user-features");if(f)f.split(" ").filter(Boolea
             <a href="admin.html" id="user-menu-admin" class="user-menu-item" role="menuitem" hidden>
               <i data-lucide="shield-check"></i><span>Admin</span>
             </a>
-            <div class="user-menu-divider"></div>
-            <button id="user-menu-theme" class="user-menu-item" type="button" role="menuitem">
-              <i data-lucide="sun"></i><span>Cambiar a noche</span>
-            </button>
             <div class="user-menu-divider"></div>
             <button id="user-menu-logout" class="user-menu-item user-menu-item-danger" type="button" role="menuitem">
               <i data-lucide="log-out"></i><span>Cerrar sesión</span>
@@ -190,38 +187,15 @@ var f=localStorage.getItem("hero-user-features");if(f)f.split(" ").filter(Boolea
             <span class="hqcc-office-cta">Entrar <i data-lucide="arrow-right"></i></span>
           </a>
 
-          <!-- Mi Asistencia — CERRADO: el fichaje se movió a Time Doctor -->
-          <div class="hqcc-tile att-closed" id="attendance-tile">
-            <div class="hqcc-tile-kicker"><i data-lucide="clock"></i>Mi Asistencia</div>
-
-            <!-- Controles originales: quedan a la vista, desaturados bajo la cinta.
-                 `inert` los saca de click, foco y lectores de pantalla; además
-                 attendance.js no les cablea listeners (HQCC_ATTENDANCE_CLOSED). -->
-            <div class="hqcc-att-inner" inert>
-              <div class="hqcc-att-grid">
-                <button type="button" class="hqcc-att-btn entrada att-btn att-entrada" data-att-type="Entrada"><i data-lucide="log-in"></i>Entrada</button>
-                <!-- Break: proxy de los dos ocultos (que attendance.js ya cablea por data-att-type) -->
-                <button type="button" id="hqcc-break" class="hqcc-break-btn"><i data-lucide="coffee"></i><span class="hqcc-break-label">Break</span></button>
-                <button type="button" class="hqcc-att-btn salida att-btn att-salida" data-att-type="Salida"><i data-lucide="log-out"></i>Salida</button>
-              </div>
-              <button type="button" id="hqcc-break-in" data-att-type="Inicio Break" style="display:none"></button>
-              <button type="button" id="hqcc-break-out" data-att-type="Fin Break" style="display:none"></button>
-
-              <div class="hqcc-status">
-                <div class="hqcc-status-row"><span class="hqcc-status-label">Estado</span><span class="hqcc-status-value" id="attStatusValue">— sin registro hoy —</span></div>
-                <div class="hqcc-status-row last"><span class="hqcc-status-label">Último</span><span class="hqcc-status-value" id="attLastValue">—</span></div>
-                <div class="hqcc-att-feedback att-feedback" id="attendanceStatus"></div>
-              </div>
-            </div>
-
-            <!-- Cinta de clausura -->
-            <div class="att-tape" aria-hidden="true">
-              <span class="att-tape-band b1"></span>
-              <span class="att-tape-band b2"></span>
-            </div>
-            <div class="att-tape-plate">
-              <span class="att-tape-title">Cerrado hasta nuevo aviso</span>
-              <span class="att-tape-sub">Utilizar Time Doctor en su lugar para sus check in, break y check out</span>
+          <!-- Reportar — avisos de ausencia, corte, internet y retraso.
+               Ocupa el lugar del fichaje, retirado en v2.41.0 (Time Doctor).
+               Los botones los pinta js/reportes.js desde su array TIPOS. -->
+          <div class="hqcc-tile hqcc-rep" id="reportes-tile">
+            <div class="hqcc-tile-kicker"><i data-lucide="megaphone"></i>Reportar</div>
+            <div class="rep-grid" id="rep-grid"></div>
+            <div class="rep-last">
+              <span>Último</span>
+              <b id="rep-last-text">— sin reportes —</b>
             </div>
           </div>
 
@@ -459,6 +433,110 @@ var f=localStorage.getItem("hero-user-features");if(f)f.split(" ").filter(Boolea
     <i data-lucide="headphones"></i>
   </a>
 
+  <!-- ══ MODAL REPORTAR ══
+       Vive fuera de <main class="page"> a propósito: dentro heredaría el
+       display:none del contenedor mientras carga la sesión.
+
+       Dos vistas dentro del mismo modal:
+         · FORMULARIO  → Llegada tarde (Ausencia tiene el suyo en attendance.js)
+         · AL MOMENTO  → Corte eléctrico y Sin internet: se avisa de un click,
+                         confirmando la hora actual. Si la cambian, hay un
+                         segundo paso de confirmación, porque el reporte no
+                         se puede editar después (firestore.rules). -->
+  <div class="rep-overlay" id="rep-overlay">
+    <div class="rep-modal" role="dialog" aria-modal="true" aria-labelledby="rep-title">
+      <div class="rep-modal-head">
+        <div class="rep-modal-emoji" id="rep-emoji">📋</div>
+        <div>
+          <div class="rep-modal-title" id="rep-title">Reportar</div>
+          <div class="rep-modal-sub" id="rep-sub">—</div>
+        </div>
+      </div>
+
+      <!-- ── Vista formulario ── -->
+      <div id="rep-view-form">
+        <div class="rep-modal-note" id="rep-note">—</div>
+
+        <div class="rep-field" id="f-date">
+          <label class="rep-label" for="rep-date">Fecha</label>
+          <input class="rep-input" type="date" id="rep-date">
+        </div>
+
+        <div class="rep-field" id="f-eta">
+          <label class="rep-label" for="rep-eta">Hora estimada de llegada</label>
+          <input class="rep-input" type="time" id="rep-eta">
+        </div>
+
+        <div class="rep-field" id="f-detail">
+          <label class="rep-label" id="rep-detail-label" for="rep-detail">Detalle</label>
+          <textarea class="rep-textarea" id="rep-detail" maxlength="240" placeholder="—"></textarea>
+          <div class="rep-hint">Máximo 240 caracteres.</div>
+        </div>
+
+        <div class="rep-actions">
+          <button class="rep-cancel" id="rep-cancel" type="button">Cancelar</button>
+          <button class="rep-submit" id="rep-send" type="button">Enviar reporte</button>
+        </div>
+      </div>
+
+      <!-- ── Vista aviso al momento ── -->
+      <div id="rep-view-instant" hidden>
+
+        <!-- Paso 1: confirmar que está pasando ahora -->
+        <div class="rep-step" id="rep-step-now">
+          <div class="rep-modal-note" id="rep-note-instant">—</div>
+          <div class="rep-now">
+            <div class="rep-now-kicker">Ocurriendo ahora</div>
+            <div class="rep-now-time" id="rep-now-time">—</div>
+            <div class="rep-now-date" id="rep-now-date">—</div>
+          </div>
+          <div class="rep-actions">
+            <button class="rep-cancel" id="rep-now-edit" type="button">No fue ahora</button>
+            <button class="rep-submit" id="rep-now-ok" type="button">Sí, reportar</button>
+          </div>
+        </div>
+
+        <!-- Paso 2: corregir fecha y hora -->
+        <div class="rep-step" id="rep-step-edit" hidden>
+          <div class="rep-modal-note">Indica cuándo empezó. Si fue hace rato, ajusta la hora.</div>
+          <div class="rep-row">
+            <div class="rep-field">
+              <label class="rep-label" for="rep-when-date">Fecha</label>
+              <input class="rep-input" type="date" id="rep-when-date">
+            </div>
+            <div class="rep-field">
+              <label class="rep-label" for="rep-when-time">Hora</label>
+              <input class="rep-input" type="time" id="rep-when-time">
+            </div>
+          </div>
+          <div class="rep-actions">
+            <button class="rep-cancel" id="rep-edit-back" type="button">Volver</button>
+            <button class="rep-submit" id="rep-edit-ok" type="button">Reportar</button>
+          </div>
+        </div>
+
+        <!-- Paso 3: segunda confirmación, solo si cambió fecha u hora -->
+        <div class="rep-step" id="rep-step-verify" hidden>
+          <div class="rep-verify">
+            <div class="rep-verify-icon">⚠️</div>
+            <div class="rep-verify-title">La hora no es la actual</div>
+            <div class="rep-verify-body">
+              Vas a reportar <b id="rep-verify-what">el evento</b> con fecha
+              <b id="rep-verify-when">—</b>.
+              <span class="rep-verify-now">Ahora mismo son las <b id="rep-verify-clock">—</b>.</span>
+            </div>
+            <div class="rep-verify-warn">Una vez enviado no se puede editar.</div>
+          </div>
+          <div class="rep-actions">
+            <button class="rep-cancel" id="rep-verify-back" type="button">Volver</button>
+            <button class="rep-submit" id="rep-verify-ok" type="button">Confirmar envío</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <!-- ══ MODAL BREAK — bloqueante ══ -->
   <div id="break-modal" class="break-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="bm-title">
     <div class="break-modal">
@@ -508,7 +586,7 @@ var f=localStorage.getItem("hero-user-features");if(f)f.split(" ").filter(Boolea
   </div>
 
   <footer class="hero-footer">
-    <span>HERO HUB · v2.41.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+    <span>HERO HUB · v2.42.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
   </footer>
 </div>
 
@@ -842,6 +920,7 @@ var f=localStorage.getItem("hero-user-features");if(f)f.split(" ").filter(Boolea
 <script type="module" src="js/auth.js"></script>
 <script type="module" src="js/tracker.js"></script>
 <script type="module" src="js/attendance.js"></script>
+<script type="module" src="js/reportes.js"></script>
 <script type="module" src="js/changelog-indicator.js"></script>
 <script>
   // ══ Modal Entrenamientos: Calendario vs Grabaciones ══

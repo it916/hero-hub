@@ -264,5 +264,23 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ── reports ──────────────────────────────────────────────────
+    // Avisos del tile "Reportar" del banner: corte eléctrico, caída de
+    // internet y llegada tarde. La ausencia NO vive aquí — sigue en
+    // `attendance` con type="Ausencia", que es de donde lee HR.
+    // Cada quien ve solo lo suyo; admin e IT ven todo. Nadie edita ni
+    // borra desde el cliente: un aviso enviado queda como quedó.
+    match /reports/{docId} {
+      allow read: if esAdminOIT()
+        || (esDelDominio() && resource.data.email == request.auth.token.email);
+
+      allow create: if esDelDominio()
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.type is string
+        && request.resource.data.timestamp is timestamp;
+
+      allow update, delete: if false;
+    }
+
   }
 }

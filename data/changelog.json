@@ -1,5 +1,57 @@
 [
   {
+    "id": "2026-09-09-tile-reportar",
+    "version": "v2.42.0",
+    "date": "2026-09-09",
+    "category": "feat",
+    "scope": "dashboard",
+    "audience": "all",
+    "title": "El banner estrena el tile “Reportar”",
+    "items": [
+      "El hueco que dejó el fichaje en el banner ya tiene reemplazo: un tile con cuatro avisos — Ausencia, Corte eléctrico, Sin internet y Llegada tarde — que se mandan sin salir del dashboard",
+      "Corte eléctrico y Sin internet se avisan al momento: un click abre el modal con la hora actual y basta confirmar. Si no fue ahora, se corrige la fecha y la hora",
+      "Si cambias la hora, el Hub te la vuelve a mostrar antes de enviar. No es capricho: el reporte no se puede editar después, así que es la última oportunidad de corregirlo",
+      "Llegada tarde mantiene su formulario, con la hora estimada de llegada y el motivo",
+      "El botón de Ausencia sigue siendo el mismo de siempre — con su calendario en español — y se guarda donde se guardaba, así que HR no pierde nada de lo que ya veía en su panel",
+      "Los otros tres avisos se guardan aparte, en su propia colección, para no mezclarse con los cálculos de horas trabajadas",
+      "El tile recuerda tu último reporte y lo muestra al pie, para que se vea de un vistazo qué fue lo último que avisaste",
+      "Por ahora el aviso queda registrado en el Hub; el correo automático a HR y a IT llega en una entrega posterior",
+      "Desaparece la cinta de “Cerrado hasta nuevo aviso” que cruzaba el tile de asistencia: el check in, el break y el check out se siguen haciendo en Time Doctor"
+    ]
+  },
+  {
+    "id": "2026-09-09-tema-topbar",
+    "version": "v2.42.0",
+    "date": "2026-09-09",
+    "category": "style",
+    "scope": "hub",
+    "audience": "all",
+    "title": "El cambio de tema sale del menú y se va al topbar",
+    "items": [
+      "El botón de día/noche ya no está escondido dentro del menú de tu foto: ahora es un botón propio en la barra de arriba, al lado del avatar",
+      "El ícono te dice a dónde vas: luna cuando estás en claro, sol cuando estás en oscuro. Un solo click y cambia",
+      "Está en las 14 páginas que comparten la barra del Hub. El panel de administración, Finanzas, la consola de IT y Soporte usan otra barra y no lo llevan"
+    ]
+  },
+  {
+    "id": "2026-09-09-dashboard-rrhh",
+    "version": "v2.42.0",
+    "date": "2026-09-09",
+    "category": "feat",
+    "scope": "admin",
+    "audience": "admin",
+    "title": "El Dashboard de Asistencia ahora es Recursos Humanos",
+    "items": [
+      "El primer tab del panel pasa a llamarse Recursos Humanos y muestra todo lo que el equipo reporta desde el banner: ausencias, llegadas tarde, cortes eléctricos y caídas de internet, en una sola lista",
+      "Cuatro contadores arriba resumen el periodo elegido — hoy, esta semana, este mes o todo — y un filtro por tipo acota la lista sin tocar los contadores",
+      "Cada fila marca si el aviso se mandó en caliente o si la persona corrigió la hora antes de enviarlo. La fecha que se ve es la del hecho; el cursor encima muestra cuándo se envió",
+      "Un gráfico de barras ordena quién reportó más en el periodo",
+      "Las ausencias siguen guardándose donde siempre; el panel las une con los reportes nuevos para que HR las vea juntas, aunque por debajo vengan de dos lados",
+      "Todo lo del fichaje — contadores en vivo, estado por persona, distribución y horas trabajadas — baja a una sección plegable, “Historial de asistencia”, cerrada por defecto. No se borró nada: sigue ahí para consultas de nómina",
+      "Esa sección solo consulta la base de datos cuando alguien la abre, así que entrar al panel es más liviano que antes"
+    ]
+  },
+  {
     "id": "2026-09-08-asistencia-time-doctor",
     "version": "v2.41.0",
     "date": "2026-09-08",

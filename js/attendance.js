@@ -329,9 +329,11 @@ async function recordAttendance(type, btn, extras = {}) {
     // Modal de break: se abre al iniciar y se cierra al terminar.
     if (type === "Inicio Break") openBreakModal(now);
     else if (type === "Fin Break") closeBreakModal();
+    return true;
   } catch (e) {
     console.error("attendance:", e);
     setFeedback("✗ No se pudo registrar. Reintenta.", "err");
+    return false;
   } finally {
     btn.classList.remove("is-loading");
     // No reactivamos btn.disabled aquí — refreshButtonsState (llamado
@@ -341,7 +343,10 @@ async function recordAttendance(type, btn, extras = {}) {
 }
 
 // ── Modal de ausencia (sl-dialog) ──────────────────────────────────
-function openAbsenceModal(triggerBtn) {
+// Exportado para el tile "Reportar" del banner (js/reportes.js): el botón
+// de Ausencia reusa este modal en vez de duplicarlo. `onSaved` es opcional
+// y recibe la fecha en MM/DD/YYYY cuando la ausencia quedó registrada.
+export function openAbsenceModal(triggerBtn, onSaved) {
   const today = new Date();
   const todayStr = today.toISOString().slice(0, 10);
 
@@ -426,7 +431,11 @@ function openAbsenceModal(triggerBtn) {
 
     submitted = true;
     dialog.hide();
-    await recordAttendance("Ausencia", triggerBtn, { absenceDate, reason });
+    const ok = await recordAttendance("Ausencia", triggerBtn, { absenceDate, reason });
+    // El botón del tile de Reportar no lo conoce refreshButtonsState, así
+    // que lo reactivamos aquí pase lo que pase.
+    triggerBtn.disabled = false;
+    if (ok && typeof onSaved === "function") onSaved(absenceDate);
   });
 
   // Shoelace lazy-registra el custom element en el primer uso; sin esto
