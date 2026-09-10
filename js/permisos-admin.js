@@ -393,6 +393,11 @@ const REGLAS_COHERENCIA = [
     mensaje: 'El tile "IT Console" lleva a una página que ese rol no tiene habilitada.'
   },
   {
+    feature: "tile-rrhh",
+    pagina: "rrhh",
+    mensaje: 'El tile "Recursos Humanos" lleva a una página que ese rol no tiene habilitada.'
+  },
+  {
     feature: "admin-migracion",
     pagina: "admin",
     mensaje: "Los tabs de migración viven dentro del panel de Admin, al que ese rol no entra."

@@ -1,5 +1,21 @@
 [
   {
+    "id": "2026-09-10-rrhh-rango-cobertura",
+    "version": "v2.45.1",
+    "date": "2026-09-10",
+    "category": "fix",
+    "scope": "admin",
+    "audience": "admin",
+    "title": "Los rangos de fecha antiguos ya traen sus datos en Recursos Humanos",
+    "items": [
+      "Al elegir un periodo personalizado anterior a los últimos 90 días, los contadores salían en cero. No era que no hubiera reportes: es que esos meses no estaban cargados, y el cero se veía igual",
+      "Ahora, si el rango elegido empieza antes de lo que hay en pantalla, el histórico completo se carga solo",
+      "«Todo lo cargado» también trae de verdad todo el histórico, en vez de solo el tramo que ya estuviera en memoria",
+      "La fecha «hasta» estaba limitada a los últimos 30 días, así que un rango cerrado antiguo — marzo a abril, por ejemplo — no se podía ni seleccionar",
+      "En Permisos, activar el acceso rápido a Recursos Humanos sin habilitar la página ahora avisa, como ya hacía con Correos, Finanzas y la consola de IT"
+    ]
+  },
+  {
     "id": "2026-09-10-rrhh-ficha-datos",
     "version": "v2.45.0",
     "date": "2026-09-10",

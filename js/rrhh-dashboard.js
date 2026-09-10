@@ -57,9 +57,10 @@ export async function initRRHHDashboard() {
       const wrap = $("rh-range");
       if (wrap) wrap.hidden = !custom;
       if (custom) asegurarPickers();
-      renderVisible();
+      renderConCobertura();
     });
     const tipo = $("rh-type");
+    // El tipo no cambia el rango, así que no puede quedarse corto de datos.
     if (tipo) tipo.addEventListener("change", renderVisible);
     bindHistorial();
     handlersBound = true;
@@ -124,6 +125,31 @@ function renderVisible() {
   else renderPendiente = true;
 }
 
+// ── Cobertura de datos ─────────────────────────────────────────────
+// `items` solo tiene lo que se trajo: 90 días, salvo que se haya pedido el
+// histórico. Un rango que empezaba antes de esa ventana devolvía cero, y cero
+// por falta de datos se ve exactamente igual que cero por no haber reportes.
+// Antes de renderizar se comprueba y, si hace falta, se trae todo.
+let coberturaDesde = null;   // null = está cargado el histórico completo
+
+async function asegurarCobertura() {
+  if (historyLoaded || !coberturaDesde) return false;
+  const sel = $("rh-period")?.value;
+  const { desde } = rangoActual();
+  // "Todo lo cargado" con media colección en memoria tampoco es todo.
+  const pideMas = sel === "all" || (desde && desde < coberturaDesde);
+  if (!pideMas) return false;
+  await fetchAndRender({ loadAll: true });
+  return true;   // fetchAndRender ya rindió; el caller no debe repetirlo
+}
+
+// Envuelve a renderVisible para los controles que pueden pedir un rango
+// fuera de la ventana cargada.
+async function renderConCobertura() {
+  if (await asegurarCobertura()) return;
+  renderVisible();
+}
+
 // ── Fetch ──────────────────────────────────────────────────────────
 async function fetchAndRender({ loadAll = false } = {}) {
   setEstadoGeneral("loading");
@@ -144,6 +170,7 @@ async function fetchAndRender({ loadAll = false } = {}) {
       .sort((a, b) => b.cuando - a.cuando);
 
     historyLoaded = loadAll;
+    coberturaDesde = loadAll ? null : daysAgo(DEFAULT_LOOKBACK_DAYS);
     const btn = $("rh-load-all");
     if (btn) {
       btn.textContent = loadAll ? `Todo cargado (${items.length})` : "Cargar todo el histórico";
@@ -269,11 +296,13 @@ function asegurarPickers() {
 
   fpDesde = flatpickr(from, {
     locale: "es", dateFormat: "m/d/Y", defaultDate: mesAtras, maxDate: hoy,
-    onChange: ([d]) => { if (d && fpHasta) fpHasta.set("minDate", d); render(); },
+    onChange: ([d]) => { if (d && fpHasta) fpHasta.set("minDate", d); renderConCobertura(); },
   });
+  // Sin minDate: el "hasta" arrancaba limitado a hace 30 días, así que un
+  // rango cerrado antiguo (marzo → abril) no se podía ni elegir.
   fpHasta = flatpickr(to, {
-    locale: "es", dateFormat: "m/d/Y", defaultDate: hoy, maxDate: hoy, minDate: mesAtras,
-    onChange: ([d]) => { if (d && fpDesde) fpDesde.set("maxDate", d); render(); },
+    locale: "es", dateFormat: "m/d/Y", defaultDate: hoy, maxDate: hoy,
+    onChange: ([d]) => { if (d && fpDesde) fpDesde.set("maxDate", d); renderConCobertura(); },
   });
 }
 
