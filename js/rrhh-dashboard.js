@@ -57,10 +57,10 @@ export async function initRRHHDashboard() {
       const wrap = $("rh-range");
       if (wrap) wrap.hidden = !custom;
       if (custom) asegurarPickers();
-      render();
+      renderVisible();
     });
     const tipo = $("rh-type");
-    if (tipo) tipo.addEventListener("change", render);
+    if (tipo) tipo.addEventListener("change", renderVisible);
     bindHistorial();
     handlersBound = true;
   }
@@ -80,14 +80,53 @@ function bindHistorial() {
   });
 }
 
-// ── Fetch ──────────────────────────────────────────────────────────
-async function fetchAndRender({ loadAll = false } = {}) {
+// ── Estado visible de la vista general ─────────────────────────────
+// Qué pestaña está al frente lo manda el selector de js/rrhh-personas.js,
+// pero la toolbar (Actualizar / Cargar todo / periodo / tipo) es compartida y
+// nunca se oculta. Por eso el estado se guarda aquí y solo se vuelca al DOM
+// cuando la vista general está visible: si no, un "Actualizar" desde "Por
+// persona" repintaba #rh-content encima del panel de personas.
+let estadoGeneral = "loading";
+let renderPendiente = false;
+
+function enVistaGeneral() {
+  const activo = document.querySelector(".rh-view-btn.active");
+  return !activo || activo.dataset.view === "general";
+}
+
+function setEstadoGeneral(estado) {
+  estadoGeneral = estado;
+  aplicarVistaGeneral(enVistaGeneral());
+}
+
+// La llama bindVistas() al cambiar de pestaña. Con `visible` en false apaga
+// los tres bloques; con true restaura el que corresponda al estado real —
+// no siempre #rh-content, que era el bug: volver de "Por persona" mientras
+// la carga había fallado mostraba el contenido vacío en vez del error.
+export function aplicarVistaGeneral(visible = true) {
+  const bloque = k => (visible && estadoGeneral === k ? "block" : "none");
   const loading = $("rh-loading");
   const errorEl = $("rh-error");
   const content = $("rh-content");
-  loading.style.display = "block";
-  errorEl.style.display = "none";
-  content.style.display = "none";
+  if (loading) loading.style.display = bloque("loading");
+  if (errorEl) errorEl.style.display = bloque("error");
+  if (content) content.style.display = bloque("content");
+  // Chart.js mide el contenedor al dibujar: si se rindió con display:none los
+  // canvas quedan en 0px. Se difiere el render hasta que la vista se ve.
+  if (visible && renderPendiente) {
+    renderPendiente = false;
+    render();
+  }
+}
+
+function renderVisible() {
+  if (enVistaGeneral()) render();
+  else renderPendiente = true;
+}
+
+// ── Fetch ──────────────────────────────────────────────────────────
+async function fetchAndRender({ loadAll = false } = {}) {
+  setEstadoGeneral("loading");
 
   try {
     const opts = loadAll ? {} : { from: daysAgo(DEFAULT_LOOKBACK_DAYS) };
@@ -115,14 +154,14 @@ async function fetchAndRender({ loadAll = false } = {}) {
     $("rh-last-update").textContent =
       "Actualizado " + new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) + sufijo;
 
-    render();
-    loading.style.display = "none";
-    content.style.display = "block";
+    // Primero se muestra el contenedor y después se dibuja: al revés, los
+    // canvas se medirían contra un #rh-content todavía en display:none.
+    setEstadoGeneral("content");
+    renderVisible();
   } catch (e) {
     console.error("rrhh-dashboard:", e);
-    loading.style.display = "none";
-    errorEl.style.display = "block";
-    pintarError(errorEl, e.message);
+    setEstadoGeneral("error");
+    pintarError($("rh-error"), e.message);
     if (window.refreshIcons) window.refreshIcons();
   }
 }

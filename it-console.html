@@ -122,8 +122,11 @@
 [data-theme="dark"] #sol-modal > div   { background: #1a1d27 !important; }
 [data-theme="dark"] select,
 [data-theme="dark"] input,
-[data-theme="dark"] textarea            { background: #141720; color: var(--hero-text-primary); border-color: var(--hero-border-btn); }
-[data-theme="dark"] select option       { background: #1a1d27; }
+[data-theme="dark"] textarea            { background: #141720; color: var(--hero-text-primary); border-color: var(--hero-border-btn); color-scheme: dark; }
+/* El `color` del option es obligatorio: sin él, Chrome en Windows pinta el
+   texto del desplegable con el color del sistema (negro) sobre este fondo
+   oscuro y no se lee. Heredar del select no es fiable en el popup nativo. */
+[data-theme="dark"] select option       { background: #1a1d27; color: var(--hero-text-primary); }
 /* ── Reset ───────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 

@@ -1,5 +1,54 @@
 [
   {
+    "id": "2026-09-10-rrhh-ficha-datos",
+    "version": "v2.45.0",
+    "date": "2026-09-10",
+    "category": "feat",
+    "scope": "admin",
+    "audience": "admin",
+    "title": "La ficha de RRHH ya deja editar nacimiento, ubicación, país, teléfonos y correo personal",
+    "items": [
+      "Hasta ahora la ficha mostraba esos datos pero no dejaba cambiarlos: había que salir al panel de administración. Ya se editan desde la propia ficha",
+      "La fecha de nacimiento se registra completa, con año, y la ficha calcula la edad. El Hub sigue publicando solo el día y el mes para el aviso de cumpleaños: el año queda guardado donde solo llega quien administra",
+      "Se distingue de dónde ES una persona y dónde ESTÁ. El país de origen sigue siendo el de la bandera del directorio; la ubicación actual — ciudad y país — es nueva y es privada",
+      "Cada persona puede tener su zona horaria, que se rellena sola al elegir el país. La ficha muestra qué hora es allá, para leer bien un reporte de retraso de alguien en otro huso",
+      "Los teléfonos se manejan como lista: se añaden y se quitan los que hagan falta",
+      "El correo personal ya tiene dónde guardarse. Sirve para avisarle a alguien que perdió el acceso a su cuenta corporativa",
+      "El correo corporativo y las direcciones con las que se inicia sesión NO se tocan desde aquí: eso es la cuenta, y afecta el acceso al Hub. Se siguen gestionando en administración",
+      "El país se elige de una lista en vez de escribirse a mano, así no se pierde por una errata"
+    ]
+  },
+  {
+    "id": "2026-09-10-rrhh-fixes",
+    "version": "v2.45.0",
+    "date": "2026-09-10",
+    "category": "fix",
+    "scope": "admin",
+    "audience": "admin",
+    "title": "Arreglos en Recursos Humanos",
+    "items": [
+      "Pulsar «Actualizar» estando en la vista por persona hacía aparecer la vista general encima, superpuesta. Ya no",
+      "Cambiar el periodo o el tipo de reporte mientras se editaba una ficha borraba lo que se estuviera escribiendo. Ahora se respeta lo tecleado, y al cambiar de persona con una edición abierta se pregunta antes de descartar",
+      "Los gráficos podían dibujarse con ancho cero si se cargaban desde la vista por persona",
+      "Volver a la vista general después de un error de carga mostraba el contenido vacío en lugar del error",
+      "La barra superior de la página resaltaba «Guías» por error"
+    ]
+  },
+  {
+    "id": "2026-09-10-selects-noche",
+    "version": "v2.45.0",
+    "date": "2026-09-10",
+    "category": "fix",
+    "scope": "hub",
+    "audience": "all",
+    "title": "Los desplegables ya se leen en modo noche",
+    "items": [
+      "En tema oscuro, al abrir un desplegable el texto salía ilegible: Windows pintaba la lista con fondo claro y las letras seguían siendo claras",
+      "Corregido en todo el Hub — administración, Mi Perfil, Reportes, Recursos Humanos, el formulario de usuarios y la consola de IT",
+      "También los relojes y calendarios nativos, que se abrían en claro sobre una pantalla oscura"
+    ]
+  },
+  {
     "id": "2026-09-09-rrhh-fichas",
     "version": "v2.44.0",
     "date": "2026-09-09",

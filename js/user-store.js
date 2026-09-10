@@ -144,6 +144,14 @@ export function countryLabel(iso) {
   return ISO_TO_NAME[iso.toUpperCase()] || iso;
 }
 
+// El catálogo como lista ordenada alfabéticamente, para poblar un <select>.
+// Se devuelve una copia: ISO_TO_NAME no se expone para que nadie lo mute.
+export function countryOptions() {
+  return Object.entries(ISO_TO_NAME)
+    .map(([iso, label]) => ({ iso, label }))
+    .sort((a, b) => a.label.localeCompare(b.label, "es"));
+}
+
 // URL de bandera SVG (flagicons.lipis.dev). Recordatorio: NO usar emoji de
 // bandera en Windows (los renderiza como "VE", "CU", etc.).
 export function countryFlagUrl(iso) {

@@ -20,9 +20,13 @@
 // Los reportes de la persona salen del rango elegido en la toolbar, que
 // administra js/rrhh-dashboard.js — este módulo se suscribe a sus cambios.
 
-import { getAllUsers, countryLabel, countryFlagUrl } from "./user-store.js";
+import {
+  getAllUsers, countryLabel, countryFlagUrl, countryOptions, updateUserFields,
+} from "./user-store.js";
 import { getAllHrData, saveHrData } from "./hr-store.js";
-import { getItemsEnRango, getEtiquetaRango, onDatosActualizados } from "./rrhh-dashboard.js";
+import {
+  getItemsEnRango, getEtiquetaRango, onDatosActualizados, aplicarVistaGeneral,
+} from "./rrhh-dashboard.js";
 
 const TIPO_EMOJI = {
   "ausencia": "🚫",
@@ -41,6 +45,60 @@ const DIAS = [
   { n: 0, corto: "D",  largo: "domingo" },
 ];
 
+const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio",
+               "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+
+const HERO_DOMAIN = "@heroinsuranceusa.com";
+
+// Huso por país, para autocompletar al elegir la ubicación. Es una sugerencia:
+// el select queda editable porque hay países con varios husos (US, BR, MX) y
+// acá solo se ofrece el más probable.
+const TZ_POR_PAIS = {
+  VE: "America/Caracas",   CU: "America/Havana",    CO: "America/Bogota",
+  CL: "America/Santiago",  HN: "America/Tegucigalpa", US: "America/New_York",
+  AR: "America/Argentina/Buenos_Aires", MX: "America/Mexico_City",
+  ES: "Europe/Madrid",     PE: "America/Lima",      EC: "America/Guayaquil",
+  UY: "America/Montevideo", CR: "America/Costa_Rica", PA: "America/Panama",
+  DO: "America/Santo_Domingo", GT: "America/Guatemala", NI: "America/Managua",
+  SV: "America/El_Salvador", BO: "America/La_Paz",  PY: "America/Asuncion",
+  PR: "America/Puerto_Rico", BR: "America/Sao_Paulo",
+};
+
+// Etiqueta legible para el select de husos: "Caracas (GMT-4)".
+function tzEtiqueta(tz) {
+  const ciudad = tz.split("/").pop().replace(/_/g, " ");
+  const off = tzOffset(tz);
+  return off ? `${ciudad} (${off})` : ciudad;
+}
+
+// Offset actual del huso, calculado con Intl para no hardcodear horarios de
+// verano — Chile y Paraguay lo cambian, Venezuela no.
+function tzOffset(tz) {
+  try {
+    const partes = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz, timeZoneName: "shortOffset",
+    }).formatToParts(new Date());
+    return partes.find(p => p.type === "timeZoneName")?.value || "";
+  } catch { return ""; }
+}
+
+// Hora local de la persona, para leer sus reportes sin hacer la cuenta mental.
+function horaEn(tz) {
+  if (!tz) return "";
+  try {
+    // en-US y no es-ES: este da "06:17 p. m." y el resto de la ficha usa el
+    // "6:17 PM" que produce hm12().
+    return new Intl.DateTimeFormat("en-US", {
+      timeZone: tz, hour: "numeric", minute: "2-digit", hour12: true,
+    }).format(new Date());
+  } catch { return ""; }
+}
+
+// Febrero con 29 a propósito: el cumpleaños se guarda sin año, así que el 29
+// es una fecha legítima aunque no exista todos los años.
+const DIAS_MES = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+const diasDelMes = m => DIAS_MES[m - 1] || 31;
+
 const $ = id => document.getElementById(id);
 
 let personas = [];
@@ -50,7 +108,8 @@ let editando = false;
 
 // Devuelve siempre un objeto, aunque la persona no tenga ficha todavia.
 function hrDe(email) {
-  return hrData.get(email) || { city: null, address: null, startDate: null, schedule: null, docsUrl: null };
+  return hrData.get(email)
+    || { city: null, address: null, startDate: null, schedule: null, docsUrl: null, birthDate: null };
 }
 
 // ── Formato ────────────────────────────────────────────────────────
@@ -87,14 +146,30 @@ function antiguedad(desde) {
   return partes.length ? partes.join(", ") : "menos de un mes";
 }
 
+// Edad a partir de la fecha completa (MM/DD/YYYY) que guarda RRHH.
+function edadDe(fecha) {
+  const d = parseUS(fecha);
+  if (!d) return null;
+  const hoy = new Date();
+  let anos = hoy.getFullYear() - d.getFullYear();
+  const m = hoy.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && hoy.getDate() < d.getDate())) anos--;
+  return anos >= 0 && anos < 120 ? anos : null;
+}
+
+// Convierte MM/DD/YYYY al MM-DD que consume el widget de cumpleaños.
+function aMMDD(fecha) {
+  const d = parseUS(fecha);
+  if (!d) return "";
+  return `${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 // identity.birthdate se guarda como MM/DD (sin año) o MM/DD/YYYY.
 function cumpleTexto(birthdate) {
   if (!birthdate) return "";
   const [m, d] = String(birthdate).split("/").map(Number);
   if (!m || !d) return String(birthdate);
-  const meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio",
-                 "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
-  return `${d} de ${meses[m - 1] || "?"}`;
+  return `${d} de ${MESES[m - 1] || "?"}`;
 }
 
 function horarioTexto(schedule) {
@@ -116,6 +191,44 @@ function el(tag, className, texto) {
   if (className) n.className = className;
   if (texto != null) n.textContent = texto;
   return n;
+}
+
+// Separador dentro del formulario. El formulario escribe en dos colecciones
+// distintas y conviene que se vea: arriba hr-data, abajo users/.
+function subtitulo(texto) {
+  const t = el("div", "section-label rh-form-sep");
+  t.appendChild(el("span", "kicker-dot"));
+  t.appendChild(el("span", null, texto));
+  return t;
+}
+
+// Una línea de teléfono con su botón de quitar. La lista nunca queda sin
+// ninguna fila: la última se vacía en vez de borrarse, para que siempre haya
+// dónde escribir.
+function filaTelefono(valor) {
+  const fila = el("div", "rh-phone-row");
+
+  const input = document.createElement("input");
+  input.type = "tel";
+  input.className = "rh-input";
+  input.placeholder = "+58 412 000 0000";
+  input.value = valor || "";
+
+  const quitar = el("button", "rh-phone-del");
+  quitar.type = "button";
+  quitar.title = "Quitar este teléfono";
+  quitar.setAttribute("aria-label", "Quitar este teléfono");
+  const icono = document.createElement("i");
+  icono.setAttribute("data-lucide", "x");
+  quitar.appendChild(icono);
+  quitar.addEventListener("click", () => {
+    const lista = fila.parentElement;
+    if (lista && lista.children.length > 1) fila.remove();
+    else input.value = "";
+  });
+
+  fila.append(input, quitar);
+  return fila;
 }
 
 function dato(etiqueta, valor, placeholder) {
@@ -187,11 +300,28 @@ function pintarLista() {
   });
 }
 
-function seleccionar(email) {
+async function seleccionar(email) {
+  if (email === seleccionada) return;
+  // Cambiar de persona reconstruye la ficha entera: si hay una edición
+  // abierta, lo tecleado se perdería sin aviso.
+  if (editando && !(await confirmarDescarte())) return;
   seleccionada = email;
   editando = false;
   pintarLista();
   pintarFicha();
+}
+
+// Un solo punto para preguntar antes de tirar una edición a medias. Devuelve
+// true si se puede continuar.
+function confirmarDescarte() {
+  if (typeof window.heroConfirm !== "function") return Promise.resolve(true);
+  return window.heroConfirm({
+    title: "Descartar cambios",
+    message: "Estás editando los datos laborales y no los guardaste. Si continúas se pierden.",
+    confirmLabel: "Descartar",
+    cancelLabel: "Seguir editando",
+    variant: "warning",
+  });
 }
 
 // ── Ficha ──────────────────────────────────────────────────────────
@@ -229,8 +359,13 @@ function cabecera(p) {
   info.appendChild(el("h2", "rh-card-name", p.identity?.name || p._email));
   info.appendChild(el("div", "rh-card-job", p.display?.jobTitle || "Sin cargo asignado"));
 
-  const iso = p.identity?.country || "";
-  const ciudad = hrDe(p._email).city || "";
+  // La cabecera muestra DÓNDE ESTÁ la persona, que es lo que RRHH necesita de
+  // un vistazo. La bandera acompaña a ese país, no al de origen: juntar la
+  // ciudad de residencia con la bandera de la nacionalidad daba un lugar que
+  // no existe (Madrid + bandera de Cuba). El origen se lee más abajo.
+  const hrCab = hrDe(p._email);
+  const ciudad = hrCab.city || "";
+  const iso = (hrCab.country || p.identity?.country || "").toUpperCase();
   const lugar = el("div", "rh-card-place");
   if (iso) {
     const bandera = document.createElement("img");
@@ -241,6 +376,10 @@ function cabecera(p) {
   }
   const textoLugar = [ciudad, countryLabel(iso)].filter(Boolean).join(", ");
   lugar.appendChild(el("span", null, textoLugar || "Ubicación sin registrar"));
+
+  const hora = horaEn(hrCab.timezone);
+  if (hora) lugar.appendChild(el("span", "rh-card-hora", `· ${hora} allá`));
+
   info.appendChild(lugar);
 
   const acciones = el("div", "rh-card-actions");
@@ -258,13 +397,29 @@ function datosLaborales(p) {
 
   const hr = hrDe(p._email);
 
+  // Origen explícito: la cabecera ya no lo dice, ahora muestra dónde vive.
+  const origen = p.identity?.country || "";
+  const vive = hr.country || "";
+  caja.appendChild(dato("País de origen", countryLabel(origen)
+    + (origen && vive && origen.toUpperCase() !== vive.toUpperCase() ? " · vive fuera" : "")));
+
+  const tzTexto = hr.timezone
+    ? `${tzEtiqueta(hr.timezone)}${horaEn(hr.timezone) ? " · ahora " + horaEn(hr.timezone) : ""}`
+    : "";
+  caja.appendChild(dato("Zona horaria", tzTexto));
+
   caja.appendChild(dato("Horario asignado", horarioTexto(hr.schedule)));
 
   const inicio = hr.startDate;
   const anos = antiguedad(inicio);
   caja.appendChild(dato("En Hero desde", inicio ? `${inicio}${anos ? " · " + anos : ""}` : ""));
 
-  caja.appendChild(dato("Cumpleaños", cumpleTexto(p.identity?.birthdate)));
+  // Con año registrado se muestra la fecha completa y la edad — es ficha de
+  // RRHH, no el directorio. Sin año, solo el día y el mes que ya publica el Hub.
+  const edad = edadDe(hr.birthDate);
+  caja.appendChild(dato("Nacimiento", hr.birthDate
+    ? `${hr.birthDate}${edad != null ? ` · ${edad} años` : ""}`
+    : cumpleTexto(p.identity?.birthdate)));
 
   const tels = Array.isArray(p.identity?.phones) ? p.identity.phones.filter(Boolean) : [];
   caja.appendChild(dato("Teléfono", tels.join(" · ")));
@@ -349,8 +504,49 @@ function formulario(p) {
   hasta.id = "rhf-to";
   hasta.value = sch.to || "";
 
+  // Dónde vive hoy. Va en hr-data, no en users/: identity.country es de dónde
+  // ES la persona (bandera pública) y para quien vive fuera de su país no es
+  // lo mismo. El que manda para huso y ley laboral es este.
+  const paisVive = document.createElement("select");
+  paisVive.className = "rh-input";
+  paisVive.id = "rhf-lives";
+  paisVive.appendChild(new Option("— Sin registrar —", ""));
+  const catalogoPaises = countryOptions();
+  catalogoPaises.forEach(c => paisVive.appendChild(new Option(c.label, c.iso)));
+  const viveActual = (hr.country || "").toUpperCase();
+  if (viveActual && !catalogoPaises.some(c => c.iso === viveActual)) {
+    paisVive.appendChild(new Option(countryLabel(viveActual), viveActual));
+  }
+  paisVive.value = viveActual;
+
+  const husos = document.createElement("select");
+  husos.className = "rh-input";
+  husos.id = "rhf-tz";
+  husos.appendChild(new Option("— Sin registrar —", ""));
+  const listaTz = [...new Set(Object.values(TZ_POR_PAIS))]
+    .map(tz => ({ tz, label: tzEtiqueta(tz) }))
+    .sort((a, b) => a.label.localeCompare(b.label, "es"));
+  listaTz.forEach(t => husos.appendChild(new Option(t.label, t.tz)));
+  if (hr.timezone && !listaTz.some(t => t.tz === hr.timezone)) {
+    husos.appendChild(new Option(tzEtiqueta(hr.timezone), hr.timezone));
+  }
+  husos.value = hr.timezone || "";
+
+  // Elegir país rellena el huso solo si está vacío: si RRHH ya puso uno a
+  // mano (un país con varios husos), no se le pisa.
+  paisVive.addEventListener("change", () => {
+    const sugerido = TZ_POR_PAIS[paisVive.value];
+    if (sugerido && !husos.value) husos.value = sugerido;
+  });
+
   const fila1 = el("div", "rh-form-row");
-  fila1.append(campo("Ciudad", ciudad), campo("En Hero desde", inicio));
+  fila1.append(campo("Ciudad", ciudad), campo("País donde vive", paisVive));
+
+  const filaTz = el("div", "rh-form-row");
+  const campoTz = campo("Zona horaria", husos);
+  campoTz.appendChild(el("div", "rh-hint",
+    "Para leer la hora de sus reportes de retraso y ausencia."));
+  filaTz.append(campoTz, campo("En Hero desde", inicio));
 
   const fila2 = el("div", "rh-form-row");
   fila2.append(campo("Entrada", desde), campo("Salida", hasta));
@@ -383,6 +579,89 @@ function formulario(p) {
     chips.appendChild(chip);
   });
 
+  // ── Datos personales (users/, no hr-data) ────────────────────────
+  // Van en su propio bloque a propósito: se guardan en otra colección y con
+  // otra regla. El correo corporativo y los aliases de login NO están acá —
+  // eso es la cuenta, y se gestiona en admin → Usuarios.
+  // Fecha completa: RRHH necesita el año para control de expediente, el Hub
+  // solo mes y día para el widget. Se captura una vez y se reparte —
+  // hr-data.birthDate guarda MM/DD/YYYY, identity.birthdate el MM-DD derivado.
+  const nacimiento = document.createElement("input");
+  nacimiento.type = "text";
+  nacimiento.className = "rh-input";
+  nacimiento.id = "rhf-birth";
+  nacimiento.placeholder = "MM/DD/YYYY";
+  nacimiento.autocomplete = "off";
+  nacimiento.value = hr.birthDate || "";
+
+  const campoCumple = campo("Fecha de nacimiento", nacimiento);
+  const edadActual = edadDe(hr.birthDate);
+  campoCumple.appendChild(el("div", "rh-hint", edadActual
+    ? `${edadActual} años. El Hub solo publica el día y el mes; el año queda en la ficha de RRHH.`
+    : "El Hub solo publica el día y el mes; el año queda en la ficha de RRHH."));
+
+  // Caso de las fichas viejas: el cumpleaños existe en users/ como MM-DD pero
+  // nadie registró el año. Se avisa para que no parezca que el dato se perdió,
+  // y al guardar en blanco no se pisa (ver guardarFicha).
+  const soloMMDD = !hr.birthDate && p.identity?.birthdate;
+  if (soloMMDD) {
+    campoCumple.appendChild(el("div", "rh-hint",
+      `Registrado sin año: ${cumpleTexto(p.identity.birthdate)}. Al guardar una fecha completa se reemplaza; si lo dejas vacío se conserva como está.`));
+  }
+
+  // País: <select> del catálogo, no el input libre del modal de admin. Ahí,
+  // escribir "Vzla" hace que nameToIso devuelva null y el país se pierda sin
+  // aviso; acá no hay forma de teclear algo que no exista.
+  const isoActual = (p.identity?.country || "").toUpperCase();
+  const pais = document.createElement("select");
+  pais.className = "rh-input";
+  pais.id = "rhf-country";
+  pais.appendChild(new Option("— Sin registrar —", ""));
+  const catalogo = countryOptions();
+  catalogo.forEach(c => pais.appendChild(new Option(c.label, c.iso)));
+  // Un ISO viejo fuera del catálogo se conserva como opción propia en vez de
+  // perderse al guardar.
+  if (isoActual && !catalogo.some(c => c.iso === isoActual)) {
+    pais.appendChild(new Option(countryLabel(isoActual), isoActual));
+  }
+  pais.value = isoActual;
+
+  const campoPais = campo("País de origen", pais);
+  campoPais.appendChild(el("div", "rh-hint",
+    "Es público: sale como bandera en Equipo y en el directorio. La ciudad, no."));
+
+  const filaOrigen = el("div", "rh-form-row");
+  filaOrigen.append(campoCumple, campoPais);
+
+  const personal = document.createElement("input");
+  personal.type = "email";
+  personal.className = "rh-input";
+  personal.id = "rhf-personal";
+  personal.placeholder = "nombre@gmail.com";
+  personal.value = p.identity?.personalEmail || "";
+  const campoPersonal = campo("Correo personal", personal);
+  campoPersonal.appendChild(el("div", "rh-hint",
+    "Se usa para avisarle si pierde el acceso a la cuenta corporativa."));
+
+  const telsWrap = el("div", "rh-phones");
+  telsWrap.id = "rhf-phones";
+  const telsActuales = Array.isArray(p.identity?.phones)
+    ? p.identity.phones.filter(Boolean) : [];
+  (telsActuales.length ? telsActuales : [""]).forEach(t => telsWrap.appendChild(filaTelefono(t)));
+
+  const addTel = el("button", "rh-btn rh-btn-sm", "+ Añadir teléfono");
+  addTel.type = "button";
+  addTel.addEventListener("click", () => {
+    telsWrap.appendChild(filaTelefono(""));
+    if (window.refreshIcons) window.refreshIcons();
+  });
+
+  const campoTels = campo("Teléfonos", telsWrap);
+  campoTels.appendChild(addTel);
+
+  const cuenta = el("div", "rh-hint",
+    "El correo corporativo y las direcciones con las que inicia sesión se gestionan en admin → Usuarios: cambiarlas afecta el acceso al Hub.");
+
   const guardar = el("button", "rh-btn rh-btn-primary", "Guardar");
   guardar.type = "button";
   guardar.addEventListener("click", () => guardarFicha(p, guardar));
@@ -400,17 +679,30 @@ function formulario(p) {
   campoDocs.appendChild(ayudaDocs);
 
   form.append(
+    subtitulo("Relación laboral"),
     fila1,
+    filaTz,
     fila2,
     campo("Días de trabajo", chips),
     campo("Dirección completa", direccion),
     campoDocs,
+    subtitulo("Datos personales"),
+    filaOrigen,
+    campoPersonal,
+    campoTels,
+    cuenta,
     acciones
   );
 
-  // Flatpickr sobre la fecha de ingreso, con el mismo formato US del Hub.
+  // Flatpickr sobre las dos fechas, con el mismo formato US del Hub.
   if (typeof flatpickr === "function") {
     flatpickr(inicio, { locale: "es", dateFormat: "m/d/Y", allowInput: true });
+    // maxDate corta el futuro. El año de Flatpickr es un input editable: se
+    // teclea 1985 en vez de recorrer meses con la flecha.
+    flatpickr(nacimiento, {
+      locale: "es", dateFormat: "m/d/Y", allowInput: true,
+      maxDate: "today", defaultDate: hr.birthDate || null,
+    });
   }
 
   return form;
@@ -424,6 +716,17 @@ async function guardarFicha(p, btn) {
   const days = Array.from(document.querySelectorAll(".rh-day.on")).map(c => Number(c.dataset.day));
   const direccion = ($("rhf-address").value || "").trim();
   const docsUrl = ($("rhf-docs").value || "").trim();
+  const paisVive = $("rhf-lives").value || "";
+  const timezone = $("rhf-tz").value || "";
+
+  // Datos personales. La fecha de nacimiento se parte: completa a hr-data,
+  // MM-DD a users/ para el widget.
+  const nacimiento = ($("rhf-birth").value || "").trim();
+  const country = $("rhf-country").value || "";
+  const personalEmail = ($("rhf-personal").value || "").trim().toLowerCase();
+  const phones = Array.from($("rhf-phones").querySelectorAll("input"))
+    .map(i => i.value.trim())
+    .filter(Boolean);
 
   if (docsUrl && !/^https:\/\//i.test(docsUrl)) {
     heroToast.error("El enlace de la carpeta tiene que empezar por https://");
@@ -435,6 +738,32 @@ async function guardarFicha(p, btn) {
   }
   if ((from && !to) || (!from && to)) {
     heroToast.error("El horario necesita hora de entrada y de salida.");
+    return;
+  }
+  if (nacimiento && !parseUS(nacimiento)) {
+    heroToast.error("La fecha de nacimiento va en formato MM/DD/YYYY.");
+    return;
+  }
+  // parseUS acepta 02/31: el Date rueda a marzo y quedaría un cumpleaños en
+  // un día que la persona no cumple. Se compara contra lo tecleado.
+  if (nacimiento) {
+    const [mm, dd] = nacimiento.split("/").map(Number);
+    if (dd > diasDelMes(mm) || mm < 1 || mm > 12) {
+      heroToast.error("Esa fecha de nacimiento no existe.");
+      return;
+    }
+    const edad = edadDe(nacimiento);
+    if (edad === null || edad < 14) {
+      heroToast.error("Revisa el año de nacimiento: la edad no es plausible.");
+      return;
+    }
+  }
+  if (personalEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(personalEmail)) {
+    heroToast.error("El correo personal no tiene un formato válido.");
+    return;
+  }
+  if (personalEmail.endsWith(HERO_DOMAIN)) {
+    heroToast.error("El correo personal no puede ser del dominio corporativo.");
     return;
   }
 
@@ -449,11 +778,43 @@ async function guardarFicha(p, btn) {
       startDate: inicio || null,
       schedule: from && to ? { from, to, days } : null,
       docsUrl: docsUrl || null,
+      birthDate: nacimiento || null,
+      country: paisVive || null,
+      timezone: timezone || null,
     };
     await saveHrData(p._email, ficha);
 
     // Se actualiza la copia en memoria para no releer toda la colección.
     hrData.set(p._email, ficha);
+
+    // Segunda escritura, a users/. Va después y por separado porque es otra
+    // colección con otra regla: si esta falla, la ficha laboral ya quedó
+    // guardada y el mensaje tiene que decir exactamente qué se perdió.
+    // Dejar la fecha en blanco NO borra el cumpleaños: las fichas viejas
+    // tienen MM-DD en users/ sin año en hr-data, y guardar cualquier otro
+    // campo se llevaría por delante el widget de cumpleaños de esa persona.
+    const patchUser = {
+      "identity.personalEmail": personalEmail || null,
+      "identity.phones": phones,
+      "identity.country": country || null,
+    };
+    if (nacimiento) patchUser["identity.birthdate"] = aMMDD(nacimiento);
+
+    try {
+      await updateUserFields(p._email, patchUser);
+      // Copia en memoria, igual que con hrData.
+      p.identity = p.identity || {};
+      if (nacimiento) p.identity.birthdate = aMMDD(nacimiento);
+      p.identity.personalEmail = personalEmail || null;
+      p.identity.phones = phones;
+      p.identity.country = country || null;
+    } catch (e) {
+      console.error("rrhh-personas (users):", e);
+      editando = false;
+      pintarFicha();
+      heroToast.error("Se guardaron los datos laborales, pero no los personales.");
+      return;
+    }
 
     editando = false;
     pintarFicha();
@@ -524,11 +885,12 @@ function bindVistas() {
         b.classList.toggle("active", activo);
         b.setAttribute("aria-selected", String(activo));
       });
-      // #rh-content lo muestra/oculta el dashboard con style.display; un
-      // atributo `hidden` no le ganaria a un display:block inline.
-      const general = $("rh-content");
+      // La vista general la maneja el dashboard: tiene tres bloques
+      // (cargando / error / contenido) y solo él sabe cuál toca. Tocar
+      // #rh-content a mano desde aquí mostraba el contenedor vacío cuando la
+      // carga había fallado.
+      aplicarVistaGeneral(vista === "general");
       const personas_ = $("rh-personas");
-      if (general) general.style.display = vista === "general" ? "block" : "none";
       if (personas_) personas_.hidden = vista !== "personas";
       // El historial de asistencia pertenece a la vista general.
       const hist = $("rh-history");
@@ -550,7 +912,11 @@ function init() {
   if (filtro) filtro.addEventListener("input", pintarLista);
 
   // Cuando cambia el rango de fechas arriba, la ficha abierta se repinta.
-  onDatosActualizados(() => { if (seleccionada) pintarFicha(); });
+  // Mientras se edita NO: pintarFicha() reconstruye el formulario desde
+  // Firestore y los selects de periodo viven en la toolbar siempre visible,
+  // así que tocarlos borraba lo que se estuviera escribiendo. Al guardar o
+  // cancelar se repinta igual y los reportes quedan al día.
+  onDatosActualizados(() => { if (seleccionada && !editando) pintarFicha(); });
 }
 
 if (document.readyState === "loading") {

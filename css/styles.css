@@ -10430,3 +10430,56 @@ body[data-theme="dark"] .sc-field textarea:focus {
   .campaign-play-icon svg { width:28px; height:28px; }
   .campaign-play-sub { font-size:11px; letter-spacing:1px; }
 }
+
+/* Formulario de RRHH · datos personales (users/) */
+.rh-form-sep { margin:22px 0 14px; }
+.rh-form-sep:first-child { margin-top:0; }
+
+.rh-phones { display:flex; flex-direction:column; gap:8px; }
+.rh-phone-row { display:flex; align-items:center; gap:8px; }
+.rh-phone-row .rh-input { flex:1; min-width:0; }
+.rh-phone-del {
+  flex:0 0 auto; display:grid; place-items:center;
+  width:34px; height:34px; border-radius:9px; cursor:pointer;
+  border:1px solid var(--border); background:var(--paper); color:var(--muted);
+  transition:border-color .15s, color .15s, background .15s;
+}
+.rh-phone-del:hover { border-color:#f43f5e; color:#f43f5e; }
+.rh-phone-del i { width:15px; height:15px; }
+body[data-theme="dark"] .rh-phone-del { background:rgba(255,255,255,.05); }
+
+.rh-btn-sm { margin-top:8px; padding:6px 12px; font-size:12px; }
+.rh-card-hora { margin-left:6px; font-family:var(--mono); font-size:11.5px; color:var(--muted); }
+
+
+/* ── Selects nativos en modo oscuro (regla transversal) ──────────
+   Windows pinta el desplegable de un <select> con el fondo claro del
+   sistema. Sin una regla explícita para `option`, el texto del select
+   (claro en tema noche) queda ilegible al abrirlo.
+
+   Va como regla genérica sobre `select` y no clase por clase: enumerar
+   .ad-select, .rep-select, .mp-att-select, .m-native-select y .rh-input
+   deja fuera al siguiente select que se agregue.
+
+   Solo se tocan `color-scheme` y el `option`: fijar aquí el fondo del
+   select pisaría el estilo propio de cada clase — .rh-input y .rep-select
+   usan un blanco translúcido, no var(--card) — y el bug no está ahí.
+
+   El `color` del option sí es obligatorio: heredarlo del select no es
+   fiable en el popup nativo de Chrome en Windows. */
+body[data-theme="dark"] select,
+[data-theme="dark"] select {
+  color-scheme: dark;
+}
+body[data-theme="dark"] select option,
+[data-theme="dark"] select option {
+  background: var(--card);
+  color: var(--text);
+}
+
+/* Mismo motivo en los relojes y calendarios nativos: sin color-scheme se
+   abren en claro sobre una ficha oscura. */
+body[data-theme="dark"] input[type="time"],
+body[data-theme="dark"] input[type="date"] {
+  color-scheme: dark;
+}

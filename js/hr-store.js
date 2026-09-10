@@ -11,10 +11,21 @@
 //   city      → ciudad. Fuera de users/ a propósito: el módulo Equipo lo ven
 //               los agentes externos y no tienen por qué saber en qué ciudad
 //               vive cada persona.
+//   country   → país donde VIVE hoy (ISO). No confundir con identity.country,
+//               que es de dónde ES y sí es público (la bandera de Equipo).
+//               Para quien vive fuera de su país los dos difieren, y el que
+//               manda para huso, ley laboral y forma de pago es este.
+//   timezone  → zona horaria IANA (ej. "America/Caracas"). El equipo es
+//               remoto y los reportes llevan hora: sin esto, un "llegué 9:15"
+//               no se puede leer bien desde otro huso.
 //   address   → dirección completa
 //   startDate → cuándo entró a Hero (MM/DD/YYYY). meta.createdAt de users/ NO
 //               sirve: es cuándo se creó el documento.
 //   schedule  → { from, to, days } — horario asignado
+//   birthDate → fecha de nacimiento COMPLETA (MM/DD/YYYY). El año vive acá y
+//               no en users/: revela la edad, y ese documento lo lee
+//               cualquiera del dominio. El widget de cumpleaños del Hub sigue
+//               leyendo identity.birthdate (MM-DD), que se deriva de este.
 //   docsUrl   → carpeta de Drive con contratos y documentos. Se guarda el
 //               enlace, no los archivos: los permisos los gestiona Workspace.
 //
@@ -29,7 +40,10 @@ import {
 
 const COLLECTION = "hr-data";
 
-const VACIO = { city: null, address: null, startDate: null, schedule: null, docsUrl: null };
+const VACIO = {
+  city: null, address: null, startDate: null, schedule: null, docsUrl: null,
+  birthDate: null, country: null, timezone: null,
+};
 
 function normalizar(data) {
   return {
@@ -38,6 +52,9 @@ function normalizar(data) {
     startDate: data?.startDate || null,
     schedule: data?.schedule || null,
     docsUrl: data?.docsUrl || null,
+    birthDate: data?.birthDate || null,
+    country: data?.country || null,
+    timezone: data?.timezone || null,
   };
 }
 
