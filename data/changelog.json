@@ -1,5 +1,19 @@
 [
   {
+    "id": "2026-09-11-rrhh-alias-fichas",
+    "version": "v2.45.2",
+    "date": "2026-09-11",
+    "category": "fix",
+    "scope": "admin",
+    "audience": "admin",
+    "title": "Los reportes enviados desde una dirección alterna ya aparecen en la ficha de la persona",
+    "items": [
+      "Quien tiene más de una dirección de inicio de sesión podía reportar desde la alterna. Ese reporte contaba en la vista general, pero no salía en «Sus reportes» dentro de su ficha: ahí figuraba en cero",
+      "Ahora la ficha reconoce todas las direcciones de la persona, y también las que se hayan guardado con mayúsculas",
+      "La ficha dejaba calendarios abiertos en segundo plano cada vez que se entraba a editar o se cambiaba de persona. Con la página abierta un buen rato se iba poniendo lenta"
+    ]
+  },
+  {
     "id": "2026-09-10-rrhh-rango-cobertura",
     "version": "v2.45.1",
     "date": "2026-09-10",

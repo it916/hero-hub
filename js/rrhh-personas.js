@@ -106,6 +106,18 @@ let hrData = new Map();    // email -> { city, address, startDate, schedule, doc
 let seleccionada = null;   // email
 let editando = false;
 
+// Flatpickr cuelga su calendario de <body>, no del input. Como la ficha se
+// repinta entera (replaceChildren), sin destruir las instancias los calendarios
+// del formulario anterior quedan huérfanos en el DOM y se van acumulando.
+let pickers = [];
+
+function destruirPickers() {
+  for (const fp of pickers) {
+    try { fp.destroy(); } catch (_) {}
+  }
+  pickers = [];
+}
+
 // Devuelve siempre un objeto, aunque la persona no tenga ficha todavia.
 function hrDe(email) {
   return hrData.get(email)
@@ -329,6 +341,8 @@ function pintarFicha() {
   const vacio = $("rh-card-empty");
   const cuerpo = $("rh-card-body");
   if (!cuerpo) return;
+
+  destruirPickers();
 
   const p = personas.find(x => (x._email || "") === seleccionada);
   if (!p) {
@@ -696,13 +710,13 @@ function formulario(p) {
 
   // Flatpickr sobre las dos fechas, con el mismo formato US del Hub.
   if (typeof flatpickr === "function") {
-    flatpickr(inicio, { locale: "es", dateFormat: "m/d/Y", allowInput: true });
+    pickers.push(flatpickr(inicio, { locale: "es", dateFormat: "m/d/Y", allowInput: true }));
     // maxDate corta el futuro. El año de Flatpickr es un input editable: se
     // teclea 1985 en vez de recorrer meses con la flecha.
-    flatpickr(nacimiento, {
+    pickers.push(flatpickr(nacimiento, {
       locale: "es", dateFormat: "m/d/Y", allowInput: true,
       maxDate: "today", defaultDate: hr.birthDate || null,
-    });
+    }));
   }
 
   return form;
@@ -837,7 +851,16 @@ function reportesDe(p) {
   titulo.appendChild(el("span", null, `Sus reportes · ${getEtiquetaRango()}`));
   caja.appendChild(titulo);
 
-  const suyos = getItemsEnRango().filter(it => it.email === p._email);
+  // Un reporte se guarda con el correo con el que se envió, que puede ser un
+  // alias de identity.emails[] y no el docId. Comparar solo contra p._email
+  // dejaba esos reportes fuera de la ficha. Se normaliza de paso: reports
+  // guarda el email tal cual llegó, sin pasarlo a minúsculas.
+  const alias = new Set(
+    [p._email, ...(Array.isArray(p.identity?.emails) ? p.identity.emails : [])]
+      .filter(Boolean)
+      .map(e => String(e).toLowerCase().trim())
+  );
+  const suyos = getItemsEnRango().filter(it => alias.has(String(it.email || "").toLowerCase().trim()));
 
   const resumen = el("div", "rh-mini-kpis");
   Object.entries(TIPO_EMOJI).forEach(([tipo, emoji]) => {
