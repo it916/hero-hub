@@ -47,6 +47,13 @@ export const PAGE_LABELS = {
 // mi-perfil el menú del avatar queda roto. La UI las muestra bloqueadas.
 export const PAGINAS_OBLIGATORIAS = ["index", "mi-perfil"];
 
+// Avisos que se muestran junto al nombre de la página en la matriz de
+// Permisos. Marcar la casilla abre la PANTALLA; si los datos que esa pantalla
+// lee están cerrados por reglas de Firestore, el rol entra y no ve nada.
+export const PAGE_NOTES = {
+  rrhh: "Marcar la casilla no basta: hr-data está restringida a administradores en las reglas de Firestore",
+};
+
 export const FEATURES = {
   "hqcc-tiles":       { group: "Dashboard",           label: "Tiles del banner (Oficina · Asistencia · CRMs)" },
   "dashboard-social": { group: "Dashboard",           label: "Misiones, Celebraciones y Mensajes" },

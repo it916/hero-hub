@@ -1,5 +1,20 @@
 [
   {
+    "id": "2026-09-11-rrhh-barras-dias",
+    "version": "v2.45.3",
+    "date": "2026-09-11",
+    "category": "fix",
+    "scope": "admin",
+    "audience": "admin",
+    "title": "Una persona, una barra: la vista general de RRHH ya no parte a nadie en dos",
+    "items": [
+      "El gráfico de reportes por persona agrupaba por el nombre guardado en cada reporte. Quien reportó desde una dirección alterna, o cuyo nombre cambió en el camino, salía como dos personas distintas con la mitad de los reportes cada una",
+      "Ahora se agrupa por la persona del directorio, y la barra lleva su nombre oficial aunque el reporte se enviara con otro",
+      "Los días de trabajo se guardaban solo si también había hora de entrada y salida. Quitar el sábado a alguien sin horario asignado no servía de nada: al guardar volvían los cinco días. Ya se guardan por su cuenta y la ficha los muestra como «lunes a viernes · sin horario fijo»",
+      "En Permisos, la fila de Recursos Humanos avisa que marcar la casilla abre la pantalla pero no los datos: los de personal están restringidos a administradores en las reglas de Firestore y hay que ampliarlas aparte. La nota del changelog de v2.44.0 que decía lo contrario quedó corregida"
+    ]
+  },
+  {
     "id": "2026-09-11-rrhh-alias-fichas",
     "version": "v2.45.2",
     "date": "2026-09-11",
@@ -111,7 +126,7 @@
       "El panel de administración queda para lo que es: la gestión interna del Hub — métricas, usuarios, permisos, log de auditoría, spotlight, mensajes y migración",
       "Al entrar al panel ahora se abre Métricas, que pasó a ser la vista de resumen",
       "El módulo se lleva todo lo que tenía: los contadores, la lista de reportes, el gráfico por persona, el historial de asistencia plegado y las estadísticas por persona",
-      "Por ahora entra el mismo que antes — los administradores. Como es una página como cualquier otra del Hub, abrirla a más gente es marcar una casilla en Permisos, sin tocar código"
+      "Por ahora entra el mismo que antes — los administradores. Abrirla a más gente no es solo marcar la casilla en Permisos: los datos de personal están restringidos a administradores en las reglas de Firestore, y hay que ampliarlas también o la página se abre vacía"
     ]
   },
   {

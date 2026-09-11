@@ -19,6 +19,7 @@
 // js/asistencia-dashboard.js, que se carga solo al abrir esa sección.
 
 import { fetchReports } from "./reports-store.js";
+import { getAllUsers } from "./user-store.js";
 import {
   fetchAttendanceEvents, parseMMDDYYYY, parseEventDate,
   startOfDay, startOfWeek, startOfMonth,
@@ -325,6 +326,68 @@ export function onDatosActualizados(cb) {
   suscriptores.push(cb);
 }
 
+
+// ── Identidad de quien reporta ─────────────────────────────────────
+// Un reporte guarda el correo con el que se envió — que puede ser un alias de
+// identity.emails[] — y el nombre tal como estaba ese día. Agrupar por
+// `name || email` partía en dos barras a la misma persona: por el alias, y por
+// un nombre que cambió (casada, tilde añadida, apellido completo).
+//
+// El directorio resuelve ambos casos: todo alias apunta al docId y la etiqueta
+// sale del nombre oficial. Se pide una sola vez y sin bloquear el pintado: las
+// barras salen con lo que haya y se repintan cuando llega.
+let alias = null;          // email normalizado -> { key, label }
+let aliasPedido = false;
+
+const normEmail = e => String(e || "").toLowerCase().trim();
+
+/** Llena el directorio con usuarios ya leídos, para no releer la colección. */
+export function setDirectorio(users) {
+  if (!Array.isArray(users) || !users.length) return;
+  alias = construirAlias(users);
+  aliasPedido = true;
+  renderVisible();
+}
+
+function construirAlias(users) {
+  const mapa = new Map();
+  for (const u of users) {
+    const key = normEmail(u._email);
+    if (!key) continue;
+    const label = u.identity?.name || u._email;
+    mapa.set(key, { key, label });
+    const otros = Array.isArray(u.identity?.emails) ? u.identity.emails : [];
+    for (const e of otros) {
+      const alt = normEmail(e);
+      // El docId manda: un alias nunca pisa a otra persona ya registrada.
+      if (alt && !mapa.has(alt)) mapa.set(alt, { key, label });
+    }
+  }
+  return mapa;
+}
+
+function pedirDirectorio() {
+  if (aliasPedido) return;
+  aliasPedido = true;
+  getAllUsers()
+    .then(users => {
+      alias = construirAlias(users);
+      renderVisible();
+    })
+    .catch(e => {
+      // Sin directorio las barras siguen saliendo, agrupadas por correo.
+      console.warn("RRHH: no se pudo leer el directorio para agrupar:", e.message);
+    });
+}
+
+/** Identidad canónica de un item: docId del Hub si se reconoce, si no el correo. */
+function identidadDe(it) {
+  const email = normEmail(it.email);
+  const encontrado = alias && alias.get(email);
+  if (encontrado) return encontrado;
+  return { key: email || it.name || "—", label: it.name || email || "—" };
+}
+
 function render() {
   const { desde, hasta, label } = rangoActual();
   const tipoSel = $("rh-type").value;
@@ -454,20 +517,24 @@ function pintarBarras(lista) {
   const canvas = $("rh-person-bars");
   if (!canvas || typeof Chart === "undefined") return;
 
+  pedirDirectorio();
+
   const porPersona = new Map();
   lista.forEach(it => {
-    const k = it.name || it.email;
-    porPersona.set(k, (porPersona.get(k) || 0) + 1);
+    const { key, label } = identidadDe(it);
+    const acum = porPersona.get(key) || { label, n: 0 };
+    acum.n += 1;
+    porPersona.set(key, acum);
   });
 
-  const orden = [...porPersona.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12);
+  const orden = [...porPersona.values()].sort((a, b) => b.n - a.n).slice(0, 12);
 
   if (charts.persons) charts.persons.destroy();
   charts.persons = new Chart(canvas, {
     type: "bar",
     data: {
-      labels: orden.map(o => o[0]),
-      datasets: [{ label: "Reportes", data: orden.map(o => o[1]), backgroundColor: "#06a3b6", borderRadius: 6 }],
+      labels: orden.map(o => o.label),
+      datasets: [{ label: "Reportes", data: orden.map(o => o.n), backgroundColor: "#06a3b6", borderRadius: 6 }],
     },
     options: {
       indexAxis: "y",

@@ -26,6 +26,7 @@ import {
 import { getAllHrData, saveHrData } from "./hr-store.js";
 import {
   getItemsEnRango, getEtiquetaRango, onDatosActualizados, aplicarVistaGeneral,
+  setDirectorio,
 } from "./rrhh-dashboard.js";
 
 const TIPO_EMOJI = {
@@ -185,7 +186,7 @@ function cumpleTexto(birthdate) {
 }
 
 function horarioTexto(schedule) {
-  if (!schedule || !schedule.from || !schedule.to) return "";
+  if (!schedule) return "";
   const dias = Array.isArray(schedule.days) ? schedule.days : [];
   let cuando = "";
   if (dias.length) {
@@ -194,6 +195,11 @@ function horarioTexto(schedule) {
     const esLaV = dias.length === 5 && [1, 2, 3, 4, 5].every(n => dias.includes(n));
     cuando = esLaV ? "lunes a viernes" : ord.map(d => d.largo).join(", ");
   }
+  // Los días de trabajo se guardan aunque no haya hora de entrada y salida:
+  // son un dato por derecho propio, no un adorno del horario. Sin ellos la
+  // ficha se quedaba sin decir qué días trabaja la persona.
+  if (!schedule.from || !schedule.to) return cuando ? `${cuando} · sin horario fijo` : "";
+
   return `${hm12(schedule.from)} – ${hm12(schedule.to)}${cuando ? " · " + cuando : ""}`;
 }
 
@@ -265,6 +271,10 @@ async function cargarPersonas() {
     hrData = hr;
     personas.sort((a, b) => (a.identity?.name || "").localeCompare(b.identity?.name || ""));
     pintarLista();
+    // La vista general agrupa las barras por persona y necesita el mismo
+    // directorio para resolver los alias. Se lo pasamos en vez de que relea
+    // la colección por su cuenta.
+    setDirectorio(users);
   } catch (e) {
     console.error("rrhh-personas:", e);
     lista.replaceChildren(el("div", "ad-empty", "No se pudo cargar el equipo."));
@@ -790,7 +800,12 @@ async function guardarFicha(p, btn) {
       city: ciudad || null,
       address: direccion || null,
       startDate: inicio || null,
-      schedule: from && to ? { from, to, days } : null,
+      // Sin horas pero con días marcados se guardan los días igual: antes el
+      // ternario los tiraba enteros y desmarcar el sábado no servía de nada
+      // mientras no hubiera horario.
+      schedule: (from && to)
+        ? { from, to, days }
+        : (days.length ? { from: null, to: null, days } : null),
       docsUrl: docsUrl || null,
       birthDate: nacimiento || null,
       country: paisVive || null,

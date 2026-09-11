@@ -19,7 +19,7 @@
 import { db } from "./firebase-config.js";
 import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import {
-  DEFAULT_ROLES, FEATURES, PAGE_LABELS, PAGINAS_OBLIGATORIAS,
+  DEFAULT_ROLES, FEATURES, PAGE_LABELS, PAGE_NOTES, PAGINAS_OBLIGATORIAS,
   loadRolesCatalog
 } from "./roles.js";
 import { logEvent, ACTIONS } from "./audit-log.js";
@@ -193,7 +193,7 @@ function filasDePaginas() {
     etiqueta: PAGE_LABELS[p],
     obligatoria: PAGINAS_OBLIGATORIAS.includes(p),
     grupo: null,
-    nota: null
+    nota: PAGE_NOTES[p] || null
   }));
 }
 
