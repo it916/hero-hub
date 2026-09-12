@@ -1,5 +1,19 @@
 [
   {
+    "id": "2026-09-12-evaluaciones-trimestres",
+    "version": "v2.52.1",
+    "date": "2026-09-12",
+    "category": "fix",
+    "scope": "admin",
+    "audience": "admin",
+    "title": "El trimestre de la evaluación se elige mejor",
+    "items": [
+      "El desplegable ofrecía cuatro trimestres hacia atrás, así que en septiembre llegaba a proponer octubre–diciembre del año pasado. Ahora muestra solo los de este año y hasta el que va en curso",
+      "El formulario abre en el trimestre más reciente que esa persona no tenga evaluado, en vez de abrir siempre en el actual",
+      "Los trimestres ya evaluados salen marcados en la lista, y si eliges uno repetido aparece un aviso sugiriendo corregir la evaluación existente en vez de registrar otra"
+    ]
+  },
+  {
     "id": "2026-09-12-evaluaciones",
     "version": "v2.52.0",
     "date": "2026-09-12",

@@ -996,17 +996,29 @@ function formularioEval(p, lista) {
   const selPeriodo = document.createElement("select");
   selPeriodo.className = "ad-select";
   selPeriodo.id = "ev-periodo";
-  // El trimestre actual y los tres anteriores: se evalúa al cierre y a veces
-  // con retraso, pero no se registran evaluaciones de hace dos años.
+  // Solo los trimestres de este año, y hasta el que va en curso: no se ofrece
+  // uno que todavía no ha empezado ni se rellena historial de años anteriores.
+  // Decisión de Fernando, 2026-09-12.
+  //
+  // Los que esa persona ya tiene evaluados se marcan, y el formulario abre en
+  // el más reciente que le falte: el selector abría siempre en el trimestre en
+  // curso, así que volver a pulsar "Nueva evaluación" ofrecía por defecto el
+  // periodo que acababas de registrar.
+  const yaEvaluados = new Set(
+    lista.filter(e => !previa || e.id !== previa.id).map(e => e.periodo)
+  );
   const hoy = new Date();
-  for (let i = 0; i < 4; i++) {
-    const d = new Date(hoy.getFullYear(), hoy.getMonth() - i * 3, 1);
-    const pid = periodoDe(d);
+  const trimestreActual = Math.floor(hoy.getMonth() / 3) + 1;
+  let sugerido = null;
+  for (let q = trimestreActual; q >= 1; q--) {
+    const pid = hoy.getFullYear() + "-Q" + q;
     const opt = document.createElement("option");
     opt.value = pid;
-    opt.textContent = periodoTexto(pid);
+    opt.textContent = periodoTexto(pid) + (yaEvaluados.has(pid) ? " · ya evaluado" : "");
     selPeriodo.appendChild(opt);
+    if (!yaEvaluados.has(pid) && !sugerido) sugerido = pid;
   }
+  if (sugerido) selPeriodo.value = sugerido;
   if (previa) {
     // Una evaluación vieja que se corrige puede tener un periodo fuera de esa
     // ventana; se añade para no cambiárselo sin querer al guardar.
@@ -1021,6 +1033,22 @@ function formularioEval(p, lista) {
   periodoWrap.appendChild(selPeriodo);
   filaMeta.appendChild(periodoWrap);
 
+  const avisoDup = el("div", "rh-eval-dup");
+  avisoDup.hidden = true;
+  const revisarDuplicado = () => {
+    const repetido = yaEvaluados.has(selPeriodo.value);
+    avisoDup.hidden = !repetido;
+    if (repetido) {
+      avisoDup.replaceChildren(
+        iconoInline("ph-fill ph-warning-circle"),
+        document.createTextNode(
+          ` Ya hay una evaluación de ${periodoTexto(selPeriodo.value)} para esta persona. ` +
+          "Si quieres cambiarla, corrige la que existe en vez de registrar otra."),
+      );
+    }
+  };
+  selPeriodo.addEventListener("change", revisarDuplicado);
+
   const fechaWrap = el("label", "rh-field");
   fechaWrap.appendChild(el("span", "rh-field-label", "Fecha de la evaluación"));
   const inpFecha = document.createElement("input");
@@ -1034,6 +1062,8 @@ function formularioEval(p, lista) {
   filaMeta.appendChild(fechaWrap);
 
   form.appendChild(filaMeta);
+  form.appendChild(avisoDup);
+  revisarDuplicado();
 
   for (const c of CRITERIOS) {
     const fila = el("div", "rh-eval-crit-row");
