@@ -32,7 +32,6 @@ export const PAGE_LABELS = {
   onboarding: "Onboarding",
   reuniones: "Reuniones",
   grabaciones: "Grabaciones",
-  contracting: "Contracting",
   "solicitud-cuenta": "Solicitud de cuenta",
   changelog: "Changelog",
   "mi-perfil": "Mi perfil",
@@ -92,7 +91,7 @@ export const DEFAULT_ROLES = {
   },
   interno: {
     label: "Equipo interno",
-    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones", "changelog", "mi-perfil", "contracting", "solicitud-cuenta"],
+    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones", "changelog", "mi-perfil", "solicitud-cuenta"],
     features: ["hqcc-tiles", "dashboard-social", "tile-database", "tile-correos", "tile-calendario", "portales-team"],
     isAdmin: false
   },
@@ -108,7 +107,7 @@ export const DEFAULT_ROLES = {
     // Misma visibilidad que "interno" + la IT Console. Sin acceso a admin.
     // it@ está en LEGACY_ADMIN_EMAILS y entra como admin — este rol es para
     // futuros asistentes de IT o cuentas de servicio que necesiten la consola.
-    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones", "changelog", "it-console", "mi-perfil", "contracting", "solicitud-cuenta"],
+    pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones", "changelog", "it-console", "mi-perfil", "solicitud-cuenta"],
     features: ["hqcc-tiles", "dashboard-social", "tile-database", "tile-correos", "tile-calendario", "tile-it-console", "portales-team", "portales-delete", "admin-migracion"],
     isAdmin: false
   },

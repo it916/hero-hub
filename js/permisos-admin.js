@@ -37,7 +37,7 @@ const ORDEN_ROLES = ["admin", "interno", "it", "agente"];
 const ORDEN_PREFERIDO = [
   "index", "equipo", "portales", "mi-perfil", "changelog",
   "agencias", "directorio", "guias", "politicas", "onboarding",
-  "reuniones", "grabaciones", "contracting", "solicitud-cuenta",
+  "reuniones", "grabaciones", "solicitud-cuenta",
   "finanzas", "finanzas-manual", "it-console", "rrhh", "admin"
 ];
 

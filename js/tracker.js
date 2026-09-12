@@ -23,8 +23,8 @@ async function trackVisit(user) {
 
   // Qué páginas contar sale del catálogo de roles.js, que es la lista única de
   // lo que existe en el Hub. Antes había aquí una lista escrita a mano que se
-  // quedó congelada: rrhh, finanzas, it-console, contracting, solicitud-cuenta
-  // y mi-perfil nacieron después y sus visitas se descartaron durante meses,
+  // quedó congelada: rrhh, finanzas, it-console, solicitud-cuenta y mi-perfil
+  // nacieron después y sus visitas se descartaron durante meses,
   // así que las métricas de admin enseñaban un Hub que ya no era el real.
   //
   // soporte va aparte: es la única página sin page-guard, así que no está en

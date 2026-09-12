@@ -1,5 +1,19 @@
 [
   {
+    "id": "2026-09-12-contracting-retirado",
+    "version": "v2.50.0",
+    "date": "2026-09-12",
+    "category": "fix",
+    "scope": "hub",
+    "audience": "all",
+    "title": "Se retira «Contracting con Carriers»",
+    "items": [
+      "La página con los procedimientos por carrier — la prueba interna con cuatro carriers de muestra — se elimina del Hub: no va a continuar",
+      "Desaparece del menú Operaciones, de la tarjeta destacada en Guías y de la lista de permisos por rol",
+      "El buzón contracting@ sigue igual: recibe los avisos de Recursos Humanos y no tiene nada que ver con esta página"
+    ]
+  },
+  {
     "id": "2026-09-12-tema-itconsole-heroes",
     "version": "v2.49.1",
     "date": "2026-09-12",
