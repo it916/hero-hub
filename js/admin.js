@@ -59,6 +59,13 @@ onAuthStateChanged(auth, async (user) => {
 let spotlightData = { imageUrl: "", message: "", honorees: [] };
 let allUsersCache = []; // array de users/{email} para poblar el <select>
 
+// <i> de Phosphor listo para insertar: los iconos del Hub vienen de ahi.
+function iconoAdmin(clases) {
+  const i = document.createElement('i');
+  i.className = clases;
+  return i;
+}
+
 async function loadSpotlight() {
   try {
     const [snap, users] = await Promise.all([
@@ -190,7 +197,7 @@ function buildHonoreeRow(h, i) {
   delBtn.className = "btn-ghost-dark honoree-del";
   delBtn.dataset.del = String(i);
   delBtn.title = "Quitar";
-  delBtn.textContent = "✕";
+  delBtn.replaceChildren(iconoAdmin("ph ph-x"));
   delBtn.addEventListener("click", () => {
     spotlightData.honorees.splice(i, 1);
     renderHonorees();
@@ -244,7 +251,7 @@ async function loadMessages() {
           <div class="msg-row-text">${m.frase || ''}</div>
           <div class="msg-row-meta">— ${m.autor || 'Anónimo'}${m.created_at ? ' · ' + new Date(m.created_at).toLocaleDateString('es-ES') : ''}</div>
         </div>
-        <button class="btn-ghost-dark" data-del="${i}" title="Eliminar">✕</button>
+        <button class="btn-ghost-dark" data-del="${i}" title="Eliminar"><i class="ph ph-x"></i></button>
       </div>
     `).join('');
     list.querySelectorAll('[data-del]').forEach(btn => {

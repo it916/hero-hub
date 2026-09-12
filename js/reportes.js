@@ -64,7 +64,7 @@ const TIPOS = [
   {
     id: "ausencia",
     label: "Ausencia",
-    emoji: "🚫",
+    ph: "ph-calendar-x",
     tone: "rose",
     flow: "absence",
     sub: "No podrás trabajar ese día",
@@ -72,7 +72,7 @@ const TIPOS = [
   {
     id: "corte-electrico",
     label: "Corte eléctrico",
-    emoji: "⚡",
+    ph: "ph-lightning-slash",
     tone: "gold",
     flow: "instant",
     sub: "Se fue la luz en tu zona",
@@ -83,7 +83,7 @@ const TIPOS = [
   {
     id: "falla-internet",
     label: "Sin internet",
-    emoji: "📶",
+    ph: "ph-wifi-slash",
     tone: "cyan",
     flow: "instant",
     sub: "Caída de tu conexión",
@@ -93,7 +93,7 @@ const TIPOS = [
   {
     id: "retraso",
     label: "Llegada tarde",
-    emoji: "⏰",
+    ph: "ph-clock-user",
     tone: "violet",
     flow: "form",
     sub: "Vas a entrar más tarde",
@@ -183,7 +183,11 @@ let momentoBase = null;
 
 function abrirOverlay(tipo) {
   tipoActual = tipo;
-  $("rep-emoji").textContent = tipo.emoji;
+  // El emoji era un textContent; un icono de fuente es un nodo, asi que se
+  // reemplaza el contenido en vez de asignar texto.
+  const ico = document.createElement("i");
+  ico.className = `ph-fill ${tipo.ph}`;
+  $("rep-emoji").replaceChildren(ico);
   $("rep-title").textContent = tipo.label;
   $("rep-sub").textContent = tipo.sub;
   $("rep-overlay").classList.add("is-open");
@@ -410,9 +414,8 @@ function pintarTile() {
     btn.dataset.id = tipo.id;
     btn.title = tipo.sub;
 
-    const emoji = document.createElement("span");
-    emoji.className = "rep-btn-emoji";
-    emoji.textContent = tipo.emoji;
+    const emoji = document.createElement("i");
+    emoji.className = `ph-fill ${tipo.ph} rep-btn-emoji`;
 
     const label = document.createElement("span");
     label.className = "rep-btn-label";

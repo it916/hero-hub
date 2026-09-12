@@ -101,7 +101,8 @@
     }
   `;
 
-  const ICONS = { success: "✓", error: "!", info: "i" };
+  // Iconos de Phosphor: la hoja se carga en todas las paginas del Hub.
+  const ICONS = { success: "ph-check-circle", error: "ph-warning-circle", info: "ph-info" };
 
   function ensureStyle() {
     if (document.getElementById(STYLE_ID)) return;
@@ -136,10 +137,9 @@
     toast.setAttribute("role", variant === "error" ? "alert" : "status");
 
     if (ICONS[variant]) {
-      const icon = document.createElement("span");
-      icon.className = "hero-toast-icon";
+      const icon = document.createElement("i");
+      icon.className = `ph-fill ${ICONS[variant]} hero-toast-icon`;
       icon.setAttribute("aria-hidden", "true");
-      icon.textContent = ICONS[variant];
       toast.appendChild(icon);
     }
 

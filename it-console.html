@@ -1322,6 +1322,9 @@ html { scroll-behavior: smooth; }
 }
 
 </style>
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<style>.ph,.ph-fill{display:inline-block;vertical-align:-0.125em;line-height:1;}</style>
 </head>
 <body>
 <script>try{var t=localStorage.getItem("hero-theme");if(t)document.body.dataset.theme=t;}catch(e){}</script>
@@ -2139,7 +2142,7 @@ html { scroll-behavior: smooth; }
       <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
         <button class="btn btn-secondary" onclick="loadTickets()" id="btn-load-tickets" style="font-size:12px;">↺ Actualizar</button>
         <div style="display:flex;border:1px solid var(--hero-border);border-radius:8px;overflow:hidden;">
-          <button id="btn-view-kanban" onclick="setTicketView('kanban')" class="btn" style="border:none;border-radius:0;background:var(--hero-primary);color:#fff;font-size:12px;padding:7px 14px;">⬛ Kanban</button>
+          <button id="btn-view-kanban" onclick="setTicketView('kanban')" class="btn" style="border:none;border-radius:0;background:var(--hero-primary);color:#fff;font-size:12px;padding:7px 14px;"><i class="ph ph-kanban"></i> Kanban</button>
           <button id="btn-view-list"   onclick="setTicketView('list')"   class="btn" style="border:none;border-radius:0;background:transparent;color:var(--hero-text-muted);font-size:12px;padding:7px 14px;"><iconify-icon icon="tabler:list"></iconify-icon> Lista</button>
         </div>
         <select id="ticket-filter-prioridad" onchange="filterTickets()" style="background:var(--hero-card-bg);border:1px solid var(--hero-border);color:var(--hero-text-body);padding:7px 12px;border-radius:8px;font-size:12px;font-family:var(--hero-font);">
@@ -2309,7 +2312,7 @@ html { scroll-behavior: smooth; }
           <option value="ticket">Tickets</option>
         </select>
         <button class="btn btn-primary" onclick="loadAudit()" id="btn-load-audit">↺ Actualizar</button>
-        <button class="btn btn-secondary" onclick="exportAuditCSV()">⬇ Exportar CSV</button>
+        <button class="btn btn-secondary" onclick="exportAuditCSV()"><i class="ph ph-download-simple"></i> Exportar CSV</button>
         <span <span id="audit-last-updated" class="last-updated" style="margin-left:8px;margin-bottom:0;"></span>
         <span id="audit-count" style="font-family:var(--mono);font-size:11px;color:var(--hero-text-muted);margin-left:auto;"></span>
       </div>
@@ -2412,7 +2415,7 @@ html { scroll-behavior: smooth; }
             <iconify-icon icon="tabler:user"></iconify-icon> <span id="dev-return-to-member-label"></span>
           </button>
           <div id="dev-detail-title" style="font-size:16px;font-weight:600;color:var(--hero-text-primary);"></div>
-          <button class="btn btn-secondary" onclick="exportDeviceReport()" style="margin-left:auto;">⬇ Exportar reporte</button>
+          <button class="btn btn-secondary" onclick="exportDeviceReport()" style="margin-left:auto;"><i class="ph ph-download-simple"></i> Exportar reporte</button>
         </div>
 
         <div class="panel-grid" style="margin-bottom:16px;">

@@ -257,7 +257,7 @@ function buildCardHTML(c) {
     `<a class="dir-phone" href="tel:${p.replace(/\s|\(|\)|-/g,'')}">${p}</a>`
   ).join('');
   const email = c.email ? `<a class="dir-email" href="mailto:${c.email}">${c.email}</a>` : '';
-  const notes = c.notes ? `<div class="dir-notes">💬 ${c.notes}</div>` : '';
+  const notes = c.notes ? `<div class="dir-notes"><i class="ph ph-chat-teardrop-text"></i> ${c.notes}</div>` : '';
 
   // Productos
   const products = (c.products || []).filter(p => PRODUCT_TYPES.includes(p))
@@ -266,11 +266,11 @@ function buildCardHTML(c) {
   const productsBlock = products ? `<div class="dir-products-row">${products}</div>` : '';
 
   // Estado
-  const stateBlock = c.state ? `<span class="dir-state-pill">📍 ${c.state}</span>` : '';
+  const stateBlock = c.state ? `<span class="dir-state-pill"><i class="ph-fill ph-map-pin"></i> ${c.state}</span>` : '';
 
   return `<div class="dir-card" data-id="${c.id}">
     <div class="dir-card-actions">
-      <button class="dir-act dir-edit" data-id="${c.id}" title="Editar">✎</button>
+      <button class="dir-act dir-edit" data-id="${c.id}" title="Editar"><i class="ph ph-pencil-simple"></i></button>
       <button class="dir-act dir-del" data-id="${c.id}" title="Eliminar">×</button>
     </div>
     <div class="dir-card-tags">

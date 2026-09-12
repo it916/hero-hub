@@ -30,11 +30,13 @@ import {
   setDirectorio,
 } from "./rrhh-dashboard.js";
 
-const TIPO_EMOJI = {
-  "ausencia": "🚫",
-  "retraso": "⏰",
-  "corte-electrico": "⚡",
-  "falla-internet": "📶",
+// Iconos de Phosphor, no emojis ([[feedback_iconos_phosphor]]). Mismos que
+// usa la vista general, para que un tipo se reconozca igual en las dos.
+const TIPO_ICONO = {
+  "ausencia": "ph-calendar-x",
+  "retraso": "ph-clock-user",
+  "corte-electrico": "ph-lightning-slash",
+  "falla-internet": "ph-wifi-slash",
 };
 
 const DIAS = [
@@ -879,11 +881,11 @@ function reportesDe(p) {
   const suyos = getItemsEnRango().filter(it => alias.has(String(it.email || "").toLowerCase().trim()));
 
   const resumen = el("div", "rh-mini-kpis");
-  Object.entries(TIPO_EMOJI).forEach(([tipo, emoji]) => {
+  Object.entries(TIPO_ICONO).forEach(([tipo, icono]) => {
     const n = suyos.filter(it => it.tipo === tipo).length;
     const kpi = el("div", "rh-mini-kpi");
     if (!n) kpi.classList.add("cero");
-    kpi.appendChild(el("span", "rh-mini-emoji", emoji));
+    kpi.appendChild(el("i", `ph-fill ${icono} rh-mini-emoji`));
     kpi.appendChild(el("span", "rh-mini-n", String(n)));
     resumen.appendChild(kpi);
   });
@@ -897,7 +899,7 @@ function reportesDe(p) {
   const lista = el("div", "rh-mini-list");
   suyos.slice(0, 20).forEach(it => {
     const fila = el("div", "rh-mini-row");
-    fila.appendChild(el("span", "rh-mini-row-emoji", TIPO_EMOJI[it.tipo] || "📋"));
+    fila.appendChild(el("i", `ph-fill ${TIPO_ICONO[it.tipo] || "ph-clipboard-text"} rh-mini-row-emoji`));
     fila.appendChild(el("span", "rh-mini-row-label", it.label));
     fila.appendChild(el("span", "rh-mini-row-detail", it.detalle || "—"));
     const cuando = it.cuando

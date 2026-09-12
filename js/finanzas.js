@@ -286,8 +286,8 @@ function initFcTable() {
         formatter: (cell) => {
           const r = cell.getRow().getData();
           return `<div class="fc-actions">
-            <button class="fc-act-btn fc-edit" data-id="${escapeHtmlAttr(r.id)}" title="Editar">✎</button>
-            <button class="fc-act-btn fc-del" data-id="${escapeHtmlAttr(r.id)}" title="Eliminar">✕</button>
+            <button class="fc-act-btn fc-edit" data-id="${escapeHtmlAttr(r.id)}" title="Editar"><i class="ph ph-pencil-simple"></i></button>
+            <button class="fc-act-btn fc-del" data-id="${escapeHtmlAttr(r.id)}" title="Eliminar"><i class="ph ph-x"></i></button>
           </div>`;
         }
       }
@@ -709,8 +709,8 @@ function initFbTable() {
         formatter: (cell) => {
           const r = cell.getRow().getData();
           return `<div class="fc-actions">
-            <button class="fc-act-btn fc-edit" data-id="${escapeHtmlAttr(r.id)}" title="Editar">✎</button>
-            <button class="fc-act-btn fc-del" data-id="${escapeHtmlAttr(r.id)}" title="Eliminar">✕</button>
+            <button class="fc-act-btn fc-edit" data-id="${escapeHtmlAttr(r.id)}" title="Editar"><i class="ph ph-pencil-simple"></i></button>
+            <button class="fc-act-btn fc-del" data-id="${escapeHtmlAttr(r.id)}" title="Eliminar"><i class="ph ph-x"></i></button>
           </div>`;
         }
       }
@@ -1349,9 +1349,9 @@ function initFiTable() {
           const emailBtnCls = "fc-act-btn fc-email" + (allSent ? " sent" : "");
           const emailTitle = allSent ? "Reportes enviados — reenviar" : "Enviar reporte a brokers";
           return `<div class="fc-actions">
-            ${hasPayouts ? `<button class="${emailBtnCls}" data-id="${escapeHtmlAttr(r.id)}" title="${emailTitle}">✉</button>` : ""}
-            <button class="fc-act-btn fc-edit" data-id="${escapeHtmlAttr(r.id)}" title="Editar">✎</button>
-            <button class="fc-act-btn fc-del" data-id="${escapeHtmlAttr(r.id)}" title="Eliminar">✕</button>
+            ${hasPayouts ? `<button class="${emailBtnCls}" data-id="${escapeHtmlAttr(r.id)}" title="${emailTitle}"><i class="ph ph-envelope-simple"></i></button>` : ""}
+            <button class="fc-act-btn fc-edit" data-id="${escapeHtmlAttr(r.id)}" title="Editar"><i class="ph ph-pencil-simple"></i></button>
+            <button class="fc-act-btn fc-del" data-id="${escapeHtmlAttr(r.id)}" title="Eliminar"><i class="ph ph-x"></i></button>
           </div>`;
         }
       }
@@ -5064,7 +5064,7 @@ async function openIngresoModal(existing, opts = {}) {
           <div id="fi-add-carrier-wrap" class="fi-add-inline" style="display:none;">
             <input type="text" id="fi-add-carrier-input" class="fi-add-inline-input" placeholder="Ej. Blue Cross" autocomplete="off">
             <button type="button" id="fi-add-carrier-save" class="fi-add-inline-save">Guardar</button>
-            <button type="button" id="fi-add-carrier-cancel" class="fi-add-inline-cancel" title="Cancelar">✕</button>
+            <button type="button" id="fi-add-carrier-cancel" class="fi-add-inline-cancel" title="Cancelar"><i class="ph ph-x"></i></button>
           </div>
         </div>
         <sl-input
@@ -5091,7 +5091,7 @@ async function openIngresoModal(existing, opts = {}) {
         <div id="fi-add-desc-deposito-wrap" class="fi-add-inline" style="display:none;">
           <input type="text" id="fi-add-desc-deposito-input" class="fi-add-inline-input" placeholder="Ej. NUEVO CARRIER" autocomplete="off">
           <button type="button" id="fi-add-desc-deposito-save" class="fi-add-inline-save">Guardar</button>
-          <button type="button" id="fi-add-desc-deposito-cancel" class="fi-add-inline-cancel" title="Cancelar">✕</button>
+          <button type="button" id="fi-add-desc-deposito-cancel" class="fi-add-inline-cancel" title="Cancelar"><i class="ph ph-x"></i></button>
         </div>
       </div>
 
@@ -5240,7 +5240,7 @@ async function openIngresoModal(existing, opts = {}) {
       </div>
       <sl-input class="fi-pf-reporte" label="Reporte (URL)" placeholder="https://..." size="small" value="${escapeHtmlAttr(payout?.reporteFile || "")}"></sl-input>
       <sl-input class="fi-pf-saldo" label="Saldo ($)" type="number" step="0.01" min="0" size="small" value="${payout?.saldo != null ? payout.saldo : ""}"></sl-input>
-      <button type="button" class="fi-pf-remove" title="Quitar payout">✕</button>
+      <button type="button" class="fi-pf-remove" title="Quitar payout"><i class="ph ph-x"></i></button>
     `;
 
     // Radios en el mismo grupo (por si el name colisiona con otras rows)
@@ -5285,7 +5285,7 @@ async function openIngresoModal(existing, opts = {}) {
     const reporteVal = payout?.reporteFile || "";
     const reporteHtml = reporteVal
       ? (/^https?:\/\//i.test(reporteVal)
-          ? `<a href="${escapeHtmlAttr(reporteVal)}" target="_blank" rel="noopener" class="fc-link">🔗 Ver reporte</a>`
+          ? `<a href="${escapeHtmlAttr(reporteVal)}" target="_blank" rel="noopener" class="fc-link"><i class="ph ph-link-simple"></i> Ver reporte</a>`
           : escapeHtml(reporteVal))
       : `<span class="fc-empty">—</span>`;
     const sentTxt = payout?.emailSentAt

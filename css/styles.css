@@ -10580,3 +10580,29 @@ body[data-theme="dark"] input[type="time"],
 body[data-theme="dark"] input[type="date"] {
   color-scheme: dark;
 }
+
+/* ── Iconos de Phosphor ──
+   Fuente de iconos del Hub desde 2026-09-11: reemplazaron a los emojis, que
+   los dibuja el sistema operativo y no heredan color ni tema. Un icono de
+   fuente es texto, asi que toma font-size y color del contenedor; lo unico
+   que necesita es alinearse con la linea base del texto que lo acompana. */
+.ph, .ph-fill, .ph-bold, .ph-duotone {
+  display: inline-block;
+  vertical-align: -0.125em;
+  line-height: 1;
+}
+
+/* Cinco estrellas seguidas no tienen separacion natural como los emojis. */
+.spotlight-stars i + i { margin-left: 2px; }
+
+/* Cabecera de la lista de actividad: titulo a la izquierda, filtro de persona
+   a la derecha. */
+.mt-events-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 12px; flex-wrap: wrap;
+}
+.mt-events-head .ad-select { max-width: 220px; }
+.mt-event-more {
+  padding: 10px 12px; text-align: center;
+  font-size: 12px; color: var(--muted); font-style: italic;
+}

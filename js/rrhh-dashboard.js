@@ -31,11 +31,13 @@ import {
 const DEFAULT_LOOKBACK_DAYS = 90;
 const MAX_FILAS = 80;
 
+// `ph` es la clase de Phosphor, la fuente de iconos del Hub: nada de emojis,
+// que los dibuja el sistema operativo y no heredan color ni tema.
 const TIPO_META = {
-  "ausencia":        { label: "Ausencia",        emoji: "🚫", icon: "calendar-x", color: "#f43f5e" },
-  "corte-electrico": { label: "Corte eléctrico", emoji: "⚡", icon: "zap",        color: "#f5b830" },
-  "falla-internet":  { label: "Sin internet",    emoji: "📶", icon: "wifi-off",   color: "#06a3b6" },
-  "retraso":         { label: "Llegada tarde",   emoji: "⏰", icon: "clock",      color: "#8b5cf6" },
+  "ausencia":        { label: "Ausencia",        ph: "ph-calendar-x",      color: "#f43f5e" },
+  "corte-electrico": { label: "Corte eléctrico", ph: "ph-lightning-slash", color: "#f5b830" },
+  "falla-internet":  { label: "Sin internet",    ph: "ph-wifi-slash",      color: "#06a3b6" },
+  "retraso":         { label: "Llegada tarde",   ph: "ph-clock-user",      color: "#8b5cf6" },
 };
 
 let items = [];
@@ -468,8 +470,15 @@ function pintarLista(lista) {
   }
 }
 
+/** <i> de Phosphor suelto, para meter dentro de un texto. */
+function iconoInline(clases) {
+  const i = document.createElement("i");
+  i.className = clases;
+  return i;
+}
+
 function filaReporte(it) {
-  const meta = TIPO_META[it.tipo] || { emoji: "📋", color: "#5a7480" };
+  const meta = TIPO_META[it.tipo] || { ph: "ph-clipboard-text", color: "#5a7480" };
 
   const fila = document.createElement("div");
   fila.className = "rh-item";
@@ -477,7 +486,10 @@ function filaReporte(it) {
 
   const emoji = document.createElement("div");
   emoji.className = "rh-item-emoji";
-  emoji.textContent = meta.emoji;
+  const icono = document.createElement("i");
+  icono.className = `ph-fill ${meta.ph}`;
+  icono.style.color = meta.color;
+  emoji.appendChild(icono);
 
   const cuerpo = document.createElement("div");
   cuerpo.className = "rh-item-body";
@@ -501,13 +513,13 @@ function filaReporte(it) {
   if (it.alMomento === true) {
     const marca = document.createElement("span");
     marca.className = "rh-item-flag rh-flag-live";
-    marca.textContent = "● al momento";
+    marca.append(iconoInline("ph-fill ph-circle"), " al momento");
     marca.title = "Se reportó con la hora actual, sin editarla";
     linea1.appendChild(marca);
   } else if (it.alMomento === false) {
     const marca = document.createElement("span");
     marca.className = "rh-item-flag rh-flag-edited";
-    marca.textContent = "✎ hora corregida";
+    marca.append(iconoInline("ph ph-pencil-simple"), " hora corregida");
     marca.title = "La persona ajustó la fecha o la hora antes de enviar";
     linea1.appendChild(marca);
   }

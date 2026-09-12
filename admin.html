@@ -11,6 +11,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
 <link rel="stylesheet" href="css/roles-admin.css">
 <link rel="stylesheet" href="css/audit-panel.css">
 <link rel="stylesheet" href="css/permisos-admin.css">
@@ -136,7 +138,7 @@
         <!-- ══════════════════════════════════════════════ -->
         <!-- SECCIÓN SPOTLIGHT -->
       <section class="admin-section" id="tab-spotlight" style="display:none;">
-        <h2>🌟 Hero Spotlight</h2>
+        <h2><i class="ph-fill ph-star"></i> Hero Spotlight</h2>
 
         <sl-textarea id="sp-message" label="Mensaje" rows="3" resize="vertical" help-text="Texto del banner del Hero Spotlight."></sl-textarea>
 
@@ -158,7 +160,7 @@
 
       <!-- SECCIÓN MENSAJES -->
       <section class="admin-section" id="tab-messages" style="display:none;">
-        <h2>💬 Mensajes motivacionales</h2>
+        <h2><i class="ph-fill ph-chat-centered-text"></i> Mensajes motivacionales</h2>
         <p class="admin-note">Los usuarios pueden publicar mensajes. Aquí puedes eliminar cualquiera.</p>
         <div id="ms-list"></div>
       </section>
@@ -208,18 +210,18 @@
 
         <!-- Gráfico actividad diaria -->
         <div class="mt-section">
-          <h3 class="mt-section-title">📈 Actividad diaria</h3>
+          <h3 class="mt-section-title"><i class="ph ph-trend-up"></i> Actividad diaria</h3>
           <div class="mt-chart" id="mt-chart"><p class="loading">Cargando gráfico...</p></div>
         </div>
 
         <!-- Top páginas y usuarios -->
         <div class="mt-grid-2">
           <div class="mt-section">
-            <h3 class="mt-section-title">🏆 Top 5 páginas</h3>
+            <h3 class="mt-section-title"><i class="ph ph-trophy"></i> Top 5 páginas</h3>
             <div class="mt-list" id="mt-top-pages"><p class="loading">Cargando...</p></div>
           </div>
           <div class="mt-section">
-            <h3 class="mt-section-title">👥 Top 5 usuarios</h3>
+            <h3 class="mt-section-title"><i class="ph ph-users-three"></i> Top 5 usuarios</h3>
             <div class="mt-list" id="mt-top-users"><p class="loading">Cargando...</p></div>
           </div>
         </div>
@@ -237,7 +239,7 @@
       <section class="admin-section" id="tab-roles" style="display:none;">
         <div class="ra-header">
           <div>
-            <h2 style="margin:0;">👥 Gestión de usuarios</h2>
+            <h2 style="margin:0;"><i class="ph ph-users-three"></i> Gestión de usuarios</h2>
             <p class="admin-note" style="margin:4px 0 0;">Crea, edita y elimina los miembros del equipo. Cada usuario tiene datos personales, foto, contactos y rol de acceso al Hero Hub.</p>
           </div>
           <sl-button variant="primary" id="ra-add-btn" size="medium">
@@ -292,7 +294,7 @@
       <!-- SECCIÓN LOG / AUDITORÍA (nuevo en Fase 2c)      -->
       <!-- ══════════════════════════════════════════════ -->
       <section class="admin-section" id="tab-permisos" style="display:none;">
-        <h2 style="margin:0;">🎛️ Permisos por rol</h2>
+        <h2 style="margin:0;"><i class="ph ph-sliders-horizontal"></i> Permisos por rol</h2>
         <p class="admin-note" style="margin:4px 0 22px;">Define qué páginas y qué elementos ve cada rol. Los cambios aplican en el próximo ingreso de cada usuario.</p>
         <div id="permisos-content"></div>
       </section>
@@ -300,7 +302,7 @@
       <section class="admin-section" id="tab-log" style="display:none;">
         <div class="al-header">
           <div>
-            <h2 style="margin:0;">📜 Log de auditoría</h2>
+            <h2 style="margin:0;"><i class="ph ph-scroll"></i> Log de auditoría</h2>
             <p class="admin-note" style="margin:4px 0 0;">Historial de cambios en roles, contactos, carriers del equipo y acciones sensibles. Los eventos con más de 1 año se pueden eliminar.</p>
           </div>
           <div class="al-actions">
@@ -376,7 +378,7 @@
       <section class="admin-section" id="tab-migracion" style="display:none;">
         <div class="ad-toolbar">
           <div>
-            <h2 style="margin:0;">🗃️ Migración de datos · users/{email}</h2>
+            <h2 style="margin:0;"><i class="ph ph-archive"></i> Migración de datos · users/{email}</h2>
             <p class="admin-note" style="margin:4px 0 0;">Consolida <code>shared/team.members[]</code> y <code>shared/roles.users[email]</code> en una colección única <code>users/{email}</code>. Los datos viejos NO se borran.</p>
           </div>
         </div>

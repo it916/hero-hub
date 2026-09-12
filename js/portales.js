@@ -78,6 +78,13 @@ onAuthStateChanged(auth, async (user) => {
 
 document.getElementById("btn-logout").addEventListener("click", () => signOut(auth).then(() => location.href = "index.html"));
 
+// <i> de Phosphor listo para insertar: los iconos del Hub vienen de ahi.
+function iconoPortal(clases) {
+  const i = document.createElement('i');
+  i.className = clases;
+  return i;
+}
+
 async function loadTeam() {
   try {
     const snap = await getDoc(doc(db, "shared", "carriers-team"));
@@ -209,7 +216,7 @@ function buildCardHTML(p, scope, idx) {
   return `
     <div class="carrier-card" data-scope="${scope}" data-idx="${idx}">
       ${showActions ? `<div class="carrier-card-actions">
-        ${canEdit ? `<button class="carrier-act edit" title="Editar">✎</button>` : ''}
+        ${canEdit ? `<button class="carrier-act edit" title="Editar"><i class="ph ph-pencil-simple"></i></button>` : ''}
         ${canDelete ? `<button class="carrier-act del" title="Eliminar">×</button>` : ''}
       </div>` : ''}
       <div class="carrier-icon">${getInitials(p.nombre)}</div>
@@ -252,7 +259,7 @@ function openDetailModal(p, scope, idx) {
     <div class="carrier-modal-header">
       <div class="cm-label">Acceso al portal</div>
       <div class="cm-name">${p.nombre || '—'}</div>
-      <button class="modal-close-x">✕</button>
+      <button class="modal-close-x"><i class="ph ph-x"></i></button>
     </div>
     <div class="carrier-modal-body">
       <div class="cred-row">
@@ -266,11 +273,11 @@ function openDetailModal(p, scope, idx) {
         <div class="cred-label">Contraseña</div>
         <div class="cred-value-wrap">
           <span class="cred-value pwd" id="dv-pass" data-pwd="${(p.pass||'').replace(/"/g,'&quot;')}" data-shown="0">••••••••</span>
-          <button class="copy-btn-c eye-btn" id="eye-btn" title="Mostrar/ocultar">👁</button>
+          <button class="copy-btn-c eye-btn" id="eye-btn" title="Mostrar/ocultar"><i class="ph ph-eye"></i></button>
           <button class="copy-btn-c" data-pwd-copy="1" title="Copiar">⧉</button>
         </div>
       </div>
-      ${p.notas ? `<div class="cred-notes"><strong>⚠ Nota</strong>${p.notas}</div>` : ''}
+      ${p.notas ? `<div class="cred-notes"><strong><i class="ph-fill ph-warning"></i> Nota</strong>${p.notas}</div>` : ''}
     </div>
     <div class="carrier-modal-footer">
       ${p.url
@@ -294,17 +301,17 @@ function openDetailModal(p, scope, idx) {
       if (shown) {
         span.textContent = '••••••••';
         span.dataset.shown = '0';
-        eyeBtn.textContent = '👁';
+        eyeBtn.replaceChildren(iconoPortal('ph ph-eye'));
         if (autoHideTimer) clearTimeout(autoHideTimer);
       } else {
         span.textContent = span.dataset.pwd;
         span.dataset.shown = '1';
-        eyeBtn.textContent = '🙈';
+        eyeBtn.replaceChildren(iconoPortal('ph ph-eye-slash'));
         // Auto-hide a los 30s
         autoHideTimer = setTimeout(() => {
           span.textContent = '••••••••';
           span.dataset.shown = '0';
-          eyeBtn.textContent = '👁';
+          eyeBtn.replaceChildren(iconoPortal('ph ph-eye'));
         }, 30000);
       }
     });
@@ -344,7 +351,7 @@ function fallbackCopy(text, btn) {
 }
 function indicate(btn) {
   const orig = btn.textContent;
-  btn.textContent = '✓';
+  btn.replaceChildren(iconoPortal('ph ph-check'));
   btn.classList.add('copied');
   setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1500);
 }

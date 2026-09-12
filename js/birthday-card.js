@@ -68,7 +68,7 @@ export function openBirthdayCardModal(person, currentUser) {
         <img class="bc-avatar" src="${person.photo}" alt="${person.name}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=06a3b6&color=fff&size=200'">
       </div>
       <div class="bc-title-block">
-        <div class="bc-kicker">🎂 TARJETA COLECTIVA DE CUMPLEAÑOS</div>
+        <div class="bc-kicker"><i class="ph-fill ph-cake"></i> TARJETA COLECTIVA DE CUMPLEAÑOS</div>
         <div class="bc-title" id="bc-title">Para ${person.name}</div>
         <div class="bc-subtitle" id="bc-subtitle">Cargando...</div>
       </div>
@@ -77,13 +77,13 @@ export function openBirthdayCardModal(person, currentUser) {
     <div class="bc-divider"></div>
 
     <div class="bc-form" id="bc-form">
-      <div class="bc-form-title" id="bc-form-title">✍️ Deja tu mensaje</div>
+      <div class="bc-form-title" id="bc-form-title"><i class="ph ph-pencil-simple-line"></i> Deja tu mensaje</div>
       <textarea id="bc-message" placeholder="Escribe tu mensaje de cumpleaños para ${person.name.split(' ')[0]}..." maxlength="400" rows="3"></textarea>
       <div class="bc-form-row">
         <span class="bc-char" id="bc-char">0/400</span>
         <div class="bc-form-btns">
-          <button class="btn-ghost-dark" id="bc-delete" style="display:none;">🗑 Borrar mío</button>
-          <button class="btn-primary" id="bc-save">Publicar felicitación ✨</button>
+          <button class="btn-ghost-dark" id="bc-delete" style="display:none;"><i class="ph ph-trash"></i> Borrar mío</button>
+          <button class="btn-primary" id="bc-save">Publicar felicitación <i class="ph-fill ph-sparkle"></i></button>
         </div>
       </div>
     </div>
@@ -92,7 +92,7 @@ export function openBirthdayCardModal(person, currentUser) {
 
     <div class="bc-messages-section">
       <div class="bc-messages-title">
-        <span>💌 Felicitaciones del equipo</span>
+        <span><i class="ph-fill ph-envelope-open"></i> Felicitaciones del equipo</span>
         <span class="bc-messages-count" id="bc-messages-count">0</span>
       </div>
       <div class="bc-messages-list" id="bc-messages-list">
@@ -312,9 +312,9 @@ function showBirthdayCelebrationPopup(person, card, currentUser) {
     <button class="bcel-close" id="bcel-close"><i data-lucide="x"></i></button>
 
     <div class="bcel-header">
-      <div class="bcel-cake">🎂</div>
+      <div class="bcel-cake"><i class="ph-fill ph-cake"></i></div>
       <div class="bcel-title">¡Feliz Cumpleaños, ${person.name.split(' ')[0]}!</div>
-      <div class="bcel-subtitle">Tu equipo preparó esta tarjeta con cariño 💝</div>
+      <div class="bcel-subtitle">Tu equipo preparó esta tarjeta con cariño</div>
     </div>
 
     <div class="bcel-messages-count">${messages.length} ${messages.length === 1 ? 'felicitación' : 'felicitaciones'} de tu equipo</div>

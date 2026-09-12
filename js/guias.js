@@ -72,7 +72,7 @@ function renderGuias() {
 
   if (!filtered.length) {
     grid.innerHTML = filter
-      ? `<p class="empty">😕 Sin resultados para "${filter}"</p>`
+      ? `<p class="empty"><i class="ph ph-smiley-meh"></i> Sin resultados para "${filter}"</p>`
       : `<p class="empty">Aún no hay guías. ¡Agrega la primera!</p>`;
     return;
   }
@@ -82,7 +82,7 @@ function renderGuias() {
     return `
       <div class="guia-card" data-idx="${idx}" style="animation-delay:${i*35}ms;">
         <div class="guia-actions">
-          <button class="guia-act edit" data-idx="${idx}" title="Editar">✎</button>
+          <button class="guia-act edit" data-idx="${idx}" title="Editar"><i class="ph ph-pencil-simple"></i></button>
           <button class="guia-act del" data-idx="${idx}" title="Eliminar">×</button>
         </div>
         <a href="${g.url}" target="_blank" rel="noopener" class="guia-link">

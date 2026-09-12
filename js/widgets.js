@@ -353,6 +353,14 @@ function bdayClearConfetti() {
   bdayConfettiAdded = false;
 }
 
+// <i> de Phosphor listo para insertar. Los iconos del Hub vienen de ahi: un
+// emoji lo dibuja el sistema operativo y no hereda color ni tema.
+function iconoPh(clases) {
+  const i = document.createElement('i');
+  i.className = clases;
+  return i;
+}
+
 function renderBirthday() {
   const MONTHS = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
 
@@ -402,7 +410,7 @@ function renderBirthday() {
   // Caja única de días restantes (singular/plural; mensaje especial si es hoy)
   if (el('cdDays') && el('cdDaysLabel')) {
     if (isToday) {
-      el('cdDays').textContent = '🎂';
+      el('cdDays').replaceChildren(iconoPh('ph-fill ph-cake'));
       el('cdDaysLabel').textContent = '¡Hoy!';
     } else {
       el('cdDays').textContent = d;
@@ -484,10 +492,10 @@ function renderPlaylist() {
   const count = document.getElementById('plCount');
   const msgs = SHARED_DATA.messages;
   if (count) count.textContent = `${msgs.length} frase${msgs.length !== 1 ? 's' : ''}`;
-  if (!msgs.length) { list.innerHTML = '<div class="pl-empty">🎵 La playlist está vacía.</div>'; return; }
+  if (!msgs.length) { list.innerHTML = '<div class="pl-empty"><i class="ph ph-music-notes"></i> La playlist está vacía.</div>'; return; }
   list.innerHTML = msgs.map((f, i) => {
     const active = i === msgIdx ? ' pl-active' : '';
-    const del = isAdmin ? `<button class="pl-del" data-id="${f.id}" title="Eliminar">🗑</button>` : '';
+    const del = isAdmin ? `<button class="pl-del" data-id="${f.id}" title="Eliminar"><i class="ph ph-trash"></i></button>` : '';
     return `<div class="pl-item${active}" data-i="${i}">
       <div class="pl-num">${i+1}</div>
       <div class="pl-content">

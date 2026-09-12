@@ -1,5 +1,20 @@
 [
   {
+    "id": "2026-09-11-iconos-phosphor",
+    "version": "v2.47.0",
+    "date": "2026-09-11",
+    "category": "style",
+    "scope": "hub",
+    "audience": "all",
+    "title": "Los íconos del Hub ya no son emojis",
+    "items": [
+      "Hasta ahora buena parte de los íconos eran emojis, y un emoji lo dibuja el sistema operativo: cambiaba de forma y de color entre Windows, Mac y el teléfono, no respetaba los colores de Hero ni el modo noche, y en algunos equipos salía como un cuadro vacío",
+      "Se reemplazaron por una familia de íconos propia en políticas, onboarding, administración, finanzas, el dashboard, recursos humanos, portales, directorio, guías y la consola de IT",
+      "Los avisos de éxito y error dejaron de llevar palomita o equis pegada al texto: ese papel ya lo cumple el color del aviso",
+      "Siguen siendo emoji, a propósito, las cosas que no son íconos: el confeti de las tarjetas de cumpleaños, los emojis que cada quien elige al felicitar, el ícono que se le pone a una guía y las banderas de país"
+    ]
+  },
+  {
     "id": "2026-09-11-rrhh-filtros-vista",
     "version": "v2.47.0",
     "date": "2026-09-11",

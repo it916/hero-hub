@@ -11,6 +11,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
 <link rel="stylesheet" href="css/finanzas.css">
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css">
@@ -574,8 +576,8 @@
         <h3>Editar o eliminar un ingreso</h3>
         <ul>
           <li>Haz clic en cualquier fila para <strong>abrir el modal en modo edición</strong>.</li>
-          <li>Usa el botón <span class="fm-fake-btn">✎</span> a la derecha para editar sin abrir la fila.</li>
-          <li>Usa el botón <span class="fm-fake-btn">✕</span> para eliminar (pide confirmación).</li>
+          <li>Usa el botón <span class="fm-fake-btn"><i class="ph ph-pencil-simple"></i></span> a la derecha para editar sin abrir la fila.</li>
+          <li>Usa el botón <span class="fm-fake-btn"><i class="ph ph-x"></i></span> para eliminar (pide confirmación).</li>
         </ul>
 
         <div class="fm-callout fm-callout-warn">
@@ -618,7 +620,7 @@
         </div>
 
         <h3>Editar o eliminar</h3>
-        <p>Igual que en Ingresos: click en fila para editar, botón <span class="fm-fake-btn">✕</span> para eliminar. Eliminar un broker <strong>no borra los ingresos históricos</strong> que lo referenciaban — el nombre queda como texto en esos payouts.</p>
+        <p>Igual que en Ingresos: click en fila para editar, botón <span class="fm-fake-btn"><i class="ph ph-x"></i></span> para eliminar. Eliminar un broker <strong>no borra los ingresos históricos</strong> que lo referenciaban — el nombre queda como texto en esos payouts.</p>
       </section>
 
       <!-- ══ 6. COMISIONES ══ -->
@@ -709,16 +711,16 @@
         <p>El módulo permite enviar el detalle del payout directamente al broker desde la Lista de Ingresos. El email se envía desde <code>Hero Finanzas &lt;financesupport@heroinsuranceusa.com&gt;</code> con plantilla Hero Light.</p>
 
         <h3>Dónde está el botón</h3>
-        <p>En la <strong>Lista de Ingresos</strong>, columna de acciones a la derecha. Si el ingreso tiene payouts, verás el botón <span class="fm-fake-btn">✉</span> junto a <span class="fm-fake-btn">✎</span> y <span class="fm-fake-btn">✕</span>.</p>
+        <p>En la <strong>Lista de Ingresos</strong>, columna de acciones a la derecha. Si el ingreso tiene payouts, verás el botón <span class="fm-fake-btn"><i class="ph ph-envelope-simple"></i></span> junto a <span class="fm-fake-btn"><i class="ph ph-pencil-simple"></i></span> y <span class="fm-fake-btn"><i class="ph ph-x"></i></span>.</p>
 
         <div class="fm-callout fm-callout-note">
           <i data-lucide="info"></i>
-          <div>Si el ícono ✉ se ve <strong>verde</strong>, significa que <strong>todos los payouts de ese ingreso ya fueron enviados</strong> al menos una vez. Aún así puedes reenviar.</div>
+          <div>Si el ícono <i class="ph ph-envelope-simple"></i> se ve <strong>verde</strong>, significa que <strong>todos los payouts de ese ingreso ya fueron enviados</strong> al menos una vez. Aún así puedes reenviar.</div>
         </div>
 
         <h3>Caso 1: el ingreso tiene UN solo payout</h3>
         <ol>
-          <li>Click en ✉ → se abre un <strong>mini-diálogo</strong>.</li>
+          <li>Click en <i class="ph ph-envelope-simple"></i> → se abre un <strong>mini-diálogo</strong>.</li>
           <li>Muestra: descripción del ingreso, broker, monto del payout.</li>
           <li>Un campo <strong>"Enviar a"</strong> pre-llenado con el email del broker (si existe). <strong>Puedes cambiarlo</strong>.</li>
           <li>Click en <span class="fm-fake-btn">Enviar</span> → el email sale.</li>
@@ -727,7 +729,7 @@
 
         <h3>Caso 2: el ingreso tiene 2 o más payouts</h3>
         <ol>
-          <li>Click en ✉ → se abre un <strong>modal grande</strong> con todos los payouts listados.</li>
+          <li>Click en <i class="ph ph-envelope-simple"></i> → se abre un <strong>modal grande</strong> con todos los payouts listados.</li>
           <li>Cada fila muestra: broker, input editable de email, monto, estado, botón Enviar.</li>
           <li>Envías uno a la vez. Cada envío es independiente.</li>
           <li>Los payouts ya enviados quedan marcados con <strong>"Enviado · fecha"</strong>. El botón cambia a "Reenviar".</li>
@@ -805,12 +807,12 @@
           </details>
 
           <details>
-            <summary>No aparece el botón ✉ en un ingreso.</summary>
+            <summary>No aparece el botón <i class="ph ph-envelope-simple"></i> en un ingreso.</summary>
             <div>El botón solo aparece cuando el ingreso tiene <strong>al menos un payout</strong>. Si es un ingreso de categoría HERO sin payouts, no hay a quién enviar el reporte. Si crees que debería tener payouts, edita el ingreso y agrégalos.</div>
           </details>
 
           <details>
-            <summary>El botón ✉ está verde en algunos ingresos. ¿Qué significa?</summary>
+            <summary>El botón <i class="ph ph-envelope-simple"></i> está verde en algunos ingresos. ¿Qué significa?</summary>
             <div>Significa que <strong>todos los payouts</strong> de ese ingreso ya fueron enviados por email al menos una vez. Es un indicador visual — igual puedes reenviar cualquiera de ellos.</div>
           </details>
 

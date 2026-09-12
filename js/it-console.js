@@ -2678,7 +2678,7 @@ function _renderHomeTickets(items) {
       +   '</div>'
       +   '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">'
       +     '<span style="font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:12px;background:' + prioColor.bg + ';color:' + prioColor.color + ';">' + escHtml(t.prioridad) + '</span>'
-      +     '<span style="font-family:var(--mono);font-size:10px;color:' + elColor + ';">⏱ ' + elapsed + '</span>'
+      +     '<span style="font-family:var(--mono);font-size:10px;color:' + elColor + ';"><i class=\"ph ph-timer\"></i> ' + elapsed + '</span>'
       +   '</div>'
       + '</div>'
       + '</div>';
@@ -2711,7 +2711,7 @@ function _renderHomeSols(items) {
       +   '</div>'
       +   '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">'
       +     '<span style="font-family:var(--mono);font-size:10px;color:' + estadoColor + ';">' + estadoBadge + '</span>'
-      +     '<span style="font-family:var(--mono);font-size:10px;color:var(--hero-text-muted);">⏱ ' + elapsed + '</span>'
+      +     '<span style="font-family:var(--mono);font-size:10px;color:var(--hero-text-muted);"><i class=\"ph ph-timer\"></i> ' + elapsed + '</span>'
       +   '</div>'
       + '</div>'
       + '</div>';
@@ -3002,7 +3002,7 @@ function renderKanban(tickets) {
       // Badge de adjuntos (Fase 3 — preparado, se activa cuando t.adjuntos exista)
       const nAdj = Array.isArray(t.adjuntos) ? t.adjuntos.length : 0;
       const adjBadge = nAdj > 0
-        ? '<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(107,122,144,0.15);color:var(--hero-text-muted);font-weight:600;" title="' + nAdj + ' adjunto' + (nAdj === 1 ? '' : 's') + '">📎 ' + nAdj + '</span>'
+        ? '<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(107,122,144,0.15);color:var(--hero-text-muted);font-weight:600;" title="' + nAdj + ' adjunto' + (nAdj === 1 ? '' : 's') + '"><i class=\"ph ph-paperclip\"></i> ' + nAdj + '</span>'
         : '';
       return '<div class="kanban-card" style="--card-pcolor:' + pc.color + ';" onclick="openTicketModal(\'' + t.id + '\')">'
         + '<div class="kanban-card-title">' + escHtml(t.asunto) + '</div>'
@@ -3012,7 +3012,7 @@ function renderKanban(tickets) {
         + '<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:' + pc.bg + ';color:' + pc.color + ';font-weight:600;">' + escHtml(t.prioridad) + '</span>'
         + '<div style="display:flex;align-items:center;gap:6px;">'
         + adjBadge
-        + '<span class="kanban-card-time" style="color:' + elColor + ';">⏱ ' + elapsed + '</span>'
+        + '<span class="kanban-card-time" style="color:' + elColor + ';"><i class=\"ph ph-timer\"></i> ' + elapsed + '</span>'
         + '</div>'
         + '</div></div>';
     }).join('');
@@ -3037,7 +3037,7 @@ function renderTicketList(tickets) {
       + '<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:' + pc.bg + ';color:' + pc.color + ';font-weight:600;">' + escHtml(t.prioridad) + '</span>'
       + '</div>'
       + '<div style="display:flex;align-items:center;gap:8px;">'
-      + '<span style="font-size:10px;color:' + elColor + ';font-family:var(--mono);">⏱ ' + elapsed + '</span>'
+      + '<span style="font-size:10px;color:' + elColor + ';font-family:var(--mono);"><i class=\"ph ph-timer\"></i> ' + elapsed + '</span>'
       + '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(0,0,0,0.05);color:' + (estadoColor[t.estado]||'#444') + ';">' + escHtml(t.estado) + '</span>'
       + '</div></div>'
       + '<div style="font-size:13px;font-weight:600;color:var(--hero-text-primary);margin-bottom:3px;">' + escHtml(t.asunto) + '</div>'
@@ -3399,7 +3399,7 @@ function renderSolicitudes() {
               : '')
       +   '</div>'
       +   '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">'
-      +     '<span style="font-family:var(--mono);font-size:10px;color:' + elColor + ';">⏱ ' + elapsed + '</span>'
+      +     '<span style="font-family:var(--mono);font-size:10px;color:' + elColor + ';"><i class=\"ph ph-timer\"></i> ' + elapsed + '</span>'
       +     '<span style="font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:20px;background:' + estadoBg + ';color:' + estadoColor + ';">' + escHtml(s.estado) + '</span>'
       +   '</div>'
       + '</div>'

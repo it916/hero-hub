@@ -98,6 +98,9 @@
     .footer { margin-top:20px; text-align:center; font-size:11px; color:var(--hero-text-muted); letter-spacing:1px; }
     .ticket-id { font-family:'Courier New',monospace; font-size:13px; color:#fff; background:rgba(255,255,255,0.2); padding:4px 12px; border-radius:6px; }
   </style>
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<style>.ph,.ph-fill{display:inline-block;vertical-align:-0.125em;line-height:1;}</style>
 </head>
 <body>
   <div class="hero-header">
@@ -107,7 +110,7 @@
 
   <div class="container">
     <div id="toast" class="toast">
-      <div class="toast-icon">✓</div>
+      <div class="toast-icon"><i class="ph-fill ph-check-circle"></i></div>
       <div id="toast-msg">Ticket enviado. Te contactaremos pronto.</div>
     </div>
 
@@ -289,7 +292,7 @@
     row.id = rowId;
     const iconWrap = document.createElement('span');
     iconWrap.className = 'att-icon';
-    iconWrap.textContent = file.type === 'application/pdf' ? '📄' : '🖼';
+    iconWrap.className += file.type === 'application/pdf' ? ' ph ph-file-pdf' : ' ph ph-image';
     const info = document.createElement('div');
     info.className = 'att-info';
     const nameEl = document.createElement('span');

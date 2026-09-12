@@ -231,9 +231,9 @@ function initTable() {
         formatter: (cell) => {
           const r = cell.getRow().getData();
           if (r.isProtected) {
-            return `<span class="ra-protected" title="Usuario protegido del sistema">🛡️</span>`;
+            return `<span class="ra-protected" title="Usuario protegido del sistema"><i class="ph-fill ph-shield-check"></i></span>`;
           }
-          return `<button class="ra-act-btn ra-del" data-email="${escapeHtmlAttr(r.email)}" title="Eliminar usuario">✕</button>`;
+          return `<button class="ra-act-btn ra-del" data-email="${escapeHtmlAttr(r.email)}" title="Eliminar usuario"><i class="ph ph-x"></i></button>`;
         }
       }
     ]
@@ -576,7 +576,7 @@ function openUserModal(user) {
             </datalist>
           </label>
           <div class="member-bday">
-            <label class="member-bday-label">🎂 Cumpleaños</label>
+            <label class="member-bday-label"><i class="ph ph-cake"></i> Cumpleaños</label>
             <div class="member-bday-row">
               <select id="m-bmonth" class="m-native-select">
                 <option value="">— Mes —</option>

@@ -539,7 +539,7 @@ function showAccessDenied(message) {
         max-width: 480px; text-align: center;
         box-shadow: 0 20px 60px rgba(0,0,0,0.3);
       ">
-        <div style="font-size: 64px; margin-bottom: 20px;">🚫</div>
+        <i class="ph-fill ph-prohibit" style="font-size: 64px; margin-bottom: 20px; display:block;"></i>
         <h1 style="color: #1a2733; margin: 0 0 12px; font-size: 24px;">Acceso denegado</h1>
         <p style="color: #5a6b7a; margin: 0 0 24px; line-height: 1.5;">${message}</p>
         <button onclick="location.href='index.html'" style="
