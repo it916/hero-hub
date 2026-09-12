@@ -1,5 +1,20 @@
 [
   {
+    "id": "2026-09-12-admin-dashboard",
+    "version": "v2.49.0",
+    "date": "2026-09-12",
+    "category": "feat",
+    "scope": "admin",
+    "audience": "admin",
+    "title": "Administración abre en un panel general en vez de en las métricas",
+    "items": [
+      "Nueva primera pestaña, «Dashboard», con tres tarjetas: quién está destacado ahora mismo en el Spotlight, cómo está el equipo (cuánta gente hay, cuánta con acceso y el reparto por rol) y la actividad de los últimos 30 días con un mini gráfico",
+      "No edita nada: cada tarjeta tiene un botón que lleva a la pestaña donde sí se edita",
+      "Métricas pasa al grupo «Contenido», junto a Spotlight y Mensajes, y deja de ser lo primero que se ve al entrar. Era una pantalla de análisis haciendo de portada",
+      "El panel también abre más rápido: la lectura de visitas del último mes ya no se hace al entrar, sino al abrir Métricas"
+    ]
+  },
+  {
     "id": "2026-09-12-metricas-grafico",
     "version": "v2.48.1",
     "date": "2026-09-12",

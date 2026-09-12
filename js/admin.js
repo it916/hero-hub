@@ -37,7 +37,10 @@ onAuthStateChanged(auth, async (user) => {
   if (window.refreshIcons) window.refreshIcons();
   loadSpotlight();
   loadMessages();
-  window.loadMetrics();
+  // Metricas ya no se carga de entrada: la pestana que abre es el panel
+  // general, que trae su propio resumen. La lectura de events se hace al
+  // pulsar Metricas.
+  if (window.loadAdminDashboard) window.loadAdminDashboard();
 
   // Exponer email del admin actual para roles-admin.js
   window._currentAdminEmail = user.email;

@@ -75,10 +75,9 @@
         <nav class="admin-sidebar-nav">
 
           <div class="admin-sidebar-group">
-            <div class="admin-sidebar-kicker">Resumen</div>
-            <button type="button" class="admin-sidebar-link active" data-tab="metrics">
-              <i data-lucide="bar-chart-3"></i>
-              <span>Métricas</span>
+            <button type="button" class="admin-sidebar-link active" data-tab="dashboard">
+              <i data-lucide="layout-dashboard"></i>
+              <span>Dashboard</span>
             </button>
           </div>
 
@@ -91,6 +90,10 @@
             <button type="button" class="admin-sidebar-link" data-tab="messages">
               <i data-lucide="message-square"></i>
               <span>Mensajes</span>
+            </button>
+            <button type="button" class="admin-sidebar-link" data-tab="metrics">
+              <i data-lucide="bar-chart-3"></i>
+              <span>Métricas</span>
             </button>
           </div>
 
@@ -169,8 +172,30 @@
         <div id="ms-list"></div>
       </section>
 
+      <!-- SECCIÓN DASHBOARD ══
+           Resumen de lo que vive en otras tres pestanas: quien esta destacado,
+           como esta el equipo y cuanta actividad hay. No edita nada: cada
+           tarjeta lleva a la pestana que si lo hace. La rinde
+           js/admin-dashboard.js. -->
+      <section class="admin-section" id="tab-dashboard">
+        <div class="metrics-header">
+          <div>
+            <h2 style="margin:0;"><i class="ph ph-squares-four"></i> Panel general</h2>
+            <p class="admin-note" style="margin:4px 0 0;">Un vistazo a lo que hay ahora mismo en el Hub.</p>
+          </div>
+        </div>
+
+        <div class="ad-error" id="adash-error" hidden></div>
+
+        <div class="adash-grid">
+          <section class="adash-card" id="adash-spotlight"><p class="loading">Cargando...</p></section>
+          <section class="adash-card" id="adash-equipo"><p class="loading">Cargando...</p></section>
+        </div>
+        <section class="adash-card adash-wide" id="adash-actividad"><p class="loading">Cargando...</p></section>
+      </section>
+
       <!-- SECCIÓN MÉTRICAS -->
-      <section class="admin-section" id="tab-metrics">
+      <section class="admin-section" id="tab-metrics" style="display:none;">
         <div class="metrics-header">
           <div>
             <h2 style="margin:0;"><i class="ph ph-chart-bar"></i> Métricas de uso</h2>
@@ -473,7 +498,7 @@
       </div>
     </div>
     <div class="footer-legal">
-      <span>HERO HUB · ADMIN v2.48.1</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+      <span>HERO HUB · ADMIN v2.49.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
     </div>
   </footer>
 
@@ -483,6 +508,7 @@
     window.refreshIcons = () => { if (window.lucide) lucide.createIcons(); };
 
     const TAB_TITLES = {
+      dashboard: 'Panel general',
       spotlight: 'Spotlight',
       messages: 'Mensajes',
       metrics: 'Métricas',
@@ -519,11 +545,12 @@
           const tab = b.dataset.tab;
           document.querySelectorAll('.admin-sidebar-link[data-tab]').forEach(x => x.classList.remove('active'));
           b.classList.add('active');
-          ['metrics','spotlight','messages','roles','permisos','log','migracion'].forEach(t => {
+          ['dashboard','metrics','spotlight','messages','roles','permisos','log','migracion'].forEach(t => {
             const sec = document.getElementById('tab-' + t);
             if (sec) sec.style.display = (t === tab) ? 'block' : 'none';
           });
           if (breadcrumb && TAB_TITLES[tab]) breadcrumb.textContent = TAB_TITLES[tab];
+          if (tab === 'dashboard' && window.loadAdminDashboard) window.loadAdminDashboard();
           if (tab === 'metrics' && window.loadMetrics) window.loadMetrics();
           if (tab === 'roles' && window.loadRolesPanel) window.loadRolesPanel();
           if (tab === 'permisos' && window.loadPermisosPanel) window.loadPermisosPanel();
@@ -539,6 +566,7 @@
   <script type="module" src="js/firebase-config.js"></script>
   <script type="module" src="js/admin.js"></script>
   <script type="module" src="js/migration-panel.js"></script>
+<script type="module" src="js/admin-dashboard.js"></script>
 <script type="module" src="js/user-menu.js"></script>
 <script type="module" src="js/tracker.js"></script>
 </body>
