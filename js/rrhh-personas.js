@@ -888,6 +888,16 @@ async function guardarFicha(p, btn) {
   }
 }
 
+// <i> de Phosphor suelto, para meter dentro de un texto. Vive aqui y no se
+// importa del dashboard: alli es privada, y tenerla duplicada en cuatro lineas
+// cuesta menos que exportarla y acoplar los dos modulos por un helper.
+function iconoInline(clases) {
+  const i = document.createElement("i");
+  i.className = clases;
+  return i;
+}
+
+
 // ── Evaluaciones trimestrales ──────────────────────────────────────
 // Historial + formulario, dentro de la ficha. Los datos viven en
 // `hr-evaluations` y solo los ve admin, igual que el resto de RRHH.
