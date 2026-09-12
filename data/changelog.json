@@ -1,5 +1,33 @@
 [
   {
+    "id": "2026-09-12-evaluaciones",
+    "version": "v2.52.0",
+    "date": "2026-09-12",
+    "category": "feat",
+    "scope": "admin",
+    "audience": "admin",
+    "title": "Recursos Humanos ya registra las evaluaciones trimestrales",
+    "items": [
+      "En la ficha de cada persona hay una sección nueva para registrar su evaluación: cinco criterios puntuados del 1 al 5 — desempeño, puntualidad, trabajo en equipo, iniciativa y comunicación — más un comentario y el promedio, que se calcula solo",
+      "El historial queda a la vista con los criterios en color: se ve de un vistazo en qué flojea alguien y cómo evolucionó entre trimestres",
+      "La lista de personas marca con un punto ámbar a quien lleva tres meses o más sin evaluación, y la ficha dice cuántos meses han pasado",
+      "Una evaluación se puede corregir, pero no borrar: si una nota quedó mal puesta se arregla, y queda constancia de quién evaluó y cuándo",
+      "Los datos son tan reservados como el resto de Recursos Humanos: solo los ve quien administra, y la persona evaluada no los ve en su perfil"
+    ]
+  },
+  {
+    "id": "2026-09-12-cortes-caducan",
+    "version": "v2.52.0",
+    "date": "2026-09-12",
+    "category": "fix",
+    "scope": "hub",
+    "audience": "all",
+    "title": "Un corte sin cerrar se da por resuelto a las 24 horas",
+    "items": [
+      "Si reportas que se fue la luz y nunca avisas de que volvió, el botón de «Ya volvió la luz» se quitaba después de un día: pasadas 24 horas ese aviso ya no significa nada"
+    ]
+  },
+  {
     "id": "2026-09-12-reportes-restablecido",
     "version": "v2.51.0",
     "date": "2026-09-12",

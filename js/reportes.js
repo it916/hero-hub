@@ -428,12 +428,19 @@ async function guardar(tipo, btn, extras) {
       }
     }
 
-    await addDoc(collection(db, COLLECTION), registro);
+    const ref = await addDoc(collection(db, COLLECTION), registro);
 
     // El corte queda cerrado, o se abre uno nuevo, segun lo que se acaba de
     // enviar. Repinta el tile con los botones que toquen.
-    if (tipo.cierraA) marcarAbierto(tipo.cierraA, false);
-    else if (TIPOS.some(t => t.cierraA === tipo.id)) marcarAbierto(tipo.id, true);
+    if (tipo.cierraA) {
+      marcarAbierto(tipo.cierraA, false);
+    } else if (TIPOS.some(t => t.cierraA === tipo.id)) {
+      const cuando = extras?.ocurrido instanceof Date ? extras.ocurrido : new Date();
+      marcarAbierto(tipo.id, true, cuando);
+      // Con el id a mano, el cierre que se envie despues puede apuntar a este
+      // corte sin esperar al refresco contra Firestore.
+      ultimoCorte[tipo.id] = { id: ref.id, cuando };
+    }
     saveLast(tipo.label, registro.fecha);
     cerrarModal();
 
@@ -464,24 +471,42 @@ async function guardar(tipo, btn, extras) {
 // no se espera a la red para pintar.
 const ABIERTOS_KEY = "hero-cortes-abiertos";
 
+// Un corte se da por cerrado solo a las 24 horas. Quien se queda sin luz y
+// nunca avisa de que volvio dejaria el boton ahi para siempre, y a los tres
+// dias ese boton ya no significa nada.
+const VIGENCIA_MS = 24 * 60 * 60 * 1000;
+
+// { tipoId: fechaISO del corte }. El formato viejo era un array de tipos sin
+// fecha; si aparece, se descarta — a lo sumo se pierde un boton que el
+// refresco contra Firestore vuelve a poner.
 function leerAbiertosLocal() {
   try {
-    const raw = localStorage.getItem(ABIERTOS_KEY);
-    const v = raw ? JSON.parse(raw) : [];
-    return Array.isArray(v) ? v : [];
-  } catch (_) { return []; }
+    const v = JSON.parse(localStorage.getItem(ABIERTOS_KEY) || "{}");
+    if (!v || typeof v !== "object" || Array.isArray(v)) return new Map();
+    const limite = Date.now() - VIGENCIA_MS;
+    return new Map(Object.entries(v).filter(([, iso]) => {
+      const t = Date.parse(iso);
+      return !isNaN(t) && t > limite;
+    }));
+  } catch (_) { return new Map(); }
 }
 
-function marcarAbierto(tipoId, abierto) {
-  const actual = new Set(leerAbiertosLocal());
-  if (abierto) actual.add(tipoId);
+function guardarAbiertosLocal(mapa) {
+  try {
+    localStorage.setItem(ABIERTOS_KEY, JSON.stringify(Object.fromEntries(mapa)));
+  } catch (_) {}
+}
+
+function marcarAbierto(tipoId, abierto, cuando) {
+  const actual = leerAbiertosLocal();
+  if (abierto) actual.set(tipoId, (cuando instanceof Date ? cuando : new Date()).toISOString());
   else actual.delete(tipoId);
-  try { localStorage.setItem(ABIERTOS_KEY, JSON.stringify([...actual])); } catch (_) {}
+  guardarAbiertosLocal(actual);
   abiertos = actual;
   pintarTile();
 }
 
-let abiertos = new Set(leerAbiertosLocal());
+let abiertos = leerAbiertosLocal();
 let ultimoCorte = {};   // tipoId del corte -> { id, cuando } del doc abierto
 
 async function refrescarAbiertos() {
@@ -493,19 +518,22 @@ async function refrescarAbiertos() {
     // diario. Interesa el ultimo de cada tipo.
     const mios = await fetchReports({ email: user.email });
 
-    const nuevos = new Set();
+    const nuevos = new Map();
     ultimoCorte = {};
+    const limite = Date.now() - VIGENCIA_MS;
     for (const cierre of TIPOS.filter(t => t.cierraA)) {
       const relevantes = mios.filter(r => r.type === cierre.cierraA || r.type === cierre.id);
       // fetchReports devuelve del mas reciente al mas viejo.
       const ultimo = relevantes[0];
-      if (ultimo && ultimo.type === cierre.cierraA) {
-        nuevos.add(cierre.cierraA);
-        ultimoCorte[cierre.cierraA] = { id: ultimo.id, cuando: ultimo.ocurrido || ultimo.reportadoAt };
-      }
+      if (!ultimo || ultimo.type !== cierre.cierraA) continue;
+      const cuando = ultimo.ocurrido || ultimo.reportadoAt;
+      // Mas de 24 horas sin cerrar: se da por resuelto y el boton no vuelve.
+      if (cuando instanceof Date && cuando.getTime() <= limite) continue;
+      nuevos.set(cierre.cierraA, (cuando instanceof Date ? cuando : new Date()).toISOString());
+      ultimoCorte[cierre.cierraA] = { id: ultimo.id, cuando };
     }
     abiertos = nuevos;
-    try { localStorage.setItem(ABIERTOS_KEY, JSON.stringify([...abiertos])); } catch (_) {}
+    guardarAbiertosLocal(nuevos);
     pintarTile();
   } catch (e) {
     // Lo mas probable: falta el indice compuesto (email + timestamp). El

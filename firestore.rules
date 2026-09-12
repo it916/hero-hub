@@ -129,6 +129,24 @@ service cloud.firestore {
     }
 
 
+    // ══════════════════════════════════════════════════════════════════
+    // EVALUACIONES TRIMESTRALES — hr-evaluations/{id}
+    // ══════════════════════════════════════════════════════════════════
+    // Un documento por evaluación, con el email de la persona dentro. Plana y
+    // no subcolección de hr-data porque el módulo necesita saber a quién le
+    // toca, y eso es mirar la última de cada uno: así es una sola lectura.
+    //
+    // Igual de sensible que hr-data, y con el mismo dueño: solo admin. La
+    // persona evaluada NO la ve — decisión de Fernando, 2026-09-12.
+    //
+    // update sí, delete no: una evaluación con una nota mal puesta se corrige;
+    // hacerla desaparecer sería otra cosa.
+    match /hr-evaluations/{evalId} {
+      allow read, create, update: if esAdmin();
+      allow delete: if false;
+    }
+
+
     // ═══════════════════════════════════════════════════════════════════
     // DOCUMENTOS COMPARTIDOS — /shared/*
     // ═══════════════════════════════════════════════════════════════════

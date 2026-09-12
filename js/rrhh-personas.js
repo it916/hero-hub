@@ -26,6 +26,10 @@ import {
 import { getAllHrData, saveHrData } from "./hr-store.js";
 import { abrirCalendario, initCalendario } from "./rrhh-calendario.js";
 import {
+  CRITERIOS, ESCALA, getEvaluacionesPorPersona, saveEvaluacion,
+  estadoDe, periodoDe, periodoTexto, promedioDe, MESES_ENTRE_EVALUACIONES,
+} from "./hr-evaluaciones.js";
+import {
   getItemsEnRango, getEtiquetaRango, onDatosActualizados, aplicarVistaGeneral,
   setDirectorio,
 } from "./rrhh-dashboard.js";
@@ -113,6 +117,9 @@ let editando = false;
 // Flatpickr cuelga su calendario de <body>, no del input. Como la ficha se
 // repinta entera (replaceChildren), sin destruir las instancias los calendarios
 // del formulario anterior quedan huérfanos en el DOM y se van acumulando.
+let evaluaciones = new Map();   // email -> [evaluacion, ...] de la mas nueva a la mas vieja
+let evaluando = null;           // { email, id } mientras el formulario esta abierto
+
 let pickers = [];
 
 function destruirPickers() {
@@ -269,7 +276,15 @@ async function cargarPersonas() {
   try {
     // Las dos colecciones van en paralelo: ninguna depende de la otra y se
     // cruzan por email.
-    const [users, hr] = await Promise.all([getAllUsers(), getAllHrData()]);
+    const [users, hr, evs] = await Promise.all([
+      getAllUsers(), getAllHrData(), getEvaluacionesPorPersona().catch(e => {
+        // Si la regla de hr-evaluations aun no esta desplegada, el resto de la
+        // ficha tiene que seguir funcionando.
+        console.warn("rrhh: no se pudieron leer las evaluaciones:", e.message);
+        return new Map();
+      }),
+    ]);
+    evaluaciones = evs;
     personas = users;
     hrData = hr;
     personas.sort((a, b) => (a.identity?.name || "").localeCompare(b.identity?.name || ""));
@@ -319,7 +334,19 @@ function pintarLista() {
     cuerpo.appendChild(el("div", "rh-person-name", p.identity?.name || email));
     cuerpo.appendChild(el("div", "rh-person-job", p.display?.jobTitle || "—"));
 
+    // Punto ámbar a quien le toca evaluación. Va en la lista y no solo en la
+    // ficha para que se vea a quién hay que llamar sin abrir uno por uno.
     fila.append(foto, cuerpo);
+
+    const { estado } = estadoDe(evaluaciones.get(email));
+    if (estado !== "al-dia") {
+      const marca = el("span", "rh-person-due");
+      marca.title = estado === "nunca"
+        ? "Sin evaluaciones registradas"
+        : "Le toca evaluación trimestral";
+      fila.appendChild(marca);
+    }
+
     fila.addEventListener("click", () => seleccionar(email));
     lista.appendChild(fila);
   });
@@ -369,6 +396,7 @@ function pintarFicha() {
 
   cuerpo.appendChild(cabecera(p));
   cuerpo.appendChild(editando ? formulario(p) : datosLaborales(p));
+  cuerpo.appendChild(evaluacionesDe(p));
   cuerpo.appendChild(reportesDe(p));
 
   if (window.refreshIcons) window.refreshIcons();
@@ -859,6 +887,276 @@ async function guardarFicha(p, btn) {
     btn.textContent = textoOriginal;
   }
 }
+
+// ── Evaluaciones trimestrales ──────────────────────────────────────
+// Historial + formulario, dentro de la ficha. Los datos viven en
+// `hr-evaluations` y solo los ve admin, igual que el resto de RRHH.
+
+function evaluacionesDe(p) {
+  const caja = el("div", "rh-card-evals");
+
+  const titulo = el("div", "section-label");
+  titulo.appendChild(el("span", "kicker-dot"));
+  titulo.appendChild(el("span", null, "Evaluaciones"));
+  caja.appendChild(titulo);
+
+  const lista = evaluaciones.get(p._email) || [];
+  const { estado, meses } = estadoDe(lista);
+
+  // Aviso de a quién le toca. Se dice en meses y no con un "vencida" a secas:
+  // saber que hace cinco meses que no se evalúa a alguien informa más que un
+  // rojo sin contexto.
+  if (estado !== "al-dia") {
+    const aviso = el("div", "rh-eval-due");
+    aviso.appendChild(iconoInline("ph-fill ph-warning-circle"));
+    aviso.appendChild(el("span", null, estado === "nunca"
+      ? "Sin evaluaciones registradas todavía."
+      : "Le toca evaluación: la última fue hace " + (meses === 1 ? "un mes" : meses + " meses") + "."));
+    caja.appendChild(aviso);
+  }
+
+  if (evaluando && evaluando.email === p._email) {
+    caja.appendChild(formularioEval(p, lista));
+    return caja;
+  }
+
+  const nueva = el("button", "btn-primary rh-eval-new", "Nueva evaluación");
+  nueva.type = "button";
+  nueva.addEventListener("click", () => {
+    evaluando = { email: p._email, id: null };
+    pintarFicha();
+  });
+  caja.appendChild(nueva);
+
+  if (!lista.length) {
+    caja.appendChild(el("div", "ad-empty", "— Aún no se ha evaluado a esta persona —"));
+    return caja;
+  }
+
+  for (const ev of lista) {
+    const fila = el("div", "rh-eval");
+
+    const cab = el("div", "rh-eval-head");
+    cab.appendChild(el("span", "rh-eval-periodo", periodoTexto(ev.periodo)));
+    if (ev.fecha) cab.appendChild(el("span", "rh-eval-fecha", ev.fecha));
+    if (ev.evaluadoPor) {
+      cab.appendChild(el("span", "rh-eval-quien", "evaluó " + ev.evaluadoPor.split("@")[0]));
+    }
+    const nota = el("span", "rh-eval-nota", ev.promedio != null ? ev.promedio.toFixed(1) : "—");
+    nota.title = "Promedio de los cinco criterios";
+    cab.appendChild(nota);
+    fila.appendChild(cab);
+
+    const chips = el("div", "rh-eval-criterios");
+    for (const c of CRITERIOS) {
+      const v = ev.criterios[c.id];
+      const chip = el("span", "rh-eval-chip", c.label + " " + (v != null ? v : "—"));
+      if (v != null) chip.dataset.nivel = String(v);
+      chips.appendChild(chip);
+    }
+    fila.appendChild(chips);
+
+    if (ev.comentario) fila.appendChild(el("blockquote", "rh-eval-coment", ev.comentario));
+
+    const editar = el("button", "rh-eval-edit", "Corregir");
+    editar.type = "button";
+    editar.addEventListener("click", () => {
+      evaluando = { email: p._email, id: ev.id };
+      pintarFicha();
+    });
+    fila.appendChild(editar);
+
+    caja.appendChild(fila);
+  }
+
+  return caja;
+}
+
+function formularioEval(p, lista) {
+  const previa = evaluando.id ? lista.find(e => e.id === evaluando.id) : null;
+  const form = el("div", "rh-eval-form");
+
+  form.appendChild(el("div", "rh-eval-form-title",
+    previa ? "Corrigiendo " + periodoTexto(previa.periodo) : "Nueva evaluación"));
+
+  const filaMeta = el("div", "rh-form-row");
+
+  const periodoWrap = el("label", "rh-field");
+  periodoWrap.appendChild(el("span", "rh-field-label", "Trimestre"));
+  const selPeriodo = document.createElement("select");
+  selPeriodo.className = "ad-select";
+  selPeriodo.id = "ev-periodo";
+  // El trimestre actual y los tres anteriores: se evalúa al cierre y a veces
+  // con retraso, pero no se registran evaluaciones de hace dos años.
+  const hoy = new Date();
+  for (let i = 0; i < 4; i++) {
+    const d = new Date(hoy.getFullYear(), hoy.getMonth() - i * 3, 1);
+    const pid = periodoDe(d);
+    const opt = document.createElement("option");
+    opt.value = pid;
+    opt.textContent = periodoTexto(pid);
+    selPeriodo.appendChild(opt);
+  }
+  if (previa) {
+    // Una evaluación vieja que se corrige puede tener un periodo fuera de esa
+    // ventana; se añade para no cambiárselo sin querer al guardar.
+    if (![...selPeriodo.options].some(o => o.value === previa.periodo)) {
+      const opt = document.createElement("option");
+      opt.value = previa.periodo;
+      opt.textContent = periodoTexto(previa.periodo);
+      selPeriodo.appendChild(opt);
+    }
+    selPeriodo.value = previa.periodo;
+  }
+  periodoWrap.appendChild(selPeriodo);
+  filaMeta.appendChild(periodoWrap);
+
+  const fechaWrap = el("label", "rh-field");
+  fechaWrap.appendChild(el("span", "rh-field-label", "Fecha de la evaluación"));
+  const inpFecha = document.createElement("input");
+  inpFecha.type = "text";
+  inpFecha.className = "ad-select rh-date";
+  inpFecha.id = "ev-fecha";
+  inpFecha.placeholder = "MM/DD/YYYY";
+  inpFecha.autocomplete = "off";
+  inpFecha.value = (previa && previa.fecha) || fechaHoyUS();
+  fechaWrap.appendChild(inpFecha);
+  filaMeta.appendChild(fechaWrap);
+
+  form.appendChild(filaMeta);
+
+  for (const c of CRITERIOS) {
+    const fila = el("div", "rh-eval-crit-row");
+    const etiqueta = el("div", "rh-eval-crit-label");
+    etiqueta.appendChild(el("span", "rh-eval-crit-name", c.label));
+    etiqueta.appendChild(el("span", "rh-eval-crit-help", c.ayuda));
+    fila.appendChild(etiqueta);
+
+    const opciones = el("div", "rh-eval-scale");
+    for (const n of ESCALA) {
+      const btn = el("button", "rh-eval-dot", String(n.v));
+      btn.type = "button";
+      btn.dataset.crit = c.id;
+      btn.dataset.valor = String(n.v);
+      btn.title = n.label;
+      if (previa && previa.criterios && previa.criterios[c.id] === n.v) btn.classList.add("on");
+      btn.addEventListener("click", () => {
+        opciones.querySelectorAll(".rh-eval-dot").forEach(x => x.classList.remove("on"));
+        btn.classList.add("on");
+        refrescarPromedio(form);
+      });
+      opciones.appendChild(btn);
+    }
+    fila.appendChild(opciones);
+    form.appendChild(fila);
+  }
+
+  const prom = el("div", "rh-eval-prom");
+  prom.id = "ev-promedio";
+  form.appendChild(prom);
+
+  const comentWrap = el("label", "rh-field");
+  comentWrap.appendChild(el("span", "rh-field-label", "Comentario"));
+  const txt = document.createElement("textarea");
+  txt.className = "ad-select rh-eval-text";
+  txt.id = "ev-comentario";
+  txt.rows = 3;
+  txt.placeholder = "Qué hizo bien, qué debe mejorar y acuerdos para el próximo trimestre…";
+  txt.value = (previa && previa.comentario) || "";
+  comentWrap.appendChild(txt);
+  form.appendChild(comentWrap);
+
+  const acciones = el("div", "rh-form-actions");
+  const cancelar = el("button", "btn-ghost", "Cancelar");
+  cancelar.type = "button";
+  cancelar.addEventListener("click", () => { evaluando = null; pintarFicha(); });
+  const guardar = el("button", "btn-primary", previa ? "Guardar corrección" : "Registrar evaluación");
+  guardar.type = "button";
+  guardar.addEventListener("click", () => guardarEval(p, guardar));
+  acciones.append(cancelar, guardar);
+  form.appendChild(acciones);
+
+  if (typeof flatpickr === "function") {
+    pickers.push(flatpickr(inpFecha, { locale: "es", dateFormat: "m/d/Y", allowInput: true }));
+  }
+
+  refrescarPromedio(form);
+  return form;
+}
+
+function fechaHoyUS() {
+  const d = new Date();
+  return String(d.getMonth() + 1).padStart(2, "0") + "/" +
+         String(d.getDate()).padStart(2, "0") + "/" + d.getFullYear();
+}
+
+function leerCriterios(form) {
+  const datos = {};
+  form.querySelectorAll(".rh-eval-dot.on").forEach(b => {
+    datos[b.dataset.crit] = Number(b.dataset.valor);
+  });
+  return datos;
+}
+
+function refrescarPromedio(form) {
+  const caja = form.querySelector("#ev-promedio");
+  if (!caja) return;
+  const criterios = leerCriterios(form);
+  const puestos = Object.keys(criterios).length;
+  const prom = promedioDe(criterios);
+  caja.replaceChildren();
+  if (prom == null) {
+    caja.appendChild(el("span", "rh-eval-prom-hint", "Puntúa los cinco criterios para ver el promedio."));
+    return;
+  }
+  caja.appendChild(el("span", "rh-eval-prom-n", prom.toFixed(1)));
+  caja.appendChild(el("span", "rh-eval-prom-lbl",
+    puestos < CRITERIOS.length ? "promedio de " + puestos + " de " + CRITERIOS.length : "promedio"));
+}
+
+async function guardarEval(p, btn) {
+  const form = btn.closest(".rh-eval-form");
+  const criterios = leerCriterios(form);
+
+  if (Object.keys(criterios).length < CRITERIOS.length) {
+    heroToast.error("Faltan criterios por puntuar.");
+    return;
+  }
+  const fecha = (form.querySelector("#ev-fecha").value || "").trim();
+  if (fecha && !parseUS(fecha)) {
+    heroToast.error("La fecha va en formato MM/DD/YYYY.");
+    return;
+  }
+
+  const texto = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Guardando…";
+
+  try {
+    await saveEvaluacion({
+      id: evaluando.id,
+      email: p._email,
+      name: p.identity?.name || p._email,
+      periodo: form.querySelector("#ev-periodo").value,
+      fecha,
+      criterios,
+      comentario: form.querySelector("#ev-comentario").value,
+    });
+    // Se relee todo para que el historial, el promedio y el aviso de "le toca"
+    // queden al día sin recargar la página.
+    evaluaciones = await getEvaluacionesPorPersona();
+    evaluando = null;
+    pintarFicha();
+    pintarLista();
+    heroToast.success("Evaluación registrada.");
+  } catch (e) {
+    console.error("rrhh evaluaciones:", e);
+    heroToast.error("No se pudo guardar: " + e.message);
+    btn.disabled = false;
+    btn.textContent = texto;
+  }
+}
+
 
 // ── Reportes de la persona ─────────────────────────────────────────
 function reportesDe(p) {
