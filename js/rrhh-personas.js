@@ -930,7 +930,7 @@ function evaluacionesDe(p) {
     return caja;
   }
 
-  const nueva = el("button", "btn-primary rh-eval-new", "Nueva evaluación");
+  const nueva = el("button", "rh-btn rh-btn-primary rh-eval-new", "Nueva evaluación");
   nueva.type = "button";
   nueva.addEventListener("click", () => {
     evaluando = { email: p._email, id: null };
@@ -1107,10 +1107,10 @@ function formularioEval(p, lista) {
   form.appendChild(comentWrap);
 
   const acciones = el("div", "rh-form-actions");
-  const cancelar = el("button", "btn-ghost", "Cancelar");
+  const cancelar = el("button", "rh-btn", "Cancelar");
   cancelar.type = "button";
   cancelar.addEventListener("click", () => { evaluando = null; pintarFicha(); });
-  const guardar = el("button", "btn-primary", previa ? "Guardar corrección" : "Registrar evaluación");
+  const guardar = el("button", "rh-btn rh-btn-primary", previa ? "Guardar corrección" : "Registrar evaluación");
   guardar.type = "button";
   guardar.addEventListener("click", () => guardarEval(p, guardar));
   acciones.append(cancelar, guardar);
