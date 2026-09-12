@@ -331,7 +331,7 @@ async function onDeleteUser(e) {
   logEvent(ACTIONS.ROLE_DELETE, email, { role: ROLES[oldRole]?.label || oldRole || "(sin rol)" });
   table.deleteRow(email);
   renderStats();
-  showStatus(`✓ ${displayName} eliminado`);
+  showStatus(`${displayName} eliminado`);
 }
 
 // ═══════════════════════════════════════════
@@ -910,7 +910,7 @@ function openUserModal(user) {
       }
       renderStats();
       dialog.hide();
-      showStatus(editing ? ("✓ " + name + " actualizado") : ("✓ " + name + " agregado"));
+      showStatus(editing ? (name + " actualizado") : (name + " agregado"));
     } catch (e) {
       console.error("[user save]", e);
       heroToast.error("Error guardando: " + e.message);

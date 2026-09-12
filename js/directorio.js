@@ -291,7 +291,7 @@ function openContactModal(idx) {
   const esc = (s) => (s == null ? "" : String(s)).replace(/"/g, "&quot;").replace(/&/g, "&amp;");
 
   const dialog = document.createElement("sl-dialog");
-  dialog.label = editing ? `✎ Editar contacto · ${c.company || c.name}` : "✦ Nuevo contacto";
+  dialog.label = editing ? `Editar contacto · ${c.company || c.name}` : "Nuevo contacto";
   dialog.className = "hh-dialog contact-dialog";
   dialog.innerHTML = `
     <div class="hh-form contact-form">

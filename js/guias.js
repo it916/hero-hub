@@ -133,7 +133,7 @@ function openGuiaModal(idx) {
   const esc = (s) => (s == null ? "" : String(s)).replace(/"/g, "&quot;").replace(/&/g, "&amp;");
 
   const dialog = document.createElement("sl-dialog");
-  dialog.label = editing ? `✎ Editar guía · ${g.title || ''}` : "✦ Nueva guía";
+  dialog.label = editing ? `Editar guía · ${g.title || ''}` : "Nueva guía";
   dialog.className = "hh-dialog guia-edit-dialog";
   dialog.innerHTML = `
     <div class="hh-form">

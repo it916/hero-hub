@@ -31,3 +31,12 @@ hero-hub-backup-*.json
 # versión MP4 comprimida generada con ffmpeg. Los MOV los conservamos fuera
 # del repo (viven en Drive) porque pesan 3-4 veces más y no aportan al deploy.
 videos/*.mov
+
+# Archivos de trabajo que viven en la raíz y no forman parte del sitio.
+# Se ignoran para que ningún `git add` con comodín los arrastre a produccion:
+#   · maqueta-reportes.html — maqueta del tile Reportar, ya implementado en v2.43.0
+#   · CONTEXTO-HERO-HUB.md — manual maestro del proyecto, snapshot para consulta
+#   · el .docx de Finanzas — documentacion del modulo descontinuado en 2026-08-20
+maqueta-reportes.html
+CONTEXTO-HERO-HUB.md
+Modulo-Finanzas-Documentacion-Tecnica.docx

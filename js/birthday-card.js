@@ -155,7 +155,7 @@ async function loadAndRenderCard(person, currentUser, modal) {
   const MONTHS = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   if (person.birthdate && /^\d{2}-\d{2}$/.test(person.birthdate)) {
     const [m, d] = person.birthdate.split('-').map(x => parseInt(x));
-    modal.querySelector("#bc-subtitle").textContent = `🗓️ ${d} de ${MONTHS[m-1]} · ${messages.length} felicitación${messages.length !== 1 ? 'es' : ''}`;
+    modal.querySelector("#bc-subtitle").textContent = `${d} de ${MONTHS[m-1]} · ${messages.length} felicitación${messages.length !== 1 ? 'es' : ''}`;
   }
 
   // Si el usuario actual YA escribió un mensaje, mostrarlo en el textarea
@@ -168,14 +168,14 @@ async function loadAndRenderCard(person, currentUser, modal) {
   if (myMessage) {
     textarea.value = myMessage.message;
     deleteBtn.style.display = 'inline-flex';
-    saveBtn.textContent = '💾 Actualizar mi mensaje';
-    formTitle.textContent = '✍️ Tu mensaje (puedes editarlo)';
+    saveBtn.textContent = 'Actualizar mi mensaje';
+    formTitle.textContent = 'Tu mensaje (puedes editarlo)';
     modal.querySelector("#bc-char").textContent = `${myMessage.message.length}/400`;
   } else {
     textarea.value = '';
     deleteBtn.style.display = 'none';
-    saveBtn.textContent = 'Publicar felicitación ✨';
-    formTitle.textContent = '✍️ Deja tu mensaje';
+    saveBtn.textContent = 'Publicar felicitación';
+    formTitle.textContent = 'Deja tu mensaje';
     modal.querySelector("#bc-char").textContent = '0/400';
   }
 
@@ -184,7 +184,7 @@ async function loadAndRenderCard(person, currentUser, modal) {
   const list = modal.querySelector("#bc-messages-list");
 
   if (!messages.length) {
-    list.innerHTML = `<p class="bc-empty">Aún no hay felicitaciones. ¡Sé el primero! 💝</p>`;
+    list.innerHTML = `<p class="bc-empty">Aún no hay felicitaciones. ¡Sé el primero!</p>`;
     return;
   }
 
@@ -337,7 +337,7 @@ function showBirthdayCelebrationPopup(person, card, currentUser) {
     </div>
 
     <div class="bcel-footer">
-      <button class="btn-primary bcel-big-btn" id="bcel-ok">Gracias a todos 🙏</button>
+      <button class="btn-primary bcel-big-btn" id="bcel-ok">Gracias a todos</button>
     </div>
   </div>`;
   document.body.appendChild(modal);

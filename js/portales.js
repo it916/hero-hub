@@ -367,7 +367,7 @@ function openCarrierModal(scope, idx) {
   const esc = (s) => (s == null ? "" : String(s)).replace(/"/g, "&quot;").replace(/&/g, "&amp;");
 
   const dialog = document.createElement("sl-dialog");
-  dialog.label = `${editing ? '✎ Editar' : '✦ Nuevo'} portal · ${scopeTag}`;
+  dialog.label = `${editing ? 'Editar' : 'Nuevo'} portal · ${scopeTag}`;
   dialog.className = "hh-dialog carrier-edit-dialog";
   dialog.innerHTML = `
     <div class="hh-form">

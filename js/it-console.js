@@ -3106,7 +3106,7 @@ function openTicketModal(id) {
   const fecha = new Date(t.fecha).toLocaleString('es-MX', { timeZone:'America/New_York', year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
   document.getElementById('modal-fecha').textContent = fecha + ' ET';
   const elEl = document.getElementById('modal-elapsed');
-  elEl.textContent = '⏱ Abierto hace ' + getElapsedTime(t.fecha);
+  elEl.textContent = 'Abierto hace ' + getElapsedTime(t.fecha);
   elEl.style.color = getElapsedColor(t.fecha, t.estado);
   document.getElementById('modal-descripcion').textContent = t.descripcion;
   document.getElementById('modal-estado').value    = t.estado;
@@ -3658,7 +3658,7 @@ async function crearUsuarioDesdeModal() {
 
     showToast(onboardingOk
       ? 'Usuario creado y solicitante notificado'
-      : 'Usuario creado ✓ · onboarding pendiente (' + onboardingErr + ')');
+      : 'Usuario creado · onboarding pendiente (' + onboardingErr + ')');
     closeSolModal();
     loadSolicitudes();
   } catch(err) {
@@ -5750,7 +5750,7 @@ function renderBackfillList() {
     var empty = document.createElement('div');
     empty.style.cssText = 'padding:40px 24px;text-align:center;color:var(--hero-text-muted);font-family:var(--mono);font-size:12px;';
     empty.textContent = filter === 'missing'
-      ? 'Todas las cuentas tienen correo personal registrado ✓'
+      ? 'Todas las cuentas tienen correo personal registrado'
       : 'Sin resultados';
     list.appendChild(empty);
     updateBackfillButton();

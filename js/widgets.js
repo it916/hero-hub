@@ -139,7 +139,7 @@ function renderArsenal() {
 
 function openAddToolModal(group) {
   const dialog = document.createElement("sl-dialog");
-  dialog.label = `✦ Nuevo acceso · ${group}`;
+  dialog.label = `Nuevo acceso · ${group}`;
   dialog.className = "hh-dialog hh-tool-dialog";
   dialog.innerHTML = `
     <div class="hh-form">
@@ -378,7 +378,7 @@ function renderBirthday() {
   if (!withBirthday.length) {
     if (el('bdayName')) el('bdayName').textContent = '—';
     if (el('bdayRole')) el('bdayRole').textContent = 'Sin cumpleaños registrados';
-    if (el('bdayBadge')) el('bdayBadge').textContent = '🎈 Próximo cumpleaños';
+    if (el('bdayBadge')) el('bdayBadge').textContent = 'Próximo cumpleaños';
     if (el('bdayDate')) el('bdayDate').textContent = '—';
     return;
   }

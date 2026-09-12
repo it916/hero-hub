@@ -344,7 +344,7 @@
       uploadedAttachments.push(att);
       row.classList.remove('uploading');
       progressEl.classList.add('ok');
-      progressEl.textContent = '✓ Subido';
+      progressEl.textContent = 'Subido';
       removeBtn.onclick = function() {
         const idx = uploadedAttachments.findIndex(function(x) { return x.key === att.key; });
         if (idx >= 0) uploadedAttachments.splice(idx, 1);
@@ -375,7 +375,7 @@
         if (radio) {
           radio.checked = true;
           const hint = document.getElementById('impact-hint');
-          if (hint) hint.textContent = '💡 Sugerido: ' + IMPACT_LABEL[impacto];
+          if (hint) hint.textContent = 'Sugerido: ' + IMPACT_LABEL[impacto];
         }
         return;
       }

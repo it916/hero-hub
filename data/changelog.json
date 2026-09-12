@@ -1,5 +1,19 @@
 [
   {
+    "id": "2026-09-12-admin-tema",
+    "version": "v2.48.0",
+    "date": "2026-09-12",
+    "category": "fix",
+    "scope": "admin",
+    "audience": "admin",
+    "title": "El panel de administración ya deja cambiar entre día y noche",
+    "items": [
+      "Administración respetaba el tema elegido en el resto del Hub, pero no tenía el botón para cambiarlo: al entrar ahí en modo noche, para volver a día había que salir a otra página. Su cabecera es propia y el botón vive en la barra del Hub, que administración no usa",
+      "Ya está el mismo botón de siempre, junto a «Volver al Hub», y guarda la preferencia igual que en el resto del sitio",
+      "La consola de IT sigue sin ese botón, por el mismo motivo"
+    ]
+  },
+  {
     "id": "2026-09-12-footer-nav",
     "version": "v2.48.0",
     "date": "2026-09-12",
@@ -10,6 +24,22 @@
     "items": [
       "La barra de arriba se había llenado. Lo que se consulta de vez en cuando — Onboarding, Políticas, el manual de Finanzas, Soporte, Solicitud de cuenta y las novedades del Hub — bajó al pie de página, en dos columnas. Arriba queda el trabajo del día",
       "El pie no repite lo que hay arriba: lo que bajó, bajó. Y respeta los permisos igual que la barra, así que nadie ve ahí un enlace que no puede abrir"
+    ]
+  },
+  {
+    "id": "2026-09-12-metricas",
+    "version": "v2.48.0",
+    "date": "2026-09-12",
+    "category": "fix",
+    "scope": "admin",
+    "audience": "admin",
+    "title": "Las métricas vuelven a medir el Hub entero",
+    "items": [
+      "Las métricas de administración llevaban meses contando de menos: la lista de páginas a registrar se escribió a mano en su día y se quedó congelada, así que las visitas a Recursos Humanos, Finanzas, la consola de IT, Contracting, Solicitud de cuenta y Mi perfil se descartaban una por una",
+      "Ahora esa lista sale del catálogo de páginas del Hub, que es el mismo que usan los permisos: cuando se cree un módulo nuevo, se cuenta solo",
+      "Seis páginas tampoco cargaban el contador. Ya lo hacen todas menos la de soporte, que es la única abierta sin inicio de sesión",
+      "El panel gana selector de periodo — 7, 30, 90 días o todo lo que quede sin podar — y la lista de actividad deja de ser «solo los diez últimos»: ahora muestra hasta 60 y se puede filtrar por persona",
+      "Aviso: lo que no se registró no se recupera. Los datos de los módulos nuevos empiezan desde hoy"
     ]
   },
   {

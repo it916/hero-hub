@@ -372,7 +372,7 @@ function openProfile(idx) {
     const [mm, dd] = birthdate.split('-');
     contactsList.appendChild(makeContactRow("cake", (row) => {
       const span = document.createElement("span");
-      span.textContent = `🎂 ${parseInt(dd)} ${MONTHS[parseInt(mm)-1]}`;
+      span.textContent = `${parseInt(dd)} ${MONTHS[parseInt(mm)-1]}`;
       row.appendChild(span);
     }));
   }

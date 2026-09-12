@@ -223,7 +223,7 @@ document.getElementById("sp-save").addEventListener("click", async () => {
   spotlightData.honorees = (spotlightData.honorees || []).filter(h => h.email || h.name);
   try {
     await setDoc(doc(db, "shared", "spotlight"), spotlightData);
-    document.getElementById("sp-status").textContent = "✓ Guardado";
+    document.getElementById("sp-status").textContent = "Guardado";
     setTimeout(() => document.getElementById("sp-status").textContent = "", 2000);
 
     // Log de auditoría: preferir nombre del user cacheado; fallback a email o legacy name.
@@ -282,20 +282,46 @@ async function loadMessages() {
 }
 
 // ══ MÉTRICAS ══
+// Ventana de las metricas. Antes eran 30 dias fijos y no habia forma de mirar
+// mas atras desde la UI, asi que cualquier pregunta sobre tendencias se
+// contestaba a ojo. El boton "Limpiar eventos >90 dias" sigue podando: "todo"
+// significa todo lo que quede sin podar.
+const PERIODOS = {
+  "7":  { dias: 7,  label: "Últimos 7 días" },
+  "30": { dias: 30, label: "Últimos 30 días" },
+  "90": { dias: 90, label: "Últimos 90 días" },
+  "all": { dias: null, label: "Todo el histórico" },
+};
+
+let ultimosEventos = [];   // lo ultimo cargado, para repintar sin releer
+
 window.loadMetrics = async function() {
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const sel = document.getElementById("mt-period")?.value || "30";
+  const { dias, label } = PERIODOS[sel] || PERIODOS["30"];
+
+  const etiqueta = document.getElementById("mt-period-label");
+  if (etiqueta) etiqueta.textContent = label;
 
   try {
-    const q = query(
-      collection(db, "events"),
-      where("timestamp", ">=", Timestamp.fromDate(thirtyDaysAgo)),
-      orderBy("timestamp", "desc")
-    );
+    // Sin recorte no hace falta el where, y asi tampoco hace falta el indice
+    // compuesto que exige combinarlo con el orderBy.
+    let q;
+    if (dias === null) {
+      q = query(collection(db, "events"), orderBy("timestamp", "desc"));
+    } else {
+      const desde = new Date();
+      desde.setDate(desde.getDate() - dias);
+      q = query(
+        collection(db, "events"),
+        where("timestamp", ">=", Timestamp.fromDate(desde)),
+        orderBy("timestamp", "desc")
+      );
+    }
     const snap = await getDocs(q);
     const events = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-    renderMetrics(events);
+    ultimosEventos = events;
+    renderMetrics(events, dias);
   } catch (e) {
     console.error("Error cargando métricas:", e);
     if (e.message && e.message.includes("index")) {
@@ -306,7 +332,7 @@ window.loadMetrics = async function() {
   }
 }
 
-function renderMetrics(events) {
+function renderMetrics(events, dias = 30) {
   // Card: visitas totales
   document.getElementById("mt-total").textContent = events.length.toLocaleString();
 
@@ -340,9 +366,21 @@ function renderMetrics(events) {
     document.getElementById("mt-topday-count").textContent = topDays[0][1] + " visitas";
   }
 
-  // Gráfico actividad diaria (últimos 30 días, en fecha local del usuario)
+  // Grafico de actividad diaria, en fecha local del usuario. El numero de
+  // barras sale del periodo elegido; con "todo" se arranca en el evento mas
+  // antiguo que haya, no en una fecha fija.
+  let ventana = dias;
+  if (ventana === null) {
+    const masViejo = events.reduce((min, e) => {
+      const d = e.timestamp?.toDate();
+      return d && (!min || d < min) ? d : min;
+    }, null);
+    const span = masViejo ? Math.ceil((Date.now() - masViejo.getTime()) / 86400000) + 1 : 30;
+    ventana = Math.min(Math.max(span, 7), 180);
+  }
+
   const dailyCounts = {};
-  for (let i = 29; i >= 0; i--) {
+  for (let i = ventana - 1; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     dailyCounts[ymdLocal(d)] = 0;
@@ -380,9 +418,45 @@ function renderMetrics(events) {
         </div>`).join('')
     : `<p class="empty">Sin datos todavía.</p>`;
 
-  // Últimos 10 eventos
-  document.getElementById("mt-events").innerHTML = events.length
-    ? events.slice(0, 10).map(e => {
+  // Desplegable de personas, para poder mirar a alguien en concreto. Antes la
+  // lista eran "los 10 ultimos" a secas: como estan ordenados por fecha, quien
+  // mas entra al Hub copa las diez filas y nunca se ve a nadie mas.
+  const selUser = document.getElementById("mt-user");
+  if (selUser) {
+    const previo = selUser.value;
+    const gente = [...uniqueUsers].sort();
+    selUser.replaceChildren();
+    const todos = document.createElement("option");
+    todos.value = "";
+    todos.textContent = `Todo el equipo (${gente.length})`;
+    selUser.appendChild(todos);
+    for (const email of gente) {
+      const o = document.createElement("option");
+      o.value = email;
+      o.textContent = email.split("@")[0];
+      selUser.appendChild(o);
+    }
+    if (previo && gente.includes(previo)) selUser.value = previo;
+  }
+
+  renderEventos(events);
+}
+
+// Se separo de renderMetrics para poder repintar solo la lista al cambiar el
+// filtro de persona, sin releer Firestore.
+const MAX_EVENTOS = 60;
+
+function renderEventos(events) {
+  const filtro = document.getElementById("mt-user")?.value || "";
+  const lista = filtro ? events.filter(e => e.email === filtro) : events;
+
+  const cont = document.getElementById("mt-events");
+  const extra = lista.length > MAX_EVENTOS
+    ? `<div class="mt-event-more">y ${lista.length - MAX_EVENTOS} visitas más en este periodo</div>`
+    : "";
+
+  cont.innerHTML = lista.length
+    ? lista.slice(0, MAX_EVENTOS).map(e => {
         const d = e.timestamp?.toDate();
         const when = d ? d.toLocaleString('es-ES', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '—';
         return `<div class="mt-event-row">
@@ -391,8 +465,8 @@ function renderMetrics(events) {
           <span class="mt-event-page">${e.page}</span>
           <span class="mt-event-time">${when}</span>
         </div>`;
-      }).join('')
-    : `<p class="empty">Sin eventos todavía. Las visitas empezarán a registrarse cuando el equipo use el Hub.</p>`;
+      }).join('') + extra
+    : `<p class="empty">Sin visitas registradas en este periodo.</p>`;
 }
 
 // YYYY-MM-DD en la zona horaria local (NO usar toISOString — devuelve UTC)
@@ -423,6 +497,10 @@ function renderChart(dailyCounts) {
 }
 
 document.getElementById("mt-refresh").addEventListener("click", () => window.loadMetrics());
+
+// El periodo relee Firestore; el filtro de persona no, que ya estan los datos.
+document.getElementById("mt-period")?.addEventListener("change", () => window.loadMetrics());
+document.getElementById("mt-user")?.addEventListener("change", () => renderEventos(ultimosEventos));
 
 document.getElementById("mt-cleanup").addEventListener("click", async () => {
   const ok = await heroConfirm({

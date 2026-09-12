@@ -310,9 +310,9 @@ function renderPreviewSummary(rows, orphans) {
 
   const wrap = document.createElement("div");
   wrap.style.cssText = "display:flex; gap:12px; flex-wrap:wrap; font-size:13px;";
-  wrap.appendChild(makeChip(`✓ ${ok} listos para migrar`, "#0f8054", "#e8f5f0"));
-  if (warn) wrap.appendChild(makeChip(`⚠ ${warn} con warnings`, "#c17a1a", "#fef3e2"));
-  if (err) wrap.appendChild(makeChip(`✗ ${err} con errores`, "#a52917", "#fbe5e0"));
+  wrap.appendChild(makeChip(`${ok} listos para migrar`, "#0f8054", "#e8f5f0"));
+  if (warn) wrap.appendChild(makeChip(`${warn} con warnings`, "#c17a1a", "#fef3e2"));
+  if (err) wrap.appendChild(makeChip(`${err} con errores`, "#a52917", "#fbe5e0"));
   if (orphans.length) wrap.appendChild(makeChip(`${orphans.length} huérfanos en roles`, "#4a5a6a", "#e5eaef"));
   el.appendChild(wrap);
 }
@@ -417,7 +417,7 @@ function logLine(text, level = "info") {
   const el = document.getElementById("mig-execute-log");
   el.style.display = "";
   const colors = { info: "#4a5a6a", ok: "#0f8054", err: "#a52917", warn: "#c17a1a" };
-  const icons = { info: "·", ok: "✓", err: "✗", warn: "⚠" };
+  const icons = { info: "·", ok: "OK", err: "ERR", warn: "!" };
   const line = document.createElement("div");
   line.style.color = colors[level] || colors.info;
   line.textContent = `${icons[level] || "·"} ${text}`;
@@ -449,11 +449,11 @@ async function runBackup() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    status.textContent = `✓ Descargado (${members.length} miembros, ${Object.keys(rolesUsers).length} roles)`;
+    status.textContent = `Descargado (${members.length} miembros, ${Object.keys(rolesUsers).length} roles)`;
     status.style.color = "#0f8054";
   } catch (e) {
     console.error(e);
-    status.textContent = "✗ Error: " + e.message;
+    status.textContent = "Error: " + e.message;
     status.style.color = "#a52917";
     heroToast.error("No se pudo descargar el backup: " + e.message);
   }

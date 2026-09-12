@@ -252,7 +252,7 @@ function refreshStatusView() {
       } else {
         elState.textContent = `${meta.verb} desde ${formatTime(d)} · ${formatElapsed(d, now)}`;
         if (meta.state === "break") {
-          document.title = `⏰ En break (${formatElapsedShort(d, now)}) — Hero Hub`;
+          document.title = `En break (${formatElapsedShort(d, now)}) — Hero Hub`;
         } else {
           document.title = ORIGINAL_TITLE;
         }
@@ -316,10 +316,10 @@ async function recordAttendance(type, btn, extras = {}) {
       // ni el status bar. Solo confirmamos con toast.
       const dateLabel = extras.absenceDate || "";
       const msg = dateLabel ? `Ausencia registrada para ${dateLabel}` : "Ausencia registrada";
-      setFeedback(`✓ ${msg}`, "ok");
+      setFeedback(msg, "ok");
       if (typeof heroToast !== "undefined") heroToast.success(msg);
     } else {
-      setFeedback(`✓ ${type} registrada a las ${formatTime(now)}`, "ok");
+      setFeedback(`${type} registrada a las ${formatTime(now)}`, "ok");
       // Optimistic update: aplicamos el estado nuevo YA para que la UI reaccione
       // sin esperar al round-trip del snapshot. El snapshot llegará después
       // y confirmará este estado.
@@ -332,7 +332,7 @@ async function recordAttendance(type, btn, extras = {}) {
     return true;
   } catch (e) {
     console.error("attendance:", e);
-    setFeedback("✗ No se pudo registrar. Reintenta.", "err");
+    setFeedback("No se pudo registrar. Reintenta.", "err");
     return false;
   } finally {
     btn.classList.remove("is-loading");
@@ -352,7 +352,7 @@ export function openAbsenceModal(triggerBtn, onSaved) {
   const todayStr = today.toISOString().slice(0, 10);
 
   const dialog = document.createElement("sl-dialog");
-  dialog.label = "📝 Reportar ausencia";
+  dialog.label = "Reportar ausencia";
   dialog.className = "att-abs-dialog";
   dialog.innerHTML = `
     <div class="att-abs-form">

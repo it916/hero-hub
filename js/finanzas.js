@@ -364,7 +364,7 @@ async function onDeleteComision(id) {
   comisionesData = comisionesData.filter(r => r.id !== id);
   if (fcTable) fcTable.deleteRow(id);
   updateTotal();
-  showFcStatus(`✓ Fila de ${row.carrier || "?"} eliminada`);
+  showFcStatus(`Fila de ${row.carrier || "?"} eliminada`);
 }
 
 
@@ -518,7 +518,7 @@ function openComisionModal(existing) {
           tipoOrigen, agente: payload.agente || null, tasa: tasaDecimal,
           from: { carrier: existing.carrier, tipoOrigen: existing.tipoOrigen, tasa: existing.tasa }
         });
-        showFcStatus(`✓ ${carrierNorm} actualizado`);
+        showFcStatus(`${carrierNorm} actualizado`);
       } else {
         payload.creadoPor = currentUserEmail;
         payload.creadoEn = serverTimestamp();
@@ -529,7 +529,7 @@ function openComisionModal(existing) {
         logEvent(ACTIONS.FINANZAS_COMISION_ADD, carrierNorm, {
           tipoOrigen, agente: payload.agente || null, tasa: tasaDecimal
         });
-        showFcStatus(`✓ ${carrierNorm} agregado`);
+        showFcStatus(`${carrierNorm} agregado`);
       }
       updateTotal();
       dialog.hide();
@@ -785,7 +785,7 @@ async function onDeleteBroker(id) {
   brokersData = brokersData.filter(r => r.id !== id);
   if (fbTable) fbTable.deleteRow(id);
   updateBrokersTotal();
-  showFbStatus(`✓ ${label} ${row.nombre || "?"} eliminada`);
+  showFbStatus(`${label} ${row.nombre || "?"} eliminada`);
 }
 
 function openBrokerModal(existing) {
@@ -922,7 +922,7 @@ function openBrokerModal(existing) {
           tipo, email: email || null,
           from: { nombre: existing.nombre, tipo: existing.tipo || null, email: existing.email || null }
         });
-        showFbStatus(`✓ ${nombreNorm} actualizado`);
+        showFbStatus(`${nombreNorm} actualizado`);
       } else {
         payload.creadoPor = currentUserEmail;
         payload.creadoEn = serverTimestamp();
@@ -931,7 +931,7 @@ function openBrokerModal(existing) {
         brokersData.push(newRow);
         if (fbTable) fbTable.addRow(newRow);
         logEvent(ACTIONS.FINANZAS_BROKER_ADD, nombreNorm, { tipo, email: email || null });
-        showFbStatus(`✓ ${nombreNorm} agregado`);
+        showFbStatus(`${nombreNorm} agregado`);
       }
       updateBrokersTotal();
       dialog.hide();
@@ -1527,7 +1527,7 @@ async function onDeleteIngreso(id) {
   ingresosData = ingresosData.filter(r => r.id !== id);
   if (fiTable) fiTable.deleteRow(id);
   updateIngresosSummary();
-  showFiStatus(`✓ Ingreso eliminado`);
+  showFiStatus(`Ingreso eliminado`);
 }
 
 function formatFechaUS(yyyyMmDd) {
@@ -1650,12 +1650,12 @@ function openSingleEmailDialog(ingreso, payoutIdx = 0) {
     try {
       await sendIngresoEmail(ingreso, payoutIdx, { nombre: broker.nombre, email });
       statusEl.className = "fi-em-status success";
-      statusEl.textContent = `✓ Reporte enviado a ${email}`;
-      showFiStatus(`✓ Reporte enviado a ${email}`);
+      statusEl.textContent = `Reporte enviado a ${email}`;
+      showFiStatus(`Reporte enviado a ${email}`);
       setTimeout(() => dialog.hide(), 900);
     } catch (err) {
       statusEl.className = "fi-em-status error";
-      statusEl.textContent = "✕ " + (err?.message || "No se pudo enviar");
+      statusEl.textContent = (err?.message || "No se pudo enviar");
       confirmBtn.disabled = false;
       cancelBtn.disabled = false;
       confirmBtn.textContent = wasSent ? "Reenviar" : "Enviar";
@@ -1755,10 +1755,10 @@ function openEmailReportDialog(ingreso) {
         cellEl.innerHTML = `<span class="fi-em-sent-tag">Enviado · ${escapeHtml(nowTxt)}</span>`;
         btn.textContent = "Reenviar";
         statusEl.className = "fi-em-status success";
-        statusEl.textContent = "✓ Reporte enviado a " + email;
+        statusEl.textContent = "Reporte enviado a " + email;
       } catch (err) {
         statusEl.className = "fi-em-status error";
-        statusEl.textContent = "✕ " + (err?.message || "No se pudo enviar el reporte");
+        statusEl.textContent = (err?.message || "No se pudo enviar el reporte");
         btn.textContent = wasSent ? "Reenviar" : "Enviar";
       } finally {
         btn.disabled = false;
@@ -5622,7 +5622,7 @@ async function openIngresoModal(existing, opts = {}) {
         logEvent(ACTIONS.FINANZAS_INGRESO_EDIT, fecha, {
           monto, pagado, ganancia, tipoPago, categoria, carrier, payoutCount: payouts.length
         });
-        showFiStatus(`✓ Ingreso de ${formatFechaUS(fecha)} actualizado`);
+        showFiStatus(`Ingreso de ${formatFechaUS(fecha)} actualizado`);
       } else {
         payload.creadoPor = currentUserEmail;
         payload.creadoEn = serverTimestamp();
@@ -5633,7 +5633,7 @@ async function openIngresoModal(existing, opts = {}) {
         logEvent(ACTIONS.FINANZAS_INGRESO_ADD, fecha, {
           monto, pagado, ganancia, tipoPago, categoria, carrier, payoutCount: payouts.length
         });
-        showFiStatus(`✓ Ingreso de ${formatFechaUS(fecha)} registrado · Ganancia ${formatMoney(ganancia)}`);
+        showFiStatus(`Ingreso de ${formatFechaUS(fecha)} registrado · Ganancia ${formatMoney(ganancia)}`);
       }
       updateIngresosSummary();
       dialog.hide();
@@ -6110,7 +6110,7 @@ async function handleIngresosFile(file) {
   applyBtn.disabled = true;
 
   if (typeof XLSX === "undefined") {
-    statusEl.textContent = "✕ La librería XLSX no está cargada aún, espera un segundo y reintenta.";
+    statusEl.textContent = "La librería XLSX no está cargada aún, espera un segundo y reintenta.";
     statusEl.className = "fimp-status error";
     return;
   }
@@ -6123,7 +6123,7 @@ async function handleIngresosFile(file) {
     const wb = XLSX.read(buf, { cellDates: true });
     const parsed = parseIngresosWorkbook(wb);
     if (!parsed.length) {
-      statusEl.textContent = "✕ No se encontraron ingresos válidos en el Excel.";
+      statusEl.textContent = "No se encontraron ingresos válidos en el Excel.";
       statusEl.className = "fimp-status error";
       return;
     }
@@ -6154,7 +6154,7 @@ async function handleIngresosFile(file) {
     applyBtn.disabled = (nuevos.length + modificados.length) === 0;
     statusEl.textContent = "";
   } catch (e) {
-    statusEl.textContent = "✕ Error: " + (e?.message || e);
+    statusEl.textContent = "Error: " + (e?.message || e);
     statusEl.className = "fimp-status error";
     console.error(e);
   }
@@ -6279,7 +6279,7 @@ async function applyIngresosImport() {
     const resumen = [];
     if (inserted) resumen.push(`${inserted} creados`);
     if (updated) resumen.push(`${updated} actualizados`);
-    statusEl.textContent = `✓ Import completado: ${resumen.join(" · ")}.`;
+    statusEl.textContent = `Import completado: ${resumen.join(" · ")}.`;
     statusEl.className = "fimp-status success";
     updateIngresosSummary();
     populateCarrierFilter();
@@ -6288,7 +6288,7 @@ async function applyIngresosImport() {
     document.getElementById("fimp-ingresos-file").value = "";
     fimpState.ingresosDiff = null;
   } catch (e) {
-    statusEl.textContent = `✕ Falló (creados ${inserted}, actualizados ${updated}): ${e.message}`;
+    statusEl.textContent = `Falló (creados ${inserted}, actualizados ${updated}): ${e.message}`;
     statusEl.className = "fimp-status error";
     console.error(e);
   } finally {
@@ -6330,12 +6330,12 @@ async function handleUrlsFile(file) {
   applyBtn.disabled = true;
 
   if (typeof XLSX === "undefined") {
-    statusEl.textContent = "✕ La librería XLSX no está cargada.";
+    statusEl.textContent = "La librería XLSX no está cargada.";
     statusEl.className = "fimp-status error";
     return;
   }
   if (!fimpState.ingresosParsed) {
-    statusEl.textContent = "✕ Primero carga el Excel de INGRESOS 2026 arriba (necesario para el lookup por MES+ID).";
+    statusEl.textContent = "Primero carga el Excel de INGRESOS 2026 arriba (necesario para el lookup por MES+ID).";
     statusEl.className = "fimp-status error";
     return;
   }
@@ -6348,7 +6348,7 @@ async function handleUrlsFile(file) {
     const urls = parseUrlsWorkbook(wb);
     fimpState.urlsParsed = urls;
     if (!urls.length) {
-      statusEl.textContent = "✕ No se encontraron URLs válidas.";
+      statusEl.textContent = "No se encontraron URLs válidas.";
       statusEl.className = "fimp-status error";
       return;
     }
@@ -6434,7 +6434,7 @@ async function handleUrlsFile(file) {
     applyBtn.disabled = matched.length === 0;
     statusEl.textContent = "";
   } catch (e) {
-    statusEl.textContent = "✕ Error: " + (e?.message || e);
+    statusEl.textContent = "Error: " + (e?.message || e);
     statusEl.className = "fimp-status error";
     console.error(e);
   }
@@ -6519,14 +6519,14 @@ async function applyUrlsImport() {
       done += chunk.length;
       statusEl.textContent = `Actualizado ${done} de ${ids.length} ingresos...`;
     }
-    statusEl.textContent = `✓ Aplicado a ${done} ingresos.`;
+    statusEl.textContent = `Aplicado a ${done} ingresos.`;
     statusEl.className = "fimp-status success";
     document.getElementById("fimp-urls-preview").hidden = true;
     document.getElementById("fimp-urls-filename").textContent = "Seleccionar archivo…";
     document.getElementById("fimp-urls-file").value = "";
     fimpState.urlsDiff = null;
   } catch (e) {
-    statusEl.textContent = `✕ Falló (${done}/${ids.length}): ${e.message}`;
+    statusEl.textContent = `Falló (${done}/${ids.length}): ${e.message}`;
     statusEl.className = "fimp-status error";
     console.error(e);
   } finally {

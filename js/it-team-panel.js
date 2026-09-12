@@ -516,7 +516,7 @@ async function saveInternalMemberNotes() {
       updatedBy: actor
     }, { merge: true });
     statusEl.textContent = 'Guardado hace un momento por ' + actor;
-    btn.textContent = 'Guardado ✓';
+    btn.textContent = 'Guardado';
     setTimeout(() => {
       btn.textContent = 'Guardar notas';
       btn.disabled = false;
@@ -598,7 +598,7 @@ async function registrarIntervencionDesdePersona() {
     if (typeof showToast === 'function') showToast('Intervención registrada');
     if (typeof auditLog === 'function') auditLog('dispositivo', tipo + ' en ' + (dev && dev.nombre || 'equipo'), descripcion);
 
-    btn.textContent = 'Registrado ✓';
+    btn.textContent = 'Registrado';
     setTimeout(() => { btn.textContent = 'Registrar'; btn.disabled = false; }, 1500);
   } catch (e) {
     btn.textContent = 'Registrar';

@@ -4,6 +4,7 @@
 // ═══════════════════════════════════════════
 
 import { auth, db } from "./firebase-config.js";
+import { PAGE_LABELS } from "./roles.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { collection, addDoc, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -14,13 +15,21 @@ function getPageName() {
   return path.replace('.html', '') || 'index';
 }
 
+const VALID_PAGES = new Set([...Object.keys(PAGE_LABELS), "soporte"]);
+
 // Registrar un evento
 async function trackVisit(user) {
   const page = getPageName();
 
-  // Evitar tracking si la página no es del Hub
-  const validPages = ['index', 'equipo', 'agencias', 'portales', 'directorio', 'guias', 'politicas', 'onboarding', 'admin', 'grabaciones', 'reuniones', 'changelog'];
-  if (!validPages.includes(page)) return;
+  // Qué páginas contar sale del catálogo de roles.js, que es la lista única de
+  // lo que existe en el Hub. Antes había aquí una lista escrita a mano que se
+  // quedó congelada: rrhh, finanzas, it-console, contracting, solicitud-cuenta
+  // y mi-perfil nacieron después y sus visitas se descartaron durante meses,
+  // así que las métricas de admin enseñaban un Hub que ya no era el real.
+  //
+  // soporte va aparte: es la única página sin page-guard, así que no está en
+  // el catálogo de permisos, pero su uso sí interesa.
+  if (!VALID_PAGES.has(page)) return;
 
   // Evitar doble tracking: si ya trackeamos esta página en los últimos 30 segundos, saltar
   const cacheKey = `lastTrack_${page}`;
