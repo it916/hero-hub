@@ -1,5 +1,19 @@
 [
   {
+    "id": "2026-09-12-metricas-grafico",
+    "version": "v2.48.1",
+    "date": "2026-09-12",
+    "category": "fix",
+    "scope": "admin",
+    "audience": "admin",
+    "title": "El gráfico de actividad diaria vuelve a dibujar barras",
+    "items": [
+      "Las barras salían todas aplastadas contra el eje, tuviera el día 2 visitas o 40. No era falta de datos: la altura de cada barra se calculaba en porcentaje sobre una columna que no tenía altura, así que el resultado era cero y quedaba solo el hilo mínimo que alguien había puesto para que se notara algo",
+      "Ya se ven las proporciones reales entre un día y otro. Es el único indicador del panel que muestra tendencia: los demás son rankings, y una caída en seco es justo la señal de que algo dejó de funcionar",
+      "Recuerda que el conteo correcto empezó ayer, así que el gráfico tarda unas semanas en tener forma"
+    ]
+  },
+  {
     "id": "2026-09-12-admin-tema",
     "version": "v2.48.0",
     "date": "2026-09-12",

@@ -2615,6 +2615,13 @@ body[data-theme="dark"] .ad-power-item.ongoing  {
   display:flex; flex-direction:column; align-items:center;
   gap:4px; cursor:pointer;
   min-width:0;
+  /* La barra se dibuja con height:% y ese porcentaje se calcula contra ESTA
+     columna, no contra .mt-chart-inner. Sin una altura aqui, el contenedor
+     media lo que midiera su contenido y el contenido dependia del contenedor:
+     el navegador resolvia ese circulo como cero y todas las barras salian
+     planas, tuviera el dia 2 visitas o 40. */
+  height:100%;
+  justify-content:flex-end;
 }
 .mt-chart-bar {
   width:100%; max-width:22px;
@@ -2622,7 +2629,7 @@ body[data-theme="dark"] .ad-power-item.ongoing  {
   border-radius:4px 4px 0 0;
   transition:all .2s;
 }
-.mt-chart-bar.has-value { min-height:3px; }
+.mt-chart-bar.has-value { min-height:2px; }   /* que un dia flojo no desaparezca del todo */
 .mt-chart-col:hover .mt-chart-bar {
   background:linear-gradient(180deg, var(--gold), #d97706);
   transform:scaleY(1.05);
