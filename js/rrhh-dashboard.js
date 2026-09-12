@@ -38,6 +38,10 @@ const TIPO_META = {
   "corte-electrico": { label: "Corte eléctrico", ph: "ph-lightning-slash", color: "#f5b830" },
   "falla-internet":  { label: "Sin internet",    ph: "ph-wifi-slash",      color: "#06a3b6" },
   "retraso":         { label: "Llegada tarde",   ph: "ph-clock-user",      color: "#8b5cf6" },
+  // Cierres: el aviso de que la luz o el internet ya volvieron. Llevan
+  // duracionMin, que es el dato que interesa de verdad.
+  "corte-electrico-fin": { label: "Volvió la luz",      ph: "ph-lightning", color: "#0f8054" },
+  "falla-internet-fin":  { label: "Volvió el internet", ph: "ph-wifi-high", color: "#0f8054" },
 };
 
 let items = [];
@@ -206,6 +210,18 @@ function daysAgo(n) {
 // ── Normalización de las dos fuentes ───────────────────────────────
 // `cuando` es siempre el momento del hecho reportado, no el del envío:
 // es lo que HR mira. `reportadoAt` guarda el envío para el detalle.
+// "3 h 20 min sin servicio". Es lo que RRHH quiere leer de un cierre, en vez
+// del detalle vacío que traen estos avisos.
+function duracionTexto(min) {
+  if (min < 1) return "restablecido enseguida";
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  const partes = [];
+  if (h) partes.push(h === 1 ? "1 hora" : `${h} horas`);
+  if (m) partes.push(m === 1 ? "1 minuto" : `${m} minutos`);
+  return `Estuvo ${partes.join(" y ")} sin servicio`;
+}
+
 function normReporte(r) {
   const porFecha = r.fecha ? parseMMDDYYYY(r.fecha) : null;
   return {
@@ -216,7 +232,7 @@ function normReporte(r) {
     email: r.email,
     cuando: r.ocurrido || porFecha || r.reportadoAt,
     hora: r.hora,
-    detalle: r.detalle,
+    detalle: r.duracionMin != null ? duracionTexto(r.duracionMin) : r.detalle,
     llegadaEstimada: r.llegadaEstimada,
     alMomento: r.alMomento,
     reportadoAt: r.reportadoAt,

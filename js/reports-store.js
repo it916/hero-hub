@@ -72,6 +72,10 @@ function docToReport(id, data) {
     ocurrido: toDate(data.ocurrido),
     alMomento: typeof data.alMomento === "boolean" ? data.alMomento : null,
     llegadaEstimada: data.llegadaEstimada || null,
+    // Solo en los avisos de cierre: minutos que duró el corte, calculados al
+    // enviarlo (los documentos no se pueden tocar después).
+    duracionMin: typeof data.duracionMin === "number" ? data.duracionMin : null,
+    cierra: data.cierra || null,
     detalle: data.detalle || "",
     reportadoAt: toDate(data.timestamp),
     destinos: Array.isArray(data.destinos) ? data.destinos : [],

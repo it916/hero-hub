@@ -1,5 +1,21 @@
 [
   {
+    "id": "2026-09-12-reportes-restablecido",
+    "version": "v2.51.0",
+    "date": "2026-09-12",
+    "category": "feat",
+    "scope": "hub",
+    "audience": "all",
+    "title": "Ya puedes avisar de que volvió la luz o el internet",
+    "items": [
+      "Después de reportar un corte eléctrico o una caída de internet, el tile Reportar te ofrece un botón nuevo para avisar de que ya se restableció",
+      "El botón solo aparece si tienes ese corte abierto: si nunca reportaste quedarte sin luz, no te sale la opción de decir que volvió",
+      "El aviso llega a los mismos a quienes les llegó el corte — IT y Recursos Humanos —, así que nadie se queda pensando que sigues caído",
+      "Tanto el correo como el panel de Recursos Humanos dicen cuánto duró: «Estuvo 3 horas y 20 minutos sin servicio»",
+      "La hora del regreso se confirma igual que la del corte, con el mismo paso extra si la corriges a mano"
+    ]
+  },
+  {
     "id": "2026-09-12-contracting-retirado",
     "version": "v2.50.0",
     "date": "2026-09-12",

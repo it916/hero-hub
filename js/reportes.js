@@ -26,6 +26,7 @@
 // avisar en `destinos`, y `notified:false` para que el Worker lo marque.
 
 import { auth, db } from "./firebase-config.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { collection, addDoc, Timestamp }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { openAbsenceModal } from "./attendance.js";
@@ -53,6 +54,11 @@ const DESTINOS = {
   "retraso":          HR,
   "corte-electrico":  ["it@heroinsuranceusa.com"].concat(HR),
   "falla-internet":   ["it@heroinsuranceusa.com"].concat(HR),
+  // El cierre va a los mismos que recibieron el corte: a quien le llegó
+  // "estoy sin luz" tiene que llegarle "ya volvió", o se queda pensando que
+  // la persona sigue caída.
+  "corte-electrico-fin": ["it@heroinsuranceusa.com"].concat(HR),
+  "falla-internet-fin":  ["it@heroinsuranceusa.com"].concat(HR),
 };
 
 // ── Tipos de reporte ───────────────────────────────────────────────
@@ -89,6 +95,31 @@ const TIPOS = [
     sub: "Caída de tu conexión",
     nombreEnFrase: "la caída de internet",
     note: "Confirma desde qué hora estás sin conexión. Si sigues trabajando con datos móviles, avísale igual a tu supervisor.",
+  },
+  // Los dos cierres solo se ofrecen si esa persona tiene el corte abierto:
+  // `cierraA` dice cual. Sin eso, el tile dejaria avisar de que volvio algo
+  // que nunca se reporto.
+  {
+    id: "corte-electrico-fin",
+    label: "Ya volvió la luz",
+    ph: "ph-lightning",
+    tone: "gold",
+    flow: "instant",
+    sub: "Se restableció la energía",
+    cierraA: "corte-electrico",
+    nombreEnFrase: "el regreso de la luz",
+    note: "Confirma la hora en que volvió la energía. Se avisa a los mismos a quienes les llegó el corte.",
+  },
+  {
+    id: "falla-internet-fin",
+    label: "Ya volvió el internet",
+    ph: "ph-wifi-high",
+    tone: "cyan",
+    flow: "instant",
+    sub: "Se restableció la conexión",
+    cierraA: "falla-internet",
+    nombreEnFrase: "el regreso del internet",
+    note: "Confirma desde qué hora tienes conexión otra vez.",
   },
   {
     id: "retraso",
@@ -340,6 +371,7 @@ async function notificar(tipo, datos) {
           llegadaEstimada: datos.llegadaEstimada || null,
           detalle: datos.detalle || null,
           alMomento: typeof datos.alMomento === "boolean" ? datos.alMomento : null,
+          duracionMin: typeof datos.duracionMin === "number" ? datos.duracionMin : null,
         },
       }),
     });
@@ -382,7 +414,26 @@ async function guardar(tipo, btn, extras) {
       notified: avisado,
     }, extras);
 
+    // Un cierre apunta al corte que cierra y deja escrita la duracion. Se
+    // calcula aqui y se guarda: los documentos son inmutables, asi que quien
+    // lea despues no tiene que emparejar nada ni fiarse de que el corte siga
+    // siendo legible.
+    if (tipo.cierraA) {
+      const corte = ultimoCorte[tipo.cierraA];
+      const fin = extras?.ocurrido instanceof Date ? extras.ocurrido : new Date();
+      if (corte?.id) registro.cierra = corte.id;
+      if (corte?.cuando instanceof Date) {
+        const min = Math.round((fin - corte.cuando) / 60000);
+        if (min >= 0) registro.duracionMin = min;
+      }
+    }
+
     await addDoc(collection(db, COLLECTION), registro);
+
+    // El corte queda cerrado, o se abre uno nuevo, segun lo que se acaba de
+    // enviar. Repinta el tile con los botones que toquen.
+    if (tipo.cierraA) marcarAbierto(tipo.cierraA, false);
+    else if (TIPOS.some(t => t.cierraA === tipo.id)) marcarAbierto(tipo.id, true);
     saveLast(tipo.label, registro.fecha);
     cerrarModal();
 
@@ -398,15 +449,81 @@ async function guardar(tipo, btn, extras) {
   }
 }
 
+// ── Cortes abiertos ────────────────────────────────────────────────
+// Un corte esta "abierto" mientras su autor no haya avisado de que volvio.
+// Se mira de dos formas, y con eso se decide que botones de cierre se ofrecen:
+//
+//   1. localStorage, que responde al instante y sin red. Es lo que hace que
+//      esto funcione desde el primer dia.
+//   2. Firestore, que es la fuente real y cruza dispositivos — reportar el
+//      corte desde el movil y el regreso desde la computadora.
+//
+// La consulta combina where(email) con orderBy(timestamp), asi que necesita un
+// indice compuesto en Firestore. Si no existe todavia, la lectura falla, se
+// deja constancia en consola y el tile sigue funcionando con lo local: por eso
+// no se espera a la red para pintar.
+const ABIERTOS_KEY = "hero-cortes-abiertos";
+
+function leerAbiertosLocal() {
+  try {
+    const raw = localStorage.getItem(ABIERTOS_KEY);
+    const v = raw ? JSON.parse(raw) : [];
+    return Array.isArray(v) ? v : [];
+  } catch (_) { return []; }
+}
+
+function marcarAbierto(tipoId, abierto) {
+  const actual = new Set(leerAbiertosLocal());
+  if (abierto) actual.add(tipoId);
+  else actual.delete(tipoId);
+  try { localStorage.setItem(ABIERTOS_KEY, JSON.stringify([...actual])); } catch (_) {}
+  abiertos = actual;
+  pintarTile();
+}
+
+let abiertos = new Set(leerAbiertosLocal());
+let ultimoCorte = {};   // tipoId del corte -> { id, cuando } del doc abierto
+
+async function refrescarAbiertos() {
+  const user = auth.currentUser;
+  if (!user) return;
+  try {
+    const { fetchReports } = await import("./reports-store.js");
+    // 40 documentos alcanzan de sobra: son avisos sueltos, no un registro
+    // diario. Interesa el ultimo de cada tipo.
+    const mios = await fetchReports({ email: user.email });
+
+    const nuevos = new Set();
+    ultimoCorte = {};
+    for (const cierre of TIPOS.filter(t => t.cierraA)) {
+      const relevantes = mios.filter(r => r.type === cierre.cierraA || r.type === cierre.id);
+      // fetchReports devuelve del mas reciente al mas viejo.
+      const ultimo = relevantes[0];
+      if (ultimo && ultimo.type === cierre.cierraA) {
+        nuevos.add(cierre.cierraA);
+        ultimoCorte[cierre.cierraA] = { id: ultimo.id, cuando: ultimo.ocurrido || ultimo.reportadoAt };
+      }
+    }
+    abiertos = nuevos;
+    try { localStorage.setItem(ABIERTOS_KEY, JSON.stringify([...abiertos])); } catch (_) {}
+    pintarTile();
+  } catch (e) {
+    // Lo mas probable: falta el indice compuesto (email + timestamp). El
+    // mensaje de Firestore trae el enlace para crearlo de un click.
+    console.warn("reportes: no se pudieron leer tus avisos previos —", e.message);
+  }
+}
+
 // ── Tile ───────────────────────────────────────────────────────────
 function pintarTile() {
   const grid = $("rep-grid");
   if (!grid) return;
+  grid.replaceChildren();
 
   // Nota: al exento de fichaje se le oculta el botón de Ausencia, pero por CSS
   // (body.no-attendance en css/styles.css) y no filtrando aquí — la clase la
   // aplica roles.js después de la auth, o sea después de esta función.
-  TIPOS.forEach(tipo => {
+  TIPOS.filter(tipo => !tipo.cierraA || abiertos.has(tipo.cierraA)).forEach(tipo => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "rep-btn";
@@ -476,3 +593,10 @@ if (document.readyState === "loading") {
 } else {
   init();
 }
+
+// Los botones de cierre dependen de lo que esa persona haya reportado, asi que
+// la comprobacion real no puede hacerse hasta que haya sesion. El tile ya se
+// pinto con lo que hubiera en localStorage; esto lo corrige si hace falta.
+onAuthStateChanged(auth, user => {
+  if (user) refrescarAbiertos();
+});
