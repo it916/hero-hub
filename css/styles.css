@@ -346,7 +346,45 @@ body[data-theme="dark"] .hero-topbar { background:rgba(15,42,51,.92); }
 @keyframes ldPulse { 0%,100% { opacity:.2; transform:scale(.8); } 50% { opacity:1; transform:scale(1.2); } }
 
 /* FOOTER */
-.hero-footer { text-align:center; padding:32px 20px 28px; color:var(--muted); font-size:11px; letter-spacing:2px; font-weight:600; display:flex; justify-content:center; gap:12px; }
+/* ── Pie de pagina ──
+   Desde 2026-09-12 el footer tambien navega: se bajo aqui lo que se consulta
+   de vez en cuando (Onboarding, Politicas, el manual de Finanzas, Soporte,
+   Solicitud de cuenta y las novedades) para aligerar la barra de arriba. No
+   duplica el topbar: lo que esta aqui, no esta alli. */
+.hero-footer {
+  border-top:1px solid var(--border);
+  margin-top:48px; padding:34px 20px 26px;
+  display:flex; flex-direction:column; align-items:center; gap:28px;
+}
+.footer-cols {
+  display:flex; gap:72px; flex-wrap:wrap; justify-content:center;
+  width:100%; max-width:760px;
+}
+.footer-col { display:flex; flex-direction:column; gap:9px; min-width:150px; }
+.footer-col-title {
+  font-family:var(--sans); font-size:11px; font-weight:800;
+  letter-spacing:.09em; text-transform:uppercase; color:var(--muted);
+  margin-bottom:2px;
+}
+/* El .nav-link del footer no hereda del topbar: aqui es texto, sin icono ni
+   pastilla. */
+.footer-col .nav-link {
+  padding:0; background:none; border:none;
+  font-family:var(--sans); font-size:13px; font-weight:500; letter-spacing:0;
+  color:var(--text-2); text-decoration:none; text-transform:none;
+  width:auto; justify-content:flex-start;
+  transition:color .15s;
+}
+.footer-col .nav-link:hover { color:var(--cyan-deep); text-decoration:underline; }
+.footer-legal {
+  color:var(--muted); font-size:11px; letter-spacing:2px; font-weight:600;
+  display:flex; justify-content:center; gap:12px; flex-wrap:wrap;
+}
+
+@media (max-width:700px) {
+  .footer-cols { gap:32px; }
+  .footer-col { min-width:0; flex:1 1 140px; }
+}
 .sep { opacity:.5; }
 .empty, .loading { color:var(--muted); text-align:center; padding:30px; font-style:italic; }
 

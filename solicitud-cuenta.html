@@ -60,6 +60,7 @@
             <a href="portales.html" class="nav-link" role="menuitem"><i data-lucide="shield"></i><span>Portales</span></a>
             <a href="agencias.html" class="nav-link" role="menuitem"><i data-lucide="network"></i><span>Agencias</span></a>
             <a href="directorio.html" class="nav-link" role="menuitem"><i data-lucide="book-user"></i><span>Directorio</span></a>
+            <a href="contracting.html" class="nav-link" role="menuitem"><i data-lucide="file-signature"></i><span>Contracting</span></a>
           </div>
         </div>
 
@@ -70,13 +71,23 @@
           </button>
           <div class="nav-dropdown" role="menu">
             <a href="guias.html" class="nav-link" role="menuitem"><i data-lucide="book-open"></i><span>Guías</span></a>
-            <a href="politicas.html" class="nav-link" role="menuitem"><i data-lucide="scroll-text"></i><span>Políticas</span></a>
-            <a href="onboarding.html" class="nav-link" role="menuitem"><i data-lucide="rocket"></i><span>Onboarding</span></a>
             <a href="reuniones.html" class="nav-link" role="menuitem"><i data-lucide="presentation"></i><span>Reuniones</span></a>
+            <a href="grabaciones.html" class="nav-link" role="menuitem"><i data-lucide="video"></i><span>Grabaciones</span></a>
           </div>
         </div>
 
-        <a href="changelog.html" class="nav-link"><i data-lucide="sparkles"></i><span>Changelog</span></a>
+        <div class="nav-group">
+          <button class="nav-group-toggle" type="button" aria-expanded="false" aria-haspopup="true">
+            <i data-lucide="layout-grid"></i><span>Módulos</span>
+            <i data-lucide="chevron-down" class="nav-group-arrow"></i>
+          </button>
+          <div class="nav-dropdown" role="menu">
+            <a href="rrhh.html" class="nav-link" role="menuitem"><i data-lucide="users-round"></i><span>Recursos Humanos</span></a>
+            <a href="it-console.html" class="nav-link" role="menuitem"><i data-lucide="terminal"></i><span>IT Console</span></a>
+            <a href="finanzas.html" class="nav-link" role="menuitem"><i data-lucide="wallet"></i><span>Finanzas</span></a>
+          </div>
+        </div>
+
       </nav>
       <div class="topbar-actions">
         <button id="btn-logout" class="icon-btn" title="Salir" style="display:none;"><i data-lucide="log-out"></i></button>
@@ -277,8 +288,24 @@
 
   </main>
 
-  <footer class="hero-footer">
-    <span>HERO HUB · v2.45.3</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+    <footer class="hero-footer">
+    <div class="footer-cols" id="footer-nav">
+      <div class="footer-col">
+        <div class="footer-col-title">Documentación</div>
+        <a href="onboarding.html" class="nav-link">Onboarding</a>
+        <a href="politicas.html" class="nav-link">Políticas</a>
+        <a href="finanzas-manual.html" class="nav-link">Manual de Finanzas</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Ayuda</div>
+        <a href="soporte.html" class="nav-link" data-siempre-visible>Reportar un problema</a>
+        <a href="solicitud-cuenta.html" class="nav-link">Solicitar una cuenta</a>
+        <a href="changelog.html" class="nav-link">Novedades del Hub</a>
+      </div>
+    </div>
+    <div class="footer-legal">
+      <span>HERO HUB · v2.48.0</span><span class="sep">•</span><span>HERO INSURANCE USA</span>
+    </div>
   </footer>
 </div>
 

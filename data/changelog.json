@@ -1,5 +1,32 @@
 [
   {
+    "id": "2026-09-12-footer-nav",
+    "version": "v2.48.0",
+    "date": "2026-09-12",
+    "category": "feat",
+    "scope": "hub",
+    "audience": "all",
+    "title": "Pie de página con enlaces, para aligerar la barra de arriba",
+    "items": [
+      "La barra de arriba se había llenado. Lo que se consulta de vez en cuando — Onboarding, Políticas, el manual de Finanzas, Soporte, Solicitud de cuenta y las novedades del Hub — bajó al pie de página, en dos columnas. Arriba queda el trabajo del día",
+      "El pie no repite lo que hay arriba: lo que bajó, bajó. Y respeta los permisos igual que la barra, así que nadie ve ahí un enlace que no puede abrir"
+    ]
+  },
+  {
+    "id": "2026-09-11-topbar-modulos",
+    "version": "v2.47.0",
+    "date": "2026-09-11",
+    "category": "feat",
+    "scope": "hub",
+    "audience": "all",
+    "title": "La barra de arriba ya lleva a los módulos, y a tres páginas que no estaban en ningún menú",
+    "items": [
+      "Nuevo menú «Módulos» con Recursos Humanos, la consola de IT, Finanzas, su manual y Soporte IT. Cada quien ve solo aquello a lo que tiene acceso, así que a la mayoría le aparecerán una o dos opciones",
+      "Grabaciones, Contracting y Solicitud de cuenta llevaban tiempo sin estar en la barra: se llegaba a ellas por un acceso del inicio o guardando el enlace. Ya están en Recursos y en Operaciones",
+      "Ojo: Administración, Finanzas, la consola de IT y Soporte tienen su propia cabecera y no muestran esta barra. Se entra a ellas desde el menú, pero para volver hay que usar el logo o el botón de atrás del navegador"
+    ]
+  },
+  {
     "id": "2026-09-11-iconos-phosphor",
     "version": "v2.47.0",
     "date": "2026-09-11",

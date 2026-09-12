@@ -568,17 +568,44 @@ export function filterTopbarByRole(userRole) {
   if (!userRole || !userRole.definition) return;
 
   const allowedPages = userRole.definition.pages;
-  const topbar = document.getElementById("topbar-nav");
-  if (!topbar) return;
 
-  topbar.querySelectorAll(".nav-link").forEach(link => {
+  // El footer tambien navega desde 2026-09-12: lleva lo que se consulta de
+  // vez en cuando (Onboarding, Politicas, el manual de Finanzas, Soporte,
+  // Solicitud de cuenta y las novedades). Se filtra igual que la barra, o
+  // alguien veria ahi abajo enlaces que no puede abrir.
+  const zonas = ["topbar-nav", "footer-nav"]
+    .map(id => document.getElementById(id))
+    .filter(Boolean);
+  if (!zonas.length) return;
+
+  const topbar = zonas[0];
+
+  zonas.forEach(zona => zona.querySelectorAll(".nav-link").forEach(link => {
     const href = link.getAttribute("href") || "";
     const pageName = href.replace(".html", "").replace("./", "");
 
     // Se asigna en los dos sentidos, no solo "none": si el catálogo llega
     // tarde y AMPLÍA los permisos, un enlace ya ocultado tiene que volver.
     if (!pageName) return;
+
+    // Páginas abiertas del dominio, sin page-guard ni entrada en el catálogo
+    // de permisos — hoy solo soporte.html, que también se alcanza por el botón
+    // flotante del dashboard y por enlaces de correo. Sin esta marca el filtro
+    // las escondería por no reconocerlas, dejándolas accesibles pero invisibles.
+    if (link.hasAttribute("data-siempre-visible")) {
+      link.style.display = "";
+      return;
+    }
+
     link.style.display = allowedPages.includes(pageName) ? "" : "none";
+  }));
+
+  // Una columna del footer sin enlaces visibles se queda con su titulo
+  // colgando, asi que se apaga entera.
+  document.querySelectorAll("#footer-nav .footer-col").forEach(col => {
+    const enlaces = col.querySelectorAll(".nav-link");
+    const visibles = Array.from(enlaces).filter(a => a.style.display !== "none");
+    col.style.display = visibles.length ? "" : "none";
   });
 
   // Si todos los hijos de un .nav-group quedaron ocultos, ocultar también
