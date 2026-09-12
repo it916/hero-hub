@@ -1,5 +1,18 @@
 [
   {
+    "id": "2026-09-12-tema-itconsole-heroes",
+    "version": "v2.49.1",
+    "date": "2026-09-12",
+    "category": "fix",
+    "scope": "hub",
+    "audience": "admin",
+    "title": "El tema elegido en la consola de IT ya se recuerda en otros equipos",
+    "items": [
+      "La consola de IT sí tenía su botón de día/noche, pero guardaba la preferencia solo en el navegador: al entrar desde otra computadora volvía al tema claro. Ahora la guarda en el perfil, que es de donde la lee el resto del Hub",
+      "En el panel general de administración, cuando hay dos o tres personas destacadas en el Spotlight, ahora salen en fila en vez de apiladas: apiladas estiraban la tarjeta y dejaban la de al lado a media altura"
+    ]
+  },
+  {
     "id": "2026-09-12-admin-dashboard",
     "version": "v2.49.0",
     "date": "2026-09-12",

@@ -10671,6 +10671,21 @@ body[data-theme="dark"] input[type="date"] {
 .adash-wide { margin-bottom:18px; }
 
 .adash-honorees { display:flex; flex-direction:column; gap:10px; }
+/* Dos o tres destacados: en fila, para que la tarjeta no crezca a lo alto y
+   deje la de al lado a media altura. */
+.adash-honorees.en-fila { flex-direction:row; gap:14px; flex-wrap:wrap; }
+.adash-honorees.en-fila .adash-honoree {
+  flex-direction:column; align-items:center; text-align:center;
+  flex:1 1 84px; min-width:0; gap:6px;
+}
+.adash-honorees.en-fila .adash-honoree-photo { width:52px; height:52px; }
+.adash-honorees.en-fila .adash-honoree-name { font-size:13px; }
+.adash-honorees.en-fila .adash-honoree-role { font-size:11px; }
+.adash-honorees.en-fila .adash-honoree-info { min-width:0; width:100%; }
+.adash-honorees.en-fila .adash-honoree-name,
+.adash-honorees.en-fila .adash-honoree-role {
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
 .adash-honoree { display:flex; align-items:center; gap:12px; }
 .adash-honoree-photo {
   width:46px; height:46px; border-radius:50%; object-fit:cover;

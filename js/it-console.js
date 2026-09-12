@@ -104,6 +104,28 @@ function toggleTheme() {
   // Sincronizar el select en Configuración si está montado.
   const pref = document.getElementById('cfg-pref-theme');
   if (pref) pref.value = newTheme;
+  guardarTemaEnPerfil(newTheme);
+}
+
+// El Hub guarda el tema en users/{email}.theme y lo cachea en localStorage;
+// aqui solo se escribia el cache, asi que la preferencia elegida desde la
+// consola no viajaba a otro equipo ni al resto del Hub. Va sin await y con el
+// fallo silenciado: el tema ya esta aplicado, y no poder guardarlo no es
+// motivo para molestar a nadie.
+function guardarTemaEnPerfil(theme) {
+  (async () => {
+    try {
+      const [{ auth, db }, { doc, updateDoc }] = await Promise.all([
+        import('/js/firebase-config.js'),
+        import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'),
+      ]);
+      const email = auth?.currentUser?.email;
+      if (!email) return;   // sesion del Worker sin usuario de Google resuelto
+      await updateDoc(doc(db, 'users', email.toLowerCase()), { theme });
+    } catch (e) {
+      console.warn('[it-console] no se pudo guardar el tema en el perfil:', e.message);
+    }
+  })();
 }
 
 function applyStoredTheme() {

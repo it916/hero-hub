@@ -65,7 +65,12 @@ function pintarSpotlight(spotlight, usuarios) {
 
   const porEmail = new Map(usuarios.map(u => [String(u._email).toLowerCase(), u]));
 
+  // El Spotlight admite hasta tres destacados. Apilados en vertical estiraban
+  // la tarjeta y descuadraban la rejilla, asi que a partir de dos se pasa a
+  // fila: foto arriba, nombre debajo, repartidos a lo ancho.
   const lista = el("div", "adash-honorees");
+  if (honorees.length > 1) lista.classList.add("en-fila");
+
   for (const h of honorees) {
     // Los honorees viejos guardaban name/role a mano; los nuevos, solo el
     // email, y el nombre y la foto salen de users/ ([[project_users_refactor]]).
