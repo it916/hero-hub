@@ -338,15 +338,41 @@ export function onDatosActualizados(cb) {
 // barras salen con lo que haya y se repintan cuando llega.
 let alias = null;          // email normalizado -> { key, label }
 let aliasPedido = false;
+let usuarios = null;       // el array crudo, para quien necesite más que el alias
 
 const normEmail = e => String(e || "").toLowerCase().trim();
 
 /** Llena el directorio con usuarios ya leídos, para no releer la colección. */
 export function setDirectorio(users) {
   if (!Array.isArray(users) || !users.length) return;
+  usuarios = users;
   alias = construirAlias(users);
   aliasPedido = true;
   renderVisible();
+}
+
+/** El directorio ya leído, o null si todavía no lo pidió nadie. */
+export function getDirectorio() {
+  return usuarios;
+}
+
+/** Todo lo cargado, sin filtrar por el rango de la toolbar. */
+export function getItems() {
+  return items;
+}
+
+/**
+ * Hasta qué fecha llega lo que hay en memoria. null = el histórico completo.
+ * Quien pinte un mes anterior a esto tiene que pedir `cargarHistorico()` o
+ * enseñará un mes vacío que parecerá un mes sin novedades.
+ */
+export function getCoberturaDesde() {
+  return coberturaDesde;
+}
+
+export async function cargarHistorico() {
+  if (historyLoaded) return;
+  await fetchAndRender({ loadAll: true });
 }
 
 function construirAlias(users) {
@@ -371,6 +397,7 @@ function pedirDirectorio() {
   aliasPedido = true;
   getAllUsers()
     .then(users => {
+      usuarios = users;
       alias = construirAlias(users);
       renderVisible();
     })

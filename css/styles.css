@@ -3486,6 +3486,103 @@ body[data-theme="dark"] .rh-day { background:rgba(255,255,255,.05); }
   .rh-item-detail { white-space:normal; }
 }
 
+/* ── Calendario de RRHH ──
+   Rejilla propia de 7 columnas en vez de una libreria: un mes plano no
+   justifica sumar FullCalendar al stack. Todo el color sale de las variables,
+   asi que el tema noche lo hereda sin reglas aparte. */
+.rh-cal-head {
+  display:flex; align-items:center; justify-content:space-between;
+  gap:12px; margin-bottom:16px; flex-wrap:wrap;
+}
+.rh-cal-nav { display:inline-flex; align-items:center; gap:10px; }
+.rh-cal-arrow {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:32px; height:32px; border-radius:10px; cursor:pointer;
+  border:1px solid var(--border); background:var(--card); color:var(--text-2);
+  transition:border-color .15s, color .15s;
+}
+.rh-cal-arrow:hover { border-color:var(--cyan); color:var(--cyan-deep); }
+.rh-cal-arrow i { width:16px; height:16px; }
+.rh-cal-title {
+  font-family:var(--display); font-weight:800; font-size:18px;
+  color:var(--text); text-transform:capitalize; min-width:190px; text-align:center;
+}
+.rh-cal-today {
+  padding:7px 14px; border-radius:10px; cursor:pointer;
+  border:1px solid var(--border); background:var(--card);
+  font-family:var(--sans); font-size:12.5px; font-weight:600; color:var(--text-2);
+}
+.rh-cal-today:hover { border-color:var(--cyan); color:var(--cyan-deep); }
+
+.rh-cal-grid {
+  display:grid; grid-template-columns:repeat(7,1fr); gap:6px;
+}
+.rh-cal-dow {
+  font-family:var(--sans); font-size:11px; font-weight:700; letter-spacing:.04em;
+  color:var(--muted); text-align:center; padding-bottom:6px;
+}
+.rh-cal-cell {
+  min-height:74px; border-radius:12px; padding:7px 8px;
+  border:1px solid var(--border); background:var(--card);
+  display:flex; flex-direction:column; gap:5px;
+}
+.rh-cal-cell.vacia { background:transparent; border-color:transparent; }
+.rh-cal-cell.hoy { border-color:var(--cyan); box-shadow:0 0 0 2px rgba(6,163,182,.16); }
+.rh-cal-num {
+  font-family:var(--mono); font-size:12.5px; font-weight:600; color:var(--text-2);
+}
+.rh-cal-cell.hoy .rh-cal-num { color:var(--cyan-deep); font-weight:800; }
+.rh-cal-marks { display:flex; flex-wrap:wrap; gap:3px; }
+.rh-cal-mark { font-size:15px; line-height:1; cursor:default; }
+
+/* Color por tipo. Con emoji el color venia dado por el sistema operativo y no
+   habia forma de tocarlo; con una fuente de iconos es una propiedad mas. */
+.m-nomina   { color:#0f8054; }
+.m-feriado  { color:#c17a1a; }
+.m-cumple   { color:#be185d; }
+.m-ausencia { color:#f43f5e; }
+
+.rh-cal-legend {
+  display:flex; flex-wrap:wrap; gap:16px; margin-top:16px;
+  padding-top:14px; border-top:1px solid var(--border);
+}
+.rh-cal-leg {
+  display:inline-flex; align-items:center; gap:6px;
+  font-size:12.5px; color:var(--text-2);
+}
+
+.rh-cal-list { display:flex; flex-direction:column; gap:6px; }
+.rh-cal-row {
+  display:flex; align-items:center; gap:10px;
+  padding:9px 12px; border-radius:10px;
+  border:1px solid var(--border); background:var(--card); font-size:13px;
+}
+.rh-cal-row-emoji { font-size:15px; line-height:1; flex-shrink:0; }
+.rh-cal-row-date {
+  font-family:var(--mono); font-size:11.5px; color:var(--muted);
+  white-space:pre; flex-shrink:0;
+}
+.rh-cal-row-text { color:var(--text); font-weight:600; }
+
+.rh-cal-warn {
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  margin-top:10px; padding:11px 14px; border-radius:10px;
+  border:1px dashed var(--border-2); background:rgba(245,184,48,.10);
+  font-size:12.5px; color:var(--text-2);
+}
+.rh-cal-loadall {
+  padding:6px 12px; border-radius:9px; cursor:pointer;
+  border:1px solid var(--cyan); background:transparent;
+  font-family:var(--sans); font-size:12px; font-weight:600; color:var(--cyan-deep);
+}
+.rh-cal-loadall:disabled { opacity:.55; cursor:default; }
+
+@media (max-width:700px) {
+  .rh-cal-cell { min-height:58px; padding:5px; }
+  .rh-cal-title { min-width:0; font-size:16px; }
+  .rh-cal-mark { font-size:12px; }
+}
+
 .ad-empty {
   padding:24px; text-align:center;
   color:var(--muted); font-size:13px; font-style:italic;

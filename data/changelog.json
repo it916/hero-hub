@@ -1,5 +1,36 @@
 [
   {
+    "id": "2026-09-11-rrhh-filtros-vista",
+    "version": "v2.47.0",
+    "date": "2026-09-11",
+    "category": "fix",
+    "scope": "admin",
+    "audience": "admin",
+    "title": "En Recursos Humanos, cada filtro aparece solo donde sirve",
+    "items": [
+      "Los filtros de fecha y de tipo se mostraban en las tres vistas aunque no hicieran nada. Estaban ahí desde que el módulo se partió en pestañas: nadie los ató a una vista en concreto",
+      "El calendario ya no muestra ninguno: ahí manda el mes que se esté viendo",
+      "La vista por persona conserva el de periodo — la ficha lo necesita para «Sus reportes» — y pierde el de tipo, que nunca usó"
+    ]
+  },
+  {
+    "id": "2026-09-11-rrhh-calendario",
+    "version": "v2.46.0",
+    "date": "2026-09-11",
+    "category": "feat",
+    "scope": "admin",
+    "audience": "admin",
+    "title": "Recursos Humanos ya tiene calendario, y abre directo en la vista por persona",
+    "items": [
+      "Nueva pestaña «Calendario»: un mes con la nómina, los feriados, los cumpleaños del equipo y las ausencias ya reportadas, todo junto",
+      "La nómina marca los días 15 y 30 tal cual, sin adelantarlos cuando caen fin de semana. En febrero la segunda quincena cae el último día del mes — el 28, o el 29 en año bisiesto",
+      "Los once feriados federales se calculan solos por la regla de cada uno («tercer lunes de enero»), así que el calendario funciona en 2030 sin que nadie lo actualice. Los de fecha fija que caen sábado o domingo indican en qué día se observan",
+      "Los cumpleaños salen de la ficha de cada persona: al corregir uno, el calendario lo refleja enseguida. No hay una segunda lista que mantener",
+      "Si se navega a un mes anterior a lo que hay cargado, el calendario avisa de que las ausencias de ese mes no están y ofrece traer el histórico, en vez de enseñar un mes vacío que parece tranquilo",
+      "El módulo ahora abre en «Por persona» en vez de la vista general: a Recursos Humanos se entra a mirar a alguien, no al agregado"
+    ]
+  },
+  {
     "id": "2026-09-11-rrhh-barras-dias",
     "version": "v2.45.3",
     "date": "2026-09-11",

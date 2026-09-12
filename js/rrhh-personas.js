@@ -24,6 +24,7 @@ import {
   getAllUsers, countryLabel, countryFlagUrl, countryOptions, updateUserFields,
 } from "./user-store.js";
 import { getAllHrData, saveHrData } from "./hr-store.js";
+import { abrirCalendario, initCalendario } from "./rrhh-calendario.js";
 import {
   getItemsEnRango, getEtiquetaRango, onDatosActualizados, aplicarVistaGeneral,
   setDirectorio,
@@ -911,6 +912,27 @@ function reportesDe(p) {
 }
 
 // ── Switch de vistas ───────────────────────────────────────────────
+/**
+ * Cada filtro de la toolbar declara en data-vista dónde sirve, y se esconde
+ * donde no. El de periodo vale en general y en personas — la ficha lee ese
+ * mismo rango para "Sus reportes" —; el de tipo solo en la general, porque la
+ * ficha recorre los cuatro tipos siempre. En el calendario no sirve ninguno:
+ * el mes manda.
+ *
+ * El rango personalizado, además, solo aparece si el periodo lo pide.
+ */
+function aplicarFiltrosDeVista(vista) {
+  document.querySelectorAll("[data-vista]").forEach(nodo => {
+    const sirve = nodo.dataset.vista.split(" ").includes(vista);
+    if (nodo.id === "rh-range") {
+      const custom = $("rh-period")?.value === "custom";
+      nodo.hidden = !sirve || !custom;
+      return;
+    }
+    nodo.hidden = !sirve;
+  });
+}
+
 function bindVistas() {
   const botones = document.querySelectorAll(".rh-view-btn");
   if (!botones.length) return;
@@ -933,8 +955,12 @@ function bindVistas() {
       // El historial de asistencia pertenece a la vista general.
       const hist = $("rh-history");
       if (hist) hist.hidden = vista !== "general";
+      const cal = $("rh-calendario");
+      if (cal) cal.hidden = vista !== "calendario";
+      aplicarFiltrosDeVista(vista);
 
       if (vista === "personas" && !personas.length) cargarPersonas();
+      if (vista === "calendario") abrirCalendario();
       if (window.refreshIcons) window.refreshIcons();
     });
   });
@@ -945,9 +971,18 @@ function init() {
   if (!$("rh-people-list")) return;
 
   bindVistas();
+  initCalendario();
 
   const filtro = $("rh-people-filter");
   if (filtro) filtro.addEventListener("input", pintarLista);
+
+  // "Por persona" es la vista de entrada del módulo: RRHH abre para mirar a
+  // alguien, no para mirar el agregado. El HTML ya la marca activa, así que
+  // aquí solo hay que traer el equipo — bindVistas() solo lo hace al pulsar
+  // la pestaña, y nadie la va a pulsar si ya está puesta.
+  const activo = document.querySelector(".rh-view-btn.active");
+  aplicarFiltrosDeVista(activo?.dataset.view || "personas");
+  if (!activo || activo.dataset.view === "personas") cargarPersonas();
 
   // Cuando cambia el rango de fechas arriba, la ficha abierta se repinta.
   // Mientras se edita NO: pintarFicha() reconstruye el formulario desde

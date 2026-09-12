@@ -130,7 +130,7 @@
             <p class="admin-note" style="margin:4px 0 0;">Ausencias, llegadas tarde y reportes de corte eléctrico o caída de internet.</p>
           </div>
           <div class="ad-toolbar-actions">
-            <select id="rh-period" class="ad-select">
+            <select id="rh-period" class="ad-select" data-vista="general personas">
               <option value="today">Hoy</option>
               <option value="week">Esta semana</option>
               <option value="month" selected>Este mes</option>
@@ -138,12 +138,12 @@
               <option value="all">Todo lo cargado</option>
               <option value="custom">Personalizado…</option>
             </select>
-            <div class="rh-range" id="rh-range" hidden>
+            <div class="rh-range" id="rh-range" data-vista="general personas" hidden>
               <input type="text" id="rh-from" class="ad-select rh-date" placeholder="MM/DD/YYYY" autocomplete="off">
               <span class="rh-range-sep">→</span>
               <input type="text" id="rh-to" class="ad-select rh-date" placeholder="MM/DD/YYYY" autocomplete="off">
             </div>
-            <select id="rh-type" class="ad-select">
+            <select id="rh-type" class="ad-select" data-vista="general">
               <option value="all" selected>Todos los tipos</option>
               <option value="ausencia">Ausencia</option>
               <option value="retraso">Llegada tarde</option>
@@ -163,11 +163,14 @@
         </div>
 
         <div class="rh-views" role="tablist">
-          <button type="button" class="rh-view-btn active" data-view="general" role="tab" aria-selected="true">
+          <button type="button" class="rh-view-btn" data-view="general" role="tab" aria-selected="false">
             <i data-lucide="layout-dashboard"></i><span>Vista general</span>
           </button>
-          <button type="button" class="rh-view-btn" data-view="personas" role="tab" aria-selected="false">
+          <button type="button" class="rh-view-btn active" data-view="personas" role="tab" aria-selected="true">
             <i data-lucide="user-search"></i><span>Por persona</span>
+          </button>
+          <button type="button" class="rh-view-btn" data-view="calendario" role="tab" aria-selected="false">
+            <i data-lucide="calendar-days"></i><span>Calendario</span>
           </button>
         </div>
 
@@ -223,7 +226,7 @@
              derecha. Los datos salen de users/{email} — los mismos que
              alimentan el módulo Equipo — y los reportes, del rango elegido
              arriba. La rinde js/rrhh-personas.js. -->
-        <div id="rh-personas" hidden>
+        <div id="rh-personas">
           <div class="rh-split">
             <aside class="rh-people">
               <div class="rh-people-search">
@@ -242,11 +245,46 @@
           </div>
         </div>
 
+        <!-- ══ CALENDARIO ══
+             Nomina (15 y 30), feriados federales, cumpleanos del equipo y las
+             ausencias ya reportadas, en un solo mes. Nada de esto se guarda:
+             se calcula en el navegador cada vez. La rinde js/rrhh-calendario.js. -->
+        <div id="rh-calendario" hidden>
+          <section class="ad-section">
+            <div class="rh-cal-head">
+              <div class="rh-cal-nav">
+                <button type="button" class="rh-cal-arrow" id="rh-cal-prev" aria-label="Mes anterior">
+                  <i data-lucide="chevron-left"></i>
+                </button>
+                <span class="rh-cal-title" id="rh-cal-title">—</span>
+                <button type="button" class="rh-cal-arrow" id="rh-cal-next" aria-label="Mes siguiente">
+                  <i data-lucide="chevron-right"></i>
+                </button>
+              </div>
+              <button type="button" class="rh-cal-today" id="rh-cal-today">Hoy</button>
+            </div>
+
+            <div class="rh-cal-grid" id="rh-cal-grid"></div>
+
+            <div class="rh-cal-legend">
+              <span class="rh-cal-leg"><i class="ph-fill ph-money"></i> Nómina</span>
+              <span class="rh-cal-leg"><i class="ph-fill ph-flag-banner"></i> Feriado federal</span>
+              <span class="rh-cal-leg"><i class="ph-fill ph-cake"></i> Cumpleaños</span>
+              <span class="rh-cal-leg"><i class="ph-fill ph-calendar-x"></i> Ausencia</span>
+            </div>
+          </section>
+
+          <section class="ad-section">
+            <div class="section-label"><span class="kicker-dot"></span>Este mes</div>
+            <div class="rh-cal-list" id="rh-cal-list"></div>
+          </section>
+        </div>
+
         <!-- ══ HISTORIAL DE ASISTENCIA ══
              El fichaje desde el Hub se cerró en v2.41.0 (Time Doctor), así que
              estos datos no crecen más. Se conservan plegados para consultas de
              nómina; el dashboard se carga solo al abrir el desplegable. -->
-        <details class="rh-history" id="rh-history">
+        <details class="rh-history" id="rh-history" hidden>
           <summary class="rh-history-summary">
             <i data-lucide="history"></i>
             <span class="rh-history-title">Historial de asistencia</span>
