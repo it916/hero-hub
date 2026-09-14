@@ -1,5 +1,36 @@
 [
   {
+    "id": "2026-09-14-hub-del-agente",
+    "version": "v2.53.0",
+    "date": "2026-09-14",
+    "category": "feat",
+    "scope": "hub",
+    "audience": "all",
+    "title": "Los agentes ya entran a un Hub pensado para ellos",
+    "items": [
+      "Quien entra como agente encuentra accesos directos a Hero CRM, Portales, Guías y el Calendario, en vez de un tablero con huecos donde estaban las herramientas del equipo",
+      "El acceso al Hero CRM faltaba: estaba dentro de un bloque reservado al equipo interno, así que un agente entraba al Hub y no encontraba el enlace a donde trabaja",
+      "Las Guías de Procedimientos y el Directorio de Contactos se abren también para los agentes — son su referencia de a quién escribir y cómo se hace cada trámite. Editarlas sigue siendo cosa del equipo interno",
+      "Se retiró el «Arsenal del héroe», que llevaba oculto desde el 9 de septiembre sin que nadie lo reclamara, y el comercial de Hero, cuya campaña terminó el 4 de septiembre"
+    ]
+  },
+  {
+    "id": "2026-09-14-permisos-banner",
+    "version": "v2.53.0",
+    "date": "2026-09-14",
+    "category": "feat",
+    "scope": "roles",
+    "audience": "admin",
+    "title": "Permisos más finos para el banner y los accesos del inicio",
+    "items": [
+      "Los tres módulos del banner — Oficina, Reportar y Plataformas — compartían un solo interruptor y ahora tienen uno cada uno: se puede dar el acceso al CRM sin dar el de reportar ausencias",
+      "Go High Level se controla por separado del Hero CRM, aunque compartan tarjeta",
+      "Hay tres accesos rápidos nuevos — Hero CRM, Portales y Guías — que se activan por rol desde la matriz de Permisos",
+      "Una cuenta cuyo rol no exista en el catálogo ya no entra con permisos de agente: ve el aviso de contactar a IT, que es lo que corresponde a un dato mal puesto",
+      "Guías y Directorio dan solo lectura a quien no sea del equipo interno, y eso lo sostienen las reglas de la base de datos, no la pantalla"
+    ]
+  },
+  {
     "id": "2026-09-14-enlace-registro-cambios",
     "version": "v2.52.3",
     "date": "2026-09-14",
