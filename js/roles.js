@@ -98,8 +98,8 @@ export const DEFAULT_ROLES = {
   // El rol "finanzas" se retiró al descontinuarse el módulo de Finanzas
   // (2026-08-20). Sus dos titulares — financesupport@ y samortiz@ — pasaron
   // a "interno". El alias de LEGACY_ROLE_ALIASES cubre cualquier doc que
-  // todavía diga "finanzas": sin él caerían en FALLBACK_ROLE, que es
-  // "agente", y perderían medio Hub.
+  // todavía diga "finanzas": sin él el rol no existiría en el catálogo y
+  // se les trataría como sin rol, dejándolos fuera del Hub.
   // Las páginas finanzas / finanzas-manual siguen en el rol "admin" para
   // poder exportar los datos antes de apagar las colecciones.
   it: {
@@ -250,9 +250,6 @@ const LEGACY_ROLE_ALIASES = {
   finanzas: "interno"   // retirado el 2026-08-20 al descontinuarse el módulo
 };
 
-// Rol por defecto si algo falla — el más restrictivo
-const FALLBACK_ROLE = "agente";
-
 // Lista para migración desde el esquema anterior:
 // emails hardcodeados que ya eran admins en el código viejo.
 // Cuando se lea el rol, si el email está aquí pero no tiene rol en Firestore,
@@ -277,6 +274,7 @@ let cachedEmail = null;
  * Devuelve null si:
  *   - el email no existe en users/ (ni como docId ni como alias en identity.emails[])
  *   - access.role es null (usuario sin rol asignado)
+ *   - access.role no existe en el catálogo (rol mal escrito o retirado)
  *   - access.active es false (usuario desactivado)
  *
  * Los emails de LEGACY_ADMIN_EMAILS (it@) siempre obtienen admin —
@@ -334,15 +332,22 @@ export async function loadUserRole(email) {
     }
 
     const definition = definicionEfectiva(roleName);
+
+    // Un rol que no está en el catálogo equivale a no tener rol, y se trata
+    // igual: guardPage muestra "contacta al administrador de IT", que es un
+    // mensaje accionable. Antes se degradaba en silencio a un FALLBACK_ROLE
+    // que era "agente" — es decir, ante un dato corrupto se entregaba la
+    // vista de alguien externo a la empresa sin que nadie se enterara.
+    // Quedarse fuera con instrucciones se ve; entrar recortado no.
+    if (!definition) {
+      console.warn(`Rol desconocido "${roleName}" para ${email}. Se trata como sin rol.`);
+      return null;
+    }
+
     // trackAttendance: opt-out por usuario. Default true — solo los docs con
     // access.trackAttendance === false quedan exentos de fichar (directiva, etc.).
     const trackAttendance = person.access?.trackAttendance !== false;
-    if (!definition) {
-      console.warn(`Rol desconocido "${roleName}" para ${email}. Usando fallback.`);
-      cachedRole = { role: FALLBACK_ROLE, definition: definicionEfectiva(FALLBACK_ROLE), trackAttendance };
-    } else {
-      cachedRole = { role: roleName, definition, trackAttendance };
-    }
+    cachedRole = { role: roleName, definition, trackAttendance };
 
     cachedEmail = normalizedEmail;
     return cachedRole;
