@@ -72,6 +72,9 @@ export const FEATURES = {
   "tile-it-console":  { group: "Accesos rápidos",     label: "IT Console" },
   "tile-rrhh":        { group: "Accesos rápidos",     label: "Recursos Humanos", nota: "Requiere también la página Recursos Humanos" },
   "tile-correos":     { group: "Accesos rápidos",     label: "Correos", nota: "Requiere también la página Solicitud de cuenta" },
+  "tile-hero-crm":    { group: "Accesos rápidos",     label: "Hero CRM", nota: "Para quien no tenga Plataformas en el banner" },
+  "tile-portales":    { group: "Accesos rápidos",     label: "Portales", nota: "Atajo; la página ya está en la barra" },
+  "tile-guias":       { group: "Accesos rápidos",     label: "Guías", nota: "Atajo; la página ya está en la barra" },
   "tile-calendario":  { group: "Accesos rápidos",     label: "Calendario" },
   "portales-team":    { group: "Permisos de edición", label: "Portales · pestaña Cuentas del Equipo" },
   "portales-delete":  { group: "Permisos de edición", label: "Portales · eliminar carriers del equipo" },
@@ -141,7 +144,7 @@ export const DEFAULT_ROLES = {
     // Ojo: Guias y Directorio los LEE, no los edita. Eso lo sostiene
     // firestore.rules (esEquipoInterno), no la UI.
     pages: ["index", "equipo", "portales", "directorio", "guias", "grabaciones", "changelog", "mi-perfil"],
-    features: ["tile-plataformas", "tile-calendario"],
+    features: ["tile-hero-crm", "tile-portales", "tile-guias", "tile-calendario"],
     isAdmin: false
   }
 };

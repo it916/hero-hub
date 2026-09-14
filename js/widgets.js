@@ -2,35 +2,6 @@ import { db, auth } from "./firebase-config.js";
 import { doc, updateDoc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAllUsers } from "./user-store.js";
 
-const ARSENAL_DEFAULT = {
-  google: [
-    {label:'Gmail', url:'https://mail.google.com', icon:'https://cdn4.iconfinder.com/data/icons/logos-brands-in-colors/48/google-gmail-512.png'},
-    {label:'Drive', url:'https://drive.google.com', icon:'https://cdn4.iconfinder.com/data/icons/logos-brands-in-colors/48/google-drive-512.png'},
-    {label:'Calendar', url:'https://calendar.google.com', icon:'https://cdn4.iconfinder.com/data/icons/logos-brands-in-colors/48/google-calendar-512.png'},
-    {label:'Meet', url:'https://meet.google.com', icon:'https://cdn4.iconfinder.com/data/icons/logos-brands-in-colors/48/google-meet-512.png'},
-    {label:'Chat', url:'https://chat.google.com', icon:'https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/google-chat-icon.svg'},
-    {label:'Sheets', url:'https://docs.google.com/spreadsheets', icon:'https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/google-sheets-icon.svg'},
-    {label:'Docs', url:'https://docs.google.com', icon:'https://cdn-icons-png.flaticon.com/512/5968/5968517.png'},
-    {label:'Slides', url:'https://slides.google.com', icon:'https://www.gstatic.com/images/branding/productlogos/slides_2020q4/v12/192px.svg'},
-  ],
-  ai: [
-    {label:'ChatGPT', url:'https://chatgpt.com', icon:'https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg'},
-    {label:'Gemini', url:'https://gemini.google.com', icon:'https://brandlogos.net/wp-content/uploads/2025/03/gemini_icon-logo_brandlogos.net_aacx5.png'},
-    {label:'Claude', url:'https://claude.ai', icon:'https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/claude-ai-icon.png'},
-  ],
-  work: [
-    {label:'ClickUp', url:'https://app.clickup.com', icon:'https://www.applivery.com/wp-content/uploads/2024/11/clickup.png'},
-    {label:'Canva', url:'https://www.canva.com', icon:'https://iaperfecta.com/wp-content/uploads/2025/05/Canva-icon.png'},
-    {label:'Scribe', url:'https://scribehow.com', icon:'https://d3m1fwcc59lqhy.cloudfront.net/images/icons/scribe.png'},
-    {label:'DeepL', url:'https://www.deepl.com/translator', icon:'https://www.deepl.com/img/favicon/favicon_96.png'},
-    {label:'ExpressVPN', url:'https://expressvpn.com', icon:'https://img.icons8.com/color/1200/express-vpn.jpg'},
-  ],
-  crm: [
-    {label:'HubSpot', url:'https://app.hubspot.com', icon:'https://cdn-icons-png.flaticon.com/512/5968/5968872.png'},
-    {label:'GoHighLevel', url:'https://app.gohighlevel.com', icon:'https://i.ibb.co/C3NrTC8s/unnamed.jpg'},
-  ],
-};
-
 const ADMIN_EMAILS = ["it@heroinsuranceusa.com"];
 
 let SHARED_DATA = { spotlight:{imageUrl:'',message:'',honorees:[]}, messages:[], team:[] };
@@ -74,118 +45,12 @@ export async function renderWidgets(userData) {
   // al instante (vía el script inline en <body>) sin esperar a Firestore.
   try { localStorage.setItem("hero-theme", theme); } catch (e) {}
 
-  renderArsenal();
   renderSpotlight();
   renderBirthday();
   renderMessageWidget();
   // El menú del avatar se auto-inicializa desde js/user-menu.js (cargado en
   // el <head> del HTML). No hace falta llamarlo desde acá.
   if (window.refreshIcons) window.refreshIcons();
-}
-
-// ═══ ARSENAL ═══
-function renderArsenal() {
-  const container = document.getElementById("tools-container");
-  if (!container) return;
-  const arsenal = (currentUserData.arsenal && Object.keys(currentUserData.arsenal).length) ? currentUserData.arsenal : ARSENAL_DEFAULT;
-  const groups = [
-    { key:'google', label:'Google Workspace', cls:'google' },
-    { key:'ai', label:'Inteligencia Artificial', cls:'ai' },
-    { key:'work', label:'Herramientas de Trabajo', cls:'work' },
-    { key:'crm', label:'CRM', cls:'crm' },
-  ];
-  container.innerHTML = `<div class="arsenal-grid-2x2">
-    ${groups.map(g => {
-      const items = arsenal[g.key] || [];
-      return `<div class="arsenal-square-card arsenal-${g.cls}">
-        <div class="asc-header"><span class="asc-dot"></span>${g.label}</div>
-        <div class="tools-grid">
-          ${items.map((t,i) => `
-            <div class="tool-item-wrap">
-              <a href="${t.url}" target="_blank" rel="noopener" class="tool-item">
-                <span class="open-mark">↗</span>
-                <div class="icon-tile"><img src="${t.icon}" alt="${t.label}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1006/1006771.png'"></div>
-                <span class="tool-name">${t.label}</span>
-              </a>
-              <button class="tool-delete-btn" data-group="${g.key}" data-idx="${i}" title="Eliminar">×</button>
-            </div>`).join("")}
-          <button class="tool-add-card" data-group="${g.key}">
-            <i data-lucide="plus"></i><span>Agregar</span>
-          </button>
-        </div>
-      </div>`;
-    }).join("")}
-  </div>`;
-
-  container.querySelectorAll('.tool-add-card').forEach(b => b.addEventListener('click', () => openAddToolModal(b.dataset.group)));
-  container.querySelectorAll('.tool-delete-btn').forEach(b => b.addEventListener('click', async (e) => {
-    e.preventDefault(); e.stopPropagation();
-    const ok = await heroConfirm({
-      title: "Eliminar acceso",
-      message: "¿Eliminar este acceso del arsenal?",
-      confirmLabel: "Eliminar",
-      variant: "danger"
-    });
-    if (!ok) return;
-    const arsenal = (currentUserData.arsenal && Object.keys(currentUserData.arsenal).length) ? currentUserData.arsenal : JSON.parse(JSON.stringify(ARSENAL_DEFAULT));
-    arsenal[b.dataset.group].splice(parseInt(b.dataset.idx), 1);
-    currentUserData.arsenal = arsenal;
-    await saveUserField({ arsenal });
-    renderArsenal();
-    heroToast.success("Acceso eliminado");
-    if (window.refreshIcons) window.refreshIcons();
-  }));
-}
-
-function openAddToolModal(group) {
-  const dialog = document.createElement("sl-dialog");
-  dialog.label = `Nuevo acceso · ${group}`;
-  dialog.className = "hh-dialog hh-tool-dialog";
-  dialog.innerHTML = `
-    <div class="hh-form">
-      <sl-input id="t-label" label="Nombre" maxlength="20" clearable required></sl-input>
-      <sl-input id="t-url" label="URL" type="url" placeholder="https://..." clearable required></sl-input>
-      <sl-input id="t-icon" label="URL del ícono (PNG/SVG)" type="url" placeholder="https://..." clearable></sl-input>
-    </div>
-    <sl-button slot="footer" id="t-cancel" variant="default">Cancelar</sl-button>
-    <sl-button slot="footer" id="t-save" variant="primary">
-      <i data-lucide="plus" slot="prefix" style="width:14px;height:14px;"></i>
-      Guardar
-    </sl-button>
-  `;
-  document.body.appendChild(dialog);
-  if (window.refreshIcons) window.refreshIcons();
-
-  dialog.addEventListener("sl-after-hide", () => dialog.remove());
-  dialog.querySelector("#t-cancel").addEventListener("click", () => dialog.hide());
-
-  dialog.querySelector("#t-save").addEventListener("click", async () => {
-    const label = (dialog.querySelector("#t-label").value || "").trim();
-    const url = (dialog.querySelector("#t-url").value || "").trim();
-    const icon = (dialog.querySelector("#t-icon").value || "").trim()
-      || "https://cdn-icons-png.flaticon.com/512/1006/1006771.png";
-    if (!label || !url) {
-      dialog.querySelector(!label ? "#t-label" : "#t-url").focus();
-      heroToast.error("Nombre y URL son requeridos");
-      return;
-    }
-
-    const arsenal = (currentUserData.arsenal && Object.keys(currentUserData.arsenal).length)
-      ? currentUserData.arsenal
-      : JSON.parse(JSON.stringify(ARSENAL_DEFAULT));
-    if (!arsenal[group]) arsenal[group] = [];
-    arsenal[group].push({ label, url, icon });
-    currentUserData.arsenal = arsenal;
-    await saveUserField({ arsenal });
-    dialog.hide();
-    renderArsenal();
-    heroToast.success(`"${label}" agregado al arsenal`);
-    if (window.refreshIcons) window.refreshIcons();
-  });
-
-  // Shoelace lazy-registra el custom element en el primer uso; sin esto
-  // el primer click no abre el modal (hay que clickear dos veces).
-  customElements.whenDefined("sl-dialog").then(() => dialog.show());
 }
 
 // ═══ SPOTLIGHT ═══

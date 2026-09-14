@@ -86,7 +86,7 @@ async function showDashboard() {
 
   initHeroCover();
 
-  // Renderizar widgets (arsenal, spotlight, cumple, mensajes)
+  // Renderizar widgets (spotlight, cumple, mensajes)
   await renderWidgets(userData);
 
   // Conectar botón "Preparar felicitación"
