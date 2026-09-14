@@ -79,7 +79,6 @@ service cloud.firestore {
     //   display, prefs               → mi-perfil / panel de usuarios
     //   theme                        → user-menu.js, finanzas.js
     //   carriers                     → portales.js (carriers personales)
-    //   arsenal                      → widgets.js (accesos del dashboard)
     //   lastChangelogSeenId          → changelog.js, changelog-banner.js
     //   birthdayCardSeenDate         → birthday-card.js
     //   birthdayInvites              → birthday-invite.js
@@ -93,7 +92,7 @@ service cloud.firestore {
         || (
           request.auth.token.email == email
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-               'display', 'prefs', 'theme', 'carriers', 'arsenal',
+               'display', 'prefs', 'theme', 'carriers',
                'lastChangelogSeenId', 'birthdayCardSeenDate', 'birthdayInvites'
              ])
         );
