@@ -62,6 +62,11 @@ service cloud.firestore {
     function esAdmin()    { return tieneRol(['admin']); }
     function esAdminOIT() { return tieneRol(['admin', 'it']); }
 
+    // Personal de Hero, por oposicion a 'agente', que es externo aunque
+    // tenga cuenta del dominio. Misma lista que TEAM_ROLES en js/roles.js:
+    // si una cambia, la otra tambien.
+    function esEquipoInterno() { return tieneRol(['admin', 'interno', 'it']); }
+
 
     // ═══════════════════════════════════════════════════════════════════
     // USUARIOS — users/{email}
@@ -180,12 +185,21 @@ service cloud.firestore {
       allow read, write: if esDelDominio();
     }
 
+    // Los agentes leen estas dos desde 2026-09-14 (son herramienta suya:
+    // a quien escribir y como se hace cada tramite), pero no las editan.
+    // Antes la regla era read, write de dominio y el frontend no tenia
+    // ningun control de edicion: guias.js y directorio.js guardaban sin
+    // mirar el rol. Mientras esas paginas fueron solo del equipo eso no se
+    // noto; abrirlas a externos con la regla vieja habria dejado que
+    // cualquier agente reescribiera las guias de la empresa desde la UI.
     match /shared/directorio {
-      allow read, write: if esDelDominio();
+      allow read:  if esDelDominio();
+      allow write: if esEquipoInterno();
     }
 
     match /shared/guias {
-      allow read, write: if esDelDominio();
+      allow read:  if esDelDominio();
+      allow write: if esEquipoInterno();
     }
 
     // Agencias: hoy se leen del Google Sheet, el doc queda como respaldo.
