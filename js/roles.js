@@ -51,10 +51,21 @@ export const PAGINAS_OBLIGATORIAS = ["index", "mi-perfil"];
 // lee están cerrados por reglas de Firestore, el rol entra y no ve nada.
 export const PAGE_NOTES = {
   rrhh: "Marcar la casilla no basta: hr-data está restringida a administradores en las reglas de Firestore",
+  guias: "Da solo lectura: editar las guías está reservado al equipo interno en las reglas de Firestore",
+  directorio: "Da solo lectura: editar contactos está reservado al equipo interno en las reglas de Firestore",
 };
 
 export const FEATURES = {
-  "hqcc-tiles":       { group: "Dashboard",           label: "Tiles del banner (Oficina · Asistencia · CRMs)" },
+  // Los tres tiles del banner eran una sola feature, y sus audiencias no
+  // coinciden: el agente es externo, no reporta ausencias ni entra a la
+  // oficina virtual, pero el CRM es su herramienta principal. Con un solo
+  // interruptor los perdia los tres y se quedaba sin lo unico que le hacia
+  // falta. Go High Level va aparte por lo mismo: comparte tile con el Hero
+  // CRM y es solo del equipo interno.
+  "tile-oficina":     { group: "Dashboard",           label: "Banner · Oficina virtual (Gather)" },
+  "tile-reportar":    { group: "Dashboard",           label: "Banner · Reportar (ausencias, cortes, retrasos)" },
+  "tile-plataformas": { group: "Dashboard",           label: "Banner · Plataformas (Hero CRM)" },
+  "plat-ghl":         { group: "Dashboard",           label: "Banner · Go High Level", nota: "Requiere también Plataformas" },
   "dashboard-social": { group: "Dashboard",           label: "Misiones, Celebraciones y Mensajes" },
   "tile-database":    { group: "Accesos rápidos",     label: "Base de Datos" },
   "tile-finanzas":    { group: "Accesos rápidos",     label: "Finanzas", nota: "El módulo está en retirada" },
@@ -92,7 +103,7 @@ export const DEFAULT_ROLES = {
   interno: {
     label: "Equipo interno",
     pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones", "changelog", "mi-perfil", "solicitud-cuenta"],
-    features: ["hqcc-tiles", "dashboard-social", "tile-database", "tile-correos", "tile-calendario", "portales-team"],
+    features: ["tile-oficina", "tile-reportar", "tile-plataformas", "plat-ghl", "dashboard-social", "tile-database", "tile-correos", "tile-calendario", "portales-team"],
     isAdmin: false
   },
   // El rol "finanzas" se retiró al descontinuarse el módulo de Finanzas
@@ -108,16 +119,29 @@ export const DEFAULT_ROLES = {
     // it@ está en LEGACY_ADMIN_EMAILS y entra como admin — este rol es para
     // futuros asistentes de IT o cuentas de servicio que necesiten la consola.
     pages: ["index", "equipo", "agencias", "portales", "directorio", "guias", "politicas", "onboarding", "grabaciones", "reuniones", "changelog", "it-console", "mi-perfil", "solicitud-cuenta"],
-    features: ["hqcc-tiles", "dashboard-social", "tile-database", "tile-correos", "tile-calendario", "tile-it-console", "portales-team", "portales-delete", "admin-migracion"],
+    features: ["tile-oficina", "tile-reportar", "tile-plataformas", "plat-ghl", "dashboard-social", "tile-database", "tile-correos", "tile-calendario", "tile-it-console", "portales-team", "portales-delete", "admin-migracion"],
     isAdmin: false
   },
   agente: {
     label: "Agente",
-    // Acceso restringido: solo Inicio, Equipo, Portales, Grabaciones y Changelog.
-    // Los agentes NO pueden solicitar altas/bajas de cuentas — es tarea de líderes.
-    // En portales.js sigue habiendo lógica que muestra al agente solo su sección personal.
-    pages: ["index", "equipo", "portales", "grabaciones", "changelog", "mi-perfil"],
-    features: ["tile-calendario"],
+    // El agente NO es empleado de Hero: tiene cuenta del dominio, pero es
+    // externo. El criterio de reparto no es "menos acceso" sino herramienta
+    // de trabajo si, vida interna de la empresa no. Su produccion, sus
+    // comisiones y sus carriers viven en el CRM, no aqui: el Hub le sirve
+    // de navaja suiza — accesos rapidos e informacion util.
+    //
+    // Dentro: Portales (sus carriers), Directorio (a quien escribir, por
+    // departamento y por producto), Guias (como se hace cada tramite),
+    // Grabaciones, Equipo y el Changelog, que ya filtra por audiencia.
+    //
+    // Fuera: Politicas y Onboarding son de empleado; Reuniones es interno;
+    // Agencias expone el organigrama y las comisiones por plan; Solicitud
+    // de cuenta es tarea de lideres.
+    //
+    // Ojo: Guias y Directorio los LEE, no los edita. Eso lo sostiene
+    // firestore.rules (esEquipoInterno), no la UI.
+    pages: ["index", "equipo", "portales", "directorio", "guias", "grabaciones", "changelog", "mi-perfil"],
+    features: ["tile-plataformas", "tile-calendario"],
     isAdmin: false
   }
 };
@@ -153,6 +177,27 @@ function leerCatalogoCacheado() {
   }
 }
 
+// Features que se dividieron en varias. El doc de shared/rolePermissions se
+// guardó con el nombre viejo y no conoce los nuevos; sin esto validarCatalogo
+// descartaría el viejo — ya no está en FEATURES — y no repondría los nuevos,
+// así que al desplegar el equipo interno perdería los tiles del banner hasta
+// que un admin entrara a la matriz de Permisos a marcarlos de nuevo.
+//
+// Editar el código no basta cuando el doc remoto tiene prioridad.
+const LEGACY_FEATURE_ALIASES = {
+  "hqcc-tiles": ["tile-oficina", "tile-reportar", "tile-plataformas", "plat-ghl"]
+};
+
+function expandirFeatures(lista) {
+  const salida = [];
+  for (const f of lista) {
+    const nuevas = LEGACY_FEATURE_ALIASES[f];
+    if (nuevas) salida.push(...nuevas);
+    else salida.push(f);
+  }
+  return salida;
+}
+
 /**
  * Deja pasar solo lo que tiene sentido: roles conocidos, páginas y features
  * que existen en el código, y el rol admin siempre con todo.
@@ -181,7 +226,7 @@ function validarCatalogo(datos) {
     // (por ejemplo si se elimina un módulo y el doc quedó desactualizado).
     const pages = remoto.pages.filter(p => TODAS_LAS_PAGINAS.includes(p));
     const features = Array.isArray(remoto.features)
-      ? remoto.features.filter(f => TODAS_LAS_FEATURES.includes(f))
+      ? expandirFeatures(remoto.features).filter(f => TODAS_LAS_FEATURES.includes(f))
       : base.features;
 
     // Las obligatorias se reponen aunque el doc diga lo contrario.

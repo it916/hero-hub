@@ -2811,7 +2811,14 @@ body[data-theme="dark"] .hqcc-time-big {
 body[data-theme="dark"] .hqcc-date-small { color:var(--text-2); }
 
 /* Módulos */
-.hqcc-modules { display:grid; grid-template-columns:1fr 1.15fr 1fr; gap:14px; align-items:stretch; }
+/* Flex y no grid a proposito: con grid-template-columns fijo a tres, un rol
+   que solo tenga uno de los tiles lo veia en su columna original y dos
+   huecos al lado. Repartiendo con flex-grow los visibles ocupan el ancho
+   sea cual sea la combinacion. 1 / 1.15 / 1 reproduce las proporciones que
+   tenian las columnas. */
+.hqcc-modules { display:flex; gap:14px; align-items:stretch; }
+.hqcc-modules > * { flex:1 1 0; min-width:0; }
+.hqcc-modules > #reportes-tile { flex:1.15 1 0; }
 .hqcc-tile { display:flex; flex-direction:column; gap:11px; padding:18px; border-radius:20px; background:var(--card); border:1px solid var(--border); box-shadow:var(--shadow); }
 .hqcc-tile-kicker { display:inline-flex; align-items:center; gap:8px; font-family:var(--display); font-style:italic; font-weight:800; font-size:11px; letter-spacing:1.4px; text-transform:uppercase; color:var(--cyan); }
 .hqcc-tile-kicker i { width:15px; height:15px; }
@@ -3002,7 +3009,7 @@ body[data-theme="dark"] .hqcc-plat-row:hover { background:rgba(6,163,182,.12); }
 body[data-theme="dark"] .hqcc-plat-row:hover .hqcc-plat-name { color:var(--cyan-bright); }
 
 @media (max-width:900px) {
-  .hqcc-modules { grid-template-columns:1fr; }
+  .hqcc-modules { flex-direction:column; }
   .hqcc-ribbon { align-items:flex-start; }
   .hqcc-meta { width:100%; }
 }
@@ -7426,11 +7433,16 @@ button.hub-card {
    oculto mientras no conste que el usuario tiene el permiso. Al agregar una
    feature nueva: declararla en FEATURES de roles.js y sumar aquí su regla.
 
-   Por defecto el agente no tiene hqcc-tiles ni dashboard-social: ve solo el
-   ribbon del banner (saludo + fecha/hora), sin tiles de Oficina, Asistencia
-   ni Plataformas, y sin las secciones sociales del dashboard. */
+   Los tres tiles del banner tienen una feature cada uno desde 2026-09-14.
+   Antes compartian "hqcc-tiles" y el agente los perdia los tres, incluido
+   el acceso al Hero CRM, que es su herramienta principal. Ahora ve
+   Plataformas — sin la fila de Go High Level, que es del equipo — y
+   sigue sin Oficina, sin Reportar y sin las secciones sociales. */
 
-body:not(.feat-hqcc-tiles) .hqcc-modules,
+body:not(.feat-tile-oficina) .hqcc-tile.office,
+body:not(.feat-tile-reportar) #reportes-tile,
+body:not(.feat-tile-plataformas) .hqcc-tile.hqcc-plat,
+body:not(.feat-plat-ghl) .hqcc-plat-row.plat-ghl,
 body:not(.feat-dashboard-social) #sec-misiones,
 body:not(.feat-dashboard-social) #sec-celebraciones,
 body:not(.feat-dashboard-social) #sec-mensajes,
@@ -7459,6 +7471,24 @@ body:not(.feat-dashboard-social) .connector:has(+ #sec-mensajes) {
    applyRoleClasses() pone la clase y el script inline del <head> de
    index.html la pre-aplica desde localStorage, igual que las features.
    Claves: role-admin, role-interno, role-it, role-agente. */
+
+/* Edicion de Guias y Directorio: solo el equipo interno.
+
+   Va contra el rol y no contra una feature a proposito. El permiso real
+   vive en firestore.rules (esEquipoInterno) y NO es configurable; ponerlo
+   en la matriz de Permisos prometeria algo que la regla despues niega, y
+   el agente veria botones que fallan al guardar.
+
+   Escrito en negativo para que falle cerrado: guias.html y directorio.html
+   no pre-aplican role-* en el <head> (solo index.html lo hace), asi que
+   entre la carga y applyRoleClasses no consta quien eres. Mejor que los
+   botones aparezcan tarde a que asomen a quien no debe tenerlos. */
+body:not(.role-admin):not(.role-interno):not(.role-it) .guia-actions,
+body:not(.role-admin):not(.role-interno):not(.role-it) #btn-add-guia,
+body:not(.role-admin):not(.role-interno):not(.role-it) .dir-card-actions,
+body:not(.role-admin):not(.role-interno):not(.role-it) #btn-add-contact {
+  display: none !important;
+}
 
 
 /* ═══════════════════════════════════════════
