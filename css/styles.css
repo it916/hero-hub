@@ -386,6 +386,25 @@ body[data-theme="dark"] .hero-topbar { background:rgba(15,42,51,.92); }
   .footer-col { min-width:0; flex:1 1 140px; }
 }
 .sep { opacity:.5; }
+
+/* El enlace al changelog vive en esta linea desde 2026-09-14. Lleva .nav-link
+   porque es lo que busca filterTopbarByRole, pero ahi ese estilo es de boton
+   (padding, radio, 13px): hay que devolverlo a la tipografia de la linea. */
+.footer-legal .nav-link {
+  display:inline; padding:0; border-radius:0; background:none;
+  font-size:inherit; font-weight:inherit; letter-spacing:inherit;
+  color:var(--cyan); text-decoration:none;
+}
+.footer-legal .nav-link:hover { background:none; color:var(--cyan-deep); text-decoration:underline; }
+body[data-theme="dark"] .footer-legal .nav-link:hover { color:var(--cyan-bright); }
+
+/* El punto de "hay novedades" se posiciona para el nav-link del topbar, que
+   tiene padding. Aqui no hay, asi que se abre sitio a la derecha del texto. */
+.footer-legal .nav-link.has-news { padding-right:12px; }
+.footer-legal .nav-link.has-news::after {
+  top:50%; right:0; transform:translateY(-50%);
+  box-shadow:0 0 0 2px var(--paper);
+}
 .empty, .loading { color:var(--muted); text-align:center; padding:30px; font-style:italic; }
 
 /* MODAL */

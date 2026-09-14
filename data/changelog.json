@@ -1,5 +1,18 @@
 [
   {
+    "id": "2026-09-14-enlace-registro-cambios",
+    "version": "v2.52.3",
+    "date": "2026-09-14",
+    "category": "fix",
+    "scope": "hub",
+    "audience": "all",
+    "title": "El registro de cambios se abre desde el pie de página",
+    "items": [
+      "El enlace dejó la columna Ayuda del pie y ahora vive en la línea de abajo, junto a la versión del Hub, con el nombre «Ver Registro de Cambios»",
+      "Vuelve a aparecer el punto que avisa de que hay novedades sin leer: llevaba unos días sin pintarse porque el enlace se había mudado de sitio y el aviso seguía buscándolo donde ya no estaba"
+    ]
+  },
+  {
     "id": "2026-09-14-reportes-multidispositivo",
     "version": "v2.52.2",
     "date": "2026-09-14",

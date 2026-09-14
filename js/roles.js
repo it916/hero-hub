@@ -568,11 +568,13 @@ export function filterTopbarByRole(userRole) {
 
   const allowedPages = userRole.definition.pages;
 
+  // El enlace al registro de cambios vive en .footer-legal desde 2026-09-14,
+  // fuera de #footer-nav: si no se incluye esa zona, se salta el filtro.
   // El footer tambien navega desde 2026-09-12: lleva lo que se consulta de
   // vez en cuando (Onboarding, Politicas, el manual de Finanzas, Soporte,
   // Solicitud de cuenta y las novedades). Se filtra igual que la barra, o
   // alguien veria ahi abajo enlaces que no puede abrir.
-  const zonas = ["topbar-nav", "footer-nav"]
+  const zonas = ["topbar-nav", "footer-nav", "footer-legal"]
     .map(id => document.getElementById(id))
     .filter(Boolean);
   if (!zonas.length) return;

@@ -76,9 +76,17 @@ async function checkChangelogIndicator(user) {
 }
 
 function showIndicator() {
-  // El topbar puede haberse filtrado por rol (roles.js → filterTopbarByRole).
-  // Si el link quedó oculto, no tiene sentido pintarle el punto.
-  const link = document.querySelector('#topbar-nav .nav-link[href="changelog.html"]');
+  // El enlace vive en la linea legal del footer desde 2026-09-14; antes de eso
+  // estuvo en #footer-nav y originalmente en el topbar. Se buscan las tres
+  // zonas porque este indicador ya se rompio una vez al mudarse el enlace:
+  // apuntaba solo al topbar y estuvo sin pintar el punto sin que nadie lo notara.
+  // El link puede haberse filtrado por rol (roles.js → filterTopbarByRole).
+  // Si quedó oculto, no tiene sentido pintarle el punto.
+  const link = document.querySelector(
+    '#footer-legal .nav-link[href="changelog.html"], ' +
+    '#footer-nav .nav-link[href="changelog.html"], ' +
+    '#topbar-nav .nav-link[href="changelog.html"]'
+  );
   if (!link || link.style.display === "none") return;
   link.classList.add("has-news");
 }
