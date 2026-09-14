@@ -34,9 +34,15 @@
 </head>
 <body>
 <script>try{var t=localStorage.getItem("hero-theme");if(t)document.body.dataset.theme=t;if(localStorage.getItem("hero-user-no-attendance"))document.body.classList.add("no-attendance");
-/* Pre-aplica las features de la última sesión para que los tiles y secciones
-   del dashboard no parpadeen mientras Firestore resuelve el rol. roles.js
-   (applyRoleClasses) las vuelve a escribir con el valor real al terminar. */
+/* Pre-aplica el rol y las features de la última sesión para que los tiles y
+   secciones del dashboard no parpadeen mientras Firestore resuelve. roles.js
+   (applyRoleClasses) los vuelve a escribir con el valor real al terminar.
+
+   Son dos ejes distintos y no hay que mezclarlos:
+     feat-*  ¿tiene permiso para esto? — configurable desde admin → Permisos.
+     role-*  ¿esta sección va dirigida a él? — estructural, no configurable.
+   Atar una sección a role-* la saca de la matriz de Permisos para siempre. */
+var r=localStorage.getItem("hero-user-role");if(r)document.body.classList.add("role-"+r);
 var f=localStorage.getItem("hero-user-features");if(f)f.split(" ").filter(Boolean).forEach(function(k){document.body.classList.add("feat-"+k);});}catch(e){}</script>
 
 <noscript>

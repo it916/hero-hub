@@ -7440,6 +7440,26 @@ body:not(.feat-dashboard-social) .connector:has(+ #sec-mensajes) {
   display: none !important;
 }
 
+/* ═══════════════════════════════════════════
+   SECCIONES PROPIAS DE UN ROL — body.role-*
+   ═══════════════════════════════════════════
+   El eje de arriba responde "¿tiene permiso?" y es configurable desde
+   admin → Permisos. Este responde otra cosa: "¿esta sección va dirigida a
+   él?". Sirve para dar a un rol contenido PROPIO, no un recorte del ajeno.
+
+   El agente es externo a la empresa (ver TEAM_ROLES en roles.js). Su
+   dashboard hoy se construye apagando bloques del interno, asi que lo que
+   le queda no es una pantalla mas simple: es la del equipo con huecos.
+   Las secciones que se escriban para el van aqui, en positivo.
+
+   Cuando uses este eje, ten claro el precio: una seccion atada a role-*
+   deja de aparecer en la matriz de Permisos y solo se cambia tocando
+   codigo. Para todo lo que deba poder configurarse, usa feat-*.
+
+   applyRoleClasses() pone la clase y el script inline del <head> de
+   index.html la pre-aplica desde localStorage, igual que las features.
+   Claves: role-admin, role-interno, role-it, role-agente. */
+
 
 /* ═══════════════════════════════════════════
    OPT-OUT DE ASISTENCIA — body.no-attendance
