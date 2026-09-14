@@ -1,5 +1,18 @@
 [
   {
+    "id": "2026-09-14-reportes-multidispositivo",
+    "version": "v2.52.2",
+    "date": "2026-09-14",
+    "category": "fix",
+    "scope": "hub",
+    "audience": "all",
+    "title": "El aviso de que volvió la luz ya funciona desde cualquier dispositivo",
+    "items": [
+      "Si reportabas el corte desde el teléfono y querías avisar del regreso desde la computadora, el botón no aparecía: cada dispositivo recordaba solo sus propios avisos",
+      "Ahora el Hub consulta también lo que quedó guardado en el sistema, así que el botón de «ya volvió» aparece sin importar desde dónde reportaste el corte"
+    ]
+  },
+  {
     "id": "2026-09-12-evaluaciones-trimestres",
     "version": "v2.52.1",
     "date": "2026-09-12",
