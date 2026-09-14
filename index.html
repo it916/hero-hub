@@ -26,17 +26,22 @@
 <script defer src="js/topbar-dropdown.js"></script>
 <script defer src="js/toast.js"></script>
 <script defer src="js/hero-confirm.js"></script>
-<script defer src="js/campaign-video.js"></script>
 
-<!-- Shoelace · component library (modal "Agregar acceso" del arsenal) -->
+<!-- Shoelace · component library (diálogos de hero-confirm.js y attendance.js) -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css">
 <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/shoelace-autoloader.js"></script>
 </head>
 <body>
 <script>try{var t=localStorage.getItem("hero-theme");if(t)document.body.dataset.theme=t;if(localStorage.getItem("hero-user-no-attendance"))document.body.classList.add("no-attendance");
-/* Pre-aplica las features de la última sesión para que los tiles y secciones
-   del dashboard no parpadeen mientras Firestore resuelve el rol. roles.js
-   (applyRoleClasses) las vuelve a escribir con el valor real al terminar. */
+/* Pre-aplica el rol y las features de la última sesión para que los tiles y
+   secciones del dashboard no parpadeen mientras Firestore resuelve. roles.js
+   (applyRoleClasses) los vuelve a escribir con el valor real al terminar.
+
+   Son dos ejes distintos y no hay que mezclarlos:
+     feat-*  ¿tiene permiso para esto? — configurable desde admin → Permisos.
+     role-*  ¿esta sección va dirigida a él? — estructural, no configurable.
+   Atar una sección a role-* la saca de la matriz de Permisos para siempre. */
+var r=localStorage.getItem("hero-user-role");if(r)document.body.classList.add("role-"+r);
 var f=localStorage.getItem("hero-user-features");if(f)f.split(" ").filter(Boolean).forEach(function(k){document.body.classList.add("feat-"+k);});}catch(e){}</script>
 
 <noscript>
@@ -223,7 +228,7 @@ var f=localStorage.getItem("hero-user-features");if(f)f.split(" ").filter(Boolea
                 </span>
                 <i class="hqcc-plat-arrow" data-lucide="arrow-up-right"></i>
               </a>
-              <a class="hqcc-plat-row" href="https://app.gohighlevel.com/v2/location/rZNWZDaUxUb562tjkNTW/launchpad" target="_blank" rel="noopener">
+              <a class="hqcc-plat-row plat-ghl" href="https://app.gohighlevel.com/v2/location/rZNWZDaUxUb562tjkNTW/launchpad" target="_blank" rel="noopener">
                 <i class="hqcc-plat-ico ghl" data-lucide="zap"></i>
                 <span class="hqcc-plat-body">
                   <span class="hqcc-plat-name">Go High Level</span>
@@ -239,27 +244,6 @@ var f=localStorage.getItem("hero-user-features");if(f)f.split(" ").filter(Boolea
     </section>
 
     <div class="connector"></div>
-
-    <!-- ══ CAMPAÑA · comercial de Hero (visible hasta data-expires; después se oculta solo) ══ -->
-    <section class="section fade-in campaign-video" id="sec-campaign-video" data-expires="2026-09-04" hidden>
-      <div class="campaign-video-player" id="campaign-player">
-        <video id="campaign-video-el"
-               poster="videos/comercial-hero-evtv-poster.jpg"
-               preload="none"
-               playsinline>
-          <source src="videos/comercial-hero-evtv.mp4" type="video/mp4">
-          Tu navegador no soporta la reproducción de video.
-        </video>
-        <button type="button" class="campaign-play-btn" id="campaign-play-btn" aria-label="Reproducir comercial de Hero">
-          <span class="campaign-play-eyebrow">✦ Nuevo</span>
-          <span class="campaign-play-title">Comercial de Hero</span>
-          <span class="campaign-play-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="36" height="36"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
-          </span>
-          <span class="campaign-play-sub">Toca para reproducir · 30 s</span>
-        </button>
-      </div>
-    </section>
 
     <!-- ══ MÓDULOS DE ACCESO ══
          Dos columnas: a la izquierda los módulos del Hub (cada uno sujeto a
@@ -300,6 +284,39 @@ var f=localStorage.getItem("hero-user-features");if(f)f.split(" ").filter(Boolea
           <div class="access-content">
             <div class="access-name">IT Console</div>
             <div class="access-roles">admin · IT</div>
+          </div>
+        </a>
+
+        <!-- El equipo interno llega al Hero CRM por el tile Plataformas del
+             banner. El agente no tiene ese tile — no reporta ausencias ni usa
+             la oficina virtual — y dejarselo solo a el lo estiraba a todo el
+             ancho con dos lineas dentro. Aqui entra en la rejilla como lo que
+             es: un acceso mas. Ningun rol lo ve en los dos sitios. -->
+        <a href="https://app.heroinsuranceusa.com/login" target="_blank" rel="noopener" class="access-tile at-hero-crm">
+          <div class="access-icon"><i data-lucide="shield"></i></div>
+          <div class="access-content">
+            <div class="access-name">Hero CRM</div>
+            <div class="access-roles">Clientes y pólizas</div>
+          </div>
+        </a>
+
+        <!-- Portales y Guias tambien estan en la barra: aqui se destacan, no
+             se mudan. Para el agente son de uso diario y ademas cierran un
+             2x2 limpio con Hero CRM y Calendario; el equipo interno los tiene
+             arriba y no necesita el atajo. -->
+        <a href="portales.html" class="access-tile at-portales">
+          <div class="access-icon"><i data-lucide="key-round"></i></div>
+          <div class="access-content">
+            <div class="access-name">Portales</div>
+            <div class="access-roles">Accesos a carriers</div>
+          </div>
+        </a>
+
+        <a href="guias.html" class="access-tile at-guias">
+          <div class="access-icon"><i data-lucide="book-open"></i></div>
+          <div class="access-content">
+            <div class="access-name">Guías</div>
+            <div class="access-roles">Paso a paso de cada trámite</div>
           </div>
         </a>
 
@@ -382,36 +399,6 @@ var f=localStorage.getItem("hero-user-features");if(f)f.split(" ").filter(Boolea
 
       </div>
     </section>
-
-    <div class="connector" id="conn-arsenal" hidden></div>
-
-    <!-- ══ ARSENAL DEL HÉROE — OCULTO desde el 09/09/2026 ══
-         No se eliminó a propósito: se esconde para ver si alguien lo reclama
-         y decidir con eso si se usaba de verdad. El tracker solo registra
-         visitas a páginas, no clics, así que no hay otra forma de saberlo.
-
-         PARA REVIVIRLO: quita el atributo `hidden` de esta sección y del
-         conector de arriba. Nada más — el JS que lo pinta (js/widgets.js,
-         renderTools) sigue intacto, y los accesos guardados por cada persona
-         siguen en su documento de Firestore, campo `arsenal`.
-
-         SI SE DECIDE ELIMINARLO: hay que borrar también renderTools y el
-         modal "Agregar acceso" en js/widgets.js, los estilos .arsenal-* en
-         css/styles.css, y decidir qué pasa con el campo `arsenal` de cada
-         usuario, que hoy guarda sus accesos personalizados. -->
-    <section class="section fade-in" id="sec-arsenal" hidden>
-      <div class="section-label"><span class="kicker-dot"></span>Arsenal del héroe</div>
-
-      <div class="card-shell">
-        <div class="tools-header-row">
-          <div class="tools-title">Accesos directos</div>
-          <div class="tools-sub">Herramientas esenciales del equipo Hero</div>
-        </div>
-        <div id="tools-container"><p class="loading">Cargando arsenal...</p></div>
-      </div>
-    </section>
-
-    <div class="connector"></div>
 
     <!-- ══ CELEBRACIONES DEL EQUIPO — Héroe del Mes + Próximo Cumple ══ -->
     <section class="section fade-in" id="sec-celebraciones">
@@ -700,7 +687,7 @@ var f=localStorage.getItem("hero-user-features");if(f)f.split(" ").filter(Boolea
       </div>
     </div>
     <div class="footer-legal" id="footer-legal">
-      <span>HERO HUB · v2.52.3</span><span class="sep">•</span><a href="changelog.html" class="nav-link">Ver Registro de Cambios</a><span class="sep">•</span><span>HERO INSURANCE USA</span>
+      <span>HERO HUB · v2.53.0</span><span class="sep">•</span><a href="changelog.html" class="nav-link">Ver Registro de Cambios</a><span class="sep">•</span><span>HERO INSURANCE USA</span>
     </div>
   </footer>
 </div>
