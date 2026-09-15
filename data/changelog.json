@@ -1,5 +1,36 @@
 [
   {
+    "id": "2026-09-15-calendario-rrhh-interactivo",
+    "version": "v2.55.0",
+    "date": "2026-09-15",
+    "category": "feat",
+    "scope": "rrhh",
+    "audience": "admin",
+    "title": "El calendario de Recursos Humanos ya se puede consultar, no solo mirar",
+    "items": [
+      "Al pulsar un día, la lista de abajo deja de ser el mes entero y pasa a ser ese día, con un botón para volver. Solo responden los días que tienen algo dentro",
+      "Los cuatro rótulos del pie dejaron de ser decorativos: encienden y apagan su tipo. Se puede dejar el mes solo con cumpleaños, o sin nómina",
+      "Desde un cumpleaños o una ausencia se abre la ficha de esa persona, que antes había que ir a buscar a mano en la otra pestaña",
+      "Las flechas del teclado cambian de mes y Escape suelta el día que se esté mirando",
+      "Al pasar el cursor sobre una marca, el detalle aparece al instante y con los colores del Hub, en vez del recuadro gris del sistema que tardaba casi un segundo",
+      "Los iconos del mes se veían como emojis de Windows: eran siluetas de color a 15px. Ahora van en trazo y algo más grandes, y el pie de leyenda lleva el color de cada tipo para que se corresponda con lo que explica"
+    ]
+  },
+  {
+    "id": "2026-09-15-rrhh-arreglos-vista",
+    "version": "v2.55.0",
+    "date": "2026-09-15",
+    "category": "fix",
+    "scope": "rrhh",
+    "audience": "admin",
+    "title": "Tres arreglos de lectura en Recursos Humanos",
+    "items": [
+      "El aviso de «elige a alguien de la lista» se quedaba encima de la ficha ya abierta",
+      "El número del día de hoy en el calendario casi no se leía en tema noche: era un cyan oscuro sobre fondo oscuro",
+      "El título de la lista decía «Este mes» pasara lo que pasara, así que en marzo seguía diciendo «este mes». Ahora nombra el mes que se está mirando"
+    ]
+  },
+  {
     "id": "2026-09-15-permisos-novedades",
     "version": "v2.54.0",
     "date": "2026-09-15",
