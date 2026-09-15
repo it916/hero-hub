@@ -187,7 +187,7 @@ function leerCatalogoCacheado() {
 // que un admin entrara a la matriz de Permisos a marcarlos de nuevo.
 //
 // Editar el código no basta cuando el doc remoto tiene prioridad.
-const LEGACY_FEATURE_ALIASES = {
+export const LEGACY_FEATURE_ALIASES = {
   "hqcc-tiles": ["tile-oficina", "tile-reportar", "tile-plataformas", "plat-ghl"]
 };
 

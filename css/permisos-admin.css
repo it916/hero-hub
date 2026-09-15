@@ -169,3 +169,62 @@ body[data-theme="dark"] .perm-coherencia {
   .perm-pie { flex-direction: column; align-items: stretch; }
   .perm-pie-acciones { justify-content: flex-end; }
 }
+
+/* ── Novedades: lo desplegado después del último guardado ──
+   Distinto en color de los avisos de coherencia (ámbar) a propósito: aquello
+   señala una combinación rota, esto solo una decisión pendiente. */
+.perm-novedades {
+  padding: 13px 16px;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  background: rgba(6, 163, 182, .08);
+  border: 1px solid rgba(6, 163, 182, .28);
+  border-left: 3px solid var(--cyan);
+  font-size: 13px;
+  color: var(--text);
+}
+.perm-novedades > strong {
+  display: block;
+  font-family: var(--display);
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+.perm-novedades-intro {
+  margin: 0 0 8px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+.perm-novedades ul { margin: 0 0 10px; padding-left: 18px; }
+.perm-novedades li { margin: 5px 0; line-height: 1.5; }
+.perm-novedades-sugerencia {
+  display: block;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.perm-novedades p:last-child { margin-bottom: 0; }
+
+body[data-theme="dark"] .perm-novedades {
+  background: rgba(6, 163, 182, .13);
+  border-color: rgba(6, 163, 182, .32);
+  /* El shorthand de arriba pisa las cuatro caras: el borde de acento se
+     vuelve a fijar aparte o en tema noche se pierde. */
+  border-left-color: var(--cyan);
+}
+
+/* Fila y distintivo de una clave todavía sin decidir */
+.perm-fila-nueva > td { background: rgba(6, 163, 182, .055); }
+body[data-theme="dark"] .perm-fila-nueva > td { background: rgba(6, 163, 182, .1); }
+
+.perm-badge-nuevo {
+  display: inline-block;
+  vertical-align: middle;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--cyan);
+  color: #fff;
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .3px;
+  text-transform: uppercase;
+}

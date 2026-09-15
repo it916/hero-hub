@@ -1,5 +1,20 @@
 [
   {
+    "id": "2026-09-15-permisos-novedades",
+    "version": "v2.54.0",
+    "date": "2026-09-15",
+    "category": "feat",
+    "scope": "roles",
+    "audience": "admin",
+    "title": "La matriz de Permisos avisa de los accesos que nadie ha decidido",
+    "items": [
+      "Cuando se publica una página o un acceso nuevo, la matriz lo marca con un distintivo y lo lista arriba, diciendo a qué roles le tocaría de fábrica",
+      "Antes nacían apagados y en silencio: los permisos guardados mandan sobre lo que trae el Hub, así que una casilla vacía por olvido se veía igual que una vacía a propósito",
+      "Le pasó a los accesos del agente de la versión anterior, anunciados en este mismo registro y ausentes en el Hub. Al publicarse esta versión quedaban 5 accesos esperando decisión: la página de Recursos Humanos y su atajo, y los tres accesos rápidos del agente (Hero CRM, Portales y Guías)",
+      "El aviso se apaga al guardar, con las casillas marcadas o sin marcar: lo que cuenta es que la decisión se haya tomado"
+    ]
+  },
+  {
     "id": "2026-09-14-hub-del-agente",
     "version": "v2.53.0",
     "date": "2026-09-14",

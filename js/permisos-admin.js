@@ -20,7 +20,7 @@ import { db } from "./firebase-config.js";
 import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import {
   DEFAULT_ROLES, FEATURES, PAGE_LABELS, PAGE_NOTES, PAGINAS_OBLIGATORIAS,
-  loadRolesCatalog
+  LEGACY_FEATURE_ALIASES, loadRolesCatalog
 } from "./roles.js";
 import { logEvent, ACTIONS } from "./audit-log.js";
 
@@ -50,6 +50,7 @@ function paginasOrdenadas() {
 
 let estado = null;        // { [rol]: { pages:Set, features:Set } }
 let estadoOriginal = null;
+let conocidas = null;     // { pages:Set, features:Set } — lo que el doc ya conocía
 let meta = { updatedAt: null, updatedBy: null };
 let adminEmail = null;
 
@@ -69,12 +70,17 @@ export async function initPermisosPanel(emailDelAdmin) {
 
 async function cargar() {
   let guardado = null;
+  let declaradas = null;
   try {
     const snap = await getDoc(DOC_REF());
     if (snap.exists()) {
       const data = snap.data();
       guardado = data.roles || null;
       meta = { updatedAt: data.updatedAt || null, updatedBy: data.updatedBy || null };
+      declaradas = {
+        pages:    Array.isArray(data.knownPages)    ? data.knownPages    : null,
+        features: Array.isArray(data.knownFeatures) ? data.knownFeatures : null
+      };
     }
   } catch (e) {
     console.warn("[permisos] No se pudo leer shared/rolePermissions:", e.message);
@@ -91,6 +97,66 @@ async function cargar() {
     };
   }
   estadoOriginal = clonarEstado(estado);
+  conocidas = deducirConocidas(guardado, declaradas);
+}
+
+/**
+ * Qué páginas y features conocía el documento guardado.
+ *
+ * Es lo único que separa "este rol no lleva esta feature porque así se
+ * decidió" de "esta feature es nueva y nadie ha decidido todavía". Sin el
+ * dato las dos se ven igual — una casilla vacía — y una feature recién
+ * desplegada nace apagada sin que nadie se entere: el código la trae en
+ * DEFAULT_ROLES, pero el doc remoto manda y no la menciona, así que
+ * validarCatalogo no la repone. Pasó en v2.53.0 con los accesos rápidos del
+ * agente, anunciados en el changelog y invisibles en el Hub.
+ *
+ * Desde ahora se guarda explícito (knownPages / knownFeatures). Para los docs
+ * anteriores a ese campo se deduce de lo que hay: una clave que no aparece en
+ * NINGÚN rol es, casi con seguridad, posterior al último guardado. Los alias
+ * cuentan como conocidas las claves en las que se expanden — si el doc dice
+ * "hqcc-tiles", sus cuatro herederas ya están efectivamente decididas y
+ * marcarlas como novedades sería ruido.
+ */
+function deducirConocidas(guardado, declaradas) {
+  // Sin doc, el Hub usa los valores por defecto: no hay ninguna decisión
+  // previa que estas claves puedan estar contradiciendo.
+  if (!guardado) {
+    return {
+      pages: new Set(Object.keys(PAGE_LABELS)),
+      features: new Set(Object.keys(FEATURES))
+    };
+  }
+
+  const pages = new Set(declaradas?.pages || []);
+  const features = new Set(declaradas?.features || []);
+
+  for (const rol of Object.keys(guardado)) {
+    const r = guardado[rol] || {};
+    if (!declaradas?.pages) {
+      for (const p of (r.pages || [])) pages.add(p);
+    }
+    if (!declaradas?.features) {
+      for (const f of (r.features || [])) {
+        features.add(f);
+        for (const heredera of (LEGACY_FEATURE_ALIASES[f] || [])) features.add(heredera);
+      }
+    }
+  }
+
+  return { pages, features };
+}
+
+/** true si la clave no existía la última vez que alguien guardó. */
+function esNueva(clave, tipo) {
+  return !!conocidas && !conocidas[tipo].has(clave);
+}
+
+/** Roles a los que el código les daría esta clave si no hubiera doc remoto. */
+function rolesPorDefecto(clave, tipo) {
+  return ORDEN_ROLES
+    .filter(rol => !DEFAULT_ROLES[rol].isAdmin && DEFAULT_ROLES[rol][tipo].includes(clave))
+    .map(rol => DEFAULT_ROLES[rol].label);
 }
 
 function clonarEstado(origen) {
@@ -155,6 +221,9 @@ function render() {
 
   cont.appendChild(construirAviso());
 
+  const novedades = construirNovedades();
+  if (novedades) cont.appendChild(novedades);
+
   const avisos = document.createElement("div");
   avisos.id = "perm-avisos";
   cont.appendChild(avisos);
@@ -187,13 +256,77 @@ function construirAviso() {
   return box;
 }
 
+/**
+ * Bloque de novedades: lo que se desplegó después del último guardado y
+ * todavía no tiene decisión. No impone nada — solo evita que una casilla
+ * vacía por olvido se vea igual que una vacía a propósito.
+ * Devuelve null si no hay nada nuevo.
+ */
+function construirNovedades() {
+  const nuevas = [
+    ...Object.keys(PAGE_LABELS)
+      .filter(p => esNueva(p, "pages"))
+      .map(p => ({ clave: p, tipo: "pages", etiqueta: PAGE_LABELS[p], donde: "Página" })),
+    ...Object.keys(FEATURES)
+      .filter(f => esNueva(f, "features"))
+      .map(f => ({ clave: f, tipo: "features", etiqueta: FEATURES[f].label, donde: FEATURES[f].group }))
+  ];
+  if (!nuevas.length) return null;
+
+  const box = document.createElement("div");
+  box.className = "perm-novedades";
+
+  const titulo = document.createElement("strong");
+  titulo.textContent = nuevas.length === 1
+    ? "Hay 1 acceso nuevo sin decidir"
+    : `Hay ${nuevas.length} accesos nuevos sin decidir`;
+  box.appendChild(titulo);
+
+  const intro = document.createElement("p");
+  intro.className = "perm-novedades-intro";
+  intro.textContent = "Aparecieron en el Hub después de la última vez que se guardó esta matriz, "
+    + "así que están sin marcar para todos los roles. Mientras sigan así no los ve nadie, "
+    + "aunque el Hub los traiga activados de fábrica.";
+  box.appendChild(intro);
+
+  const lista = document.createElement("ul");
+  for (const n of nuevas) {
+    const li = document.createElement("li");
+
+    const nombre = document.createElement("strong");
+    nombre.textContent = n.etiqueta;
+    li.appendChild(nombre);
+    li.appendChild(document.createTextNode(` · ${n.donde}`));
+
+    const sugeridos = rolesPorDefecto(n.clave, n.tipo);
+    const sugerencia = document.createElement("span");
+    sugerencia.className = "perm-novedades-sugerencia";
+    sugerencia.textContent = sugeridos.length
+      ? `De fábrica sería para: ${sugeridos.join(", ")}`
+      : "De fábrica no sería para ningún rol salvo Administrador";
+    li.appendChild(sugerencia);
+
+    lista.appendChild(li);
+  }
+  box.appendChild(lista);
+
+  const pie = document.createElement("p");
+  pie.className = "perm-novedades-intro";
+  pie.textContent = "El aviso desaparece al guardar, con las casillas marcadas o sin marcar: "
+    + "lo que cuenta es que la decisión se haya tomado.";
+  box.appendChild(pie);
+
+  return box;
+}
+
 function filasDePaginas() {
   return paginasOrdenadas().map(p => ({
     clave: p,
     etiqueta: PAGE_LABELS[p],
     obligatoria: PAGINAS_OBLIGATORIAS.includes(p),
     grupo: null,
-    nota: PAGE_NOTES[p] || null
+    nota: PAGE_NOTES[p] || null,
+    nueva: esNueva(p, "pages")
   }));
 }
 
@@ -214,7 +347,8 @@ function filasDeFeatures() {
         etiqueta: FEATURES[clave].label,
         obligatoria: false,
         grupo: primeraDelGrupo ? grupo : null,
-        nota: FEATURES[clave].nota || null
+        nota: FEATURES[clave].nota || null,
+        nueva: esNueva(clave, "features")
       });
       primeraDelGrupo = false;
     }
@@ -279,6 +413,15 @@ function construirFila(fila, tipo) {
   const tdNombre = document.createElement("td");
   tdNombre.className = "perm-col-nombre";
   tdNombre.appendChild(document.createTextNode(fila.etiqueta));
+  if (fila.nueva) {
+    tr.classList.add("perm-fila-nueva");
+    const badge = document.createElement("span");
+    badge.className = "perm-badge-nuevo";
+    badge.textContent = "Nuevo";
+    badge.title = "Apareció después del último guardado y todavía no tiene decisión";
+    tdNombre.appendChild(document.createTextNode(" "));
+    tdNombre.appendChild(badge);
+  }
   if (fila.nota) {
     const nota = document.createElement("span");
     nota.className = "perm-nota";
@@ -477,8 +620,13 @@ async function guardarCambios() {
       : { pages: [...estado[rol].pages], features: [...estado[rol].features] };
   }
 
+  // knownPages / knownFeatures: el catálogo completo que existía al guardar.
+  // No autoriza nada — sirve para que la próxima carga sepa distinguir una
+  // casilla vacía a propósito de una que nadie ha mirado todavía.
   const payload = {
     roles,
+    knownPages: Object.keys(PAGE_LABELS),
+    knownFeatures: Object.keys(FEATURES),
     updatedAt: new Date().toISOString(),
     updatedBy: adminEmail || "—"
   };
@@ -487,6 +635,14 @@ async function guardarCambios() {
     await setDoc(DOC_REF(), payload);
     meta = { updatedAt: payload.updatedAt, updatedBy: payload.updatedBy };
     estadoOriginal = clonarEstado(estado);
+
+    // Todo lo que había en pantalla queda decidido, marcado o no: el aviso de
+    // novedades y los badges se apagan hasta el próximo despliegue.
+    conocidas = {
+      pages: new Set(payload.knownPages),
+      features: new Set(payload.knownFeatures)
+    };
+    render();
 
     // Refrescar el catálogo en memoria y en localStorage para que el propio
     // admin vea el efecto sin recargar de más.
