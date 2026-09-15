@@ -23,7 +23,7 @@
 import {
   getAllUsers, countryLabel, countryFlagUrl, countryOptions, updateUserFields,
 } from "./user-store.js";
-import { getAllHrData, saveHrData } from "./hr-store.js";
+import { getAllHrData, saveHrData, leerHorario } from "./hr-store.js";
 import { abrirCalendario, initCalendario } from "./rrhh-calendario.js";
 import {
   CRITERIOS, ESCALA, getEvaluacionesPorPersona, saveEvaluacion,
@@ -196,21 +196,36 @@ function cumpleTexto(birthdate) {
 }
 
 function horarioTexto(schedule) {
-  if (!schedule) return "";
-  const dias = Array.isArray(schedule.days) ? schedule.days : [];
-  let cuando = "";
-  if (dias.length) {
-    const ord = DIAS.filter(d => dias.includes(d.n));
-    // Lunes a viernes es el caso normal: se dice así en vez de listar cinco.
-    const esLaV = dias.length === 5 && [1, 2, 3, 4, 5].every(n => dias.includes(n));
-    cuando = esLaV ? "lunes a viernes" : ord.map(d => d.largo).join(", ");
-  }
+  const h = leerHorario(schedule);
+  if (!h) return "";
+
+  const { porDia, dias, uniforme } = h;
+  const nombreDe = n => DIAS.find(d => d.n === n)?.largo || "?";
+  const cortoDe = n => (DIAS.find(d => d.n === n)?.largo || "?").slice(0, 3);
+
+  // Lunes a viernes es el caso normal: se dice así en vez de listar cinco.
+  const esLaV = dias.length === 5 && [1, 2, 3, 4, 5].every(n => dias.includes(n));
+  const cuando = esLaV ? "lunes a viernes" : dias.map(nombreDe).join(", ");
+
   // Los días de trabajo se guardan aunque no haya hora de entrada y salida:
   // son un dato por derecho propio, no un adorno del horario. Sin ellos la
   // ficha se quedaba sin decir qué días trabaja la persona.
-  if (!schedule.from || !schedule.to) return cuando ? `${cuando} · sin horario fijo` : "";
+  const conHoras = dias.filter(n => porDia[n].from && porDia[n].to);
+  if (!conHoras.length) return `${cuando} · sin horario fijo`;
 
-  return `${hm12(schedule.from)} – ${hm12(schedule.to)}${cuando ? " · " + cuando : ""}`;
+  // Mismo rango todos los días: una frase. Distinto según el día: una entrada
+  // por día, que es justamente el caso que el formato viejo no sabía guardar.
+  if (uniforme) {
+    const { from, to } = porDia[dias[0]];
+    return `${hm12(from)} – ${hm12(to)} · ${cuando}`;
+  }
+
+  return dias.map(n => {
+    const { from, to } = porDia[n];
+    return from && to
+      ? `${cortoDe(n)} ${hm12(from)}–${hm12(to)}`
+      : `${cortoDe(n)} sin horario`;
+  }).join(" · ");
 }
 
 // ── Helpers de DOM ─────────────────────────────────────────────────
@@ -519,11 +534,124 @@ function documentos(p) {
   return fila;
 }
 
+// ── Días y horario ─────────────────────────────────────────────────
+// Antes había un solo par entrada/salida para toda la semana. No servía para
+// quien trabaja de mañana unos días y de tarde otros: había que elegir cuál
+// de los dos horarios era "el" horario y el otro no se registraba.
+//
+// No se hicieron dos modos ("fijo" y "por día"). Un horario igual todos los
+// días es el caso particular del otro, y dos modos serían dos formas del dato,
+// dos rutas de pintado y la pregunta de qué se tira al cambiar de uno a otro.
+// Un botón que copia el primer horario al resto cubre lo mismo.
+
+const ORDEN_SEMANA = [1, 2, 3, 4, 5, 6, 0];
+
+function bloqueHorario(horario) {
+  const bloque = el("div", "rh-field");
+  bloque.appendChild(el("label", "rh-label", "Días y horario"));
+
+  const chips = el("div", "rh-days");
+  const filas = el("div", "rh-sched-rows");
+  filas.id = "rhf-sched";
+
+  const porDia = horario?.porDia || {};
+  // Sin nada registrado, lunes a viernes: es lo que tiene casi todo el mundo.
+  const activos = horario?.dias || [1, 2, 3, 4, 5];
+
+  const pie = el("div", "rh-sched-foot");
+  const copiar = el("button", "rh-sched-copy", "Mismo horario todos los días");
+  copiar.type = "button";
+  copiar.addEventListener("click", () => {
+    const primera = filas.querySelector(".rh-sched-row");
+    if (!primera) return;
+    const from = primera.querySelector(".rh-sched-from").value;
+    const to = primera.querySelector(".rh-sched-to").value;
+    filas.querySelectorAll(".rh-sched-row").forEach(f => {
+      f.querySelector(".rh-sched-from").value = from;
+      f.querySelector(".rh-sched-to").value = to;
+    });
+  });
+  pie.appendChild(copiar);
+
+  function construirFila(n, from, to) {
+    const fila = el("div", "rh-sched-row");
+    fila.dataset.day = String(n);
+    fila.appendChild(el("span", "rh-sched-day", DIAS.find(d => d.n === n)?.largo || "?"));
+
+    const entrada = document.createElement("input");
+    entrada.type = "time";
+    entrada.className = "rh-input rh-sched-from";
+    entrada.value = from || "";
+    entrada.setAttribute("aria-label", `Entrada ${DIAS.find(d => d.n === n)?.largo || ""}`);
+
+    const salida = document.createElement("input");
+    salida.type = "time";
+    salida.className = "rh-input rh-sched-to";
+    salida.value = to || "";
+    salida.setAttribute("aria-label", `Salida ${DIAS.find(d => d.n === n)?.largo || ""}`);
+
+    fila.append(entrada, el("span", "rh-sched-sep", "–"), salida);
+    return fila;
+  }
+
+  // Las filas se reordenan de lunes a domingo tras cada alta: si no, marcar el
+  // sábado y luego el martes los dejaría en ese orden.
+  function reordenar() {
+    const nodos = [...filas.children].sort((a, b) =>
+      ORDEN_SEMANA.indexOf(Number(a.dataset.day)) - ORDEN_SEMANA.indexOf(Number(b.dataset.day)));
+    filas.replaceChildren(...nodos);
+    pie.hidden = filas.childElementCount < 2;
+  }
+
+  DIAS.forEach(d => {
+    const chip = el("button", "rh-day", d.corto);
+    chip.type = "button";
+    chip.dataset.day = String(d.n);
+    chip.title = d.largo;
+    chip.setAttribute("aria-pressed", String(activos.includes(d.n)));
+    if (activos.includes(d.n)) chip.classList.add("on");
+
+    chip.addEventListener("click", () => {
+      const encendido = chip.classList.toggle("on");
+      chip.setAttribute("aria-pressed", String(encendido));
+      if (encendido) {
+        // Se estrena con el horario del primer día ya puesto: quien trabaja
+        // cinco días iguales no teclea la misma hora cinco veces.
+        const modelo = filas.querySelector(".rh-sched-row");
+        construirFilaEnLista(d.n,
+          modelo?.querySelector(".rh-sched-from").value || "",
+          modelo?.querySelector(".rh-sched-to").value || "");
+      } else {
+        filas.querySelector(`.rh-sched-row[data-day="${d.n}"]`)?.remove();
+        pie.hidden = filas.childElementCount < 2;
+      }
+    });
+
+    chips.appendChild(chip);
+  });
+
+  function construirFilaEnLista(n, from, to) {
+    filas.appendChild(construirFila(n, from, to));
+    reordenar();
+  }
+
+  for (const n of ORDEN_SEMANA) {
+    if (!activos.includes(n)) continue;
+    filas.appendChild(construirFila(n, porDia[n]?.from, porDia[n]?.to));
+  }
+  pie.hidden = filas.childElementCount < 2;
+
+  bloque.append(chips, filas, pie);
+  bloque.appendChild(el("div", "rh-hint",
+    "Marca los días que trabaja y pon las horas de cada uno. Si son todos iguales, "
+    + "llena el primero y usa el botón. Un día sin horas queda registrado como día trabajado."));
+  return bloque;
+}
+
 // ── Formulario de edición ──────────────────────────────────────────
 function formulario(p) {
   const form = el("div", "rh-form");
   const hr = hrDe(p._email);
-  const sch = hr.schedule || {};
 
   const campo = (etiqueta, input) => {
     const wrap = el("div", "rh-field");
@@ -547,17 +675,9 @@ function formulario(p) {
   inicio.autocomplete = "off";
   inicio.value = hr.startDate || "";
 
-  const desde = document.createElement("input");
-  desde.type = "time";
-  desde.className = "rh-input";
-  desde.id = "rhf-from";
-  desde.value = sch.from || "";
-
-  const hasta = document.createElement("input");
-  hasta.type = "time";
-  hasta.className = "rh-input";
-  hasta.id = "rhf-to";
-  hasta.value = sch.to || "";
+  // El horario ya no es un solo rango para toda la semana: cada día lleva el
+  // suyo. Lo pinta bloqueHorario(), más abajo.
+  const horario = leerHorario(hr.schedule);
 
   // Dónde vive hoy. Va en hr-data, no en users/: identity.country es de dónde
   // ES la persona (bandera pública) y para quien vive fuera de su país no es
@@ -603,8 +723,7 @@ function formulario(p) {
     "Para leer la hora de sus reportes de retraso y ausencia."));
   filaTz.append(campoTz, campo("En Hero desde", inicio));
 
-  const fila2 = el("div", "rh-form-row");
-  fila2.append(campo("Entrada", desde), campo("Salida", hasta));
+  const fila2 = bloqueHorario(horario);
 
   const direccion = document.createElement("textarea");
   direccion.className = "rh-input rh-textarea";
@@ -620,19 +739,6 @@ function formulario(p) {
   docs.id = "rhf-docs";
   docs.placeholder = "https://drive.google.com/drive/folders/…";
   docs.value = hr.docsUrl || "";
-
-  // Días: chips que se marcan. Por defecto, lunes a viernes.
-  const diasActuales = Array.isArray(sch.days) ? sch.days : [1, 2, 3, 4, 5];
-  const chips = el("div", "rh-days");
-  DIAS.forEach(d => {
-    const chip = el("button", "rh-day", d.corto);
-    chip.type = "button";
-    chip.dataset.day = String(d.n);
-    chip.title = d.largo;
-    if (diasActuales.includes(d.n)) chip.classList.add("on");
-    chip.addEventListener("click", () => chip.classList.toggle("on"));
-    chips.appendChild(chip);
-  });
 
   // ── Datos personales (users/, no hr-data) ────────────────────────
   // Van en su propio bloque a propósito: se guardan en otra colección y con
@@ -738,7 +844,6 @@ function formulario(p) {
     fila1,
     filaTz,
     fila2,
-    campo("Días de trabajo", chips),
     campo("Dirección completa", direccion),
     campoDocs,
     subtitulo("Datos personales"),
@@ -766,9 +871,17 @@ function formulario(p) {
 async function guardarFicha(p, btn) {
   const ciudad = ($("rhf-city").value || "").trim();
   const inicio = ($("rhf-start").value || "").trim();
-  const from = $("rhf-from").value || "";
-  const to = $("rhf-to").value || "";
-  const days = Array.from(document.querySelectorAll(".rh-day.on")).map(c => Number(c.dataset.day));
+  // Una entrada por día marcado. El día sin horas se guarda igual: saber que
+  // alguien trabaja el sábado es un dato aunque no se sepa desde qué hora.
+  const byDay = {};
+  let horasIncompletas = null;
+  for (const fila of document.querySelectorAll("#rhf-sched .rh-sched-row")) {
+    const n = Number(fila.dataset.day);
+    const f = fila.querySelector(".rh-sched-from").value || "";
+    const t = fila.querySelector(".rh-sched-to").value || "";
+    if ((f && !t) || (!f && t)) horasIncompletas = DIAS.find(d => d.n === n)?.largo || "ese día";
+    byDay[n] = { from: f || null, to: t || null };
+  }
   const direccion = ($("rhf-address").value || "").trim();
   const docsUrl = ($("rhf-docs").value || "").trim();
   const paisVive = $("rhf-lives").value || "";
@@ -791,8 +904,8 @@ async function guardarFicha(p, btn) {
     heroToast.error("La fecha de ingreso va en formato MM/DD/YYYY.");
     return;
   }
-  if ((from && !to) || (!from && to)) {
-    heroToast.error("El horario necesita hora de entrada y de salida.");
+  if (horasIncompletas) {
+    heroToast.error(`El horario de ${horasIncompletas} necesita hora de entrada y de salida.`);
     return;
   }
   if (nacimiento && !parseUS(nacimiento)) {
@@ -834,9 +947,11 @@ async function guardarFicha(p, btn) {
       // Sin horas pero con días marcados se guardan los días igual: antes el
       // ternario los tiraba enteros y desmarcar el sábado no servía de nada
       // mientras no hubiera horario.
-      schedule: (from && to)
-        ? { from, to, days }
-        : (days.length ? { from: null, to: null, days } : null),
+      //
+      // Se escribe solo `byDay`, sin el from/to/days de antes. Mezclar las dos
+      // formas en el mismo documento obligaría a decidir cuál manda el día que
+      // no coincidan, y leerHorario() ya entiende la vieja sin ayuda.
+      schedule: Object.keys(byDay).length ? { byDay } : null,
       docsUrl: docsUrl || null,
       birthDate: nacimiento || null,
       country: paisVive || null,

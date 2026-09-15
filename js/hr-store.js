@@ -21,7 +21,14 @@
 //   address   → dirección completa
 //   startDate → cuándo entró a Hero (MM/DD/YYYY). meta.createdAt de users/ NO
 //               sirve: es cuándo se creó el documento.
-//   schedule  → { from, to, days } — horario asignado
+//   schedule  → horario asignado. Dos formas conviven a propósito:
+//                 { byDay: { "1": {from,to}, "3": {from,to} } }   ← actual
+//                 { from, to, days:[1,3,5] }                      ← anterior
+//               La vieja es el caso particular de la nueva: un mismo rango
+//               repetido en varios días. Se lee con leerHorario(), que
+//               devuelve siempre la forma nueva, así que no hizo falta migrar
+//               ni un documento. Se dejó de escribir en v2.56.0, cuando
+//               aparecieron los horarios que cambian según el día.
 //   birthDate → fecha de nacimiento COMPLETA (MM/DD/YYYY). El año vive acá y
 //               no en users/: revela la edad, y ese documento lo lee
 //               cualquiera del dominio. El widget de cumpleaños del Hub sigue
@@ -44,6 +51,48 @@ const VACIO = {
   city: null, address: null, startDate: null, schedule: null, docsUrl: null,
   birthDate: null, country: null, timezone: null,
 };
+
+/**
+ * Lee un schedule en cualquiera de sus dos formas y devuelve siempre la misma:
+ *
+ *   { porDia: { 1:{from,to}, 3:{from,to} }, dias:[1,3], uniforme:true|false }
+ *
+ * `dias` va ordenado de lunes a domingo, no por el número del día: getDay()
+ * pone el domingo en 0 y un `[0,1,2]` crudo empezaría la semana en domingo.
+ * `uniforme` dice si todos los días trabajados comparten el mismo rango — es
+ * lo que permite escribir "lunes a viernes, 9 a 5" en vez de cinco líneas.
+ *
+ * Devuelve null si no hay nada que enseñar.
+ */
+export function leerHorario(schedule) {
+  if (!schedule || typeof schedule !== "object") return null;
+
+  const porDia = {};
+
+  if (schedule.byDay && typeof schedule.byDay === "object") {
+    for (const [clave, horas] of Object.entries(schedule.byDay)) {
+      const n = Number(clave);
+      if (!Number.isInteger(n) || n < 0 || n > 6) continue;
+      porDia[n] = { from: horas?.from || null, to: horas?.to || null };
+    }
+  } else if (Array.isArray(schedule.days)) {
+    // Forma anterior: un solo rango para todos los días marcados.
+    for (const n of schedule.days) {
+      if (!Number.isInteger(n) || n < 0 || n > 6) continue;
+      porDia[n] = { from: schedule.from || null, to: schedule.to || null };
+    }
+  }
+
+  const ORDEN_SEMANA = [1, 2, 3, 4, 5, 6, 0];
+  const dias = ORDEN_SEMANA.filter(n => porDia[n]);
+  if (!dias.length) return null;
+
+  const conHoras = dias.filter(n => porDia[n].from && porDia[n].to);
+  const uniforme = conHoras.length === dias.length && conHoras.every(n =>
+    porDia[n].from === porDia[dias[0]].from && porDia[n].to === porDia[dias[0]].to);
+
+  return { porDia, dias, uniforme };
+}
 
 function normalizar(data) {
   return {
