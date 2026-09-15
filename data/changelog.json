@@ -1,5 +1,21 @@
 [
   {
+    "id": "2026-09-15-horario-por-dia",
+    "version": "v2.56.0",
+    "date": "2026-09-15",
+    "category": "feat",
+    "scope": "rrhh",
+    "audience": "admin",
+    "title": "El horario de cada persona ya puede cambiar según el día",
+    "items": [
+      "Había un solo par de entrada y salida para toda la semana. Quien trabajaba de mañana unos días y de tarde otros no cabía: había que elegir cuál de los dos horarios era «el» horario y el otro no quedaba registrado",
+      "Ahora cada día marcado lleva sus propias horas. Al marcar un día se estrena con el horario del primero, y hay un botón para copiarlo a todos: quien tiene horario parejo no teclea la misma hora cinco veces",
+      "Las fichas ya cargadas se ven igual que siempre y no hubo que tocar ninguna: el formato anterior se sigue leyendo como «esos días con ese mismo horario»",
+      "En la ficha, si todos los días coinciden se sigue leyendo «9:00 AM – 5:00 PM · lunes a viernes»; si cambian, se detalla día por día",
+      "Al guardar, el aviso de horas incompletas dice de qué día se trata en vez de señalar el horario entero"
+    ]
+  },
+  {
     "id": "2026-09-15-calendario-rrhh-interactivo",
     "version": "v2.55.0",
     "date": "2026-09-15",
