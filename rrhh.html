@@ -278,16 +278,16 @@
 
             <div class="rh-cal-grid" id="rh-cal-grid"></div>
 
-            <div class="rh-cal-legend">
-              <span class="rh-cal-leg"><i class="ph-fill ph-money"></i> Nómina</span>
-              <span class="rh-cal-leg"><i class="ph-fill ph-flag-banner"></i> Feriado federal</span>
-              <span class="rh-cal-leg"><i class="ph-fill ph-cake"></i> Cumpleaños</span>
-              <span class="rh-cal-leg"><i class="ph-fill ph-calendar-x"></i> Ausencia</span>
+            <div class="rh-cal-legend" role="group" aria-label="Filtrar por tipo">
+              <button type="button" class="rh-cal-leg" data-tipo="nomina" aria-pressed="true"><i class="ph ph-money m-nomina"></i> Nómina</button>
+              <button type="button" class="rh-cal-leg" data-tipo="feriado" aria-pressed="true"><i class="ph ph-flag-banner m-feriado"></i> Feriado federal</button>
+              <button type="button" class="rh-cal-leg" data-tipo="cumple" aria-pressed="true"><i class="ph ph-cake m-cumple"></i> Cumpleaños</button>
+              <button type="button" class="rh-cal-leg" data-tipo="ausencia" aria-pressed="true"><i class="ph ph-calendar-x m-ausencia"></i> Ausencia</button>
             </div>
           </section>
 
           <section class="ad-section">
-            <div class="section-label"><span class="kicker-dot"></span>Este mes</div>
+            <div class="section-label"><span class="kicker-dot"></span><span id="rh-cal-list-label">Este mes</span></div>
             <div class="rh-cal-list" id="rh-cal-list"></div>
           </section>
         </div>

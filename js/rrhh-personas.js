@@ -1306,12 +1306,40 @@ function bindVistas() {
   });
 }
 
+/**
+ * El calendario pide abrir la ficha de alguien al pulsar un cumpleaños o una
+ * ausencia. Llega por evento del documento y no por import: rrhh-calendario.js
+ * ya se importa desde aquí, y devolverle la llamada cerraría el círculo.
+ *
+ * Cambiar de vista se hace pulsando la pestaña, no tocando `hidden` a mano:
+ * bindVistas() coordina cuatro contenedores y los filtros de la toolbar, y
+ * media docena de estados se quedarían a medias.
+ */
+function bindSaltoDesdeCalendario() {
+  document.addEventListener("rh:abrir-persona", async e => {
+    const email = e.detail?.email;
+    if (!email) return;
+
+    document.querySelector('.rh-view-btn[data-view="personas"]')?.click();
+    if (!personas.length) await cargarPersonas();
+
+    // Quien reportó una ausencia puede no estar en el equipo (una cuenta ya
+    // dada de baja, por ejemplo): sin esto la ficha quedaría en blanco.
+    if (!personas.some(p => (p._email || "") === email)) {
+      window.heroToast?.info("Esa persona no está en la lista del equipo.");
+      return;
+    }
+    seleccionar(email);
+  });
+}
+
 // ── Init ───────────────────────────────────────────────────────────
 function init() {
   if (!$("rh-people-list")) return;
 
   bindVistas();
   initCalendario();
+  bindSaltoDesdeCalendario();
 
   const filtro = $("rh-people-filter");
   if (filtro) filtro.addEventListener("input", pintarLista);

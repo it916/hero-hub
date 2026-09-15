@@ -3312,6 +3312,10 @@ body[data-theme="dark"] .rh-flag-edited { color:var(--gold-2); }
 }
 .rh-card-empty i { width:34px; height:34px; opacity:.5; }
 .rh-card-empty p { margin:0; font-size:13px; font-style:italic; }
+/* El display de arriba le gana al atributo hidden, que el navegador aplica
+   con menos especificidad: pintarFicha() ponia hidden=true y el aviso de
+   'elige a alguien' se quedaba encima de la ficha ya cargada. */
+.rh-card-empty[hidden] { display:none; }
 
 .rh-card-head { display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
 .rh-card-photo { width:74px; height:74px; border-radius:50%; object-fit:cover; flex-shrink:0; }
@@ -3507,15 +3511,29 @@ body[data-theme="dark"] .rh-day { background:rgba(255,255,255,.05); }
   font-family:var(--mono); font-size:12.5px; font-weight:600; color:var(--text-2);
 }
 .rh-cal-cell.hoy .rh-cal-num { color:var(--cyan-deep); font-weight:800; }
-.rh-cal-marks { display:flex; flex-wrap:wrap; gap:3px; }
-.rh-cal-mark { font-size:15px; line-height:1; cursor:default; }
+/* --cyan-deep es un cyan oscuro: sobre el fondo de noche el numero del dia
+   de hoy casi no se lee. En noche va el cyan claro, que es el que usa el
+   resto de la hoja para lo mismo. */
+body[data-theme="dark"] .rh-cal-cell.hoy .rh-cal-num { color:var(--cyan-bright); }
+.rh-cal-marks { display:flex; flex-wrap:wrap; gap:4px; }
+.rh-cal-mark { font-size:17px; line-height:1; cursor:default; }
 
 /* Color por tipo. Con emoji el color venia dado por el sistema operativo y no
-   habia forma de tocarlo; con una fuente de iconos es una propiedad mas. */
+   habia forma de tocarlo; con una fuente de iconos es una propiedad mas.
+   Van en trazo (.ph regular) y no en silueta (.ph-fill): una mancha solida
+   de color a 15px se lee como emoji del sistema por mucho que el DOM diga
+   otra cosa, y asi se reporto. El trazo pide algo mas de caja: 17px. */
 .m-nomina   { color:#0f8054; }
 .m-feriado  { color:#c17a1a; }
 .m-cumple   { color:#be185d; }
 .m-ausencia { color:#f43f5e; }
+
+/* Los cuatro tonos de arriba estan elegidos contra blanco y sobre el fondo
+   oscuro quedan apagados: en noche suben de luminosidad. */
+body[data-theme="dark"] .m-nomina   { color:#34d399; }
+body[data-theme="dark"] .m-feriado  { color:#e0a94a; }
+body[data-theme="dark"] .m-cumple   { color:#f472b6; }
+body[data-theme="dark"] .m-ausencia { color:#fb7185; }
 
 .rh-cal-legend {
   display:flex; flex-wrap:wrap; gap:16px; margin-top:16px;
@@ -3526,13 +3544,78 @@ body[data-theme="dark"] .rh-day { background:rgba(255,255,255,.05); }
   font-size:12.5px; color:var(--text-2);
 }
 
+/* La leyenda lleva el color de su tipo: si la marca del mes es magenta y la
+   de la leyenda gris, deja de ser una leyenda. */
+.rh-cal-leg i { font-size:16px; line-height:1; }
+
+/* ── Dia con detalle ── */
+/* Solo los dias con algo dentro responden al puntero. Marcar en hover un dia
+   vacio promete un detalle que no existe. */
+.rh-cal-cell.con-eventos { cursor:pointer; transition:border-color .15s, box-shadow .15s, transform .15s; }
+.rh-cal-cell.con-eventos:hover { border-color:var(--cyan); transform:translateY(-1px); box-shadow:0 4px 12px rgba(6,163,182,.14); }
+.rh-cal-cell.con-eventos:focus-visible { outline:2px solid var(--cyan); outline-offset:2px; }
+.rh-cal-cell.sel { border-color:var(--cyan); background:rgba(6,163,182,.07); box-shadow:0 0 0 2px rgba(6,163,182,.2); }
+body[data-theme="dark"] .rh-cal-cell.sel { background:rgba(6,163,182,.14); }
+
+/* ── Tooltip propio ── */
+/* El title nativo tarda casi un segundo, lo pinta el sistema operativo y no
+   sabe nada del tema noche. */
+.rh-cal-mark { position:relative; }
+.rh-cal-mark::after {
+  content:attr(data-tip);
+  position:absolute; bottom:calc(100% + 7px); left:50%; transform:translateX(-50%);
+  padding:5px 9px; border-radius:7px; z-index:30;
+  background:var(--text); color:var(--paper);
+  font-family:var(--sans); font-size:11.5px; font-weight:600; line-height:1.35;
+  white-space:nowrap; max-width:260px; overflow:hidden; text-overflow:ellipsis;
+  opacity:0; pointer-events:none; transition:opacity .12s;
+  box-shadow:var(--shadow);
+}
+.rh-cal-mark:hover::after { opacity:1; }
+
+/* ── Cabecera del dia enfocado ── */
+.rh-cal-dayhead {
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  padding:9px 12px; margin-bottom:4px;
+  border-radius:10px; background:rgba(6,163,182,.08); border:1px solid rgba(6,163,182,.22);
+}
+body[data-theme="dark"] .rh-cal-dayhead { background:rgba(6,163,182,.13); border-color:rgba(6,163,182,.3); }
+.rh-cal-dayhead-title { font-family:var(--display); font-size:14px; font-weight:700; color:var(--text); }
+.rh-cal-dayhead-count { font-family:var(--mono); font-size:11.5px; color:var(--muted); }
+.rh-cal-dayhead-back {
+  margin-left:auto; padding:5px 11px; border-radius:999px; cursor:pointer;
+  border:1px solid var(--cyan); background:transparent;
+  font-family:var(--sans); font-size:11.5px; font-weight:600; color:var(--cyan-deep);
+}
+.rh-cal-dayhead-back:hover { background:var(--cyan); color:#fff; }
+body[data-theme="dark"] .rh-cal-dayhead-back { color:var(--cyan-bright); }
+body[data-theme="dark"] .rh-cal-dayhead-back:hover { color:#06151a; }
+
+/* ── Leyenda como filtro ── */
+/* Eran cuatro etiquetas decorativas; ahora encienden y apagan su tipo. */
+.rh-cal-leg { border:1px solid transparent; background:transparent; cursor:pointer;
+  padding:3px 9px; border-radius:999px; transition:background .15s, opacity .15s; }
+.rh-cal-leg:hover { background:var(--paper-2); }
+.rh-cal-leg:focus-visible { outline:2px solid var(--cyan); outline-offset:1px; }
+.rh-cal-leg.off { opacity:.4; }
+.rh-cal-leg.off i { color:var(--muted) !important; }
+.rh-cal-leg.off { text-decoration:line-through; }
+
+/* ── Fila que lleva a una ficha ── */
+.rh-cal-row.con-persona { cursor:pointer; }
+.rh-cal-row.con-persona:hover { border-color:var(--cyan); background:rgba(6,163,182,.05); }
+body[data-theme="dark"] .rh-cal-row.con-persona:hover { background:rgba(6,163,182,.12); }
+.rh-cal-row.con-persona:focus-visible { outline:2px solid var(--cyan); outline-offset:2px; }
+.rh-cal-row-go { margin-left:auto; font-size:15px; color:var(--muted); flex-shrink:0; }
+.rh-cal-row.con-persona:hover .rh-cal-row-go { color:var(--cyan); }
+
 .rh-cal-list { display:flex; flex-direction:column; gap:6px; }
 .rh-cal-row {
   display:flex; align-items:center; gap:10px;
   padding:9px 12px; border-radius:10px;
   border:1px solid var(--border); background:var(--card); font-size:13px;
 }
-.rh-cal-row-emoji { font-size:15px; line-height:1; flex-shrink:0; }
+.rh-cal-row-emoji { font-size:17px; line-height:1; flex-shrink:0; }
 .rh-cal-row-date {
   font-family:var(--mono); font-size:11.5px; color:var(--muted);
   white-space:pre; flex-shrink:0;
@@ -3555,7 +3638,7 @@ body[data-theme="dark"] .rh-day { background:rgba(255,255,255,.05); }
 @media (max-width:700px) {
   .rh-cal-cell { min-height:58px; padding:5px; }
   .rh-cal-title { min-width:0; font-size:16px; }
-  .rh-cal-mark { font-size:12px; }
+  .rh-cal-mark { font-size:14px; }
 }
 
 .ad-empty {

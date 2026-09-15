@@ -41,6 +41,13 @@ let mesVisible = null;     // Date apuntando al día 1 del mes en pantalla
 let usuarios = null;
 let pidiendoHistorico = false;
 
+// Día del mes cuyo detalle se está mirando, o null para el mes entero. No se
+// guarda en ningún sitio: cambiar de mes lo suelta.
+let diaEnfocado = null;
+
+// Tipos encendidos. La leyenda dejó de ser decorativa y los apaga.
+const tiposActivos = new Set(ORDEN_TIPOS);
+
 
 // ── Fechas ─────────────────────────────────────────────────────────
 
@@ -130,6 +137,8 @@ function cumplesDelMes(mes) {
       dia: dd,
       tipo: "cumple",
       texto: u.identity?.name || u._email,
+      // Para saltar de la lista del mes a la ficha de esa persona.
+      email: u._email || null,
     });
   }
   return salida;
@@ -145,6 +154,7 @@ function ausenciasDelMes(y, m) {
       dia: it.cuando.getDate(),
       tipo: "ausencia",
       texto: it.name || it.email || "—",
+      email: it.email || null,
     }));
 }
 
@@ -217,18 +227,35 @@ function pintar() {
     celda.appendChild(el("div", "rh-cal-num", String(d)));
 
     const marcas = el("div", "rh-cal-marks");
-    const eventos = porDia.get(d) || [];
+    const eventos = (porDia.get(d) || []).filter(ev => tiposActivos.has(ev.tipo));
     // Una marca por tipo: cinco cumpleaños el mismo día no pintan cinco
     // pasteles, pintan uno. El detalle está en la lista de abajo.
     const vistos = new Set();
     for (const ev of eventos) {
       if (vistos.has(ev.tipo)) continue;
       vistos.add(ev.tipo);
-      const marca = el("i", `ph-fill ${TIPOS[ev.tipo].ph} rh-cal-mark m-${ev.tipo}`);
-      marca.title = eventos.filter(e => e.tipo === ev.tipo).map(e => e.texto).join(" · ");
+      const marca = el("i", `ph ${TIPOS[ev.tipo].ph} rh-cal-mark m-${ev.tipo}`);
+      // data-tip y no title: el tooltip nativo tarda casi un segundo, lo
+      // dibuja el sistema operativo y no sabe nada del tema noche.
+      marca.dataset.tip = eventos.filter(e => e.tipo === ev.tipo).map(e => e.texto).join(" · ");
       marcas.appendChild(marca);
     }
     if (marcas.childElementCount) celda.appendChild(marcas);
+
+    // Solo los días con algo que enseñar responden al clic. Un día vacío que
+    // se hunde al pulsarlo promete un detalle que no existe.
+    if (eventos.length) {
+      celda.classList.add("con-eventos");
+      celda.tabIndex = 0;
+      celda.setAttribute("role", "button");
+      celda.setAttribute("aria-label", `${d} de ${MESES[m]}: ${eventos.length} evento(s)`);
+      if (diaEnfocado === d) celda.classList.add("sel");
+      const abrir = () => enfocarDia(diaEnfocado === d ? null : d);
+      celda.addEventListener("click", abrir);
+      celda.addEventListener("keydown", e => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); abrir(); }
+      });
+    }
 
     cont.appendChild(celda);
   }
@@ -236,23 +263,95 @@ function pintar() {
   pintarLista(porDia, y, m);
 }
 
+/** Enfoca un día (o lo suelta con null) y repinta. */
+function enfocarDia(d) {
+  diaEnfocado = d;
+  pintar();
+  // Al enfocar, la lista de abajo es la respuesta al clic: si queda fuera de
+  // pantalla el clic parece no haber hecho nada.
+  if (d != null) $("rh-cal-list")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+/** Cabecera de la lista cuando se está mirando un solo día. */
+function construirCabeceraDia(dia, mes, cuantos) {
+  const cab = el("div", "rh-cal-dayhead");
+
+  const titulo = el("span", "rh-cal-dayhead-title", `${dia} de ${MESES[mes]}`);
+  cab.appendChild(titulo);
+
+  cab.appendChild(el("span", "rh-cal-dayhead-count",
+    cuantos === 1 ? "1 evento" : `${cuantos} eventos`));
+
+  const volver = el("button", "rh-cal-dayhead-back", "Ver todo el mes");
+  volver.type = "button";
+  volver.addEventListener("click", () => enfocarDia(null));
+  cab.appendChild(volver);
+
+  return cab;
+}
+
+/**
+ * Pide abrir la ficha de alguien. Va por evento y no por import para no atar
+ * el calendario a rrhh-personas.js: ese módulo ya importa de este, y un
+ * import de vuelta cerraría el círculo.
+ */
+function pedirFichaDe(email) {
+  document.dispatchEvent(new CustomEvent("rh:abrir-persona", { detail: { email } }));
+}
+
 function pintarLista(porDia, y, m) {
   const cont = $("rh-cal-list");
   if (!cont) return;
   cont.replaceChildren();
 
-  const dias = [...porDia.keys()].sort((a, b) => a - b);
+  const visible = d => (porDia.get(d) || []).filter(ev => tiposActivos.has(ev.tipo));
+
+  // El rotulo decia "Este mes" fijo, y mentia en cuanto se navegaba a otro:
+  // en marzo seguia diciendo "este mes". Ahora nombra el mes que se mira. El
+  // dia enfocado no se repite aqui — de eso ya se encarga la cabecera.
+  const rotulo = $("rh-cal-list-label");
+  if (rotulo) rotulo.textContent = `${MESES[m]} ${y}`;
+
+  let dias = [...porDia.keys()].sort((a, b) => a - b).filter(d => visible(d).length);
+
+  // Con un día enfocado la lista deja de ser el mes y pasa a ser ese día. Es
+  // el detalle que faltaba: la rejilla dice que pasa algo, esto dice qué.
+  if (diaEnfocado != null) {
+    const soloEse = dias.filter(d => d === diaEnfocado);
+    cont.appendChild(construirCabeceraDia(diaEnfocado, m, soloEse.length ? visible(diaEnfocado).length : 0));
+    dias = soloEse;
+  }
+
   if (!dias.length) {
-    cont.appendChild(el("div", "ad-empty", "— Nada marcado este mes —"));
+    const texto = diaEnfocado != null
+      ? "— Nada visible este día con los filtros puestos —"
+      : (porDia.size ? "— Nada visible con los filtros puestos —" : "— Nada marcado este mes —");
+    cont.appendChild(el("div", "ad-empty", texto));
     return;
   }
 
   for (const d of dias) {
-    for (const ev of porDia.get(d)) {
+    for (const ev of visible(d)) {
       const fila = el("div", "rh-cal-row");
-      fila.appendChild(el("i", `ph-fill ${TIPOS[ev.tipo].ph} rh-cal-row-emoji m-${ev.tipo}`));
+      fila.appendChild(el("i", `ph ${TIPOS[ev.tipo].ph} rh-cal-row-emoji m-${ev.tipo}`));
       fila.appendChild(el("span", "rh-cal-row-date", `${String(d).padStart(2, " ")} ${MESES[m].slice(0, 3)}`));
       fila.appendChild(el("span", "rh-cal-row-text", ev.texto));
+
+      // Cumpleaños y ausencias son de alguien: desde aquí se abre su ficha.
+      // Nómina y feriados no tienen dueño y se quedan como están.
+      if (ev.email) {
+        fila.classList.add("con-persona");
+        fila.tabIndex = 0;
+        fila.setAttribute("role", "button");
+        fila.title = "Ver la ficha de esta persona";
+        fila.appendChild(el("i", "ph ph-arrow-right rh-cal-row-go"));
+        const ir = () => pedirFichaDe(ev.email);
+        fila.addEventListener("click", ir);
+        fila.addEventListener("keydown", e => {
+          if (e.key === "Enter") { e.preventDefault(); ir(); }
+        });
+      }
+
       cont.appendChild(fila);
     }
   }
@@ -313,7 +412,35 @@ export async function abrirCalendario() {
 function mover(delta) {
   if (!mesVisible) return;
   mesVisible = new Date(mesVisible.getFullYear(), mesVisible.getMonth() + delta, 1);
+  // El día enfocado pertenecía al mes que se deja atrás: mantenerlo mostraría
+  // el "3 de octubre" mientras la rejilla enseña noviembre.
+  diaEnfocado = null;
   pintar();
+}
+
+/** Enciende o apaga un tipo desde la leyenda. */
+function alternarTipo(tipo) {
+  if (!TIPOS[tipo]) return;
+  if (tiposActivos.has(tipo)) {
+    // Apagar el último dejaría un mes en blanco sin decir por qué.
+    if (tiposActivos.size === 1) return;
+    tiposActivos.delete(tipo);
+  } else {
+    tiposActivos.add(tipo);
+  }
+  pintarLeyenda();
+  pintar();
+}
+
+function pintarLeyenda() {
+  document.querySelectorAll(".rh-cal-leg[data-tipo]").forEach(btn => {
+    const activo = tiposActivos.has(btn.dataset.tipo);
+    btn.classList.toggle("off", !activo);
+    btn.setAttribute("aria-pressed", String(activo));
+    btn.title = activo
+      ? `Ocultar ${TIPOS[btn.dataset.tipo]?.label || ""}`.trim()
+      : `Mostrar ${TIPOS[btn.dataset.tipo]?.label || ""}`.trim();
+  });
 }
 
 export function initCalendario() {
@@ -325,7 +452,27 @@ export function initCalendario() {
   $("rh-cal-today")?.addEventListener("click", () => {
     const hoy = new Date();
     mesVisible = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+    diaEnfocado = hoy.getDate();
     pintar();
+  });
+
+  document.querySelectorAll(".rh-cal-leg[data-tipo]").forEach(btn => {
+    btn.addEventListener("click", () => alternarTipo(btn.dataset.tipo));
+  });
+  pintarLeyenda();
+
+  // Flechas para cambiar de mes y Escape para soltar el día. Solo con el
+  // calendario a la vista y fuera de un campo de texto: los filtros de fecha
+  // de la toolbar viven en la misma pantalla y las flechas les pertenecen.
+  document.addEventListener("keydown", e => {
+    if ($("rh-calendario")?.hidden) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const activo = document.activeElement;
+    if (activo && activo.closest("input, textarea, select, [contenteditable]")) return;
+
+    if (e.key === "ArrowLeft")  { e.preventDefault(); mover(-1); }
+    if (e.key === "ArrowRight") { e.preventDefault(); mover(1); }
+    if (e.key === "Escape" && diaEnfocado != null) { e.preventDefault(); enfocarDia(null); }
   });
 
   // Si llegan ausencias nuevas mientras el calendario está abierto, se repinta.
