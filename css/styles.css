@@ -3369,6 +3369,76 @@ body[data-theme="dark"] .rh-card-job { color:var(--cyan-bright); }
 .rh-docs-link i { width:15px; height:15px; }
 body[data-theme="dark"] .rh-docs-link { color:var(--cyan-bright); }
 
+/* ── Destacados de la ficha ──
+   Lo que cambia solo (si está en horario ahora, qué hace hoy) y lo que se
+   consulta seguido. El resto de los datos sigue abajo, en la grilla de
+   etiqueta y valor. */
+.rh-destacados {
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(168px,1fr)); gap:12px;
+  margin-top:20px; padding-top:18px; border-top:1px solid var(--border);
+}
+.rh-tile {
+  background:var(--paper-2); border:1px solid var(--border); border-radius:13px;
+  padding:13px 15px; min-width:0;
+}
+.rh-tile-label {
+  font-family:var(--mono); font-size:9.5px; font-weight:700;
+  letter-spacing:1.1px; text-transform:uppercase; color:var(--muted);
+}
+.rh-tile-value {
+  display:flex; align-items:center; gap:7px; margin-top:6px; line-height:1.2;
+  font-family:var(--display); font-size:16.5px; font-weight:700; color:var(--text);
+}
+.rh-tile-sub { font-size:11.5px; color:var(--muted); margin-top:4px; }
+.rh-tile-dot {
+  width:8px; height:8px; border-radius:50%; flex-shrink:0; background:var(--muted);
+}
+
+/* "En horario" es el único estado que se pinta en color: si todo destacara,
+   nada destacaría. Fuera de horario y jornada terminada van en gris. */
+.rh-tile.dentro { border-color:rgba(16,185,129,.35); background:rgba(16,185,129,.07); }
+.rh-tile.dentro .rh-tile-value { color:#0a7d5c; }
+.rh-tile.dentro .rh-tile-dot { background:var(--emerald); box-shadow:0 0 0 3px rgba(16,185,129,.18); }
+.rh-tile.suelto .rh-tile-dot { background:var(--gold); }
+.rh-tile-libre { color:var(--muted); }
+
+/* Dato sin registrar: borde punteado y el aviso convertido en el botón que
+   abre el formulario. Con dieciséis fichas de diecisiete vacías, este es el
+   estado que más se ve — conviene que se note y que se arregle desde acá. */
+.rh-tile.vacio { border-style:dashed; background:transparent; }
+.rh-tile-fix {
+  margin-top:7px; padding:0; border:0; background:none; cursor:pointer;
+  font-family:var(--sans); font-size:12.5px; font-weight:700;
+  color:var(--cyan-deep); text-align:left;
+}
+.rh-tile-fix:hover { text-decoration:underline; }
+
+body[data-theme="dark"] .rh-tile { background:rgba(255,255,255,.04); }
+body[data-theme="dark"] .rh-tile.vacio { background:transparent; }
+body[data-theme="dark"] .rh-tile.dentro { background:rgba(16,185,129,.12); }
+body[data-theme="dark"] .rh-tile.dentro .rh-tile-value { color:#4ade9f; }
+body[data-theme="dark"] .rh-tile-fix { color:var(--cyan-bright); }
+
+/* La semana en rejilla, solo cuando los días NO son iguales entre sí —
+   lo decide resumenSemana(). Si son iguales va una frase y no esto. */
+.rh-semana { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-top:12px; }
+.rh-semana-dia {
+  display:flex; flex-direction:column; align-items:center; gap:1px;
+  padding:8px 3px; border-radius:10px; min-width:0;
+  background:var(--paper-2); border:1px solid transparent;
+}
+.rh-semana-dia.off { opacity:.45; }
+.rh-semana-dia.hoy { border-color:var(--cyan); }
+.rh-semana-n {
+  font-family:var(--mono); font-size:10px; font-weight:700;
+  letter-spacing:.5px; color:var(--muted);
+}
+.rh-semana-h {
+  font-family:var(--mono); font-size:10px; color:var(--text-2); white-space:nowrap;
+}
+.rh-semana-frase { margin-top:12px; font-size:13px; color:var(--text-2); }
+body[data-theme="dark"] .rh-semana-dia { background:rgba(255,255,255,.04); }
+
 /* Formulario de edición */
 .rh-form { margin:22px 0 4px; padding-top:18px; border-top:1px solid var(--border); }
 .rh-form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }

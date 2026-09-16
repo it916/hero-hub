@@ -102,6 +102,117 @@ function horaEn(tz) {
   } catch { return ""; }
 }
 
+// ── ¿Está trabajando ahora? ────────────────────────────────────────
+// El día y la hora se calculan EN LA ZONA DE LA PERSONA, no con el reloj del
+// navegador: a las 11 PM de un martes en Miami, en Madrid ya es miércoles y
+// la ficha enseñaría el horario del día equivocado.
+
+const NOMBRE_DIA_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function diaEnZona(tz) {
+  if (tz) {
+    try {
+      const corto = new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "short" })
+        .format(new Date());
+      const n = NOMBRE_DIA_EN.indexOf(corto);
+      if (n >= 0) return n;
+    } catch { /* huso inválido: cae al reloj de quien mira */ }
+  }
+  return new Date().getDay();
+}
+
+// Minutos desde medianoche allá. hourCycle:"h23" y no hour12:false — con este
+// último algunos entornos devuelven "24" a medianoche en vez de "00".
+function minutosEnZona(tz) {
+  if (tz) {
+    try {
+      const partes = new Intl.DateTimeFormat("en-US", {
+        timeZone: tz, hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+      }).formatToParts(new Date());
+      const h = Number(partes.find(x => x.type === "hour")?.value);
+      const m = Number(partes.find(x => x.type === "minute")?.value);
+      if (Number.isInteger(h) && Number.isInteger(m)) return (h % 24) * 60 + m;
+    } catch { /* idem */ }
+  }
+  const d = new Date();
+  return d.getHours() * 60 + d.getMinutes();
+}
+
+// Devuelve null para todo lo que no sea una hora de verdad. Antes partía la
+// cadena y confiaba en Number(), pero Number("") es 0: un día marcado sin
+// horas —que se guarda como {from:null,to:null} a propósito— pasaba por las
+// 00:00 y la ficha lo daba por "En horario · hasta las " (sin hora).
+const aMinutos = hm => {
+  const t = String(hm ?? "").trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!t) return null;
+  const h = Number(t[1]), min = Number(t[2]);
+  return h <= 23 && min <= 59 ? h * 60 + min : null;
+};
+
+// Primer día con jornada a partir de mañana, para poder decir cuándo vuelve.
+function proximoDia(porDia, desde) {
+  for (let i = 1; i <= 7; i++) {
+    const n = (desde + i) % 7;
+    if (porDia[n]) return { n, ...porDia[n] };
+  }
+  return null;
+}
+
+/**
+ * Dónde está la persona en este momento:
+ *
+ *   { clase:"dentro"|"fuera"|"suelto", titulo, detalle }
+ *
+ * Devuelve null si falta el horario o el huso. Con uno de los dos sin
+ * registrar la pregunta no se puede responder, y resolverla con el reloj de
+ * quien mira la ficha sería mentir sin avisar.
+ */
+function estadoAhora(hr) {
+  const h = leerHorario(hr.schedule);
+  if (!h || !hr.timezone) return null;
+
+  const hoy = diaEnZona(hr.timezone);
+  const ahora = minutosEnZona(hr.timezone);
+  const turno = h.porDia[hoy];
+
+  // Un turno que cruzó la medianoche sigue corriendo en la madrugada del día
+  // siguiente: a las 2 AM del miércoles, quien entró el martes a las 21:00
+  // para salir a las 05:00 está trabajando, y porDia[miércoles] no sabe nada
+  // de eso. Se mira el día anterior antes que el de hoy.
+  const anoche = h.porDia[(hoy + 6) % 7];
+  const entroAnoche = aMinutos(anoche?.from);
+  const saleHoy = aMinutos(anoche?.to);
+  if (entroAnoche != null && saleHoy != null && saleHoy <= entroAnoche && ahora < saleHoy) {
+    return { clase: "dentro", titulo: "En horario", detalle: `hasta las ${hm12(anoche.to)}` };
+  }
+
+  const sig = proximoDia(h.porDia, hoy);
+  const vuelve = sig
+    ? `vuelve el ${DIAS.find(d => d.n === sig.n)?.largo || "?"}`
+      + (sig.from ? ` a las ${hm12(sig.from)}` : "")
+    : "sin más días asignados";
+
+  if (!turno) return { clase: "fuera", titulo: "Hoy no trabaja", detalle: vuelve };
+
+  const entra = aMinutos(turno.from);
+  const sale = aMinutos(turno.to);
+  // Día marcado sin horas: se sabe que trabaja, no desde cuándo.
+  if (entra == null || sale == null) {
+    return { clase: "suelto", titulo: "Trabaja hoy", detalle: "sin horario fijo" };
+  }
+
+  // Si el turno de hoy cruza la medianoche (entra 21:00, sale 05:00), estar
+  // dentro es solo haber entrado ya: el tramo de madrugada pertenece al
+  // turno de ayer y lo resuelve la comprobación de arriba.
+  const dentro = sale > entra
+    ? ahora >= entra && ahora < sale
+    : ahora >= entra;
+
+  if (dentro) return { clase: "dentro", titulo: "En horario", detalle: `hasta las ${hm12(turno.to)}` };
+  if (ahora < entra) return { clase: "fuera", titulo: "Aún no entra", detalle: `entra a las ${hm12(turno.from)}` };
+  return { clase: "fuera", titulo: "Jornada terminada", detalle: vuelve };
+}
+
 // Febrero con 29 a propósito: el cumpleaños se guarda sin año, así que el 29
 // es una fecha legítima aunque no exista todos los años.
 const DIAS_MES = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -410,6 +521,13 @@ function pintarFicha() {
   cuerpo.replaceChildren();
 
   cuerpo.appendChild(cabecera(p));
+  // Los destacados solo en lectura: mientras se edita, el horario que se está
+  // tecleando todavía no es el guardado y los tiles dirían otra cosa.
+  if (!editando) {
+    cuerpo.appendChild(destacados(p));
+    const semana = resumenSemana(hrDe(p._email));
+    if (semana) cuerpo.appendChild(semana);
+  }
   cuerpo.appendChild(editando ? formulario(p) : datosLaborales(p));
   cuerpo.appendChild(evaluacionesDe(p));
   cuerpo.appendChild(reportesDe(p));
@@ -462,6 +580,124 @@ function cabecera(p) {
   return head;
 }
 
+// ── Destacados ─────────────────────────────────────────────────────
+// Tres cosas y no diez. El criterio no es "qué parece importante" sino qué
+// cambia solo y qué se consulta seguido: el horario se mira cada vez que
+// alguien quiere saber si puede escribirle a esa persona; la dirección, una
+// vez en la vida. El resto sigue abajo, en la grilla de etiqueta y valor.
+//
+// Sin cuenta regresiva a propósito. Un "sale en 4h 18m" obliga a un
+// setInterval que hay que limpiar al cambiar de persona —la misma fuga que
+// dejaron los Flatpickr— y sin refrescarlo la ficha miente a los diez
+// minutos. Lo que hace falta saber es binario: si se le puede escribir ahora.
+// Eso lo dice el estado más la hora de corte, que no envejece en una sesión.
+function destacados(p) {
+  const hr = hrDe(p._email);
+  const caja = el("div", "rh-destacados");
+  caja.append(tileAhora(hr), tileHoy(hr), tileHero(hr));
+  return caja;
+}
+
+function tile(etiqueta, clase) {
+  const t = el("div", "rh-tile" + (clase ? " " + clase : ""));
+  t.appendChild(el("div", "rh-tile-label", etiqueta));
+  return t;
+}
+
+// El hueco se arregla desde donde se ve: el aviso ES el botón que abre el
+// formulario, en vez de mandar a buscar "Editar datos laborales" arriba.
+// Hoy dieciséis de las diecisiete fichas están vacías, así que este es el
+// estado que más se va a ver.
+function tileVacio(etiqueta, texto) {
+  const t = tile(etiqueta, "vacio");
+  const btn = el("button", "rh-tile-fix", texto);
+  btn.type = "button";
+  btn.addEventListener("click", () => { editando = true; pintarFicha(); });
+  t.appendChild(btn);
+  return t;
+}
+
+function tileAhora(hr) {
+  const est = estadoAhora(hr);
+  if (!est) {
+    return leerHorario(hr.schedule)
+      ? tileVacio("Ahora", "Registrar zona horaria")
+      : tileVacio("Ahora", "Registrar horario");
+  }
+
+  const t = tile("Ahora", est.clase);
+  const valor = el("div", "rh-tile-value");
+  valor.appendChild(el("span", "rh-tile-dot"));
+  // El texto va envuelto en su span y no suelto: dentro de un flex con gap el
+  // texto pelado se separa por palabras ([[feedback_flex_gap_texto_suelto]]).
+  valor.appendChild(el("span", null, est.titulo));
+  t.append(valor, el("div", "rh-tile-sub", est.detalle));
+  return t;
+}
+
+function tileHoy(hr) {
+  const h = leerHorario(hr.schedule);
+  if (!h) return tileVacio("Hoy", "Registrar horario");
+
+  const n = diaEnZona(hr.timezone);
+  const nombre = DIAS.find(d => d.n === n)?.largo || "";
+  const turno = h.porDia[n];
+
+  const t = tile("Hoy");
+  if (!turno) {
+    t.append(el("div", "rh-tile-value rh-tile-libre", "Libre"),
+             el("div", "rh-tile-sub", nombre));
+    return t;
+  }
+  t.append(
+    el("div", "rh-tile-value", turno.from && turno.to
+      ? `${hm12(turno.from)} – ${hm12(turno.to)}`
+      : "Sin horario fijo"),
+    el("div", "rh-tile-sub", nombre));
+  return t;
+}
+
+function tileHero(hr) {
+  if (!hr.startDate) return tileVacio("En Hero", "Registrar fecha de ingreso");
+  const t = tile("En Hero");
+  t.append(el("div", "rh-tile-value", antiguedad(hr.startDate) || "—"),
+           el("div", "rh-tile-sub", `desde ${hr.startDate}`));
+  return t;
+}
+
+// Debajo de los tiles, la semana entera. Una frase cuando todos los días son
+// iguales y la rejilla de siete solo cuando hay algo que comparar: siete
+// celdas repitiendo el mismo rango cinco veces no informan de nada, y la
+// frase "10:00 AM – 6:00 PM · lunes a viernes" se lee mejor.
+function resumenSemana(hr) {
+  const h = leerHorario(hr.schedule);
+  if (!h) return null;
+
+  const sinHoras = !h.dias.some(n => h.porDia[n].from);
+  if (h.uniforme || sinHoras) {
+    return el("div", "rh-semana-frase", horarioTexto(hr.schedule));
+  }
+
+  const hoy = diaEnZona(hr.timezone);
+  const fila = el("div", "rh-semana");
+  for (const d of DIAS) {
+    const turno = h.porDia[d.n];
+    const celda = el("div", "rh-semana-dia"
+      + (turno ? "" : " off") + (d.n === hoy ? " hoy" : ""));
+    celda.appendChild(el("span", "rh-semana-n", d.corto));
+    if (turno?.from && turno?.to) {
+      celda.append(el("span", "rh-semana-h", hm12(turno.from)),
+                   el("span", "rh-semana-h", hm12(turno.to)));
+      celda.title = `${d.largo}: ${hm12(turno.from)} – ${hm12(turno.to)}`;
+    } else {
+      celda.appendChild(el("span", "rh-semana-h", turno ? "s/h" : "—"));
+      celda.title = turno ? `${d.largo}: sin horario fijo` : `${d.largo}: no trabaja`;
+    }
+    fila.appendChild(celda);
+  }
+  return fila;
+}
+
 function datosLaborales(p) {
   const caja = el("div", "rh-datos");
 
@@ -478,11 +714,9 @@ function datosLaborales(p) {
     : "";
   caja.appendChild(dato("Zona horaria", tzTexto));
 
-  caja.appendChild(dato("Horario asignado", horarioTexto(hr.schedule)));
-
-  const inicio = hr.startDate;
-  const anos = antiguedad(inicio);
-  caja.appendChild(dato("En Hero desde", inicio ? `${inicio}${anos ? " · " + anos : ""}` : ""));
+  // El horario y la antigüedad ya no se repiten acá: subieron a los
+  // destacados, arriba. Repetirlos treinta centímetros más abajo no destaca
+  // nada, compite.
 
   // Con año registrado se muestra la fecha completa y la edad — es ficha de
   // RRHH, no el directorio. Sin año, solo el día y el mes que ya publica el Hub.
