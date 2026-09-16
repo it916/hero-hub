@@ -42,7 +42,7 @@
 
 import { db } from "./firebase-config.js";
 import {
-  collection, doc, getDoc, getDocs, setDoc
+  collection, doc, getDoc, getDocs, setDoc, deleteField
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const COLLECTION = "hr-data";
@@ -130,5 +130,27 @@ export async function getHrData(email) {
 export async function saveHrData(email, patch) {
   if (!email) throw new Error("saveHrData: email requerido");
   const ref = doc(db, COLLECTION, email.toLowerCase());
-  await setDoc(ref, patch, { merge: true });
+  await setDoc(ref, limpiarHorarioViejo(patch), { merge: true });
+}
+
+// El merge de Firestore es recursivo DENTRO de los mapas: escribir
+// schedule:{byDay} no reemplaza el mapa, lo fusiona, y el from/to/days de la
+// forma anterior sobrevive. El documento acaba diciendo dos cosas distintas
+// —un byDay con siete días junto a un days:[1,2,3,4,5]— y aunque
+// leerHorario() mira byDay primero y enseña lo correcto, lo guardado miente.
+// Se borran los tres campos viejos en el mismo guardado.
+//
+// No hace falta migrar nada: los documentos que nadie vuelva a guardar
+// conservan solo la forma vieja, que leerHorario() entiende igual.
+function limpiarHorarioViejo(patch) {
+  if (!patch?.schedule?.byDay) return patch;
+  return {
+    ...patch,
+    schedule: {
+      byDay: patch.schedule.byDay,
+      from: deleteField(),
+      to: deleteField(),
+      days: deleteField(),
+    },
+  };
 }
