@@ -1,5 +1,35 @@
 [
   {
+    "id": "2026-09-16-ficha-destacados",
+    "version": "v2.57.0",
+    "date": "2026-09-16",
+    "category": "feat",
+    "scope": "rrhh",
+    "audience": "admin",
+    "title": "La ficha de cada persona dice de un vistazo si está trabajando ahora",
+    "items": [
+      "La ficha listaba diez datos con el mismo peso, así que no destacaba ninguno. Arriba van ahora tres: si la persona está en horario en este momento, qué horario le toca hoy y cuánto lleva en Hero",
+      "El «ahora» se calcula con la hora del lugar donde vive esa persona, no con la de quien mira la ficha. A última hora de la tarde, quien está en otro huso ya va por el día siguiente y se le mostraba el horario equivocado",
+      "Cuando los días no coinciden entre sí, debajo aparece la semana completa con el de hoy señalado. Si el horario es parejo, se sigue leyendo en una sola línea",
+      "Lo que falta por registrar se ve punteado y se llena desde ahí mismo: el aviso es el botón que abre el formulario, en vez de mandar a buscar «Editar datos laborales»",
+      "El horario y la antigüedad dejaron de repetirse en la lista de abajo: ya están arriba"
+    ]
+  },
+  {
+    "id": "2026-09-16-horario-residuo",
+    "version": "v2.57.0",
+    "date": "2026-09-16",
+    "category": "fix",
+    "scope": "rrhh",
+    "audience": "admin",
+    "title": "El horario guardado ya no arrastra el formato anterior",
+    "items": [
+      "Al guardar un horario por día, el formato viejo se quedaba debajo del nuevo y el registro acababa diciendo dos cosas distintas: siete días marcados arriba y «lunes a viernes» abajo",
+      "La ficha siempre mostró lo correcto, porque lee el formato nuevo primero. Lo que estaba mal era lo guardado, y se veía al abrir la base de datos",
+      "No hay que tocar ninguna ficha: cada una se limpia sola la próxima vez que se guarde"
+    ]
+  },
+  {
     "id": "2026-09-15-horario-por-dia",
     "version": "v2.56.0",
     "date": "2026-09-15",
