@@ -1,5 +1,20 @@
 [
   {
+    "id": "2026-09-16-horario-dia-desmarcado",
+    "version": "v2.57.1",
+    "date": "2026-09-16",
+    "category": "fix",
+    "scope": "rrhh",
+    "audience": "admin",
+    "title": "Quitarle un día al horario ahora lo quita de verdad",
+    "items": [
+      "Al desmarcar un día del horario de alguien, el formulario lo mostraba desmarcado pero el registro se quedaba con el horario de antes. La ficha seguía diciendo que esa persona trabajaba ese día",
+      "Se veía sobre todo al recortar la semana: a quien tenía los siete días y se le dejaban cinco, la ficha lo seguía poniendo «en horario» un sábado",
+      "Nada que corregir a mano: la próxima vez que se guarde cada ficha, los días que ya no están se borran solos",
+      "Es la misma causa que el arreglo anterior de hoy, un nivel más adentro: lo que no se envía al guardar no se borra, se queda"
+    ]
+  },
+  {
     "id": "2026-09-16-ficha-destacados",
     "version": "v2.57.0",
     "date": "2026-09-16",
