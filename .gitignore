@@ -40,3 +40,8 @@ videos/*.mov
 maqueta-reportes.html
 CONTEXTO-HERO-HUB.md
 Modulo-Finanzas-Documentacion-Tecnica.docx
+
+# Configuración local de servidores MCP para Claude Code — herramienta de
+# desarrollo, no parte del sitio. Además GitHub Pages serviría este archivo
+# públicamente si se commitea.
+.mcp.json
