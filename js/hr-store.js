@@ -140,14 +140,25 @@ export async function saveHrData(email, patch) {
 // leerHorario() mira byDay primero y enseña lo correcto, lo guardado miente.
 // Se borran los tres campos viejos en el mismo guardado.
 //
+// Ese mismo merge recursivo muerde un nivel más adentro: el día que el
+// formulario desmarca no viaja en el patch, así que el de antes sobrevive
+// dentro de byDay. Quien dejaba de trabajar el sábado seguía apareciendo
+// «trabajando» el sábado, y el formulario mostraba el día desmarcado, así que
+// nadie lo notaba. Los días son un dominio cerrado (0-6): lo que no venga en
+// el patch se borra explícitamente, sin necesidad de leer el estado anterior.
+//
 // No hace falta migrar nada: los documentos que nadie vuelva a guardar
 // conservan solo la forma vieja, que leerHorario() entiende igual.
 function limpiarHorarioViejo(patch) {
   if (!patch?.schedule?.byDay) return patch;
+  const byDay = { ...patch.schedule.byDay };
+  for (let n = 0; n < 7; n++) {
+    if (!(n in byDay)) byDay[n] = deleteField();
+  }
   return {
     ...patch,
     schedule: {
-      byDay: patch.schedule.byDay,
+      byDay,
       from: deleteField(),
       to: deleteField(),
       days: deleteField(),
