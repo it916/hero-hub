@@ -1,5 +1,20 @@
 [
   {
+    "id": "2026-09-17-email-suspension-plazo",
+    "version": "v2.57.5",
+    "date": "2026-09-17",
+    "category": "fix",
+    "scope": "it-console",
+    "audience": "admin",
+    "title": "El aviso de suspensión ya no amenaza con borrar lo que no se borra",
+    "items": [
+      "El correo que recibe una persona suspendida decía que su cuenta sería «eliminada de forma permanente» y que no podría recuperar su contenido. Era falso por partida doble: nada ejecutaba ese borrado, y el plan es archivar la cuenta, que conserva correo y archivos",
+      "Ahora dice que la cuenta se cerrará de forma definitiva y que dejará de tener acceso a su contenido. Mantiene la urgencia del plazo sin prometer una destrucción que no ocurre",
+      "Está redactado a propósito sobre lo que le pasa a la persona y no sobre el mecanismo interno, para que siga siendo cierto tanto si la cuenta se archiva como si se elimina",
+      "El aviso del inicio también dejó de decir «listas para eliminar»"
+    ]
+  },
+  {
     "id": "2026-09-17-cerrar-ciclo-eliminacion",
     "version": "v2.57.4",
     "date": "2026-09-17",

@@ -1330,7 +1330,13 @@ function buildEmailSuspension(nombre, emailCorp, fechaEliminacion, motivo) {
   + '<p style="margin:0 0 20px;font-size:13px;color:#4a5568;line-height:1.55;">Mientras la cuenta está suspendida no podrás acceder al correo, al calendario ni a ningún otro servicio de Google Workspace de Hero Insurance USA.</p>'
   + '<div style="background:#fff8e6;border-radius:12px;border:1px solid #f5d87a;border-left:4px solid #f0b429;padding:16px 20px;margin-bottom:24px;">'
   + '<p style="margin:0 0 6px;font-size:11px;font-weight:700;color:#b08a00;text-transform:uppercase;letter-spacing:1.5px;">Plazo importante</p>'
-  + '<p style="margin:0;font-size:13px;color:#7a5f00;line-height:1.6;">Si no solicitas la reactivación de tu cuenta en los próximos <strong>15 días</strong>' + (fechaEliminacion ? ' (antes del <strong>' + fechaEliminacion + '</strong>)' : '') + ', la cuenta será <strong>eliminada de forma permanente</strong> y no podrás recuperar su contenido.</p>'
+  // Se describe la consecuencia para quien lo lee — perder el acceso — y no el
+  // mecanismo interno. Hasta v2.57.5 decía "eliminada de forma permanente y no
+  // podrás recuperar su contenido", y eso era falso por partida doble: nada
+  // ejecutaba el borrado, y el plan es archivar (reversible, conserva el
+  // contenido), no eliminar. Redactado así el texto sigue siendo cierto se
+  // acabe archivando o eliminando, que es lo que evita volver a desalinearlo.
+  + '<p style="margin:0;font-size:13px;color:#7a5f00;line-height:1.6;">Si no solicitas la reactivación de tu cuenta en los próximos <strong>15 días</strong>' + (fechaEliminacion ? ' (antes del <strong>' + fechaEliminacion + '</strong>)' : '') + ', la cuenta se <strong>cerrará de forma definitiva</strong> y dejarás de tener acceso a su contenido.</p>'
   + '</div>'
   + '<div style="text-align:center;margin:0 0 24px;">'
   + '<a href="' + mailtoUrl + '" style="display:inline-block;padding:14px 32px;background:' + P + ';color:#fff;font-family:Trebuchet MS,Arial,sans-serif;font-size:14px;font-weight:700;text-decoration:none;border-radius:30px;letter-spacing:0.5px;box-shadow:0 4px 14px rgba(6,163,182,0.30);">✉ Solicitar reactivación</a>'
@@ -2701,9 +2707,13 @@ async function loadHome() {
 }
 
 // Chip de alerta en el dashboard: cuentas suspendidas cuyo scheduledDeletionAt
-// ya llegó (o pasó) y NO fueron reactivadas ni eliminadas. Se prometió al
-// usuario que su cuenta se eliminaria a los 15 días si no solicitaba
-// reactivación; este chip le recuerda a IT que ese plazo se cumplió.
+// ya llegó (o pasó) y NO fueron reactivadas ni cerradas. Al usuario se le dio
+// un plazo de 15 días para pedir la reactivación; este chip le recuerda a IT
+// que venció y toca cerrar la cuenta.
+//
+// El campo se sigue llamando scheduledDeletionAt aunque el cierre vaya a ser
+// por archivado y no por borrado: renombrarlo dejaría fuera de la cola todos
+// los documentos ya escritos en Firestore. Lo mismo vale para deletedAt.
 async function _renderPendingDeletionsChip() {
   var alert = document.getElementById('home-alert-eliminaciones');
   if (!alert) return;
