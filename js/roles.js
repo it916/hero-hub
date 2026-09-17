@@ -67,7 +67,10 @@ export const FEATURES = {
   "tile-plataformas": { group: "Dashboard",           label: "Banner · Plataformas (Hero CRM)" },
   "plat-ghl":         { group: "Dashboard",           label: "Banner · Go High Level", nota: "Requiere también Plataformas" },
   "dashboard-social": { group: "Dashboard",           label: "Misiones, Celebraciones y Mensajes" },
-  "tile-database":    { group: "Accesos rápidos",     label: "Base de Datos" },
+  // La clave sigue diciendo "database" a propósito: está guardada en
+  // shared/rolePermissions y renombrarla dejaría sin efecto los permisos ya
+  // persistidos. Solo cambió el label visible (v2.57.2).
+  "tile-database":    { group: "Accesos rápidos",     label: "Agentes Activos" },
   "tile-finanzas":    { group: "Accesos rápidos",     label: "Finanzas", nota: "El módulo está en retirada" },
   "tile-it-console":  { group: "Accesos rápidos",     label: "IT Console" },
   "tile-rrhh":        { group: "Accesos rápidos",     label: "Recursos Humanos", nota: "Requiere también la página Recursos Humanos" },

@@ -1,5 +1,20 @@
 [
   {
+    "id": "2026-09-17-modulos-acceso-limpieza",
+    "version": "v2.57.2",
+    "date": "2026-09-17",
+    "category": "style",
+    "scope": "dashboard",
+    "audience": "all",
+    "title": "Los módulos de acceso ahora dicen qué hay detrás de cada uno",
+    "items": [
+      "Cinco tiles usaban su segunda línea para listar qué roles los veían («admin · interno · finanzas · IT»). Era información inútil: si el tile está ahí es porque tienes acceso, y saber quién más lo tiene no ayuda a nadie. Ahora esa línea dice qué vas a encontrar al entrar",
+      "«Base de Datos» pasa a llamarse «Agentes Activos», que es lo que realmente abre: la lista maestra con códigos, licencias y jerarquía. El nombre anterior describía el formato del archivo, no su contenido",
+      "Dos de esos tiles seguían nombrando el rol «finanzas», retirado desde agosto",
+      "Se quitó el tile de Finanzas del panel: el módulo está descontinuado y solo sigue disponible para exportar. La página no se fue a ningún lado — sigue en el menú Módulos de la barra de arriba"
+    ]
+  },
+  {
     "id": "2026-09-16-horario-dia-desmarcado",
     "version": "v2.57.1",
     "date": "2026-09-16",

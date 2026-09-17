@@ -247,8 +247,13 @@ var f=localStorage.getItem("hero-user-features");if(f)f.split(" ").filter(Boolea
 
     <!-- ══ MÓDULOS DE ACCESO ══
          Dos columnas: a la izquierda los módulos del Hub (cada uno sujeto a
-         su feature tile-*, así que no todos ven los seis), a la derecha los
-         accesos a Google Workspace, que sí ve todo el mundo. -->
+         su feature tile-*, así que cada rol ve un subconjunto distinto), a
+         la derecha los accesos a Google Workspace, que sí ve todo el mundo.
+
+         El subtítulo de cada tile dice QUÉ HAY DETRÁS, nunca qué roles lo
+         ven: si el tile está pintado es porque quien mira tiene acceso, y
+         listar a los demás es ruido. Hasta v2.57.1 cinco tiles listaban
+         roles — dos de ellos nombraban "finanzas", retirado en 2026-08-20. -->
     <section class="section fade-in" id="sec-access-modules">
       <div class="access-split">
 
@@ -258,24 +263,21 @@ var f=localStorage.getItem("hero-user-features");if(f)f.split(" ").filter(Boolea
         <a href="https://docs.google.com/spreadsheets/d/1100HED8B6MxpDrOxnFoxitsRzZPRerwN6TkAJvXVu2I/edit?gid=969364169#gid=969364169" target="_blank" rel="noopener" class="access-tile at-database">
           <div class="access-icon"><i data-lucide="database"></i></div>
           <div class="access-content">
-            <div class="access-name">Base de Datos</div>
-            <div class="access-roles">admin · interno · finanzas · IT</div>
+            <div class="access-name">Agentes Activos</div>
+            <div class="access-roles">Códigos, licencias y jerarquía</div>
           </div>
         </a>
 
-        <a href="finanzas.html" target="_blank" rel="noopener" class="access-tile at-finanzas">
-          <div class="access-icon"><i data-lucide="landmark"></i></div>
-          <div class="access-content">
-            <div class="access-name">Finanzas</div>
-            <div class="access-roles">admin · finanzas</div>
-          </div>
-        </a>
+        <!-- El tile de Finanzas se retiró en v2.57.2: el módulo está
+             descontinuado desde 2026-08-20 y solo sigue vivo para exportar
+             las colecciones antes de apagarlas. La página no queda huérfana
+             — el enlace sigue en la barra superior de las 15 páginas. -->
 
         <a href="rrhh.html" target="_blank" rel="noopener" class="access-tile at-rrhh">
           <div class="access-icon"><i data-lucide="users-round"></i></div>
           <div class="access-content">
             <div class="access-name">Recursos Humanos</div>
-            <div class="access-roles">admin</div>
+            <div class="access-roles">Personas, fichas y evaluaciones</div>
           </div>
         </a>
 
@@ -283,7 +285,7 @@ var f=localStorage.getItem("hero-user-features");if(f)f.split(" ").filter(Boolea
           <div class="access-icon"><i data-lucide="terminal-square"></i></div>
           <div class="access-content">
             <div class="access-name">IT Console</div>
-            <div class="access-roles">admin · IT</div>
+            <div class="access-roles">Workspace, equipos y accesos</div>
           </div>
         </a>
 
@@ -324,7 +326,7 @@ var f=localStorage.getItem("hero-user-features");if(f)f.split(" ").filter(Boolea
           <div class="access-icon"><i data-lucide="calendar-days"></i></div>
           <div class="access-content">
             <div class="access-name">Calendario de Entrenamientos</div>
-            <div class="access-roles">todos los roles</div>
+            <div class="access-roles">Sesiones y capacitaciones</div>
           </div>
         </button>
 
@@ -332,7 +334,7 @@ var f=localStorage.getItem("hero-user-features");if(f)f.split(" ").filter(Boolea
           <div class="access-icon"><i data-lucide="mail-plus"></i></div>
           <div class="access-content">
             <div class="access-name">Solicitud de correos</div>
-            <div class="access-roles">Alta y baja de cuentas</div>
+            <div class="access-roles">Pedir alta o baja de cuenta</div>
           </div>
         </a>
           </div>
@@ -399,6 +401,14 @@ var f=localStorage.getItem("hero-user-features");if(f)f.split(" ").filter(Boolea
 
       </div>
     </section>
+
+    <!-- Era el único par de secciones seguidas sin conector: la separación la
+         daba, por accidente, el hueco que dejaba el último tile cuando la
+         rejilla cerraba en impar. Al quedar en ocho (v2.57.2) la última fila
+         se llenó y el bloque chocaba con el rótulo de abajo — más la sombra
+         del tile, que cae 18px. No se arregla con un margen suelto: el resto
+         de la página ya separa así. -->
+    <div class="connector"></div>
 
     <!-- ══ CELEBRACIONES DEL EQUIPO — Héroe del Mes + Próximo Cumple ══ -->
     <section class="section fade-in" id="sec-celebraciones">
@@ -687,7 +697,7 @@ var f=localStorage.getItem("hero-user-features");if(f)f.split(" ").filter(Boolea
       </div>
     </div>
     <div class="footer-legal" id="footer-legal">
-      <span>HERO HUB · v2.57.1</span><span class="sep">•</span><a href="changelog.html" class="nav-link">Ver Registro de Cambios</a><span class="sep">•</span><span>HERO INSURANCE USA</span>
+      <span>HERO HUB · v2.57.2</span><span class="sep">•</span><a href="changelog.html" class="nav-link">Ver Registro de Cambios</a><span class="sep">•</span><span>HERO INSURANCE USA</span>
     </div>
   </footer>
 </div>
