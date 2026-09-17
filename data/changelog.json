@@ -1,5 +1,20 @@
 [
   {
+    "id": "2026-09-17-it-console-sin-borrado",
+    "version": "v2.57.3",
+    "date": "2026-09-17",
+    "category": "fix",
+    "scope": "it-console",
+    "audience": "admin",
+    "title": "El botón de eliminar cuenta ya no promete algo que no puede hacer",
+    "items": [
+      "El panel de usuario ofrecía «Eliminar de Workspace» y te hacía escribir el correo completo para confirmar. Después fallaba siempre: el servidor rechaza esa acción desde mayo, cuando se alineó con PROC-IT-001 («solo suspender»)",
+      "El botón se había quitado en su momento, pero volvió al traer la Consola de IT al Hub en julio. Ninguna cuenta se borró nunca por esta vía — el error saltaba antes de tocar Workspace",
+      "En su lugar hay ahora una nota con el procedimiento real y un enlace directo a Google Admin, que es donde se hace el borrado definitivo si hace falta",
+      "Suspender sigue siendo la acción del panel, y es la que corresponde primero: conserva correo, archivos e historial, y se puede revertir"
+    ]
+  },
+  {
     "id": "2026-09-17-modulos-acceso-limpieza",
     "version": "v2.57.2",
     "date": "2026-09-17",

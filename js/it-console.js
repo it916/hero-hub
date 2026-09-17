@@ -2062,23 +2062,15 @@ async function userAction(action) {
   const email  = currentUserEmail;
   const nombre = document.getElementById('um-nombre').textContent;
 
-  const labels = { reset: 'resetear contraseña', suspend: 'suspender', restore: 'restaurar', delete: 'eliminar' };
+  // No hay 'delete': PROC-IT-001 es solo suspender y el Worker rechaza esa
+  // acción. Había aquí un heroConfirm con mustType que hacía teclear el correo
+  // entero antes de fallar contra el backend — se retiró en v2.57.3 junto con
+  // su botón. El borrado permanente se hace a mano en Google Admin.
+  const labels = { reset: 'resetear contraseña', suspend: 'suspender', restore: 'restaurar' };
   const newPassword = action === 'reset' ? document.getElementById('um-new-password').value.trim() : null;
 
   if (action === 'reset' && !newPassword) {
     showToast('Ingresa o genera una contraseña temporal primero'); return;
-  }
-
-  // Borrar cuenta es irreversible — confirmación fuerte que obliga a tipear el email.
-  if (action === 'delete') {
-    const ok = await heroConfirm({
-      title: '¿Eliminar la cuenta de Workspace?',
-      body: 'Vas a eliminar de forma permanente la cuenta de ' + nombre + ' (' + email + '). Esta acción no se puede deshacer.',
-      confirmText: 'Eliminar definitivamente',
-      destructive: true,
-      mustType: email,
-    });
-    if (!ok) return;
   }
 
   // Suspender: pedir motivo ANTES de tocar Workspace. Si cancela el modal
@@ -2118,7 +2110,6 @@ async function userAction(action) {
       reset:   'Contraseña reseteada para ' + nombre,
       suspend: 'Cuenta suspendida: ' + nombre,
       restore: 'Cuenta restaurada: ' + nombre,
-      delete:  'Cuenta eliminada: ' + nombre,
     };
     addLog(msgs[action], 'success');
     auditLog('usuario', msgs[action], email);

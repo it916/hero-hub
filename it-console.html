@@ -1794,10 +1794,17 @@ html { scroll-behavior: smooth; }
             <p style="font-size:11px;color:var(--hero-text-muted);margin:6px 0 10px;line-height:1.5;">Envía un correo cálido dando la bienvenida oficial al equipo y presentando el Hero Hub. Úsalo cuando HR ya haya firmado los consents.</p>
             <button class="btn btn-primary" onclick="enviarBienvenidaHub()" style="width:100%;font-size:13px;"><iconify-icon icon="tabler:mail-heart"></iconify-icon> Enviar bienvenida al Hub</button>
           </div>
-          <div class="info-box" style="margin-bottom:0;border-color:rgba(214,69,69,0.3);">
-            <div class="info-box-title" style="color:var(--hero-danger);"><iconify-icon icon="tabler:alert-triangle"></iconify-icon> Eliminar cuenta</div>
-            <p style="font-size:11px;color:var(--hero-text-muted);margin:6px 0 10px;line-height:1.5;">Borra la cuenta de Workspace de forma permanente. Esta acción no se puede deshacer.</p>
-            <button class="btn" onclick="userAction('delete')" style="width:100%;background:rgba(214,69,69,0.1);border:1px solid var(--hero-danger);color:var(--hero-danger);font-size:13px;"><iconify-icon icon="tabler:trash"></iconify-icon> Eliminar de Workspace</button>
+          <!-- PROC-IT-001: desde aquí NO se borra. El Worker rechaza la acción
+               'delete' desde el commit 17b85d8 (2026-05-28), que la quitó de la
+               Console vieja. Al migrar la Console al Hub (v2.4) el botón volvió
+               por arrastre del HTML anterior al arreglo, así que durante meses
+               obligó a teclear el correo completo para después fallar con
+               "Acción no permitida: delete". Se cambia por la instrucción real
+               en v2.57.3. No reponer el botón sin cambiar antes PROC-IT-001. -->
+          <div class="info-box" style="margin-bottom:0;">
+            <div class="info-box-title"><iconify-icon icon="tabler:info-circle"></iconify-icon> Eliminar definitivamente</div>
+            <p style="font-size:11px;color:var(--hero-text-muted);margin:6px 0 10px;line-height:1.5;">Desde el Hub no se elimina. <strong>PROC-IT-001</strong> establece suspender primero: eso conserva el correo, los archivos y el historial, y se puede revertir. El borrado permanente es un paso manual en Google Admin, y solo si hace falta.</p>
+            <a class="btn" href="https://admin.google.com/ac/users" target="_blank" rel="noopener" style="width:100%;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;"><iconify-icon icon="tabler:external-link"></iconify-icon> Abrir Google Admin</a>
           </div>
         </div>
       </div>
