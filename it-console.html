@@ -1805,6 +1805,12 @@ html { scroll-behavior: smooth; }
             <div class="info-box-title"><iconify-icon icon="tabler:info-circle"></iconify-icon> Eliminar definitivamente</div>
             <p style="font-size:11px;color:var(--hero-text-muted);margin:6px 0 10px;line-height:1.5;">Desde el Hub no se elimina. <strong>PROC-IT-001</strong> establece suspender primero: eso conserva el correo, los archivos y el historial, y se puede revertir. El borrado permanente es un paso manual en Google Admin, y solo si hace falta.</p>
             <a class="btn" href="https://admin.google.com/ac/users" target="_blank" rel="noopener" style="width:100%;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;"><iconify-icon icon="tabler:external-link"></iconify-icon> Abrir Google Admin</a>
+            <!-- Cierra el ciclo. Sin esto la cuenta se queda en la cola de
+                 "plazo cumplido" para siempre: el chip del Home y el filtro
+                 suspendidos-vencidos descartan por deletedAt, y hasta v2.57.4
+                 ese campo se leía en dos sitios y no lo escribía nadie. Una
+                 alerta que no se puede apagar se termina ignorando. -->
+            <button class="btn" onclick="marcarComoEliminada()" id="um-btn-eliminada" style="width:100%;font-size:12px;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:6px;"><iconify-icon icon="tabler:checkbox"></iconify-icon> Ya la eliminé en Google Admin</button>
           </div>
         </div>
       </div>

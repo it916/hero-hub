@@ -2157,6 +2157,67 @@ async function userAction(action) {
   }
 }
 
+// ── Acuse de una eliminación hecha a mano ────────────────────
+// PROC-IT-001 manda borrar en Google Admin, fuera del Hub, así que el Hub no
+// puede enterarse solo de que ya pasó. Este botón es el acuse: escribe
+// deletedAt y saca la cuenta de la cola de plazos cumplidos — el chip del Home
+// y el filtro `suspendidos-vencidos` la descartan por ese campo.
+//
+// Hasta v2.57.4 deletedAt se leía en esos dos sitios y NO lo escribía nadie:
+// la cola no tenía forma de vaciarse y el contador solo podía subir. Una
+// alerta que no se puede apagar se termina ignorando, y entonces deja de
+// avisar de las que sí importan.
+//
+// Depende de que el modal siga abierto: "Abrir Google Admin" va a pestaña
+// nueva, se borra allá y se vuelve aquí a marcar. Si se cierra el modal y se
+// recarga la lista, la cuenta ya no existe en Workspace y no hay forma de
+// abrirla — ese caso queda pendiente de una reconciliación automática.
+//
+// No lleva type-to-confirm: lo destructivo fue el borrado en Admin, esto solo
+// lo anota. Tampoco toca Workspace.
+async function marcarComoEliminada() {
+  if (!currentUserEmail) return;
+  const email  = currentUserEmail;
+  const nombre = document.getElementById('um-nombre').textContent;
+
+  const registro = await getWorkspaceUser(email);
+  if (registro && registro.deletedAt) {
+    showToast('Ya estaba marcada como eliminada');
+    return;
+  }
+
+  // Marcar una cuenta viva la sacaría de la cola sin que nadie la haya
+  // borrado — justo el descuadre que este botón viene a evitar.
+  const uWs = (window.allUsers || allUsers || []).find(function(x) {
+    return (x.email || '').toLowerCase() === email.toLowerCase();
+  });
+  if (uWs && uWs.estado === 'activo') {
+    showToast('Esa cuenta sigue activa en Workspace: suspéndela primero');
+    return;
+  }
+
+  const ok = await heroConfirm({
+    title: '¿Marcar como eliminada?',
+    body: 'Se anotará que la cuenta de ' + nombre + ' (' + email + ') ya fue eliminada '
+        + 'en Google Admin, y saldrá de la lista de plazos cumplidos. No se toca nada en Workspace.',
+    confirmText: 'Marcar como eliminada',
+  });
+  if (!ok) return;
+
+  try {
+    await saveWorkspaceUser(email, { deletedAt: new Date().toISOString() });
+    addLog('Cuenta marcada como eliminada: ' + email, 'success');
+    auditLog('usuario', 'Cuenta marcada como eliminada en Google Admin', email);
+    showToast('Marcada como eliminada: ' + nombre);
+    closeUserModal();
+    if (typeof _renderPendingDeletionsChip === 'function') _renderPendingDeletionsChip();
+    loadUsers();
+  } catch (err) {
+    addLog('Error marcando como eliminada: ' + err.message, 'error');
+    showToast('Error: ' + err.message);
+  }
+}
+
 // ── Selector de motivo de suspensión ─────────────────────────
 // Modal con radio buttons de motivos predefinidos + opción "Otro" con
 // textarea. Retorna Promise<{motivo:string} | null> donde null = canceló.

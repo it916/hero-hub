@@ -1,5 +1,20 @@
 [
   {
+    "id": "2026-09-17-cerrar-ciclo-eliminacion",
+    "version": "v2.57.4",
+    "date": "2026-09-17",
+    "category": "fix",
+    "scope": "it-console",
+    "audience": "admin",
+    "title": "La lista de cuentas con plazo cumplido ya se puede vaciar",
+    "items": [
+      "El aviso del inicio contaba las cuentas suspendidas que ya pasaron sus 15 días, pero no había forma de decirle que una ya se había eliminado. El contador solo podía subir, y una alerta que no se apaga se termina ignorando",
+      "En el panel de cada usuario hay ahora un botón «Ya la eliminé en Google Admin»: anota la fecha y saca esa cuenta de la lista. No toca nada en Workspace, solo registra lo que ya se hizo",
+      "Se usa con el enlace de al lado: abre Google Admin en otra pestaña, eliminas allá, vuelves y marcas",
+      "No deja marcar una cuenta que siga activa: primero hay que suspenderla"
+    ]
+  },
+  {
     "id": "2026-09-17-it-console-sin-borrado",
     "version": "v2.57.3",
     "date": "2026-09-17",
