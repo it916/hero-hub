@@ -704,6 +704,32 @@ nav { padding: 12px; flex: 1; }
   font-size: 12px; color: var(--hero-success); font-weight: 600;
 }
 
+/* ── Plazos del ciclo, informativos ───────────────────────
+   Fila de solo lectura: dice las reglas, no cuenta casos ni abre nada. Va sin
+   caja propia para no competir con la tira de avisos, que es la que sí pide
+   acción. Los valores los pinta renderPlazosStrip() leyendo las constantes de
+   js/it-console.js — no se escriben aquí para que no queden desfasados. */
+.plazos-strip {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin: -6px 0 20px; padding: 0 2px;
+}
+.plazos-strip-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.2px; color: var(--hero-text-muted); margin-right: 4px;
+}
+.plazos-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: var(--hero-radius-pill);
+  background: var(--hero-bg);
+  border: 1px solid var(--hero-border-card);
+  font-size: 11.5px; color: var(--hero-text-muted); white-space: nowrap;
+}
+.plazos-pill b { font-weight: 700; color: var(--hero-text-primary); }
+.plazos-nota {
+  flex-basis: 100%; font-size: 11px; color: var(--hero-text-muted);
+  padding-left: 2px; line-height: 1.5;
+}
+
 /* ── Ciclo de cuentas ─────────────────────────────────────
    Los tonos solo pintan el número y el borde al seleccionar; el fondo sale
    de las variables del tema, así que el modo noche no necesita duplicar cada
@@ -1545,6 +1571,11 @@ html { scroll-behavior: smooth; }
         </span>
       </div>
 
+      <!-- Las reglas del ciclo, para no tener que recordarlas. Solo lectura:
+           el contenido lo pinta renderPlazosStrip() con las constantes reales
+           de js/it-console.js, así que cambiar un plazo ahí cambia esto. -->
+      <div class="plazos-strip" id="home-plazos"></div>
+
       <!-- Accesos rápidos — Fase 1: navegan a las páginas que ya existen.
            En Fase 2 los cuatro primeros abren su modal sin salir del dashboard. -->
       <div class="home-quick-label">Acciones rápidas</div>
@@ -1721,6 +1752,8 @@ html { scroll-behavior: smooth; }
         <div class="section-title"><span>//</span> Ciclo de <span>Cuentas</span></div>
         <div class="section-desc">De la solicitud al cierre: dónde está cada cuenta y qué toca hacer con ella.</div>
       </div>
+
+      <div class="plazos-strip" id="ciclo-plazos"></div>
 
       <div id="ciclo-etapas" class="ciclo-etapas"></div>
       <div id="ciclo-detalle" class="ciclo-detalle"></div>

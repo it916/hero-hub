@@ -1,5 +1,20 @@
 [
   {
+    "id": "2026-09-18-plazos-a-la-vista",
+    "version": "v2.58.1",
+    "date": "2026-09-18",
+    "category": "style",
+    "scope": "it-console",
+    "audience": "admin",
+    "title": "Los plazos del ciclo de cuentas quedan a la vista",
+    "items": [
+      "Las tres reglas que ordenan el ciclo —sin entrar 3 meses lleva al aviso previo, el aviso dura 15 días y la suspensión otros 15 hasta el cierre— había que recordarlas de memoria o ir a buscarlas",
+      "Ahora se leen en una línea, en el inicio de la consola y arriba de Ciclo de Cuentas, que son los dos sitios donde se decide sobre estas cuentas",
+      "Es solo informativo: dice cuánto dura cada tramo, no se edita desde ahí",
+      "Lo acompaña el recordatorio de que ningún plazo corre solo: al vencer, la cuenta aparece en su etapa y el paso lo ejecuta IT a mano"
+    ]
+  },
+  {
     "id": "2026-09-17-ciclo-de-cuentas",
     "version": "v2.58.0",
     "date": "2026-09-17",

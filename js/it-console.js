@@ -1604,6 +1604,61 @@ function classifyActivityStatus(u, wsData) {
   return 'active';
 }
 
+// ── Plazos del ciclo, en pantalla ────────────────────────────
+// Solo informativo: dice las tres reglas que ordenan el ciclo para no tener
+// que recordarlas ni ir a buscarlas al código. No se editan desde la UI.
+//
+// Los valores se leen de las constantes de arriba en vez de escribirse en el
+// HTML: así la tira no puede quedar desfasada del comportamiento real si
+// alguna vez se cambia un plazo. Se pinta en el Home y arriba de Ciclo de
+// Cuentas, que son los dos sitios donde se decide sobre estas cuentas.
+function _plazoEnPalabras(d) {
+  d = Math.round(Number(d) || 0);
+  if (d === 30) return '1 mes';
+  if (d >= 60 && d % 30 === 0) return (d / 30) + ' meses';
+  return d + (d === 1 ? ' día' : ' días');
+}
+
+function renderPlazosStrip(containerId) {
+  const cont = document.getElementById(containerId);
+  if (!cont) return;
+  cont.replaceChildren();
+
+  const label = document.createElement('span');
+  label.className = 'plazos-strip-label';
+  label.textContent = 'Plazos';
+  cont.appendChild(label);
+
+  // [estado de partida, plazo, a dónde pasa al vencer]
+  const tramos = [
+    ['Sin entrar', _plazoEnPalabras(INACTIVITY_THRESHOLD_DAYS), 'aviso previo'],
+    ['Tras el aviso', _plazoEnPalabras(PRE_SUSPENSION_GRACE_DAYS), 'suspensión'],
+    ['Suspendida', _plazoEnPalabras(SUSPENSION_TO_DELETION_DAYS), 'cierre'],
+  ];
+
+  tramos.forEach(function (t) {
+    const pill = document.createElement('span');
+    pill.className = 'plazos-pill';
+    // Cada trozo va en su propio span: la píldora es flex con gap, y un nodo
+    // de texto suelto se volvería un item más, partiendo la frase.
+    const ini = document.createElement('span');
+    ini.textContent = t[0];
+    pill.appendChild(ini);
+    const dias = document.createElement('b');
+    dias.textContent = t[1];
+    pill.appendChild(dias);
+    const fin = document.createElement('span');
+    fin.textContent = '→ ' + t[2];
+    pill.appendChild(fin);
+    cont.appendChild(pill);
+  });
+
+  const nota = document.createElement('span');
+  nota.className = 'plazos-nota';
+  nota.textContent = 'Ninguno corre solo: al vencer, la cuenta aparece en su etapa y el paso lo ejecuta IT a mano.';
+  cont.appendChild(nota);
+}
+
 // Chips del Home para el flujo de agentes inactivos. Cuentan solo agentes
 // con estado activo en Workspace. Tres chips: nunca-login (morado),
 // inactivos-3m (amarillo), aviso-vencido (rojo).
@@ -2327,6 +2382,7 @@ function _cicloHasta(iso) {
 async function loadCicloCuentas(refrescar) {
   const cont = document.getElementById('ciclo-etapas');
   if (!cont) return;
+  renderPlazosStrip('ciclo-plazos');
   try {
     if (refrescar || !allUsers || !allUsers.length) await loadUsers();
     _cicloDatos = await _cicloCalcular();
@@ -3008,6 +3064,7 @@ async function loadHome() {
   // el render del home si Firestore tarda o falla).
   _renderPendingDeletionsChip();
   _renderInactiveAgentsChips();
+  renderPlazosStrip('home-plazos');
   // Bootstrap: si entramos al Home antes de haber visitado Usuarios en esta
   // sesión, allUsers está vacío y los chips del flujo de inactividad no
   // pueden contar nada. Dispara loadUsers en background — al terminar llama
