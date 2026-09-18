@@ -17,6 +17,7 @@ import { guardPage, filterTopbarByRole, applyRoleClasses } from "./roles.js";
 import { getFreshGooglePhotoURL, getGooglePhotoURL } from "./user-photo.js";
 import { ACTION_LABELS } from "./audit-log.js";
 import { getUserByEmail, countryLabel, countryFlagUrl } from "./user-store.js";
+import { misConexiones } from "./conexion.js";
 import {
   fetchAttendanceEvents,
   computePersonStats, computePeriod,
@@ -115,6 +116,7 @@ onAuthStateChanged(auth, async (user) => {
     loadPersonDoc(),
     loadActivity(),
     loadAttendance(),
+    loadMiConexion(),
   ]);
 
   wireAttendanceToolbar();
@@ -358,6 +360,66 @@ function renderAttendanceTable(stats) {
 }
 
 // ── Actividad reciente (audit-log) ─────────────────────────────
+
+
+// ── Mi conexión ──────────────────────────────────────────────
+// Desde dónde entra esta persona al Hub. La empresa lo registra; que cada
+// quien pueda verlo aquí es la contrapartida de que se registre.
+//
+// El dato lo da el Worker, no el navegador: la IP la ve él. Pedirlo tiene el
+// efecto de registrar esta visita, que es justo lo que ya pasó al entrar.
+async function loadMiConexion() {
+  const cont = document.getElementById("mp-conexion");
+  if (!cont) return;
+  const registros = await misConexiones(currentUser);
+  cont.replaceChildren();
+
+  if (!registros.length) {
+    const p = document.createElement("p");
+    p.className = "mp-empty";
+    p.textContent = "Todavía no hay conexiones registradas.";
+    cont.appendChild(p);
+    return;
+  }
+
+  const ultima = registros[0];
+  const caja = document.createElement("div");
+  caja.className = "mp-conexion-ahora";
+  const lab = document.createElement("div");
+  lab.className = "mp-conexion-ahora-label";
+  lab.textContent = "Estás conectado desde";
+  caja.appendChild(lab);
+  const val = document.createElement("div");
+  val.className = "mp-conexion-ahora-valor";
+  val.textContent = [ultima.ip, ultima.isp, [ultima.ciudad, ultima.pais].filter(Boolean).join(", ")]
+    .filter(Boolean).join(" · ") || "sin datos";
+  caja.appendChild(val);
+  cont.appendChild(caja);
+
+  const lista = document.createElement("div");
+  lista.className = "mp-conexion-lista";
+  registros.slice(0, 10).forEach(r => {
+    const fila = document.createElement("div");
+    fila.className = "mp-conexion-fila";
+    const dia = document.createElement("span");
+    dia.className = "mp-conexion-dia";
+    dia.textContent = r.dia || "—";
+    fila.appendChild(dia);
+    const det = document.createElement("span");
+    det.className = "mp-conexion-det";
+    const lugar = [r.ciudad, r.pais].filter(Boolean).join(", ");
+    det.textContent = [lugar, r.isp, r.ip].filter(Boolean).join(" · ");
+    fila.appendChild(det);
+    lista.appendChild(fila);
+  });
+  cont.appendChild(lista);
+
+  const nota = document.createElement("p");
+  nota.className = "mp-conexion-nota";
+  nota.textContent = "La ubicación es aproximada: sale de tu conexión a internet, no de tu equipo. "
+    + "Con una VPN encendida aparecerá el país por donde salga la conexión.";
+  cont.appendChild(nota);
+}
 
 async function loadActivity() {
   const container = document.getElementById("mp-activity");

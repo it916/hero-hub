@@ -21,6 +21,7 @@ import { auth } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { loadUserRole, canAccessPage, filterTopbarByRole, getCurrentPage, isAdmin as isAdminRole, clearRoleCache, applyRoleClasses } from "./roles.js";
 import { logEvent, ACTIONS } from "./audit-log.js";
+import { registrarConexion } from "./conexion.js";
 
 // Exponemos el contexto en window para que otros scripts lo puedan usar
 window.HeroHubContext = {
@@ -90,6 +91,12 @@ onAuthStateChanged(auth, async (user) => {
 
   // 7. Resolver la promesa para que otros scripts puedan continuar
   window._resolveHubContext({ user, userRole });
+
+  // 8. Registrar desde dónde se conectó. Va al final y sin await: es lo menos
+  //    urgente de todo esto, y no debe retrasar el pintado de la página.
+  //    conexion.js solo llama una vez por pestaña, así que navegar entre
+  //    páginas del Hub no dispara una petición por cada una.
+  registrarConexion(user);
 });
 
 // Función auxiliar para que los scripts de cada página obtengan el contexto

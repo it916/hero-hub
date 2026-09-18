@@ -151,6 +151,7 @@ const pageLabels = {
   'auditoria': 'Auditoría',
   'crear-usuario': 'Crear Usuario',
   'ciclo-cuentas': 'Ciclo de Cuentas',
+  'conexiones': 'Registro de Conexiones',
   'onboarding': 'Enviar Onboarding',
   'toolbox': 'Soporte · Toolbox',
   'dispositivos': 'Soporte · Dispositivos',
@@ -217,6 +218,7 @@ function showPage(id) {
     'plantillas':   () => loadPlantillas(),
     'crear-usuario': () => initCrearUsuario(),
     'ciclo-cuentas': () => loadCicloCuentas(),
+    'conexiones':   () => loadConexiones(),
   };
   if (autoLoad[id]) autoLoad[id]();
 
@@ -2528,6 +2530,203 @@ function _renderCicloDetalle(key) {
     lista.appendChild(fila);
   });
   panel.appendChild(lista);
+}
+
+
+// ═════════════════════════════════════════════════════════════
+// REGISTRO DE CONEXIONES
+// ═════════════════════════════════════════════════════════════
+// Desde dónde entra cada persona al Hub. Lo pidió administración. El dato lo
+// captura el Worker al iniciar sesión (POST /conexion/registrar) — nadie pulsa
+// nada — y esta pantalla lo consulta.
+//
+// Vive en el IT Console y no en admin.html porque hoy la lista de quien puede
+// verlo (CONEXIONES_ADMIN_EMAILS en el Worker) es solo it@, que es justo quien
+// entra aquí. Poner el tab en admin.html enseñaría una pantalla que a casi
+// todos les respondería 403. Si algún día se abre a la directiva, se mueve.
+//
+// La auth de este endpoint es Firebase ID token, no el HERO_TOKEN del Console:
+// así la misma pantalla se puede llevar al Hub sin tocar el Worker.
+//
+// ⚠ Lo que esta tabla NO dice, y conviene recordar al leerla:
+//   · una VPN la desvía — de ahí la marca de zona horaria, que avisa cuando el
+//     reloj del equipo no cuadra con el país de la conexión;
+//   · la ciudad es aproximada, a veces la del nodo del proveedor;
+//   · solo ve a quien abra el Hub. Quien trabaje la jornada entera en el CRM
+//     no aparece aquí. El historial de Google Workspace no tiene ese hueco.
+let _conexionesDatos = [];
+let _conexionesDetalle = false;
+
+async function _conexionesToken() {
+  await import('/js/firebase-config.js');
+  const { getAuth } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+  const user = await waitForFirebaseUser(getAuth(), 5000);
+  if (!user) throw new Error('No hay sesión de Firebase');
+  return user.getIdToken();
+}
+
+async function loadConexiones(detalle) {
+  const cont = document.getElementById('conexiones-lista');
+  if (!cont) return;
+  _conexionesDetalle = !!detalle;
+  // El botón dice a dónde lleva, no dónde estás: alternar sin cambiar el
+  // rótulo deja al botón mintiendo en una de las dos vistas.
+  const rotulo = document.getElementById('btn-conexiones-detalle-txt');
+  if (rotulo) rotulo.textContent = _conexionesDetalle ? 'Ver solo la última' : 'Ver historial completo';
+  renderSkeleton(cont, { type: 'list', rows: 4 });
+  try {
+    const idToken = await _conexionesToken();
+    const resp = await authFetchConexiones(idToken, _conexionesDetalle);
+    _conexionesDatos = resp.personas || [];
+    _renderConexiones();
+  } catch (e) {
+    cont.replaceChildren();
+    const err = document.createElement('div');
+    err.className = 'conexiones-vacio';
+    err.textContent = 'No se pudo cargar el registro: ' + (e && e.message ? e.message : e);
+    cont.appendChild(err);
+  }
+}
+
+async function authFetchConexiones(idToken, detalle) {
+  const resp = await fetch(WORKER_URL + '/conexion/registros', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ idToken, detalle: !!detalle }),
+  });
+  const data = await resp.json().catch(function () { return {}; });
+  if (!resp.ok) throw new Error(data.error || 'El servidor respondió ' + resp.status);
+  return data;
+}
+
+function _conexionFecha(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString('en-US', {
+    month: '2-digit', day: '2-digit', year: 'numeric',
+    hour: 'numeric', minute: '2-digit',
+  });
+}
+
+// Fila de una persona en la vista resumida: su última conexión conocida.
+function _filaConexion(p) {
+  const fila = document.createElement('div');
+  fila.className = 'conexion-fila';
+
+  const info = document.createElement('div');
+  info.className = 'conexion-info';
+
+  const nom = document.createElement('div');
+  nom.className = 'conexion-nombre';
+  nom.textContent = p.nombre || p.email || '(sin nombre)';
+  info.appendChild(nom);
+
+  const sub = document.createElement('div');
+  sub.className = 'conexion-sub';
+  const trozos = [p.ip, p.isp, p.lugar].filter(Boolean);
+  sub.textContent = trozos.join(' · ') || 'sin datos de conexión';
+  info.appendChild(sub);
+
+  if (p.zonaDiscrepa) {
+    const aviso = document.createElement('div');
+    aviso.className = 'conexion-aviso';
+    aviso.textContent = p.zonaEquipo
+      ? 'El equipo está en ' + p.zonaEquipo + ' — la conexión sale por otro sitio. Puede haber una VPN.'
+      : 'El reloj del equipo no cuadra con el país de la conexión. Puede haber una VPN.';
+    info.appendChild(aviso);
+  }
+
+  fila.appendChild(info);
+
+  const cuando = document.createElement('div');
+  cuando.className = 'conexion-cuando';
+  cuando.textContent = _conexionFecha(p.ultima || p.actualizado);
+  fila.appendChild(cuando);
+
+  return fila;
+}
+
+// Bloque de una persona con su historial, en la vista de detalle.
+function _bloqueConexion(p) {
+  const bloque = document.createElement('div');
+  bloque.className = 'conexion-bloque';
+
+  const cab = document.createElement('div');
+  cab.className = 'conexion-bloque-cab';
+  const nom = document.createElement('div');
+  nom.className = 'conexion-nombre';
+  nom.textContent = (p.nombre || p.email || '(sin nombre)');
+  cab.appendChild(nom);
+  const cuenta = document.createElement('div');
+  cuenta.className = 'conexion-sub';
+  const n = (p.registros || []).length;
+  cuenta.textContent = p.email + ' · ' + n + (n === 1 ? ' entrada' : ' entradas');
+  cab.appendChild(cuenta);
+  bloque.appendChild(cab);
+
+  (p.registros || []).forEach(function (r) {
+    const linea = document.createElement('div');
+    linea.className = 'conexion-linea';
+
+    const dia = document.createElement('span');
+    dia.className = 'conexion-linea-dia';
+    dia.textContent = r.dia || '—';
+    linea.appendChild(dia);
+
+    const det = document.createElement('span');
+    det.className = 'conexion-linea-det';
+    const lugar = [r.ciudad, r.pais].filter(Boolean).join(', ');
+    const partes = [r.ip, r.isp, lugar].filter(Boolean);
+    // veces > 1 quiere decir que volvió a entrar ese día desde la misma IP;
+    // la entrada no se duplica, se le alarga el tramo.
+    if (r.veces > 1) partes.push(r.veces + ' entradas ese día');
+    det.textContent = partes.join(' · ');
+    linea.appendChild(det);
+
+    if (r.zonaCoincide === false) {
+      const marca = document.createElement('span');
+      marca.className = 'conexion-marca';
+      marca.textContent = r.zonaEquipo ? 'equipo en ' + r.zonaEquipo : 'zona no cuadra';
+      marca.title = 'El reloj del equipo no coincide con el país de la conexión. Puede haber una VPN.';
+      linea.appendChild(marca);
+    }
+
+    bloque.appendChild(linea);
+  });
+
+  return bloque;
+}
+
+function _renderConexiones() {
+  const cont = document.getElementById('conexiones-lista');
+  if (!cont) return;
+  cont.replaceChildren();
+
+  if (!_conexionesDatos.length) {
+    const vacio = document.createElement('div');
+    vacio.className = 'conexiones-vacio';
+    vacio.textContent = 'Todavía no hay conexiones registradas. Se anotan solas cuando alguien entra al Hub.';
+    cont.appendChild(vacio);
+    return;
+  }
+
+  const conVpn = _conexionesDatos.filter(function (p) {
+    return p.zonaDiscrepa || (p.registros || []).some(function (r) { return r.zonaCoincide === false; });
+  }).length;
+
+  const resumen = document.createElement('div');
+  resumen.className = 'conexiones-resumen';
+  resumen.textContent = _conexionesDatos.length
+    + (_conexionesDatos.length === 1 ? ' persona registrada' : ' personas registradas')
+    + (conVpn ? ' · ' + conVpn + ' con la zona horaria descuadrada' : '');
+  cont.appendChild(resumen);
+
+  _conexionesDatos.forEach(function (p) {
+    cont.appendChild(_conexionesDetalle ? _bloqueConexion(p) : _filaConexion(p));
+  });
+}
+
+function toggleConexionesDetalle() {
+  loadConexiones(!_conexionesDetalle);
 }
 
 // ── Acuse de una eliminación hecha a mano ────────────────────

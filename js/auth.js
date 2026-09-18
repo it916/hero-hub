@@ -8,6 +8,7 @@ import { openBirthdayCardModal, checkBirthdayPopup } from "./birthday-card.js";
 import { checkBirthdayInvitePopup } from "./birthday-invite.js";
 import { loadUserRole, filterTopbarByRole, isAdmin as isAdminRole, clearRoleCache, canAccessPage, applyRoleClasses } from "./roles.js";
 import { getFreshGooglePhotoURL } from "./user-photo.js";
+import { registrarConexion } from "./conexion.js";
 
 const ALLOWED_DOMAIN = "heroinsuranceusa.com";
 
@@ -43,6 +44,10 @@ onAuthStateChanged(auth, async (user) => {
   currentUserRole = roleInfo;
   isAdmin = isAdminRole(roleInfo);
   showDashboard();
+
+  // Deja constancia de desde dónde se entró. Sin await: el registro no puede
+  // retrasar la carga del dashboard, y si falla, tampoco impedirla.
+  registrarConexion(user);
 });
 
 function showLogin() {

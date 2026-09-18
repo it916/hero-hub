@@ -704,6 +704,62 @@ nav { padding: 12px; flex: 1; }
   font-size: 12px; color: var(--hero-success); font-weight: 600;
 }
 
+/* ── Registro de conexiones ───────────────────────────────
+   Todo con variables del tema; el modo noche no necesita reglas propias
+   salvo el aviso de zona, que sobre fondo oscuro pierde contraste. */
+.conexiones-resumen {
+  font-size: 12px; color: var(--hero-text-muted);
+  padding-bottom: 12px; margin-bottom: 4px;
+  border-bottom: 1px solid var(--hero-border-card);
+}
+.conexiones-vacio {
+  font-size: 13px; color: var(--hero-text-muted);
+  text-align: center; padding: 28px 0; line-height: 1.6;
+}
+.conexion-fila {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 12px 2px; border-bottom: 1px solid var(--hero-border-card);
+}
+.conexion-fila:last-child { border-bottom: none; }
+.conexion-info { flex: 1; min-width: 0; }
+.conexion-nombre { font-size: 13px; font-weight: 600; color: var(--hero-text-primary); }
+.conexion-sub {
+  font-size: 11px; color: var(--hero-text-muted); margin-top: 3px;
+  font-family: var(--mono); word-break: break-all;
+}
+.conexion-cuando {
+  font-size: 11px; color: var(--hero-text-muted);
+  font-family: var(--mono); white-space: nowrap; flex-shrink: 0;
+}
+.conexion-aviso {
+  margin-top: 6px; font-size: 11px; line-height: 1.5;
+  color: #b45309; background: #fff8e6;
+  border-left: 3px solid #f0b429; border-radius: 0 6px 6px 0;
+  padding: 6px 10px;
+}
+[data-theme="dark"] .conexion-aviso { color: #fbbf24; background: rgba(240,180,41,0.10); }
+
+.conexion-bloque {
+  padding: 14px 0; border-bottom: 1px solid var(--hero-border-card);
+}
+.conexion-bloque:last-child { border-bottom: none; }
+.conexion-bloque-cab { margin-bottom: 8px; }
+.conexion-linea {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  padding: 5px 0 5px 12px; border-left: 2px solid var(--hero-border-card);
+  font-size: 11.5px;
+}
+.conexion-linea-dia {
+  font-family: var(--mono); font-weight: 700;
+  color: var(--hero-text-primary); flex-shrink: 0;
+}
+.conexion-linea-det { color: var(--hero-text-muted); font-family: var(--mono); }
+.conexion-marca {
+  font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px;
+  background: #fff8e6; color: #b45309; white-space: nowrap;
+}
+[data-theme="dark"] .conexion-marca { background: rgba(240,180,41,0.15); color: #fbbf24; }
+
 /* ── Plazos del ciclo, informativos ───────────────────────
    Fila de solo lectura: dice las reglas, no cuenta casos ni abre nada. Va sin
    caja propia para no competir con la tira de avisos, que es la que sí pide
@@ -1473,6 +1529,10 @@ html { scroll-behavior: smooth; }
       <span class="nav-icon"><iconify-icon icon="tabler:refresh"></iconify-icon></span> Ciclo de cuentas
     </a>
 
+    <a class="nav-item" onclick="showPage('conexiones')" href="#">
+      <span class="nav-icon"><iconify-icon icon="tabler:map-pin"></iconify-icon></span> Conexiones
+    </a>
+
     <div class="nav-section-label">Registros</div>
     <a class="nav-item" onclick="showPage('auditoria')" href="#">
       <span class="nav-icon"><iconify-icon icon="tabler:history"></iconify-icon></span> Auditoría
@@ -1757,6 +1817,39 @@ html { scroll-behavior: smooth; }
 
       <div id="ciclo-etapas" class="ciclo-etapas"></div>
       <div id="ciclo-detalle" class="ciclo-detalle"></div>
+    </div>
+
+    <!-- ══ REGISTRO DE CONEXIONES ══
+         Desde dónde entra cada persona al Hub. Lo captura el Worker al
+         iniciar sesión (js/conexion.js → POST /conexion/registrar); aquí
+         solo se consulta. El contenido lo pinta loadConexiones().
+         Está en el Console y no en admin.html porque hoy solo it@ figura en
+         CONEXIONES_ADMIN_EMAILS del Worker — ver el comentario del módulo. -->
+    <div class="page" id="page-conexiones">
+      <div class="section-header">
+        <div class="section-title"><span>//</span> Registro de <span>Conexiones</span></div>
+        <div class="section-desc">Desde dónde entra cada persona al Hub. Se anota sola al iniciar sesión.</div>
+      </div>
+
+      <div class="info-box" style="margin-bottom:16px;">
+        <p style="font-size:12px;color:var(--hero-text-muted);margin:0;line-height:1.7;">
+          Se guarda <strong>90 días</strong> y luego se borra solo. Cada persona ve su propio registro en Mi Perfil.
+          <br>
+          Tres cosas que este registro <strong>no</strong> puede decir: una <strong>VPN lo desvía</strong> —cuando se
+          detecta, la fila lo avisa—; la <strong>ciudad es aproximada</strong>, a veces la del nodo del proveedor; y
+          <strong>solo ve a quien abra el Hub</strong>, así que quien trabaje la jornada entera en el CRM no aparece
+          aquí. Para eso está el historial de inicios de sesión de Google Workspace.
+        </p>
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:14px;">
+        <button class="btn btn-secondary" onclick="toggleConexionesDetalle()" id="btn-conexiones-detalle" style="font-size:12px;">
+          <iconify-icon icon="tabler:list-details"></iconify-icon> <span id="btn-conexiones-detalle-txt">Ver historial completo</span>
+        </button>
+        <button class="btn btn-secondary" onclick="loadConexiones()" style="font-size:12px;">↺ Actualizar</button>
+      </div>
+
+      <div id="conexiones-lista"></div>
     </div>
 
     <div class="page" id="page-usuarios">

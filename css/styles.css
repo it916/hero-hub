@@ -10706,3 +10706,26 @@ body[data-theme="dark"] input[type="date"] {
   .rh-eval-crit-row { align-items:flex-start; }
   .rh-eval-dot { width:30px; height:30px; }
 }
+
+/* ── Mi conexión (Mi Perfil) ─────────────────────────────────
+   Lo que el Hub registra de dónde entra esta persona. Sin colores propios:
+   todo sale de los tokens, así que el modo noche no necesita reglas aparte. */
+.mp-conexion-intro { font-size: 12px; color: var(--muted); margin: -4px 0 14px; line-height: 1.6; }
+.mp-conexion-ahora {
+  background: var(--paper-2); border: 1px solid var(--border);
+  border-radius: var(--r-sm); padding: 14px 16px; margin-bottom: 16px;
+}
+.mp-conexion-ahora-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.2px; color: var(--muted); margin-bottom: 4px;
+}
+.mp-conexion-ahora-valor { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--text); word-break: break-all; }
+.mp-conexion-lista { display: flex; flex-direction: column; }
+.mp-conexion-fila {
+  display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+  padding: 9px 0; border-top: 1px solid var(--border); font-size: 12px;
+}
+.mp-conexion-fila:first-child { border-top: none; }
+.mp-conexion-dia { font-family: var(--mono); font-weight: 700; color: var(--text); flex-shrink: 0; }
+.mp-conexion-det { color: var(--muted); font-family: var(--mono); }
+.mp-conexion-nota { font-size: 11px; color: var(--muted); margin-top: 14px; line-height: 1.6; font-style: italic; }

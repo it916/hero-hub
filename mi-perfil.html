@@ -251,6 +251,23 @@
       </div>
     </section>
 
+    <!-- ══ Mi conexión ══
+         Lo que el Hub registra de dónde entra esta persona. Va en Mi Perfil a
+         propósito: si la empresa anota desde dónde se conecta cada quien, esa
+         persona tiene que poder verlo sin pedírselo a nadie. Lo pinta
+         renderConexiones() en js/mi-perfil.js. -->
+    <section class="mp-card mp-card-activity-standalone" id="mp-conexion-section">
+      <div class="mp-card-title">
+        <i data-lucide="map-pin"></i>Mi conexión
+      </div>
+      <p class="mp-conexion-intro">
+        El Hub anota desde dónde entras a los sistemas de la empresa. Se guarda 90 días y luego se borra.
+      </p>
+      <div id="mp-conexion" class="mp-conexion">
+        <p class="mp-empty">Cargando…</p>
+      </div>
+    </section>
+
     <!-- ══ Actividad reciente ══ -->
     <section class="mp-card mp-card-activity-standalone">
       <div class="mp-card-title">
