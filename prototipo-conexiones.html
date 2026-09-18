@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Prototipo del registro de conexiones: desde donde entra cada persona al Hero Hub.">
+<link rel="icon" type="image/png" href="icons/favicon-hero.png">
+<link rel="apple-touch-icon" href="icons/favicon-hero.png">
+<meta name="theme-color" content="#06a3b6">
+<title>Prototipo · Registro de conexiones — Hero Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<script type="module" src="js/user-menu.js"></script>
+<script defer src="https://unpkg.com/lucide@0.474.0"></script>
+<script defer src="js/topbar-dropdown.js"></script>
+<script defer src="js/toast.js"></script>
+<style>
+/* Prototipo — estilos locales a propósito: si la idea no prospera, se borra el
+   archivo y no queda nada suelto en css/styles.css. Todo sale de los tokens
+   del Hub, así que el modo noche funciona sin reglas duplicadas. */
+.proto-aviso {
+  display:flex; gap:12px; align-items:flex-start;
+  background:color-mix(in srgb, var(--gold) 12%, var(--card));
+  border:1px solid color-mix(in srgb, var(--gold) 38%, transparent);
+  border-radius:var(--r-sm); padding:16px 18px; margin-bottom:var(--s-7);
+  font-size:14px; line-height:1.6; color:var(--text-2);
+}
+.proto-aviso i { font-size:22px; color:var(--gold); flex-shrink:0; }
+.proto-bloque { margin-bottom:var(--s-8); }
+.proto-h2 {
+  font-family:var(--display); font-size:22px; font-weight:700;
+  color:var(--text); margin-bottom:var(--s-2);
+}
+.proto-intro { font-size:14px; color:var(--muted); line-height:1.65; max-width:68ch; margin-bottom:var(--s-5); }
+.proto-pie { font-size:12px; color:var(--muted); margin-top:var(--s-3); font-style:italic; }
+
+.proto-mia {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:var(--r-sm); box-shadow:var(--shadow-sm); padding:var(--s-6);
+}
+.proto-cargando, .proto-error { font-size:14px; color:var(--muted); text-align:center; padding:var(--s-5) 0; }
+.proto-error { color:var(--rose); }
+.proto-campos { display:grid; gap:var(--s-5); grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); }
+.proto-campo-label {
+  font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1.2px;
+  color:var(--muted); margin-bottom:var(--s-1);
+}
+.proto-campo-valor { font-family:var(--mono); font-size:15px; font-weight:700; color:var(--text); word-break:break-all; }
+.proto-campo-valor.vacio { font-family:var(--sans); font-weight:400; color:var(--muted); font-style:italic; }
+.proto-sello {
+  margin-top:var(--s-5); padding-top:var(--s-4); border-top:1px solid var(--border);
+  font-size:12px; color:var(--muted); line-height:1.6;
+}
+
+.proto-tabla-wrap { overflow-x:auto; border:1px solid var(--border); border-radius:var(--r-sm); background:var(--card); }
+.proto-tabla { width:100%; border-collapse:collapse; font-size:13px; min-width:640px; }
+.proto-tabla th {
+  text-align:left; padding:12px 16px; font-size:11px; font-weight:700;
+  text-transform:uppercase; letter-spacing:1px; color:var(--muted);
+  border-bottom:1px solid var(--border); white-space:nowrap;
+}
+.proto-tabla td { padding:12px 16px; border-bottom:1px solid var(--border); color:var(--text-2); }
+.proto-tabla tr:last-child td { border-bottom:none; }
+.proto-tabla .col-mono { font-family:var(--mono); font-size:12px; }
+.proto-tabla .col-persona { font-weight:600; color:var(--text); white-space:nowrap; }
+
+.proto-limites { list-style:none; display:grid; gap:var(--s-4); }
+.proto-limites li {
+  background:var(--card); border:1px solid var(--border); border-left:3px solid var(--rose);
+  border-radius:var(--r-sm); padding:14px 18px; font-size:14px; line-height:1.65; color:var(--text-2);
+}
+.proto-limites strong { color:var(--text); display:block; margin-bottom:2px; }
+</style>
+</head>
+<body>
+<script>try{var t=localStorage.getItem("hero-theme");if(t)document.body.dataset.theme=t;}catch(e){}</script>
+<script>try{var r=localStorage.getItem("hero-user-role");if(r){document.body.classList.add("skip-loading","role-"+r);}}catch(e){}</script>
+
+<noscript>
+  <div style="position:fixed;inset:0;background:#062a33;color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font-family:system-ui,sans-serif;z-index:99999;">
+    <div>
+      <h1 style="margin:0 0 12px;">Hero Hub requiere JavaScript</h1>
+      <p style="margin:0;opacity:.85;">Activa JavaScript en tu navegador para acceder al Hero Hub.</p>
+    </div>
+  </div>
+</noscript>
+
+<div id="loading" class="login-container"><div class="login-card"><p>Verificando acceso...</p></div></div>
+
+<div id="dashboard" style="display:none;">
+
+  <header class="hero-topbar">
+    <div class="topbar-inner">
+      <div class="brand-block">
+        <a href="index.html" class="brand-link">
+          <div class="logo-mark"><img src="icons/favicon-hero.png" alt="Hero"></div>
+          <div>
+            <div class="brand-name">HERO HUB</div>
+            <div class="brand-sub">Hero Insurance USA</div>
+          </div>
+        </a>
+      </div>
+      <nav class="topbar-nav" id="topbar-nav">
+        <a href="index.html" class="nav-link"><i data-lucide="home"></i><span>Inicio</span></a>
+        <a href="equipo.html" class="nav-link"><i data-lucide="users"></i><span>Equipo</span></a>
+
+        <div class="nav-group">
+          <button class="nav-group-toggle" type="button" aria-expanded="false" aria-haspopup="true">
+            <i data-lucide="briefcase"></i><span>Operaciones</span>
+            <i data-lucide="chevron-down" class="nav-group-arrow"></i>
+          </button>
+          <div class="nav-dropdown" role="menu">
+            <a href="portales.html" class="nav-link" role="menuitem"><i data-lucide="shield"></i><span>Portales</span></a>
+            <a href="agencias.html" class="nav-link" role="menuitem"><i data-lucide="network"></i><span>Agencias</span></a>
+            <a href="directorio.html" class="nav-link" role="menuitem"><i data-lucide="book-user"></i><span>Directorio</span></a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-group-toggle" type="button" aria-expanded="false" aria-haspopup="true">
+            <i data-lucide="library"></i><span>Recursos</span>
+            <i data-lucide="chevron-down" class="nav-group-arrow"></i>
+          </button>
+          <div class="nav-dropdown" role="menu">
+            <a href="guias.html" class="nav-link" role="menuitem"><i data-lucide="book-open"></i><span>Guías</span></a>
+            <a href="reuniones.html" class="nav-link" role="menuitem"><i data-lucide="presentation"></i><span>Reuniones</span></a>
+            <a href="grabaciones.html" class="nav-link" role="menuitem"><i data-lucide="video"></i><span>Grabaciones</span></a>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-group-toggle" type="button" aria-expanded="false" aria-haspopup="true">
+            <i data-lucide="layout-grid"></i><span>Módulos</span>
+            <i data-lucide="chevron-down" class="nav-group-arrow"></i>
+          </button>
+          <div class="nav-dropdown" role="menu">
+            <a href="rrhh.html" class="nav-link" role="menuitem"><i data-lucide="users-round"></i><span>Recursos Humanos</span></a>
+            <a href="it-console.html" class="nav-link" role="menuitem"><i data-lucide="terminal"></i><span>IT Console</span></a>
+            <a href="finanzas.html" class="nav-link" role="menuitem"><i data-lucide="wallet"></i><span>Finanzas</span></a>
+          </div>
+        </div>
+
+      </nav>
+      <div class="topbar-actions">
+        <button id="btn-logout" class="icon-btn" title="Salir" style="display:none;"><i data-lucide="log-out"></i></button>
+
+        <button id="theme-toggle-btn" class="icon-btn" type="button" title="Cambiar a noche" aria-label="Cambiar a noche"><i data-lucide="moon"></i></button>
+        <div class="user-menu-wrap">
+          <button id="user-avatar-btn" class="user-avatar-btn" type="button" aria-label="Menú de usuario" aria-haspopup="true" aria-expanded="false">
+            <img id="user-avatar" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="" class="avatar">
+          </button>
+          <div id="user-menu" class="user-menu" role="menu" hidden>
+            <div class="user-menu-header">
+              <img id="user-menu-avatar" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="" class="user-menu-photo">
+              <div class="user-menu-info">
+                <div class="user-menu-name" id="user-menu-name">—</div>
+                <div class="user-menu-email" id="user-menu-email">—</div>
+                <div class="user-menu-role" id="user-menu-role" hidden></div>
+              </div>
+            </div>
+            <div class="user-menu-divider"></div>
+            <button id="user-menu-profile" class="user-menu-item" type="button" role="menuitem">
+              <i data-lucide="user"></i><span>Mi perfil</span>
+            </button>
+            <a href="admin.html" id="user-menu-admin" class="user-menu-item" role="menuitem" hidden>
+              <i data-lucide="shield-check"></i><span>Admin</span>
+            </a>
+            <div class="user-menu-divider"></div>
+            <button id="user-menu-logout" class="user-menu-item user-menu-item-danger" type="button" role="menuitem">
+              <i data-lucide="log-out"></i><span>Cerrar sesión</span>
+            </button>
+          </div>
+        </div>
+        <button id="btn-menu" class="icon-btn menu-toggle" title="Menú"><i data-lucide="menu"></i></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+
+    <section class="page-header">
+      <div class="page-kicker">• Prototipo — no es una función del Hub •</div>
+      <h1 class="page-title">Registro de conexiones</h1>
+      <p class="page-sub">Desde dónde entra cada persona a los sistemas de la empresa</p>
+    </section>
+
+    <div class="proto-aviso">
+      <i class="ph ph-flask" aria-hidden="true"></i>
+      <div>
+        <strong>Esto todavía no guarda nada.</strong>
+        La página pide el dato, lo enseña y lo olvida: sirve para ver qué se registraría
+        antes de decidir si se registra. Nadie queda anotado por abrirla — ni tú.
+      </div>
+    </div>
+
+    <section class="proto-bloque">
+      <h2 class="proto-h2">Tu conexión ahora</h2>
+      <p class="proto-intro">
+        Esto es real: sale de tu conexión de este momento. Es exactamente el dato que
+        quedaría anotado de cada persona al entrar al Hub.
+      </p>
+      <div id="proto-mia" class="proto-mia">
+        <div class="proto-cargando">Consultando tu conexión…</div>
+      </div>
+    </section>
+
+    <section class="proto-bloque">
+      <h2 class="proto-h2">Así se vería el registro</h2>
+      <p class="proto-intro">
+        Ejemplo con datos inventados, para ver la forma que tendría la consulta de
+        administración. Las IP están recortadas a propósito.
+      </p>
+      <div class="proto-tabla-wrap">
+        <table class="proto-tabla">
+          <thead>
+            <tr>
+              <th>Persona</th><th>Entró</th><th>IP pública</th><th>Proveedor</th><th>Desde</th>
+            </tr>
+          </thead>
+          <tbody id="proto-ejemplo"></tbody>
+        </table>
+      </div>
+      <p class="proto-pie">Filas de ejemplo — ninguna corresponde a una persona real.</p>
+    </section>
+
+    <section class="proto-bloque">
+      <h2 class="proto-h2">Lo que este registro no puede decir</h2>
+      <p class="proto-intro">
+        Conviene que esto se sepa antes de aprobarlo, porque define para qué sirve y
+        para qué no.
+      </p>
+      <ul class="proto-limites">
+        <li>
+          <strong>Con una VPN, el registro apunta a otro sitio.</strong>
+          Se anota por dónde sale la conexión, no dónde está la persona. Cualquier
+          extensión gratuita de navegador cambia lo que aparece aquí.
+        </li>
+        <li>
+          <strong>La ciudad es aproximada.</strong>
+          El país casi siempre acierta; la ciudad, a veces no — puede apuntar al nodo
+          del proveedor y no a donde está quien se conecta. Sirve para «entró desde
+          Venezuela y no desde otro país», no para «estaba en su casa».
+        </li>
+        <li>
+          <strong>Solo ve quien abra el Hub.</strong>
+          Alguien que trabaje toda la jornada en el CRM sin pasar por el dashboard no
+          deja registro. El historial de inicios de sesión de Google Workspace no tiene
+          ese hueco y ya guarda IP y ubicación de todas las cuentas.
+        </li>
+      </ul>
+    </section>
+
+    <footer class="hero-footer">
+    <div class="footer-cols" id="footer-nav">
+      <div class="footer-col">
+        <div class="footer-col-title">Documentación</div>
+        <a href="onboarding.html" class="nav-link">Onboarding</a>
+        <a href="politicas.html" class="nav-link">Políticas</a>
+        <a href="finanzas-manual.html" class="nav-link">Manual de Finanzas</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Ayuda</div>
+        <a href="soporte.html" class="nav-link" data-siempre-visible>Reportar un problema</a>
+        <a href="solicitud-cuenta.html" class="nav-link">Solicitar una cuenta</a>
+      </div>
+    </div>
+    <div class="footer-legal" id="footer-legal">
+      <span>HERO HUB · v2.58.1</span><span class="sep">•</span><a href="changelog.html" class="nav-link">Ver Registro de Cambios</a><span class="sep">•</span><span>HERO INSURANCE USA</span>
+    </div>
+  </footer>
+</div>
+
+<script>
+  window.refreshIcons = () => { if (window.lucide) lucide.createIcons(); };
+  document.addEventListener("DOMContentLoaded", () => {
+    window.refreshIcons();
+    const menuBtn = document.getElementById("btn-menu");
+    const nav = document.getElementById("topbar-nav");
+    if (menuBtn && nav) menuBtn.addEventListener("click", () => nav.classList.toggle("open"));
+  });
+</script>
+<script type="module" src="js/firebase-config.js"></script>
+<script type="module" src="js/prototipo-conexiones.js"></script>
+</body>
+</html>

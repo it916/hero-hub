@@ -76,6 +76,7 @@ hero-hub/
 ├── finanzas.html                ← módulo de Finanzas (DESCONTINUADO 2026-08-20)
 ├── finanzas-manual.html         ← manual de Finanzas
 ├── it-console.html              ← consola de IT (rol `it`)
+├── prototipo-conexiones.html    ← PROTOTIPO: registro de conexiones (IP/ISP/geo); fuera de la navegación, se abre por URL
 │
 ├── css/                         ← hojas de estilo
 ├── js/                          ← lógica y módulos
