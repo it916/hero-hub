@@ -731,13 +731,6 @@ nav { padding: 12px; flex: 1; }
   font-size: 11px; color: var(--hero-text-muted);
   font-family: var(--mono); white-space: nowrap; flex-shrink: 0;
 }
-.conexion-aviso {
-  margin-top: 6px; font-size: 11px; line-height: 1.5;
-  color: #b45309; background: #fff8e6;
-  border-left: 3px solid #f0b429; border-radius: 0 6px 6px 0;
-  padding: 6px 10px;
-}
-[data-theme="dark"] .conexion-aviso { color: #fbbf24; background: rgba(240,180,41,0.10); }
 
 .conexion-bloque {
   padding: 14px 0; border-bottom: 1px solid var(--hero-border-card);
@@ -754,11 +747,6 @@ nav { padding: 12px; flex: 1; }
   color: var(--hero-text-primary); flex-shrink: 0;
 }
 .conexion-linea-det { color: var(--hero-text-muted); font-family: var(--mono); }
-.conexion-marca {
-  font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px;
-  background: #fff8e6; color: #b45309; white-space: nowrap;
-}
-[data-theme="dark"] .conexion-marca { background: rgba(240,180,41,0.15); color: #fbbf24; }
 
 /* ── Plazos del ciclo, informativos ───────────────────────
    Fila de solo lectura: dice las reglas, no cuenta casos ni abre nada. Va sin
@@ -1835,8 +1823,9 @@ html { scroll-behavior: smooth; }
         <p style="font-size:12px;color:var(--hero-text-muted);margin:0;line-height:1.7;">
           Se guarda <strong>90 días</strong> y luego se borra solo. Cada persona ve su propio registro en Mi Perfil.
           <br>
-          Tres cosas que este registro <strong>no</strong> puede decir: una <strong>VPN lo desvía</strong> —cuando se
-          detecta, la fila lo avisa—; la <strong>ciudad es aproximada</strong>, a veces la del nodo del proveedor; y
+          Tres cosas que este registro <strong>no</strong> puede decir: una <strong>VPN lo desvía</strong> —se anota
+          por dónde sale la conexión, no dónde está la persona—; la <strong>ciudad es aproximada</strong>, a veces la
+          del nodo del proveedor; y
           <strong>solo ve a quien abra el Hub</strong>, así que quien trabaje la jornada entera en el CRM no aparece
           aquí. Para eso está el historial de inicios de sesión de Google Workspace.
         </p>

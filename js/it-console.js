@@ -2549,8 +2549,10 @@ function _renderCicloDetalle(key) {
 // así la misma pantalla se puede llevar al Hub sin tocar el Worker.
 //
 // ⚠ Lo que esta tabla NO dice, y conviene recordar al leerla:
-//   · una VPN la desvía — de ahí la marca de zona horaria, que avisa cuando el
-//     reloj del equipo no cuadra con el país de la conexión;
+//   · una VPN la desvía: se anota por dónde sale la conexión, no dónde está la
+//     persona. Hubo una marca que lo señalaba comparando la zona horaria del
+//     equipo; se retiró el 2026-09-18 por decisión de IT — para lo que se pide
+//     da igual por dónde salga la conexión;
 //   · la ciudad es aproximada, a veces la del nodo del proveedor;
 //   · solo ve a quien abra el Hub. Quien trabaje la jornada entera en el CRM
 //     no aparece aquí. El historial de Google Workspace no tiene ese hueco.
@@ -2626,15 +2628,6 @@ function _filaConexion(p) {
   sub.textContent = trozos.join(' · ') || 'sin datos de conexión';
   info.appendChild(sub);
 
-  if (p.zonaDiscrepa) {
-    const aviso = document.createElement('div');
-    aviso.className = 'conexion-aviso';
-    aviso.textContent = p.zonaEquipo
-      ? 'El equipo está en ' + p.zonaEquipo + ' — la conexión sale por otro sitio. Puede haber una VPN.'
-      : 'El reloj del equipo no cuadra con el país de la conexión. Puede haber una VPN.';
-    info.appendChild(aviso);
-  }
-
   fila.appendChild(info);
 
   const cuando = document.createElement('div');
@@ -2682,14 +2675,6 @@ function _bloqueConexion(p) {
     det.textContent = partes.join(' · ');
     linea.appendChild(det);
 
-    if (r.zonaCoincide === false) {
-      const marca = document.createElement('span');
-      marca.className = 'conexion-marca';
-      marca.textContent = r.zonaEquipo ? 'equipo en ' + r.zonaEquipo : 'zona no cuadra';
-      marca.title = 'El reloj del equipo no coincide con el país de la conexión. Puede haber una VPN.';
-      linea.appendChild(marca);
-    }
-
     bloque.appendChild(linea);
   });
 
@@ -2709,15 +2694,10 @@ function _renderConexiones() {
     return;
   }
 
-  const conVpn = _conexionesDatos.filter(function (p) {
-    return p.zonaDiscrepa || (p.registros || []).some(function (r) { return r.zonaCoincide === false; });
-  }).length;
-
   const resumen = document.createElement('div');
   resumen.className = 'conexiones-resumen';
   resumen.textContent = _conexionesDatos.length
-    + (_conexionesDatos.length === 1 ? ' persona registrada' : ' personas registradas')
-    + (conVpn ? ' · ' + conVpn + ' con la zona horaria descuadrada' : '');
+    + (_conexionesDatos.length === 1 ? ' persona registrada' : ' personas registradas');
   cont.appendChild(resumen);
 
   _conexionesDatos.forEach(function (p) {

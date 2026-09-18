@@ -19,19 +19,6 @@ import { getFreshGooglePhotoURL } from "./user-photo.js";
 
 const WORKER_URL = "https://hero-email-worker.broad-fire-d2d6.workers.dev";
 
-// Zona horaria configurada en el equipo. El Worker la compara con la que
-// deduce de la IP: si el equipo dice Caracas y la conexión sale por Nueva
-// York, lo más probable es que haya una VPN de por medio. Es una señal, no
-// una prueba — este dato lo pone el navegador y por tanto se puede falsear;
-// la IP, en cambio, la ve el Worker.
-function zonaDelEquipo() {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || null;
-  } catch (_) {
-    return null;
-  }
-}
-
 
 // Filas inventadas para enseñar la forma que tendría la consulta. Las IP van
 // recortadas: en una maqueta que se comparte no hace falta que parezcan reales.
@@ -123,7 +110,7 @@ async function consultarMiConexion(user) {
     const resp = await fetch(WORKER_URL + "/conexion/quien-soy", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ idToken, zonaEquipo: zonaDelEquipo() }),
+      body: JSON.stringify({ idToken }),
     });
     const data = await resp.json().catch(() => ({}));
     if (!resp.ok) throw new Error(data.error || "El servidor respondió " + resp.status);
