@@ -704,6 +704,83 @@ nav { padding: 12px; flex: 1; }
   font-size: 12px; color: var(--hero-success); font-weight: 600;
 }
 
+/* ── Ciclo de cuentas ─────────────────────────────────────
+   Los tonos solo pintan el número y el borde al seleccionar; el fondo sale
+   de las variables del tema, así que el modo noche no necesita duplicar cada
+   regla — solo aclarar los acentos, que sobre fondo oscuro pierden lectura. */
+.ciclo-etapas { display: flex; flex-wrap: wrap; gap: 22px; margin-bottom: 24px; }
+.ciclo-grupo { display: flex; flex-direction: column; gap: 8px; }
+.ciclo-grupo-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.2px; color: var(--hero-text-muted); padding-left: 2px;
+}
+.ciclo-grupo-etapas { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.ciclo-etapa {
+  --tono: var(--hero-primary);
+  display: flex; flex-direction: column; gap: 2px;
+  min-width: 104px; padding: 12px 14px;
+  background: var(--hero-bg-card);
+  border: 1px solid var(--hero-border-card);
+  border-radius: var(--hero-radius-card);
+  cursor: pointer; text-align: left;
+  font-family: var(--hero-font);
+  transition: border-color .15s, transform .15s;
+}
+.ciclo-etapa:hover { border-color: var(--tono); transform: translateY(-1px); }
+.ciclo-etapa.activa { border-color: var(--tono); box-shadow: 0 0 0 3px color-mix(in srgb, var(--tono) 18%, transparent); }
+.ciclo-etapa.vacia { opacity: .5; }
+.ciclo-etapa.vacia:hover { opacity: .8; }
+.ciclo-etapa-n { font-size: 22px; font-weight: 700; line-height: 1.1; color: var(--tono); }
+.ciclo-etapa-label { font-size: 11px; color: var(--hero-text-muted); line-height: 1.3; }
+
+.ciclo-etapa.tono-cyan   { --tono: var(--hero-primary); }
+.ciclo-etapa.tono-verde  { --tono: #16a34a; }
+.ciclo-etapa.tono-morado { --tono: #7c3aed; }
+.ciclo-etapa.tono-ambar  { --tono: #d97706; }
+.ciclo-etapa.tono-azul   { --tono: #2563eb; }
+.ciclo-etapa.tono-rojo   { --tono: #dc2626; }
+.ciclo-etapa.tono-gris   { --tono: #64748b; }
+
+[data-theme="dark"] .ciclo-etapa.tono-verde  { --tono: #4ade80; }
+[data-theme="dark"] .ciclo-etapa.tono-morado { --tono: #a78bfa; }
+[data-theme="dark"] .ciclo-etapa.tono-ambar  { --tono: #fbbf24; }
+[data-theme="dark"] .ciclo-etapa.tono-azul   { --tono: #60a5fa; }
+[data-theme="dark"] .ciclo-etapa.tono-rojo   { --tono: #f87171; }
+[data-theme="dark"] .ciclo-etapa.tono-gris   { --tono: #94a3b8; }
+
+.ciclo-detalle {
+  background: var(--hero-bg-card);
+  border: 1px solid var(--hero-border-card);
+  border-radius: var(--hero-radius-card);
+  padding: 20px;
+}
+.ciclo-head { margin-bottom: 14px; }
+.ciclo-head-title { font-size: 15px; font-weight: 700; color: var(--hero-text-primary); }
+.ciclo-head-help { font-size: 12px; color: var(--hero-text-muted); margin: 5px 0 0; line-height: 1.5; max-width: 72ch; }
+.ciclo-head .btn { margin-top: 12px; }
+.ciclo-vacio { font-size: 13px; color: var(--hero-text-muted); padding: 18px 0; text-align: center; }
+
+.ciclo-lista { display: flex; flex-direction: column; }
+.ciclo-fila {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 2px; border-top: 1px solid var(--hero-border-card);
+}
+.ciclo-fila:first-child { border-top: none; }
+.ciclo-fila-info { flex: 1; min-width: 0; }
+.ciclo-fila-nombre { font-size: 13px; font-weight: 600; color: var(--hero-text-primary); }
+.ciclo-fila-sub {
+  font-size: 11px; color: var(--hero-text-muted); margin-top: 2px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ciclo-fila-btn { flex-shrink: 0; font-size: 12px; }
+
+@media (max-width: 720px) {
+  .ciclo-etapas { gap: 14px; }
+  .ciclo-etapa { min-width: 88px; padding: 10px 12px; }
+  .ciclo-fila { flex-wrap: wrap; }
+}
+
 /* ── Accesos rápidos del dashboard ───────────────────────── */
 .home-quick-label {
   display: flex; align-items: center; gap: 8px;
@@ -1366,6 +1443,10 @@ html { scroll-behavior: smooth; }
       <span class="nav-icon"><iconify-icon icon="tabler:users"></iconify-icon></span> Usuarios
     </a>
 
+    <a class="nav-item" onclick="showPage('ciclo-cuentas')" href="#">
+      <span class="nav-icon"><iconify-icon icon="tabler:refresh"></iconify-icon></span> Ciclo de cuentas
+    </a>
+
     <div class="nav-section-label">Registros</div>
     <a class="nav-item" onclick="showPage('auditoria')" href="#">
       <span class="nav-icon"><iconify-icon icon="tabler:history"></iconify-icon></span> Auditoría
@@ -1629,6 +1710,22 @@ html { scroll-behavior: smooth; }
     </div><!-- /reset -->
 
     <!-- ══ USUARIOS WORKSPACE ══════════════════════════════ -->
+    <!-- ══ CICLO DE CUENTAS ══
+         Vista transversal: la misma data que ya alimenta los chips del Home y
+         el select de Actividad de Usuarios, pero ordenada como recorrido y con
+         la acción que toca en cada etapa. No duplica esas listas — responde
+         "qué me toca hacer hoy" sin tener que saber qué filtro poner.
+         El contenido lo pinta loadCicloCuentas() en js/it-console.js. -->
+    <div class="page" id="page-ciclo-cuentas">
+      <div class="section-header">
+        <div class="section-title"><span>//</span> Ciclo de <span>Cuentas</span></div>
+        <div class="section-desc">De la solicitud al cierre: dónde está cada cuenta y qué toca hacer con ella.</div>
+      </div>
+
+      <div id="ciclo-etapas" class="ciclo-etapas"></div>
+      <div id="ciclo-detalle" class="ciclo-detalle"></div>
+    </div>
+
     <div class="page" id="page-usuarios">
       <div class="section-header">
         <div class="section-title"><span>//</span> Usuarios</div>

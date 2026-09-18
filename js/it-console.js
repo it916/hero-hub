@@ -150,6 +150,7 @@ const pageLabels = {
   'tickets': 'Soporte · Tickets',
   'auditoria': 'Auditoría',
   'crear-usuario': 'Crear Usuario',
+  'ciclo-cuentas': 'Ciclo de Cuentas',
   'onboarding': 'Enviar Onboarding',
   'toolbox': 'Soporte · Toolbox',
   'dispositivos': 'Soporte · Dispositivos',
@@ -215,6 +216,7 @@ function showPage(id) {
     'config':       () => loadConfig(),
     'plantillas':   () => loadPlantillas(),
     'crear-usuario': () => initCrearUsuario(),
+    'ciclo-cuentas': () => loadCicloCuentas(),
   };
   if (autoLoad[id]) autoLoad[id]();
 
@@ -2161,6 +2163,315 @@ async function userAction(action) {
     addLog('Error: ' + err.message, 'error');
     showToast('Error: ' + err.message);
   }
+}
+
+// ═════════════════════════════════════════════════════════════
+// CICLO DE CUENTAS
+// ═════════════════════════════════════════════════════════════
+// El ciclo ya estaba modelado antes de esta pantalla, pero repartido: cuatro
+// chips en el Home, cinco opciones del select de Actividad en Usuarios, y la
+// cola de plazos. Se veía una etapa a la vez y había que saber cuál mirar.
+//
+// Esto NO duplica esas listas: es la misma data vista como recorrido, y cada
+// etapa ofrece la acción que toca en ella. Responde "qué me toca hacer hoy"
+// sin ir a Usuarios a filtrar. Los chips del Home se quedan — avisan sin que
+// los busques, que es una función distinta a la de esta pantalla.
+//
+// Las etapas de inactividad cuentan SOLO agentes, igual que los chips: al
+// equipo interno no se le suspende la cuenta por no entrar a Workspace. Las
+// de cierre cuentan a cualquiera. Se dice en la UI para que el total no
+// desconcierte.
+const CICLO_ETAPAS = [
+  { key: 'solicitudes', grupo: 'Alta', label: 'Solicitudes', tono: 'cyan',
+    ayuda: 'Altas pedidas que todavía no se han resuelto.',
+    vacio: 'Ninguna solicitud pendiente.',
+    accionGlobal: { label: 'Ver solicitudes', fn: function () { showPage('solicitudes'); } } },
+
+  { key: 'activas', grupo: 'Vida', label: 'Activas', tono: 'verde',
+    ayuda: 'Cuentas en uso normal. No hay nada que hacer aquí.',
+    vacio: 'Ninguna cuenta activa.' },
+
+  { key: 'nunca-login', grupo: 'Vida', label: 'Nunca iniciaron sesión', tono: 'morado', soloAgentes: true,
+    ayuda: 'Cuenta creada que no registra ningún acceso. Toca avisar.',
+    vacio: 'Todas las cuentas se han usado al menos una vez.',
+    filaAccion: { label: 'Enviar aviso', fn: function (r) { return enviarAvisoInactividad(r.email, r.nombre); } } },
+
+  { key: 'inactivas', grupo: 'Vida', label: 'Inactivas ≥3 meses', tono: 'ambar', soloAgentes: true,
+    ayuda: 'Sin acceso en 90 días o más y sin aviso enviado todavía.',
+    vacio: 'Nadie lleva 3 meses sin entrar.',
+    filaAccion: { label: 'Enviar aviso', fn: function (r) { return enviarAvisoInactividad(r.email, r.nombre); } } },
+
+  { key: 'avisadas', grupo: 'Aviso', label: 'Avisadas, esperando', tono: 'azul', soloAgentes: true,
+    ayuda: 'Ya recibieron el aviso y el plazo de 15 días sigue corriendo. No hay nada que hacer: esperar o que vuelvan a entrar.',
+    vacio: 'Ningún aviso en espera.' },
+
+  { key: 'aviso-vencido', grupo: 'Aviso', label: 'Aviso vencido', tono: 'rojo', soloAgentes: true,
+    ayuda: 'Pasaron los 15 días del aviso sin respuesta ni acceso. Toca suspender.',
+    vacio: 'Ningún aviso vencido.',
+    filaAccion: { label: 'Suspender', fn: function (r) { return suspenderPorInactividad(r.email, r.nombre); } } },
+
+  { key: 'suspendidas', grupo: 'Cierre', label: 'Suspendidas', tono: 'gris',
+    ayuda: 'Suspendidas con el plazo de 15 días todavía corriendo. Pueden pedir reactivación.',
+    vacio: 'Ninguna cuenta suspendida en plazo.' },
+
+  { key: 'plazo-cumplido', grupo: 'Cierre', label: 'Plazo cumplido', tono: 'rojo',
+    ayuda: 'Venció el plazo que se le dio a la persona. Toca cerrar la cuenta — hoy se hace en Google Admin y se marca desde el panel.',
+    vacio: 'Ninguna cuenta con el plazo vencido.',
+    filaAccion: { label: 'Abrir panel', fn: function (r) { openUserModal(r.email, r.nombre); } } },
+];
+
+let _cicloEtapaActiva = null;
+let _cicloDatos = {};
+
+// Reparte a cada persona en su etapa. Una cuenta cae en UNA sola: el reparto
+// va de lo más avanzado del ciclo a lo más temprano, porque una suspendida que
+// ademas lleva meses sin login es un caso de cierre, no de inactividad.
+async function _cicloCalcular() {
+  const [rolesMap, wsList] = await Promise.all([
+    getHubUserRoles().catch(function () { return {}; }),
+    listWorkspaceUsers().catch(function () { return []; }),
+  ]);
+
+  const wsMap = {};
+  (wsList || []).forEach(function (w) {
+    if (w && w.email) wsMap[String(w.email).toLowerCase()] = w;
+  });
+
+  const out = {};
+  CICLO_ETAPAS.forEach(function (e) { out[e.key] = []; });
+
+  const ahora = Date.now();
+
+  (allUsers || []).forEach(function (u) {
+    const mail = String(u.email || '').toLowerCase();
+    const ws = wsMap[mail] || {};
+    const agente = isAgente(u, rolesMap);
+
+    if (u.estado !== 'activo') {
+      // Cerrada: ya se marcó. Sale del ciclo y no se lista en ninguna etapa.
+      if (ws.deletedAt) return;
+      const plazo = ws.scheduledDeletionAt ? new Date(ws.scheduledDeletionAt).getTime() : null;
+      if (plazo && plazo <= ahora && !ws.reactivatedAt) {
+        out['plazo-cumplido'].push({ email: u.email, nombre: u.nombre, detalle: _cicloDesde(ws.scheduledDeletionAt, 'plazo vencido hace') });
+      } else {
+        out['suspendidas'].push({ email: u.email, nombre: u.nombre, detalle: plazo ? _cicloHasta(ws.scheduledDeletionAt) : 'sin plazo registrado' });
+      }
+      return;
+    }
+
+    const status = classifyActivityStatus(u, ws);
+    const dias = daysSinceLogin(u);
+
+    if (agente && status === 'notice-expired') {
+      out['aviso-vencido'].push({ email: u.email, nombre: u.nombre, detalle: _cicloDesde(ws.preSuspensionNoticeSentAt, 'avisado hace') });
+    } else if (agente && status === 'notice-waiting') {
+      out['avisadas'].push({ email: u.email, nombre: u.nombre, detalle: _cicloDesde(ws.preSuspensionNoticeSentAt, 'avisado hace') });
+    } else if (agente && status === 'never-logged-in') {
+      out['nunca-login'].push({ email: u.email, nombre: u.nombre, detalle: 'sin ningún acceso' });
+    } else if (agente && status === 'inactive') {
+      out['inactivas'].push({ email: u.email, nombre: u.nombre, detalle: dias === null ? 'sin registro' : ('sin entrar hace ' + dias + ' días') });
+    } else {
+      out['activas'].push({ email: u.email, nombre: u.nombre, detalle: dias === null ? 'sin registro de acceso' : ('último acceso hace ' + dias + ' días') });
+    }
+  });
+
+  // Solicitudes: viven en el Worker, no en Workspace. Pendientes = todo lo que
+  // no se resolvió todavía (ni procesada ni rechazada).
+  try {
+    const resp = await authFetch(WORKER_URL + '/alta-agente');
+    const data = await resp.json();
+    if (resp.ok) {
+      (data.solicitudes || []).forEach(function (s) {
+        const est = String(s.estado || '').toLowerCase();
+        if (est === 'procesada' || est === 'rechazada') return;
+        const nom = [s.nombre, s.apellido].filter(Boolean).join(' ');
+        out['solicitudes'].push({
+          email: s.correo || '',
+          nombre: nom || '(sin nombre)',
+          detalle: est ? ('estado: ' + est) : 'pendiente',
+        });
+      });
+    }
+  } catch (e) {
+    console.warn('[ciclo] solicitudes no disponibles:', e && e.message);
+  }
+
+  CICLO_ETAPAS.forEach(function (e) {
+    out[e.key].sort(function (a, b) { return String(a.nombre).localeCompare(String(b.nombre), 'es'); });
+  });
+  return out;
+}
+
+function _cicloDesde(iso, prefijo) {
+  if (!iso) return '';
+  const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  return prefijo + ' ' + d + (d === 1 ? ' día' : ' días');
+}
+
+function _cicloHasta(iso) {
+  if (!iso) return '';
+  const d = Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000);
+  if (d <= 0) return 'plazo vencido';
+  return 'cierra en ' + d + (d === 1 ? ' día' : ' días');
+}
+
+// Punto de entrada — lo llama showPage. allUsers puede estar vacío si no se
+// visitó Usuarios en esta sesión; en ese caso se carga antes, igual que hace
+// el Home con sus chips.
+//
+// refrescar=true fuerza el reload aunque ya haya data: el estado de Workspace
+// (activo/suspendido) vive en allUsers, y suspender no lo actualiza a tiempo
+// — sin esto la persona recién suspendida seguiría en su etapa anterior. Lo
+// que vive en shared/workspaceUsers no lo necesita: _cicloCalcular relee esa
+// colección en cada pasada.
+async function loadCicloCuentas(refrescar) {
+  const cont = document.getElementById('ciclo-etapas');
+  if (!cont) return;
+  try {
+    if (refrescar || !allUsers || !allUsers.length) await loadUsers();
+    _cicloDatos = await _cicloCalcular();
+    _renderCicloEtapas();
+    // Al entrar se abre la etapa más urgente con gente dentro, en vez de
+    // obligar a buscarla: el orden del array ya va de alta a cierre, así que
+    // se recorre al revés — cerrar una cuenta corre más que avisar a otra.
+    if (!_cicloEtapaActiva || !(_cicloDatos[_cicloEtapaActiva] || []).length) {
+      const urgentes = ['plazo-cumplido', 'aviso-vencido', 'inactivas', 'nunca-login', 'solicitudes'];
+      _cicloEtapaActiva = urgentes.find(function (k) { return (_cicloDatos[k] || []).length; }) || 'activas';
+    }
+    _renderCicloDetalle(_cicloEtapaActiva);
+  } catch (e) {
+    console.warn('[ciclo] error:', e && e.message);
+    showToast('No se pudo cargar el ciclo de cuentas');
+  }
+}
+
+function _renderCicloEtapas() {
+  const cont = document.getElementById('ciclo-etapas');
+  if (!cont) return;
+  cont.replaceChildren();
+
+  let grupoActual = null;
+  let wrap = null;
+
+  CICLO_ETAPAS.forEach(function (e) {
+    if (e.grupo !== grupoActual) {
+      grupoActual = e.grupo;
+      const g = document.createElement('div');
+      g.className = 'ciclo-grupo';
+      const t = document.createElement('div');
+      t.className = 'ciclo-grupo-label';
+      t.textContent = e.grupo;
+      g.appendChild(t);
+      wrap = document.createElement('div');
+      wrap.className = 'ciclo-grupo-etapas';
+      g.appendChild(wrap);
+      cont.appendChild(g);
+    }
+
+    const n = (_cicloDatos[e.key] || []).length;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'ciclo-etapa tono-' + e.tono + (e.key === _cicloEtapaActiva ? ' activa' : '') + (n ? '' : ' vacia');
+    b.title = e.ayuda;
+    b.addEventListener('click', function () {
+      _cicloEtapaActiva = e.key;
+      _renderCicloEtapas();
+      _renderCicloDetalle(e.key);
+    });
+
+    const num = document.createElement('span');
+    num.className = 'ciclo-etapa-n';
+    num.textContent = String(n);
+    b.appendChild(num);
+
+    const lab = document.createElement('span');
+    lab.className = 'ciclo-etapa-label';
+    lab.textContent = e.label;
+    b.appendChild(lab);
+
+    wrap.appendChild(b);
+  });
+}
+
+function _renderCicloDetalle(key) {
+  const panel = document.getElementById('ciclo-detalle');
+  if (!panel) return;
+  const etapa = CICLO_ETAPAS.find(function (e) { return e.key === key; });
+  if (!etapa) return;
+  const filas = _cicloDatos[key] || [];
+  panel.replaceChildren();
+
+  const head = document.createElement('div');
+  head.className = 'ciclo-head';
+  const h = document.createElement('div');
+  h.className = 'ciclo-head-title';
+  h.textContent = etapa.label + ' · ' + filas.length + (filas.length === 1 ? ' cuenta' : ' cuentas');
+  head.appendChild(h);
+  const p = document.createElement('p');
+  p.className = 'ciclo-head-help';
+  p.textContent = etapa.ayuda + (etapa.soloAgentes ? ' Solo cuenta agentes: al equipo interno no se le suspende por inactividad.' : '');
+  head.appendChild(p);
+
+  if (etapa.accionGlobal) {
+    const ab = document.createElement('button');
+    ab.type = 'button';
+    ab.className = 'btn btn-secondary';
+    ab.style.fontSize = '12px';
+    ab.textContent = etapa.accionGlobal.label;
+    ab.addEventListener('click', etapa.accionGlobal.fn);
+    head.appendChild(ab);
+  }
+  panel.appendChild(head);
+
+  if (!filas.length) {
+    const vacio = document.createElement('div');
+    vacio.className = 'ciclo-vacio';
+    vacio.textContent = etapa.vacio;
+    panel.appendChild(vacio);
+    return;
+  }
+
+  const lista = document.createElement('div');
+  lista.className = 'ciclo-lista';
+  filas.forEach(function (r) {
+    const fila = document.createElement('div');
+    fila.className = 'ciclo-fila';
+
+    const info = document.createElement('div');
+    info.className = 'ciclo-fila-info';
+    const nom = document.createElement('div');
+    nom.className = 'ciclo-fila-nombre';
+    nom.textContent = r.nombre || '(sin nombre)';
+    info.appendChild(nom);
+    const sub = document.createElement('div');
+    sub.className = 'ciclo-fila-sub';
+    sub.textContent = (r.email || '') + (r.detalle ? ' · ' + r.detalle : '');
+    info.appendChild(sub);
+    fila.appendChild(info);
+
+    if (etapa.filaAccion && r.email) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-secondary ciclo-fila-btn';
+      btn.textContent = etapa.filaAccion.label;
+      btn.addEventListener('click', async function () {
+        btn.disabled = true;
+        try {
+          await etapa.filaAccion.fn(r);
+        } finally {
+          // Las acciones mueven a la persona de etapa, así que se recalcula
+          // con data fresca de Workspace. openUserModal no cambia nada por sí
+          // solo: recargar es inofensivo.
+          btn.disabled = false;
+          loadCicloCuentas(true);
+        }
+      });
+      fila.appendChild(btn);
+    }
+
+    lista.appendChild(fila);
+  });
+  panel.appendChild(lista);
 }
 
 // ── Acuse de una eliminación hecha a mano ────────────────────

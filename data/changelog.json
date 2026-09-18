@@ -1,5 +1,21 @@
 [
   {
+    "id": "2026-09-17-ciclo-de-cuentas",
+    "version": "v2.58.0",
+    "date": "2026-09-17",
+    "category": "feat",
+    "scope": "it-console",
+    "audience": "admin",
+    "title": "Ciclo de Cuentas: todo el recorrido de una cuenta en una sola pantalla",
+    "items": [
+      "La vida de una cuenta —solicitud, alta, uso, inactividad, aviso, suspensión y cierre— estaba repartida entre cuatro avisos del inicio, un filtro dentro de Usuarios y una lista de plazos. Se veía una etapa a la vez y había que saber cuál mirar",
+      "La nueva sección muestra las ocho etapas en orden con cuánta gente hay en cada una. Al elegir una salen las personas que están ahí y el botón de lo que toca hacerles: avisar, suspender o cerrar",
+      "Abre sola en la etapa más urgente que tenga gente dentro, así que al entrar ya estás donde hace falta",
+      "Las etapas de inactividad cuentan solo agentes, igual que los avisos del inicio: al equipo interno no se le suspende la cuenta por no entrar. Lo dice en pantalla para que el total no desconcierte",
+      "Los avisos del inicio se quedan como estaban: siguen saltando al entrar sin que haya que ir a buscarlos"
+    ]
+  },
+  {
     "id": "2026-09-17-email-suspension-plazo",
     "version": "v2.57.5",
     "date": "2026-09-17",
