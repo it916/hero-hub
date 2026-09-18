@@ -1,5 +1,34 @@
 [
   {
+    "id": "2026-09-18-registro-conexiones",
+    "version": "v2.59.0",
+    "date": "2026-09-18",
+    "category": "feat",
+    "scope": "hub",
+    "audience": "all",
+    "title": "El Hub registra desde dónde entras",
+    "items": [
+      "Desde ahora, al iniciar sesión queda anotado desde qué conexión entraste: la IP pública, el proveedor de internet y la ciudad aproximada. Administración pidió ese registro",
+      "No hay que pulsar nada: se anota solo al entrar, una vez al día por cada conexión distinta",
+      "Puedes ver lo tuyo cuando quieras. En Mi Perfil, abajo del todo, está la sección «Mi conexión» con desde dónde entraste las últimas veces",
+      "Se guarda 90 días y después se borra solo",
+      "La ubicación es aproximada: sale de tu conexión a internet, no de tu equipo. Si usas una VPN aparecerá el país por donde salga la conexión, no donde estás tú"
+    ]
+  },
+  {
+    "id": "2026-09-18-fuera-boton-ausencia",
+    "version": "v2.59.0",
+    "date": "2026-09-18",
+    "category": "fix",
+    "scope": "mi-perfil",
+    "audience": "all",
+    "title": "Se va el botón de Ausencia que quedaba en Mi Perfil",
+    "items": [
+      "La asistencia se cerró hace meses al pasar a Time Doctor, pero en Mi Perfil seguía un botón de «Reportar ausencia» que se había quedado encendido",
+      "Avisar de una ausencia se sigue haciendo igual que hasta ahora: desde el tile «Reportar» del inicio. Solo desaparece la segunda puerta, que confundía"
+    ]
+  },
+  {
     "id": "2026-09-18-plazos-a-la-vista",
     "version": "v2.58.1",
     "date": "2026-09-18",
