@@ -182,15 +182,10 @@ function refreshButtonsState() {
     _applyButtonState(btn, allowed, btn.dataset.attType);
   });
 
-  // El botón de Ausencia siempre está habilitado — se puede reportar
-  // ausencia para cualquier fecha (hoy, ayer, mañana), independiente
-  // del ciclo del día en curso.
-  const btnAus = document.getElementById("btnAusencia");
-  if (btnAus) {
-    btnAus.disabled = false;
-    btnAus.classList.remove("is-blocked");
-    btnAus.removeAttribute("title");
-  }
+  // El botón de Ausencia de Mi Perfil se retiró el 2026-09-18: la asistencia
+  // se cerró en v2.41.0 con la migración a Time Doctor, y ese botón había
+  // sobrevivido al cierre. El modal sigue vivo, lo abre el tile "Reportar" del
+  // dashboard vía reportes.js, así que openAbsenceModal no se toca.
 
   // Botón break proxy del HQCC — activo si Inicio Break O Fin Break están permitidos.
   const btnBreak = document.getElementById("hqcc-break");
@@ -660,16 +655,6 @@ function init() {
     const type = btn.dataset.attType;
     btn.addEventListener("click", () => recordAttendance(type, btn));
   });
-
-  // Botón ausencia (abre modal) — siempre habilitado; la ausencia se
-  // reporta para cualquier fecha, no depende del ciclo del día.
-  const btnAusencia = document.getElementById("btnAusencia");
-  if (btnAusencia) {
-    btnAusencia.addEventListener("click", () => {
-      btnAusencia.disabled = true;
-      openAbsenceModal(btnAusencia);
-    });
-  }
 
   if (!HQCC_ATTENDANCE_CLOSED) initHqccBreakToggle();
 

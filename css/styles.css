@@ -9215,50 +9215,6 @@ body:not(.feat-tile-calendario) .access-tile.at-calendario {
 }
 [data-theme="dark"] .mp-att-period-lbl { color: rgba(226, 232, 240, 0.65); }
 
-/* Botón "Reportar ausencia" en el toolbar de mi-perfil */
-.mp-att-btn-report {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 8px 14px;
-  border-radius: 9px;
-  border: 1px solid rgba(6, 163, 182, 0.30);
-  background: rgba(6, 163, 182, 0.10);
-  color: #06788a;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  letter-spacing: 0.15px;
-  transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
-}
-.mp-att-btn-report i { width: 15px; height: 15px; }
-.mp-att-btn-report:hover {
-  background: rgba(6, 163, 182, 0.18);
-  border-color: rgba(6, 163, 182, 0.50);
-  transform: translateY(-1px);
-}
-.mp-att-btn-report:active { transform: translateY(0); }
-.mp-att-btn-report:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
-[data-theme="dark"] .mp-att-btn-report {
-  background: rgba(6, 163, 182, 0.18);
-  border-color: rgba(6, 163, 182, 0.40);
-  color: #7dd3e0;
-}
-[data-theme="dark"] .mp-att-btn-report:hover {
-  background: rgba(6, 163, 182, 0.28);
-}
-
-.mp-att-toolbar-divider {
-  width: 1px;
-  align-self: stretch;
-  background: rgba(15, 23, 42, 0.10);
-  margin: 0 4px;
-}
-[data-theme="dark"] .mp-att-toolbar-divider {
-  background: rgba(226, 232, 240, 0.14);
-}
-
 .mp-att-select {
   background: #f8fafc;
   border: 1px solid #cbd5e1;
